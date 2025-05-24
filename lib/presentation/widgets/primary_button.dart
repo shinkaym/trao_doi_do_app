@@ -9,14 +9,16 @@ class PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ext = Theme.of(context).extension<AppThemeExtension>()!;
+    final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>()!;
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: ext.primaryTextColor,
-          foregroundColor: Colors.white,
+          foregroundColor: theme.colorScheme.onPrimary,
+          textStyle: theme.textTheme.labelLarge,
           padding: const EdgeInsets.symmetric(vertical: 20),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
