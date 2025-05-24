@@ -9,7 +9,7 @@ class PostsScreen extends StatelessWidget {
     return const MainLayout(
       title: 'Bài đăng',
       notificationCount: 3,
-      child: SizedBox.shrink(),
+      child: Placeholder(child:Text("data"),)
     );
   }
 }
