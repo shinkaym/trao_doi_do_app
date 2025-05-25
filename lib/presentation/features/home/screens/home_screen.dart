@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:trao_doi_do_app/presentation/features/home/widgets/item_slider.dart';
+import 'package:trao_doi_do_app/presentation/features/home/widgets/banner_address.dart';
+import 'package:trao_doi_do_app/presentation/features/home/widgets/item_list_view.dart';
+import 'package:trao_doi_do_app/presentation/features/home/widgets/item_page_view.dart';
 import 'package:trao_doi_do_app/presentation/features/home/widgets/lost_found_card.dart';
 import 'package:trao_doi_do_app/presentation/features/home/widgets/send_item_card.dart';
-import 'package:trao_doi_do_app/presentation/widgets/item.dart';
+import 'package:trao_doi_do_app/presentation/widgets/item_single.dart';
 import 'package:trao_doi_do_app/presentation/widgets/main_layout.dart';
 import 'package:trao_doi_do_app/theme/extensions/app_theme_extension.dart';
 
@@ -53,16 +55,101 @@ class HomeScreen extends StatelessWidget {
               style: TextStyle(
                 color: ext.secondaryTextColor, // Màu chữ phụ
                 fontSize: 14,
+                decoration: TextDecoration.underline, // Gạch chân
+                decorationThickness: 0.5, // Độ dày gạch chân
+                decorationColor: ext.secondaryTextColor,
               ),
             ),
             SizedBox(height: 8),
-            Item(
-              message: 'Vì đâu mà mưa, bên trong có gì để tôi tìm mà trong mưa tôi tìm...',
-              sender: 'Mike',
-              time: '5 giờ trước',
-              badge: 'SL1',
-            )
-            // ItemSlider(),
+            ItemPageView(),
+            SizedBox(height: 8),
+            Text(
+              'Mới nhất',
+              style: TextStyle(
+                color: ext.secondaryTextColor, // Màu chữ phụ
+                fontSize: 14,
+                decoration: TextDecoration.underline, // Gạch chân
+                decorationThickness: 0.5,
+                decorationColor: ext.secondaryTextColor,
+              ),
+            ),
+            SizedBox(height: 8),
+            ItemListView(),
+            SizedBox(height: 8),
+            Text(
+              'Phổ biến nhất',
+              style: TextStyle(
+                color: ext.secondaryTextColor, // Màu chữ phụ
+                fontSize: 14,
+                decoration: TextDecoration.underline, // Gạch chân
+                decorationThickness: 0.5,
+                decorationColor: ext.secondaryTextColor,
+              ),
+            ),
+            SizedBox(height: 8),
+            ItemListView(),
+            SizedBox(height: 16),
+            BannerAddress(),
+            SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  "Đồ cũ",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: ext.primaryTextColor,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => context.go('/warehouse'),
+                  child: Text(
+                    "Xem tất cả",
+                    style: TextStyle(
+                      color: ext.primary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.underline,
+                      decorationThickness: 0.5,
+                      decorationColor: ext.primary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+            ItemSingle(
+              description:
+                  'Hôm nay trời đẹp, tôi muốn đi dạo nhưng lại không có ai đi cùng nên tôi quyết định tìm một chiếc ô để che nắng...',
+              sender: 'Anna',
+              time: '3 giờ trước',
+              quantity: '2',
+              name: 'Ô dù',
+              imageUrl: 'https://picsum.photos/250?image=10',
+              address: 'Tòa A, Lầu 3, Phòng A301',
+            ),
+            ItemSingle(
+              description:
+                  'Hôm nay trời đẹp, tôi muốn đi dạo nhưng lại không có ai đi cùng nên tôi quyết định tìm một chiếc ô để che nắng...',
+              sender: 'Anna',
+              time: '3 giờ trước',
+              quantity: '2',
+              name: 'Ô dù',
+              imageUrl: 'https://picsum.photos/250?image=10',
+              address: 'Tòa A, Lầu 3, Phòng A301',
+            ),
+            SizedBox(height: 8),
+            ItemSingle(
+              description:
+                  'Hôm nay trời đẹp, tôi muốn đi dạo nhưng lại không có ai đi cùng nên tôi quyết định tìm một chiếc ô để che nắng...',
+              sender: 'Anna',
+              time: '3 giờ trước',
+              quantity: '2',
+              name: 'Ô dù',
+              imageUrl: 'https://picsum.photos/250?image=10',
+              address: 'Tòa A, Lầu 3, Phòng A301',
+            ),
           ],
         ),
       ),
