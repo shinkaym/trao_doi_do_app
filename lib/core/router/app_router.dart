@@ -8,7 +8,11 @@ import 'package:trao_doi_do_app/presentation/features/auth/screens/otp_screen.da
 import 'package:trao_doi_do_app/presentation/features/auth/screens/register_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/notification/screens/notification_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/posts/screens/posts_screen.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/screens/change_password_screen.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/screens/edit_profile_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/screens/profile_screen.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/screens/request_detail_screen.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/screens/requests_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/ranking/screens/ranking_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/send_item/screens/send_item_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/warehouse/screens/warehouse_screen.dart';
@@ -67,6 +71,37 @@ final router = GoRouter(
         GoRoute(
           path: '/profile',
           builder: (context, state) => const ProfileScreen(),
+        ),
+        GoRoute(
+          path: '/edit-profile',
+          builder: (context, state) => EditProfileScreen(),
+        ),
+        GoRoute(
+          path: '/change-password',
+          builder: (context, state) => ChangePasswordScreen(),
+        ),
+        GoRoute(
+          path: '/requests',
+          builder: (context, state) => RequestsScreen(),
+        ),
+        GoRoute(
+          path: '/request-detail',
+          name: 'request-detail',
+          builder: (context, state) {
+            final title = state.uri.queryParameters['title'] ?? '';
+            final type = state.uri.queryParameters['type'] ?? '';
+            final status = state.uri.queryParameters['status'] ?? '';
+            final location = state.uri.queryParameters['location'] ?? '';
+            final date = state.uri.queryParameters['date'] ?? '';
+
+            return RequestDetailScreen(
+              title: title,
+              type: type,
+              status: status,
+              location: location,
+              date: date,
+            );
+          },
         ),
       ],
     ),

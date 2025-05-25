@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:trao_doi_do_app/presentation/widgets/notification_tile.dart';
+import 'package:trao_doi_do_app/presentation/features/notification/widgets/notification_tile.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
@@ -26,10 +26,12 @@ class _NotificationScreenState extends State<NotificationScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         leading: const BackButton(),
-        title: const Text('Thông báo'),
+        title: Text('Thông báo', style: theme.textTheme.titleLarge),
         elevation: 0,
         backgroundColor: Colors.transparent,
       ),

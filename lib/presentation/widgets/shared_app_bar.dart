@@ -26,7 +26,7 @@ class SharedAppBar extends StatelessWidget implements PreferredSizeWidget {
         children: [
           Image.asset('assets/images/logo.png', height: 40),
           const SizedBox(width: 12),
-          Expanded(child: Text(title, style: theme.textTheme.titleMedium)),
+          Expanded(child: Text(title, style: theme.textTheme.titleLarge)),
         ],
       ),
       actions: [

@@ -20,15 +20,12 @@ class ThemeToggleTile extends ConsumerWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        border: Border.all(color: theme.dividerColor),
+        border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(12),
       ),
       child: SwitchListTile(
         secondary: Icon(icon, color: theme.iconTheme.color),
-        title: Text(
-          title,
-          style: theme.textTheme.bodyLarge,
-        ),
+        title: Text(title, style: theme.textTheme.bodyLarge),
         subtitle: Text(
           'Thay đổi giao diện sáng/tối',
           style: theme.textTheme.bodySmall,

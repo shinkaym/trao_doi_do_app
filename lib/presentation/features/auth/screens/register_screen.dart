@@ -28,23 +28,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     return AuthLayout(
       title: 'Đăng ký tài khoản',
-      child: ListView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          CustomTextField(
+            label: 'Họ và tên', 
+            hint: 'Nhập họ và tên',
+            controller: fullNameController,
+          ),
+          const SizedBox(height: 16),
 
-          CustomTextField(label: 'Họ và tên', hint: 'Nhập họ và tên'),
           CustomTextField(
             label: 'Số điện thoại',
             hint: 'Nhập số điện thoại',
+            controller: phoneController,
             inputType: TextInputType.phone,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
           CustomTextField(
             label: 'Email',
             hint: 'Nhập email',
+            controller: emailController,
             inputType: TextInputType.emailAddress,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
           CustomTextField(
             label: 'Mật khẩu',
@@ -55,7 +63,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             onToggleVisibility:
                 () => setState(() => isPasswordVisible = !isPasswordVisible),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
           CustomTextField(
             label: 'Xác nhận mật khẩu',
@@ -89,5 +97,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    fullNameController.dispose();
+    phoneController.dispose();
+    super.dispose();
   }
 }
