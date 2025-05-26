@@ -75,10 +75,11 @@ class _RequestsScreenState extends State<RequestsScreen> {
   }
 
   void _showFilterBottomSheet() {
+    final ext = Theme.of(context).extension<AppThemeExtension>()!;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: ext.background,
       builder:
           (context) => FilterBottomSheet(
             typeOptions: typeOptions,
@@ -123,7 +124,7 @@ class _RequestsScreenState extends State<RequestsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: const BackButton(),
+        leading: BackButton(color: ext.secondary),
         title: Text('Yêu cầu đã gửi', style: theme.textTheme.titleLarge),
         elevation: 0,
         backgroundColor: Colors.transparent,

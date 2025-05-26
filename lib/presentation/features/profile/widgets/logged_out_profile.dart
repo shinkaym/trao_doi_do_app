@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trao_doi_do_app/presentation/widgets/primary_button.dart';
-import 'package:trao_doi_do_app/presentation/widgets/secondary_button.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/theme_toggle_tile.dart';
 
 class LoggedOutProfile extends StatelessWidget {

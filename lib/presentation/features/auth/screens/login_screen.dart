@@ -4,6 +4,7 @@ import 'package:trao_doi_do_app/presentation/widgets/auth_layout.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_text_field.dart';
 import 'package:trao_doi_do_app/presentation/widgets/primary_button.dart';
 import 'package:trao_doi_do_app/presentation/widgets/secondary_button.dart';
+import 'package:trao_doi_do_app/theme/extensions/app_theme_extension.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>()!;
 
     return AuthLayout(
       title: 'Đăng Nhập',
@@ -66,6 +68,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 12),
                 SecondaryButton(
+                  textColor: ext.primaryTextColor,
                   text: 'ĐĂNG KÝ',
                   onPressed: () => context.push('/register'),
                 ),

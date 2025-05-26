@@ -27,16 +27,16 @@ class ActiveFilterChip extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
-              color: Colors.white,
+              color: ext.secondaryTextColor,
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(width: 4),
           GestureDetector(
             onTap: onRemove,
-            child: const Icon(Icons.close, size: 14, color: Colors.white),
+            child: Icon(Icons.close, size: 14, color: ext.secondaryTextColor),
           ),
         ],
       ),

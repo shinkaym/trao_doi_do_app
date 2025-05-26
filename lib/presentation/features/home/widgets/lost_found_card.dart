@@ -10,7 +10,7 @@ class LostFoundCard extends StatelessWidget {
     final ext = theme.extension<AppThemeExtension>()!;
 
     return Card(
-      color: ext.surfaceContainer, // Màu nền từ theme
+      color: ext.card, // Màu nền từ theme
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10), // Bo góc
       ),

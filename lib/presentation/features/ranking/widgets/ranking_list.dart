@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trao_doi_do_app/theme/extensions/app_theme_extension.dart';
 
 class RankingList extends StatelessWidget {
   const RankingList();
@@ -6,6 +7,7 @@ class RankingList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>()!;
 
     final rankings = [
       {
@@ -52,6 +54,14 @@ class RankingList extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
               decoration: BoxDecoration(
+                color: ext.card,
+                boxShadow: [
+                  BoxShadow(
+                    color: ext.accentLight.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
                 border: Border.all(color: Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(12),
               ),

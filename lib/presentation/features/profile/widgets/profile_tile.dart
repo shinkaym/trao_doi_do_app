@@ -5,12 +5,15 @@ class ProfileTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final Color color;
 
   const ProfileTile({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.onTap,
+    required this.color,
+    super.key,
   });
 
   @override
@@ -20,6 +23,7 @@ class ProfileTile extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(12),
+        color: color,
       ),
       child: ListTile(
         leading: Icon(icon),

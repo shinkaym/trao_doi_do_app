@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trao_doi_do_app/theme/extensions/app_theme_extension.dart';
 
 class AuthLayout extends StatelessWidget {
   final String title;
@@ -15,9 +16,12 @@ class AuthLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>()!;
     return Scaffold(
       appBar: AppBar(
-        leading: const BackButton(),
+        leading: BackButton(
+          color: ext.secondary, // Set the color of the back button
+        ),
         elevation: 0,
         backgroundColor: Colors.transparent,
         actions: actions,

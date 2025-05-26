@@ -6,6 +6,7 @@ import 'package:trao_doi_do_app/presentation/features/auth/screens/forgot_passwo
 import 'package:trao_doi_do_app/presentation/features/auth/screens/login_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/screens/otp_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/screens/register_screen.dart';
+import 'package:trao_doi_do_app/presentation/features/item_detail/screens/item_detail_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/notification/screens/notification_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/posts/screens/posts_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/screens/change_password_screen.dart';
@@ -102,7 +103,22 @@ final router = GoRouter(
               date: date,
             );
           },
-        ),
+        ),        GoRoute(
+          path: '/item-detail/:id',
+          name: 'item_detail',
+          builder: (context, state) {
+            final item = state.extra as Map<String, dynamic>;
+            return ItemDetailScreen(
+              description: item['description'] ?? '',
+              sender: item['sender'] ?? '',
+              time: item['time'] ?? '',
+              quantity: item['quantity'] ?? '',
+              name: item['name'] ?? '',
+              imageUrl: item['imageUrl'] ?? '',
+              address: item['address'] ?? '',
+            );
+          },
+        )
       ],
     ),
 

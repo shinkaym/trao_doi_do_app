@@ -23,16 +23,16 @@ class FilterChipWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? ext.accentLight : Colors.grey.shade100,
+          color: isSelected ? ext.primary : ext.accentLight,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? ext.accentLight : Colors.grey.shade300,
+            color: isSelected ? ext.accentLight : ext.secondaryTextColor.withValues(alpha: 0.3),
           ),
         ),
         child: Text(
           label,
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: isSelected ? Colors.white : Colors.black87,
+            color: isSelected ? ext.onPrimary : ext.primaryTextColor,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
           ),
         ),

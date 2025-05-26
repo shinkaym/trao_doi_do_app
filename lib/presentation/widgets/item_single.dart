@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:trao_doi_do_app/presentation/features/item_detail/screens/item_detail_screen.dart';
+import 'package:go_router/go_router.dart';
 import 'package:trao_doi_do_app/theme/extensions/app_theme_extension.dart';
 
 class ItemSingle extends StatelessWidget {
@@ -29,26 +29,24 @@ class ItemSingle extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        // Hành động khi tap: Chuyển sang màn hình chi tiết
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ItemDetailScreen(
-              description: description,
-              sender: sender,
-              time: time,
-              quantity: quantity,
-              name: name,
-              imageUrl: imageUrl,
-              address: address,
-            ),
-          ),
+        context.pushNamed(
+          'item_detail',
+          pathParameters: {'id': '1'}, // Thêm id nếu cần
+          extra: {
+            'description': description,
+            'sender': sender,
+            'time': time,
+            'quantity': quantity,
+            'name': name,
+            'imageUrl': imageUrl,
+            'address': address,
+          },
         );
       },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10), // Bo tròn 4 góc toàn bộ
         child: Card(
-          color: ext.surfaceContainer,
+          color: ext.card,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10), // Đảm bảo Card bo tròn
           ),
@@ -85,7 +83,7 @@ class ItemSingle extends StatelessWidget {
                   bottomRight: Radius.circular(10),
                 ),
                 child: Container(
-                  color: ext.surfaceContainer,
+                  color: ext.card,
                   padding: const EdgeInsets.all(8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

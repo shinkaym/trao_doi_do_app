@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trao_doi_do_app/theme/extensions/app_theme_extension.dart';
 import 'active_filter_chip.dart';
 
 class FilterIndicator extends StatelessWidget {
@@ -17,6 +18,8 @@ class FilterIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>()!;
     if (selectedType == null && selectedStatus == null) {
       return const SizedBox();
     }
@@ -25,13 +28,13 @@ class FilterIndicator extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       child: Row(
         children: [
-          const Icon(Icons.filter_list, size: 16, color: Colors.grey),
+          Icon(Icons.filter_list, size: 16, color: ext.secondaryTextColor),
           const SizedBox(width: 8),
-          const Text(
+          Text(
             'Đang lọc:',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey,
+              color:ext.secondaryTextColor,
               fontWeight: FontWeight.w500,
             ),
           ),

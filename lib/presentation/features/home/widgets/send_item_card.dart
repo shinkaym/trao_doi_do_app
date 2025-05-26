@@ -11,7 +11,7 @@ class SendItemCard extends StatelessWidget {
     final ext = theme.extension<AppThemeExtension>()!;
 
     return Card(
-      color: ext.surfaceContainer,
+      color: ext.card,
       // Sử dụng màu từ theme
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10), // Bo góc

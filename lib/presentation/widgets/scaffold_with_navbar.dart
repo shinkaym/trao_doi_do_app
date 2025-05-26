@@ -26,7 +26,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
         child: NavigationBarTheme(
           data: NavigationBarThemeData(
             height: 72,
-            backgroundColor: ext.surfaceContainer,
+            backgroundColor: ext.surfaceContainer, // Màu nền của NavigationBar
             indicatorColor: ext.primary, // Màu nền tròn khi chọn
             indicatorShape: const CircleBorder(), // Hình tròn cho indicator
             iconTheme: WidgetStateProperty.resolveWith<IconThemeData>(

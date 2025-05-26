@@ -15,6 +15,7 @@ class YourInfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: ext.card,
         borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: ext.secondary),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,

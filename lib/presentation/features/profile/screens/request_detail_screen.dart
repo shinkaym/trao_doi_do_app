@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trao_doi_do_app/theme/extensions/app_theme_extension.dart';
 import '../widgets/status_widget.dart';
 import '../widgets/request_info_widget.dart';
 import '../widgets/delivery_info_widget.dart';
@@ -22,10 +23,11 @@ class RequestDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>()!;
 
     return Scaffold(
       appBar: AppBar(
-        leading: const BackButton(),
+        leading: BackButton(color: ext.secondary),
         title: Text('Chi tiết yêu cầu', style: theme.textTheme.titleLarge),
         elevation: 0,
         backgroundColor: Colors.transparent,

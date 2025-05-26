@@ -17,7 +17,7 @@ class SharedAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final ext = theme.extension<AppThemeExtension>();
+    final ext = theme.extension<AppThemeExtension>()!;
 
     return AppBar(
       elevation: 0,
@@ -35,7 +35,7 @@ class SharedAppBar extends StatelessWidget implements PreferredSizeWidget {
           alignment: Alignment.topRight,
           children: [
             IconButton(
-              icon: const Icon(Icons.notifications),
+              icon: Icon(Icons.notifications,color: ext.secondary,),
               onPressed: () {
                 context.push('/notifications');
               },

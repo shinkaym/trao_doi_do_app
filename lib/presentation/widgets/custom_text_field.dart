@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trao_doi_do_app/theme/extensions/app_theme_extension.dart';
 
 class CustomTextField extends StatelessWidget {
   final String label;
@@ -22,6 +23,7 @@ class CustomTextField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ext = Theme.of(context).extension<AppThemeExtension>()!;
     return Padding(
       padding: const EdgeInsets.only(bottom: 20.0),
       child: Column(
@@ -33,9 +35,14 @@ class CustomTextField extends StatelessWidget {
             controller: controller,
             keyboardType: inputType,
             obscureText: isPassword && !isVisible,
-            decoration: InputDecoration(
+            cursorColor: ext.surfaceContainer,
+            decoration: InputDecoration(  
               hintText: hint,
-              border: const OutlineInputBorder(),
+              border: OutlineInputBorder(
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: ext.primaryTextColor, width: 2),
+              ),
               suffixIcon:
                   isPassword
                       ? IconButton(

@@ -20,7 +20,7 @@ class RequestItemCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: ext.secondaryTextColor.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -32,27 +32,31 @@ class RequestItemCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: ext.accentLight,
+                  color: ext.primary,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
                   request['type'],
                   style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w500,
+                    color: ext.onPrimary,
                   ),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
+                  color: ext.accentLight,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.circle, size: 8, color: Colors.black54),
+                    Icon(Icons.circle, size: 8, color: request['status'] == 'Đã duyệt' ? ext.success : request['status'] == 'Đang xử lý' ? ext.warning : ext.danger),
                     const SizedBox(width: 4),
-                    Text(request['status'], style: theme.textTheme.bodySmall),
+                    Text(request['status'], style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: ext.secondaryTextColor,
+                    )),
                   ],
                 ),
               ),

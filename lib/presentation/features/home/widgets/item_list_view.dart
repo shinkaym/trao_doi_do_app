@@ -1,43 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:trao_doi_do_app/presentation/widgets/item_tile.dart';
 
 class ItemListView extends StatelessWidget {
-  final List<ItemTile> items = const [
-    ItemTile(
-      time: '5 giờ trước',
-      quantity: '1',
-      name: 'Máy tính xách tay',
-      imageUrl: 'https://picsum.photos/250?image=9',
-      address: 'Tòa F, Lầu 5, Phòng F512',
-    ),
-    ItemTile(
-      time: '3 giờ trước',
-      quantity: '2',
-      name: 'Ô dù',
-      imageUrl: 'https://picsum.photos/250?image=10',
-      address: 'Tòa A, Lầu 3, Phòng A301',
-    ),
-    ItemTile(
-      time: '1 giờ trước',
-      quantity: '1',
-      name: 'Sách lập trình',
-      imageUrl: 'https://picsum.photos/250?image=11',
-      address: 'Thư viện trường, tầng 2',
-    ),
-  ];
+  final List<Map<String, dynamic>> items;
 
-  const ItemListView({super.key});
+  const ItemListView({super.key, required this.items});
 
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
-      itemCount: items.length,
       shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      separatorBuilder: (context, index) => const SizedBox(height: 12), // Khoảng cách giữa các ListTile
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: items.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
-        return items[index];
+        final item = items[index];
+        return ItemTile(
+          name: item['name'] ?? '',
+          time: item['time'] ?? '',
+          quantity: item['quantity'] ?? '',
+          imageUrl: item['imageUrl'] ?? '',
+          address: item['address'] ?? '',
+          onTap: () {
+            context.pushNamed(
+              'item_detail',
+              pathParameters: {'id': item['id'] ?? ''},
+              extra: item,
+            );
+          },
+        );
       },
     );
   }

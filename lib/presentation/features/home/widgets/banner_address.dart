@@ -22,7 +22,7 @@ class BannerAddressState extends State<BannerAddress> {
 
     return Container(
       decoration: BoxDecoration(
-        color: ext.surfaceContainer, // Màu nền từ theme
+        color: ext.card, // Màu nền từ theme
         borderRadius: BorderRadius.circular(10), // Bo góc
         boxShadow: [
           BoxShadow(

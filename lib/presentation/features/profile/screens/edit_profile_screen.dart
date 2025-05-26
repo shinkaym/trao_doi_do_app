@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_text_field.dart';
 import 'package:trao_doi_do_app/presentation/widgets/primary_button.dart';
+import 'package:trao_doi_do_app/theme/extensions/app_theme_extension.dart';
 
 class EditProfileScreen extends StatelessWidget {
   final nameController = TextEditingController(text: 'John Doe');
@@ -12,11 +13,12 @@ class EditProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final ext = theme.extension<AppThemeExtension>()!;
 
     return Scaffold(
       appBar: AppBar(
         // font titleLarge
-        leading: const BackButton(),
+        leading: BackButton(color: ext.secondary),
         title: Text('Chỉnh sửa thông tin', style: theme.textTheme.titleLarge),
 
         elevation: 0,
@@ -26,10 +28,16 @@ class EditProfileScreen extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            const CircleAvatar(radius: 40, child: Icon(Icons.person, size: 40)),
+            CircleAvatar(backgroundColor: ext.secondary, radius: 40, child: Icon(Icons.person, size: 40)),
             const SizedBox(height: 12),
 
-            ElevatedButton(onPressed: () {}, child: const Text('Thay đổi ảnh')),
+            ElevatedButton(
+              onPressed: () {},
+              style: ButtonStyle(
+                backgroundColor: MaterialStateProperty.all(ext.secondary),
+              ),
+              child: const Text('Thay đổi ảnh'),
+            ),
             const SizedBox(height: 24),
 
             CustomTextField(
