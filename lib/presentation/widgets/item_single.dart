@@ -83,7 +83,7 @@ class ItemSingle extends StatelessWidget {
                   bottomRight: Radius.circular(10),
                 ),
                 child: Container(
-                  color: ext.card,
+                  color: ext.surfaceContainer,
                   padding: const EdgeInsets.all(8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

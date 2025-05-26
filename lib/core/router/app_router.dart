@@ -55,7 +55,7 @@ final router = GoRouter(
         GoRoute(path: '/home', builder: (context, state) => const HomeScreen()),
         GoRoute(
           path: '/posts',
-          builder: (context, state) => const PostsScreen(),
+          builder: (context, state) => const PostScreen(),
         ),
         GoRoute(
           path: '/warehouse',
