@@ -8,6 +8,7 @@ import 'package:trao_doi_do_app/presentation/features/auth/screens/otp_screen.da
 import 'package:trao_doi_do_app/presentation/features/auth/screens/register_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/item_detail/screens/item_detail_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/notification/screens/notification_screen.dart';
+import 'package:trao_doi_do_app/presentation/features/onboarding/screens/onboarding_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/posts/screens/posts_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/screens/change_password_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/screens/edit_profile_screen.dart';
@@ -16,6 +17,7 @@ import 'package:trao_doi_do_app/presentation/features/profile/screens/request_de
 import 'package:trao_doi_do_app/presentation/features/profile/screens/requests_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/ranking/screens/ranking_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/send_item/screens/send_item_screen.dart';
+import 'package:trao_doi_do_app/presentation/features/splash/screens/splash_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/warehouse/screens/warehouse_screen.dart';
 import 'package:trao_doi_do_app/presentation/widgets/scaffold_with_navbar.dart';
 import 'package:trao_doi_do_app/presentation/features/home/screens/home_screen.dart';
@@ -32,7 +34,7 @@ int _calculateIndex(String location) {
 
 final router = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/home',
+  initialLocation: '/onboarding',
   errorBuilder: (context, state) => const NotFoundScreen(),
   routes: [
     GoRoute(
@@ -103,7 +105,8 @@ final router = GoRouter(
               date: date,
             );
           },
-        ),        GoRoute(
+        ),
+        GoRoute(
           path: '/item-detail/:id',
           name: 'item_detail',
           builder: (context, state) {
@@ -118,7 +121,7 @@ final router = GoRouter(
               address: item['address'] ?? '',
             );
           },
-        )
+        ),
       ],
     ),
 
@@ -133,5 +136,10 @@ final router = GoRouter(
       builder: (context, state) => const ForgotPasswordScreen(),
     ),
     GoRoute(path: '/otp', builder: (context, state) => const OtpScreen()),
+    GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingScreen(),
+    ),
   ],
 );
