@@ -17,12 +17,13 @@ class AppTheme {
     primaryTextColor: Color(0xFF1A2238), // Text chính
     secondaryTextColor: Color(0xFF6B7280), // Text phụ
     surfaceContainer: Color(0xFFF8FAFC), // Nền container, nhạt hơn background
-
+    backgroundButton: Color(0xFF1A2238), // Nền nút chính
+    backgroundButtonText: Colors.white, // Text nút chính
   );
 
   static final darkExtension = const AppThemeExtension(
     primary: Color(0xFF3366FF), // Chủ đạo giữ nguyên
-    onPrimary: Color(0xFF1A2238),
+    onPrimary: Colors.white, 
     secondary: Color(0xFFB0B8C4), // Màu phụ nhạt hơn cho dark
     onSecondary: Colors.black,
     background: Color(0xFF181C20), // Nền tối
@@ -34,6 +35,8 @@ class AppTheme {
     primaryTextColor: Color(0xFFF1F5F9), // Text chính sáng
     secondaryTextColor: Color(0xFFB0B8C4), // Text phụ sáng
     surfaceContainer: Color(0xFF23272F), // Nền container tối
+    backgroundButton: Color(0xFFF1F5F9), // Nền nút chính sáng
+    backgroundButtonText: Color(0xFF1A2238), // Text nút chính tối
   );
 
   static ThemeData get light => ThemeData(

@@ -16,16 +16,21 @@ class PrimaryButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: ext.primaryTextColor,
-          foregroundColor: theme.colorScheme.onPrimary,
+          backgroundColor: ext.backgroundButton,
+          foregroundColor: ext.backgroundButtonText,
           textStyle: theme.textTheme.labelLarge,
           padding: const EdgeInsets.symmetric(vertical: 20),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
         ),
-        child: Text(text),
+        child: Text(text,
+          style: TextStyle(
+            color: ext.backgroundButtonText,
+            fontWeight: FontWeight.w600,
+          ),
       ),
+    ),
     );
   }
 }

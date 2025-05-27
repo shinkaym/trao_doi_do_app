@@ -30,7 +30,6 @@ class _LoginScreenState extends State<LoginScreen> {
         children: [
           CustomTextField(
             label: 'Email',
-            hint: 'Nhập email',
             controller: emailController,
             inputType: TextInputType.emailAddress,
           ),
@@ -38,7 +37,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
           CustomTextField(
             label: 'Mật khẩu',
-            hint: 'Nhập mật khẩu',
             controller: passwordController,
             isPassword: true,
             isVisible: isPasswordVisible,

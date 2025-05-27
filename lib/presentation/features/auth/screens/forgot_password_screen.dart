@@ -18,7 +18,6 @@ class ForgotPasswordScreen extends StatelessWidget {
         children: [
           CustomTextField(
             label: 'Email',
-            hint: 'Nhập email',
             controller: emailController,
             inputType: TextInputType.emailAddress,
           ),

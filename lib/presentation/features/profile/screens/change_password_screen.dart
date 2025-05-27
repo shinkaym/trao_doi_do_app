@@ -60,7 +60,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
             CustomTextField(
               label: 'Mật khẩu hiện tại',
-              hint: 'Nhập mật khẩu hiện tại',
               controller: currentPasswordController,
               isPassword: true,
               isVisible: isCurrentPasswordVisible,
@@ -72,7 +71,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
             CustomTextField(
               label: 'Mật khẩu mới',
-              hint: 'Nhập mật khẩu mới',
               controller: newPasswordController,
               isPassword: true,
               isVisible: isNewPasswordVisible,
@@ -84,7 +82,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
             CustomTextField(
               label: 'Xác nhận mật khẩu mới',
-              hint: 'Nhập lại mật khẩu mới',
               controller: confirmPasswordController,
               isPassword: true,
               isVisible: isConfirmPasswordVisible,

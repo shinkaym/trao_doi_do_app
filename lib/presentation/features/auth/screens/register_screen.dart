@@ -35,14 +35,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         children: [
           CustomTextField(
             label: 'Họ và tên', 
-            hint: 'Nhập họ và tên',
             controller: fullNameController,
           ),
           const SizedBox(height: 16),
 
           CustomTextField(
             label: 'Số điện thoại',
-            hint: 'Nhập số điện thoại',
             controller: phoneController,
             inputType: TextInputType.phone,
           ),
@@ -50,7 +48,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
           CustomTextField(
             label: 'Email',
-            hint: 'Nhập email',
             controller: emailController,
             inputType: TextInputType.emailAddress,
           ),
@@ -58,7 +55,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
           CustomTextField(
             label: 'Mật khẩu',
-            hint: 'Nhập mật khẩu',
             controller: passwordController,
             isPassword: true,
             isVisible: isPasswordVisible,
@@ -69,7 +65,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
           CustomTextField(
             label: 'Xác nhận mật khẩu',
-            hint: 'Nhập lại mật khẩu',
             controller: confirmPasswordController,
             isPassword: true,
             isVisible: isConfirmPasswordVisible,

@@ -38,7 +38,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
                   );
                 }
                 return IconThemeData(
-                  color: ext.secondaryTextColor, // Màu icon khi không chọn
+                  color: ext.secondary, // Màu icon khi không chọn
                   size: 24,
                 );
               },

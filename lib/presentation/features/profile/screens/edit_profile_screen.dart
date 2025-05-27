@@ -42,18 +42,15 @@ class EditProfileScreen extends StatelessWidget {
 
             CustomTextField(
               label: 'Họ và tên',
-              hint: 'Nhập họ và tên',
               controller: nameController,
             ),
             CustomTextField(
               label: 'Email',
-              hint: 'Nhập email',
               inputType: TextInputType.emailAddress,
               controller: emailController,
             ),
             CustomTextField(
               label: 'Số điện thoại',
-              hint: 'Nhập số điện thoại',
               inputType: TextInputType.phone,
               controller: phoneController,
             ),

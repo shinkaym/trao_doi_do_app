@@ -15,6 +15,8 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
   final Color primaryTextColor;
   final Color secondaryTextColor;
   final Color surfaceContainer;
+  final Color backgroundButton;
+  final Color backgroundButtonText;
 
   const AppThemeExtension({
     required this.primary,
@@ -30,6 +32,8 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     required this.primaryTextColor,
     required this.secondaryTextColor,
     required this.surfaceContainer,
+    required this.backgroundButton,
+    required this.backgroundButtonText,
   });
 
   @override
@@ -47,6 +51,8 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     Color? primaryTextColor,
     Color? secondaryTextColor,
     Color? surfaceContainer,
+    Color? backgroundButton,
+    Color? backgroundButtonText,
   }) {
     return AppThemeExtension(
       primary: primary ?? this.primary,
@@ -62,6 +68,8 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       primaryTextColor: primaryTextColor ?? this.primaryTextColor,
       secondaryTextColor: secondaryTextColor ?? this.secondaryTextColor,
       surfaceContainer: surfaceContainer ?? this.surfaceContainer,
+      backgroundButton: backgroundButton ?? this.backgroundButton,
+      backgroundButtonText: backgroundButtonText ?? this.backgroundButtonText,
     );
   }
 
@@ -82,6 +90,8 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       primaryTextColor: Color.lerp(primaryTextColor, other.primaryTextColor, t)!,
       secondaryTextColor: Color.lerp(secondaryTextColor, other.secondaryTextColor, t)!,
       surfaceContainer: Color.lerp(surfaceContainer, other.surfaceContainer, t)!,
+      backgroundButton: Color.lerp(backgroundButton, other.backgroundButton, t)!,
+      backgroundButtonText: Color.lerp(backgroundButtonText, other.backgroundButtonText, t)!,
     );
   }
 }
