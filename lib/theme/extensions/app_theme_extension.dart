@@ -36,6 +36,35 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     required this.backgroundButtonText,
   });
 
+  // Convenience getters for common color combinations
+  Color get textOnCard => primaryTextColor;
+  Color get textOnBackground => primaryTextColor;
+  Color get textSecondaryOnCard => secondaryTextColor;
+  Color get textSecondaryOnBackground => secondaryTextColor;
+
+  // Status colors with proper contrast
+  Color get successContainer => success.withOpacity(0.1);
+  Color get onSuccessContainer => success;
+  Color get errorContainer => danger.withOpacity(0.1);
+  Color get onErrorContainer => danger;
+  Color get warningContainer => warning.withOpacity(0.1);
+  Color get onWarningContainer => warning;
+
+  // Button color variants
+  Color get secondaryButtonBackground => accentLight;
+  Color get secondaryButtonText => primary;
+  Color get outlineButtonBorder => primary.withOpacity(0.5);
+
+  // Surface variants
+  Color get surfaceElevated => card;
+  Color get surfaceDim => background;
+  Color get surfaceBright => card;
+
+  // Divider and border colors
+  Color get dividerColor => secondaryTextColor.withOpacity(0.2);
+  Color get borderColor => secondaryTextColor.withOpacity(0.3);
+  Color get focusBorderColor => primary;
+
   @override
   AppThemeExtension copyWith({
     Color? primary,
@@ -87,11 +116,58 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       success: Color.lerp(success, other.success, t)!,
       danger: Color.lerp(danger, other.danger, t)!,
       warning: Color.lerp(warning, other.warning, t)!,
-      primaryTextColor: Color.lerp(primaryTextColor, other.primaryTextColor, t)!,
-      secondaryTextColor: Color.lerp(secondaryTextColor, other.secondaryTextColor, t)!,
-      surfaceContainer: Color.lerp(surfaceContainer, other.surfaceContainer, t)!,
-      backgroundButton: Color.lerp(backgroundButton, other.backgroundButton, t)!,
-      backgroundButtonText: Color.lerp(backgroundButtonText, other.backgroundButtonText, t)!,
+      primaryTextColor:
+          Color.lerp(primaryTextColor, other.primaryTextColor, t)!,
+      secondaryTextColor:
+          Color.lerp(secondaryTextColor, other.secondaryTextColor, t)!,
+      surfaceContainer:
+          Color.lerp(surfaceContainer, other.surfaceContainer, t)!,
+      backgroundButton:
+          Color.lerp(backgroundButton, other.backgroundButton, t)!,
+      backgroundButtonText:
+          Color.lerp(backgroundButtonText, other.backgroundButtonText, t)!,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is AppThemeExtension &&
+        other.primary == primary &&
+        other.onPrimary == onPrimary &&
+        other.secondary == secondary &&
+        other.onSecondary == onSecondary &&
+        other.background == background &&
+        other.card == card &&
+        other.accentLight == accentLight &&
+        other.success == success &&
+        other.danger == danger &&
+        other.warning == warning &&
+        other.primaryTextColor == primaryTextColor &&
+        other.secondaryTextColor == secondaryTextColor &&
+        other.surfaceContainer == surfaceContainer &&
+        other.backgroundButton == backgroundButton &&
+        other.backgroundButtonText == backgroundButtonText;
+  }
+
+  @override
+  int get hashCode {
+    return Object.hash(
+      primary,
+      onPrimary,
+      secondary,
+      onSecondary,
+      background,
+      card,
+      accentLight,
+      success,
+      danger,
+      warning,
+      primaryTextColor,
+      secondaryTextColor,
+      surfaceContainer,
+      backgroundButton,
+      backgroundButtonText,
     );
   }
 }
