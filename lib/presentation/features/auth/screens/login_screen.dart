@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/presentation/features/auth/widgets/app_header_widget.dart';
+import 'package:trao_doi_do_app/presentation/features/auth/widgets/auth_divider_widget.dart';
+import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -43,10 +46,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
+    final isDark = context.isDarkMode;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -62,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () {
-              if (context.canPop()) {
+              if (context.canPop) {
                 context.pop();
               } else {
                 // Fallback nếu không thể pop, có thể điều hướng đến màn hình mặc định
@@ -80,57 +83,11 @@ class _LoginScreenState extends State<LoginScreen> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [colorScheme.primary, colorScheme.primary],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: isTablet ? 60 : 40,
-                      horizontal: 24,
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: isTablet ? 100 : 80,
-                          height: isTablet ? 100 : 80,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Icon(
-                            Icons.lock_outline,
-                            size: isTablet ? 50 : 40,
-                            color: Colors.white,
-                          ),
-                        ),
-                        SizedBox(height: isTablet ? 24 : 16),
-                        Text(
-                          'Đăng nhập',
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: isTablet ? 32 : 28,
-                          ),
-                        ),
-                        SizedBox(height: isTablet ? 12 : 8),
-                        Text(
-                          'Chào mừng bạn trở lại',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: isTablet ? 18 : 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                AppHeaderWidget(
+                  title: 'Đăng nhập',
+                  subtitle: 'Chào mừng bạn trở lại',
+                  icon: Icons.lock_outline,
                 ),
-
                 Padding(
                   padding: EdgeInsets.all(isTablet ? 32 : 24),
                   child: ConstrainedBox(
@@ -146,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextFormField(
                             controller: _emailController,
                             // keyboardType: TextInputType.emailAddress,
-                            decoration: _inputDecoration(
+                            decoration: CustomInputDecoration.build(
                               context,
                               label: 'Email',
                               hint: 'Nhập email của bạn',
@@ -167,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextFormField(
                             controller: _passwordController,
                             obscureText: !_isPasswordVisible,
-                            decoration: _inputDecoration(
+                            decoration: CustomInputDecoration.build(
                               context,
                               label: 'Mật khẩu',
                               hint: 'Nhập mật khẩu của bạn',
@@ -244,51 +201,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           SizedBox(height: isTablet ? 32 : 24),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Divider(color: theme.dividerColor),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                ),
-                                child: Text(
-                                  'hoặc',
-                                  style: TextStyle(
-                                    color: theme.hintColor,
-                                    fontSize: isTablet ? 16 : 14,
-                                  ),
-                                ),
-                              ),
-                              Expanded(
-                                child: Divider(color: theme.dividerColor),
-                              ),
-                            ],
-                          ),
+                          const AuthDividerWidget(),
+
                           SizedBox(height: isTablet ? 32 : 24),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Bạn chưa có tài khoản? ',
-                                style: TextStyle(
-                                  color: theme.hintColor,
-                                  fontSize: isTablet ? 16 : 14,
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: _handleSignUp,
-                                child: Text(
-                                  'Đăng ký',
-                                  style: TextStyle(
-                                    color: colorScheme.primary,
-                                    fontSize: isTablet ? 16 : 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          AuthLinkWidget(
+                            question: 'Bạn chưa có tài khoản? ',
+                            linkText: 'Đăng ký',
+                            onTap: _handleSignUp,
                           ),
                           SizedBox(height: isTablet ? 40 : 32),
                         ],
@@ -300,71 +219,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration(
-    BuildContext context, {
-    required String label,
-    required String hint,
-    required IconData icon,
-    Widget? suffix,
-  }) {
-    final theme = Theme.of(context);
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      hintStyle: TextStyle(
-        color: theme.hintColor.withOpacity(0.7),
-        fontSize: 16,
-      ),
-      labelStyle: TextStyle(
-        color: theme.hintColor,
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-      ),
-      floatingLabelStyle: TextStyle(
-        color: theme.colorScheme.primary,
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-      ),
-      prefixIcon: Padding(
-        padding: const EdgeInsets.only(right: 12),
-        child: Icon(icon, color: theme.hintColor, size: 22),
-      ),
-      prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 50),
-      suffixIcon:
-          suffix != null
-              ? Padding(padding: const EdgeInsets.only(left: 12), child: suffix)
-              : null,
-      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 0),
-      border: UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: theme.dividerColor.withOpacity(0.5),
-          width: 1,
-        ),
-      ),
-      enabledBorder: UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: theme.dividerColor.withOpacity(0.6),
-          width: 1,
-        ),
-      ),
-      focusedBorder: UnderlineInputBorder(
-        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2.5),
-      ),
-      errorBorder: UnderlineInputBorder(
-        borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
-      ),
-      focusedErrorBorder: UnderlineInputBorder(
-        borderSide: BorderSide(color: theme.colorScheme.error, width: 2.5),
-      ),
-      errorStyle: TextStyle(
-        color: theme.colorScheme.error,
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        height: 1.4,
       ),
     );
   }

@@ -36,35 +36,6 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     required this.backgroundButtonText,
   });
 
-  // Convenience getters for common color combinations
-  Color get textOnCard => primaryTextColor;
-  Color get textOnBackground => primaryTextColor;
-  Color get textSecondaryOnCard => secondaryTextColor;
-  Color get textSecondaryOnBackground => secondaryTextColor;
-
-  // Status colors with proper contrast
-  Color get successContainer => success.withOpacity(0.1);
-  Color get onSuccessContainer => success;
-  Color get errorContainer => danger.withOpacity(0.1);
-  Color get onErrorContainer => danger;
-  Color get warningContainer => warning.withOpacity(0.1);
-  Color get onWarningContainer => warning;
-
-  // Button color variants
-  Color get secondaryButtonBackground => accentLight;
-  Color get secondaryButtonText => primary;
-  Color get outlineButtonBorder => primary.withOpacity(0.5);
-
-  // Surface variants
-  Color get surfaceElevated => card;
-  Color get surfaceDim => background;
-  Color get surfaceBright => card;
-
-  // Divider and border colors
-  Color get dividerColor => secondaryTextColor.withOpacity(0.2);
-  Color get borderColor => secondaryTextColor.withOpacity(0.3);
-  Color get focusBorderColor => primary;
-
   @override
   AppThemeExtension copyWith({
     Color? primary,

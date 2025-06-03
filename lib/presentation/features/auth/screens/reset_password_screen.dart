@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/presentation/features/auth/widgets/auth_divider_widget.dart';
+import 'package:trao_doi_do_app/presentation/widgets/password_strength_widget.dart';
+import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String email;
@@ -57,30 +60,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         _hasSpecialChar;
   }
 
-  double get _passwordStrengthScore {
-    int score = 0;
-    if (_hasMinLength) score++;
-    if (_hasUppercase) score++;
-    if (_hasLowercase) score++;
-    if (_hasNumbers) score++;
-    if (_hasSpecialChar) score++;
-    return score / 5.0;
-  }
-
-  Color get _passwordStrengthColor {
-    if (_passwordStrengthScore < 0.3) return Colors.red;
-    if (_passwordStrengthScore < 0.6) return Colors.orange;
-    if (_passwordStrengthScore < 0.8) return Colors.yellow[700]!;
-    return Colors.green;
-  }
-
-  String get _passwordStrengthText {
-    if (_passwordStrengthScore < 0.3) return 'Yếu';
-    if (_passwordStrengthScore < 0.6) return 'Trung bình';
-    if (_passwordStrengthScore < 0.8) return 'Mạnh';
-    return 'Rất mạnh';
-  }
-
   void _handleResetPassword() async {
     if (_formKey.currentState!.validate() && _isPasswordStrong) {
       setState(() => _isLoading = true);
@@ -94,13 +73,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       });
 
       // Hiển thị thông báo thành công
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Đặt lại mật khẩu thành công!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      context.showSuccessSnackBar('Đặt lại mật khẩu thành công!');
 
       // Tự động chuyển về màn hình đăng nhập sau 3 giây
       Future.delayed(const Duration(seconds: 3), () {
@@ -117,10 +90,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
+    final isDark = context.isDarkMode;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -136,7 +109,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () {
-              if (context.canPop()) {
+              if (context.canPop) {
                 context.pop();
               } else {
                 context.goNamed('login');
@@ -231,9 +204,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Widget _buildFormContent() {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
 
     return Form(
       key: _formKey,
@@ -294,7 +267,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
             controller: _passwordController,
             focusNode: _passwordFocusNode,
             obscureText: !_isPasswordVisible,
-            decoration: _inputDecoration(
+            decoration: CustomInputDecoration.build(
               context,
               label: 'Mật khẩu mới',
               hint: 'Nhập mật khẩu mới',
@@ -323,64 +296,23 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           ),
           SizedBox(height: isTablet ? 16 : 12),
 
-          // Password strength indicator
           if (_passwordController.text.isNotEmpty) ...[
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'Độ mạnh mật khẩu: ',
-                      style: TextStyle(
-                        color: theme.hintColor,
-                        fontSize: isTablet ? 14 : 12,
-                      ),
-                    ),
-                    Text(
-                      _passwordStrengthText,
-                      style: TextStyle(
-                        color: _passwordStrengthColor,
-                        fontSize: isTablet ? 14 : 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8),
-                LinearProgressIndicator(
-                  value: _passwordStrengthScore,
-                  backgroundColor: Colors.grey[300],
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    _passwordStrengthColor,
-                  ),
-                ),
-                SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 4,
-                  children: [
-                    _buildPasswordRequirement('Ít nhất 8 ký tự', _hasMinLength),
-                    _buildPasswordRequirement('Chữ hoa', _hasUppercase),
-                    _buildPasswordRequirement('Chữ thường', _hasLowercase),
-                    _buildPasswordRequirement('Số', _hasNumbers),
-                    _buildPasswordRequirement(
-                      'Ký tự đặc biệt',
-                      _hasSpecialChar,
-                    ),
-                  ],
-                ),
-              ],
+            // Password strength indicator
+            PasswordStrengthWidget(
+              password: _passwordController.text,
+              hasMinLength: _hasMinLength,
+              hasUppercase: _hasUppercase,
+              hasLowercase: _hasLowercase,
+              hasNumbers: _hasNumbers,
+              hasSpecialChar: _hasSpecialChar,
             ),
-            SizedBox(height: isTablet ? 24 : 20),
           ],
-
           // Confirm Password input
           TextFormField(
             controller: _confirmPasswordController,
             focusNode: _confirmPasswordFocusNode,
             obscureText: !_isConfirmPasswordVisible,
-            decoration: _inputDecoration(
+            decoration: CustomInputDecoration.build(
               context,
               label: 'Xác nhận mật khẩu',
               hint: 'Nhập lại mật khẩu mới',
@@ -494,31 +426,17 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
             ),
           ),
-          SizedBox(height: isTablet ? 24 : 20),
+          SizedBox(height: isTablet ? 32 : 24),
+
+          // Divider
+          const AuthDividerWidget(),
+          SizedBox(height: isTablet ? 32 : 24),
 
           // Back to login
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Nhớ mật khẩu cũ? ',
-                style: TextStyle(
-                  color: theme.hintColor,
-                  fontSize: isTablet ? 16 : 14,
-                ),
-              ),
-              GestureDetector(
-                onTap: _handleBackToLogin,
-                child: Text(
-                  'Đăng nhập',
-                  style: TextStyle(
-                    color: colorScheme.primary,
-                    fontSize: isTablet ? 16 : 14,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
+          AuthLinkWidget(
+            question: 'Nhớ mật khẩu cũ? ',
+            linkText: 'Đăng nhập',
+            onTap: _handleBackToLogin,
           ),
           SizedBox(height: isTablet ? 40 : 32),
         ],
@@ -527,9 +445,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   Widget _buildSuccessContent() {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -633,111 +551,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         ),
         SizedBox(height: isTablet ? 40 : 32),
       ],
-    );
-  }
-
-  Widget _buildPasswordRequirement(String text, bool isMet) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color:
-            isMet
-                ? Colors.green.withOpacity(0.1)
-                : Colors.grey.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color:
-              isMet
-                  ? Colors.green.withOpacity(0.3)
-                  : Colors.grey.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            isMet ? Icons.check : Icons.close,
-            size: 12,
-            color: isMet ? Colors.green : Colors.grey,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 11,
-              color: isMet ? Colors.green : theme.hintColor,
-              fontWeight: isMet ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration(
-    BuildContext context, {
-    required String label,
-    required String hint,
-    required IconData icon,
-    Widget? suffix,
-  }) {
-    final theme = Theme.of(context);
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      hintStyle: TextStyle(
-        color: theme.hintColor.withOpacity(0.7),
-        fontSize: 16,
-      ),
-      labelStyle: TextStyle(
-        color: theme.hintColor,
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-      ),
-      floatingLabelStyle: TextStyle(
-        color: theme.colorScheme.primary,
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-      ),
-      prefixIcon: Padding(
-        padding: const EdgeInsets.only(right: 12),
-        child: Icon(icon, color: theme.hintColor, size: 22),
-      ),
-      prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 50),
-      suffixIcon:
-          suffix != null
-              ? Padding(padding: const EdgeInsets.only(left: 12), child: suffix)
-              : null,
-      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 0),
-      border: UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: theme.dividerColor.withOpacity(0.5),
-          width: 1,
-        ),
-      ),
-      enabledBorder: UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: theme.dividerColor.withOpacity(0.6),
-          width: 1,
-        ),
-      ),
-      focusedBorder: UnderlineInputBorder(
-        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2.5),
-      ),
-      errorBorder: UnderlineInputBorder(
-        borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
-      ),
-      focusedErrorBorder: UnderlineInputBorder(
-        borderSide: BorderSide(color: theme.colorScheme.error, width: 2.5),
-      ),
-      errorStyle: TextStyle(
-        color: theme.colorScheme.error,
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        height: 1.4,
-      ),
     );
   }
 }

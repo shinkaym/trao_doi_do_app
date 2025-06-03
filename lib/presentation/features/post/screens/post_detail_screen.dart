@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 
 class PostDetailScreen extends ConsumerStatefulWidget {
   final String postId;
@@ -15,7 +14,6 @@ class PostDetailScreen extends ConsumerStatefulWidget {
 
 class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   final PageController _imagePageController = PageController();
-  final TextEditingController _commentController = TextEditingController();
 
   bool _isLoading = true;
   bool _isBookmarked = false;
@@ -23,10 +21,8 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   bool _showFullContent = false;
   int _currentImageIndex = 0;
   int _likeCount = 0;
-  int _commentCount = 0;
 
   Map<String, dynamic>? _post;
-  List<Map<String, dynamic>> _comments = [];
   List<Map<String, dynamic>> _relatedPosts = [];
 
   // Mock data cho bài đăng chi tiết
@@ -59,11 +55,10 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
     'updatedAt': DateTime.now().subtract(const Duration(minutes: 30)),
     'status': 'urgent',
     'author': 'Nguyễn Văn A',
-    'authorId': 'user_001',
+    'authorID': 'user_001',
     'authorAvatar': 'https://dummyimage.com/100x100/4A90E2/FFFFFF&text=A',
     'authorPhone': '0901234567',
     'authorEmail': 'nguyenvana@email.com',
-    'contactInfo': '0901234567',
     'rewardOffered': '500,000đ',
     'category': 'Phụ kiện',
     'condition': null,
@@ -74,54 +69,6 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
     'isVerified': true,
     'priority': 'high',
   };
-
-  // Mock comments
-  final List<Map<String, dynamic>> _mockComments = [
-    {
-      'id': 'comment_1',
-      'userId': 'user_002',
-      'userName': 'Trần Thị B',
-      'userAvatar': 'https://dummyimage.com/100x100/E74C3C/FFFFFF&text=B',
-      'content':
-          'Mình thấy có người đăng trên group Facebook "Nhặt đồ thất lạc Sài Gòn" cũng tìm ví tương tự. Bạn check thử nhé!',
-      'createdAt': DateTime.now().subtract(const Duration(minutes: 45)),
-      'likeCount': 3,
-      'isLiked': false,
-      'replies': [],
-    },
-    {
-      'id': 'comment_2',
-      'userId': 'user_003',
-      'userName': 'Lê Văn C',
-      'userAvatar': 'https://dummyimage.com/100x100/27AE60/FFFFFF&text=C',
-      'content':
-          'Mình có bạn làm bảo vệ ở khu vực đó, để mình hỏi thử xem có ai nhặt được không nhé. Hi vọng bạn sớm tìm lại được!',
-      'createdAt': DateTime.now().subtract(const Duration(minutes: 30)),
-      'likeCount': 5,
-      'isLiked': true,
-      'replies': [
-        {
-          'id': 'reply_1',
-          'userId': 'user_001',
-          'userName': 'Nguyễn Văn A',
-          'userAvatar': 'https://dummyimage.com/100x100/4A90E2/FFFFFF&text=A',
-          'content': 'Cảm ơn bạn rất nhiều! Mình đang rất lo lắng về việc này.',
-          'createdAt': DateTime.now().subtract(const Duration(minutes: 25)),
-        },
-      ],
-    },
-    {
-      'id': 'comment_3',
-      'userId': 'user_004',
-      'userName': 'Phạm Thị D',
-      'userAvatar': 'https://dummyimage.com/100x100/9B59B6/FFFFFF&text=D',
-      'content': 'Upvote để nhiều người thấy. Chúc bạn may mắn!',
-      'createdAt': DateTime.now().subtract(const Duration(minutes: 15)),
-      'likeCount': 8,
-      'isLiked': false,
-      'replies': [],
-    },
-  ];
 
   // Mock related posts
   final List<Map<String, dynamic>> _mockRelatedPosts = [
@@ -154,7 +101,6 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
   @override
   void dispose() {
     _imagePageController.dispose();
-    _commentController.dispose();
     super.dispose();
   }
 
@@ -168,10 +114,8 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
 
     setState(() {
       _post = _mockPost;
-      _comments = _mockComments;
       _relatedPosts = _mockRelatedPosts;
       _likeCount = 24;
-      _commentCount = _comments.length;
       _isLoading = false;
     });
   }
@@ -181,12 +125,11 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
       _isBookmarked = !_isBookmarked;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(_isBookmarked ? 'Đã lưu bài đăng' : 'Đã bỏ lưu bài đăng'),
-        backgroundColor: _isBookmarked ? Colors.green : Colors.grey,
-      ),
-    );
+    if (_isBookmarked) {
+      context.showSuccessSnackBar('Đã lưu bài đăng');
+    } else {
+      context.showWarningSnackBar('Đã bỏ lưu bài đăng');
+    }
   }
 
   void _handleLike() {
@@ -202,138 +145,14 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
 
   void _handleShare() {
     // Implement share functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Đã sao chép link bài đăng'),
-        backgroundColor: Colors.blue,
-      ),
-    );
-  }
-
-  void _handleContact() {
-    if (_post?['contactInfo'] != null) {
-      // Show contact options dialog
-      _showContactDialog();
-    }
-  }
-
-  void _showContactDialog() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Liên hệ với ${_post!['author']}',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
-              ListTile(
-                leading: const Icon(Icons.phone, color: Colors.green),
-                title: Text(_post!['contactInfo']),
-                subtitle: const Text('Gọi điện thoại'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Implement phone call
-                },
-              ),
-              if (_post!['authorEmail'] != null)
-                ListTile(
-                  leading: const Icon(Icons.email, color: Colors.blue),
-                  title: Text(_post!['authorEmail']),
-                  subtitle: const Text('Gửi email'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    // Implement email
-                  },
-                ),
-              ListTile(
-                leading: const Icon(Icons.message, color: Colors.orange),
-                title: const Text('Nhắn tin trong app'),
-                subtitle: const Text('Gửi tin nhắn riêng'),
-                onTap: () {
-                  Navigator.pop(context);
-                  // Navigate to chat
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _handleReport() {
-    // Show report dialog
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Báo cáo bài đăng'),
-          content: const Text('Bạn có chắc chắn muốn báo cáo bài đăng này?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Hủy'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Đã gửi báo cáo'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              },
-              child: const Text('Báo cáo'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _handleAddComment() {
-    if (_commentController.text.trim().isEmpty) return;
-
-    final newComment = {
-      'id': 'comment_${_comments.length + 1}',
-      'userId': 'current_user',
-      'userName': 'Bạn',
-      'userAvatar': 'https://dummyimage.com/100x100/2ECC71/FFFFFF&text=U',
-      'content': _commentController.text.trim(),
-      'createdAt': DateTime.now(),
-      'likeCount': 0,
-      'isLiked': false,
-      'replies': [],
-    };
-
-    setState(() {
-      _comments.insert(0, newComment);
-      _commentCount++;
-      _commentController.clear();
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Đã thêm bình luận'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    context.showInfoSnackBar('Đã sao chép link bài đăng');
   }
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
 
     if (_isLoading) {
       return Scaffold(
@@ -375,11 +194,6 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
           // Post Content
           SliverToBoxAdapter(
             child: _buildPostContent(isTablet, theme, colorScheme),
-          ),
-
-          // Comments Section
-          SliverToBoxAdapter(
-            child: _buildCommentsSection(isTablet, theme, colorScheme),
           ),
 
           // Related Posts
@@ -487,9 +301,6 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
                     switch (value) {
                       case 'share':
                         _handleShare();
-                        break;
-                      case 'report':
-                        _handleReport();
                         break;
                     }
                   },
@@ -849,18 +660,6 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
 
         const SizedBox(width: 16),
 
-        // Comment Count
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.comment_outlined, size: 20),
-            const SizedBox(width: 4),
-            Text('$_commentCount'),
-          ],
-        ),
-
-        const SizedBox(width: 16),
-
         // View Count
         Row(
           mainAxisSize: MainAxisSize.min,
@@ -872,250 +671,7 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
         ),
 
         const Spacer(),
-
-        // Contact Button
-        if (_post!['contactInfo'] != null)
-          ElevatedButton.icon(
-            onPressed: _handleContact,
-            icon: const Icon(Icons.phone, size: 18),
-            label: const Text('Liên hệ'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: theme.primaryColor,
-              foregroundColor: Colors.white,
-            ),
-          ),
       ],
-    );
-  }
-
-  Widget _buildCommentsSection(
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return Container(
-      margin: EdgeInsets.all(isTablet ? 24 : 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Bình luận ($_commentCount)',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          SizedBox(height: isTablet ? 20 : 16),
-
-          // Comment Input
-          _buildCommentInput(isTablet, theme, colorScheme),
-
-          SizedBox(height: isTablet ? 24 : 20),
-
-          // Comments List
-          ..._comments.map(
-            (comment) =>
-                _buildCommentItem(comment, isTablet, theme, colorScheme),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCommentInput(
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundImage: NetworkImage(
-              'https://dummyimage.com/100x100/2ECC71/FFFFFF&text=U',
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextField(
-              controller: _commentController,
-              decoration: const InputDecoration(
-                hintText: 'Viết bình luận...',
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-              ),
-              maxLines: null,
-            ),
-          ),
-          const SizedBox(width: 8),
-          IconButton(
-            onPressed: _handleAddComment,
-            icon: Icon(Icons.send, color: theme.primaryColor),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCommentItem(
-    Map<String, dynamic> comment,
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                radius: 16,
-                backgroundImage: NetworkImage(comment['userAvatar']),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          comment['userName'],
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _formatDateTime(comment['createdAt']),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colorScheme.onSurface.withOpacity(0.6),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      comment['content'],
-                      style: theme.textTheme.bodyMedium?.copyWith(height: 1.4),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        InkWell(
-                          onTap: () {
-                            // Handle comment like
-                          },
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                comment['isLiked']
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                size: 16,
-                                color: comment['isLiked'] ? Colors.red : null,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${comment['likeCount']}',
-                                style: theme.textTheme.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        InkWell(
-                          onTap: () {
-                            // Handle reply
-                          },
-                          child: Text(
-                            'Trả lời',
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: theme.primaryColor,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          // Replies
-          if (comment['replies'] != null &&
-              (comment['replies'] as List).isNotEmpty)
-            Container(
-              margin: const EdgeInsets.only(left: 40, top: 12),
-              child: Column(
-                children:
-                    (comment['replies'] as List).map<Widget>((reply) {
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CircleAvatar(
-                              radius: 12,
-                              backgroundImage: NetworkImage(
-                                reply['userAvatar'],
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Text(
-                                        reply['userName'],
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        _formatDateTime(reply['createdAt']),
-                                        style: theme.textTheme.bodySmall
-                                            ?.copyWith(
-                                              color: colorScheme.onSurface
-                                                  .withOpacity(0.6),
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    reply['content'],
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      height: 1.4,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-              ),
-            ),
-        ],
-      ),
     );
   }
 
@@ -1287,7 +843,7 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
                   _isLiked ? Icons.favorite : Icons.favorite_border,
                   color: _isLiked ? Colors.red : null,
                 ),
-                label: Text('Thích ($_likeCount)'),
+                label: Text('Quan tâm ($_likeCount)'),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -1307,24 +863,6 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
                 ),
               ),
             ),
-
-            if (_post!['contactInfo'] != null) ...[
-              const SizedBox(width: 12),
-
-              // Contact Button
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _handleContact,
-                  icon: const Icon(Icons.phone),
-                  label: const Text('Liên hệ'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.primaryColor,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),

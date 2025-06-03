@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -30,10 +30,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
-    final isTablet = MediaQuery.of(context).size.width > 600;
+    final isTablet = context.isTablet;
+    final colorScheme = context.colorScheme;
+    final isDark = context.isDarkMode;
 
     final appBarBgColor = backgroundColor ?? colorScheme.primary;
     final appBarFgColor = foregroundColor ?? Colors.white;

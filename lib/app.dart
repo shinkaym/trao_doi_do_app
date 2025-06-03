@@ -16,9 +16,9 @@ class MyApp extends ConsumerWidget {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Trao Đổi Đồ Cũ Và Đồ Thất Lạc',
-      locale: Locale('vi'),
-      supportedLocales: [Locale('vi')],
-      localizationsDelegates: [
+      locale: const Locale('vi'),
+      supportedLocales: const [Locale('vi')],
+      localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:trao_doi_do_app/core/constants/nav_bar_constants.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_navigation_bar.dart';
 
 class ScaffoldWithNavBar extends StatelessWidget {

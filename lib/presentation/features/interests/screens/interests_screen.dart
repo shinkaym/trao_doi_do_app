@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
 
 // Model cho người quan tâm
@@ -27,7 +27,7 @@ class InterestedPost {
   final String interestId; // Thêm dòng này
   final String title;
   final String author;
-  final String authorId;
+  final String authorID;
   final String authorAvatar;
   final String type;
   final String location;
@@ -41,7 +41,7 @@ class InterestedPost {
     required this.interestId, // Thêm dòng này
     required this.title,
     required this.author,
-    required this.authorId,
+    required this.authorID,
     required this.authorAvatar,
     required this.type,
     required this.location,
@@ -94,7 +94,7 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
       interestId: 'interest_1',
       title: 'Tìm chiếc ví da màu nâu bị mất tại quận 1',
       author: 'Nguyễn Văn A',
-      authorId: 'user1',
+      authorID: 'user1',
       authorAvatar: '',
       type: 'findLost',
       location: 'Quận 1, TP.HCM',
@@ -108,7 +108,7 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
       interestId: 'interest_2',
       title: 'Nhặt được điện thoại iPhone tại công viên Tao Đàn',
       author: 'Trần Thị B',
-      authorId: 'user2',
+      authorID: 'user2',
       authorAvatar: '',
       type: 'foundItem',
       location: 'Quận 1, TP.HCM',
@@ -122,7 +122,7 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
       interestId: 'interest_3',
       title: 'Tặng bộ sách giáo khoa lớp 12 đầy đủ',
       author: 'Lê Văn C',
-      authorId: 'user3',
+      authorID: 'user3',
       authorAvatar: '',
       type: 'giveAway',
       location: 'Quận 3, TP.HCM',
@@ -136,7 +136,7 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
       interestId: 'interest_4',
       title: 'Tặng xe đạp cũ còn dùng được',
       author: 'Võ Văn F',
-      authorId: 'user4',
+      authorID: 'user4',
       authorAvatar: '',
       type: 'giveAway',
       location: 'Quận 10, TP.HCM',
@@ -255,12 +255,7 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
       _interestedPosts.removeWhere((post) => post.id == postId);
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Đã bỏ quan tâm bài đăng'),
-        backgroundColor: Colors.orange,
-      ),
-    );
+    context.showWarningSnackBar('Đã bỏ quan tâm bài đăng');
   }
 
   Future<void> _handleRefresh() async {
@@ -275,12 +270,7 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
         _isLoading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Đã cập nhật danh sách'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      context.showSuccessSnackBar('Đã cập nhật danh sách');
     }
   }
 
@@ -290,9 +280,9 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
 
     return Scaffold(
       backgroundColor: colorScheme.background,

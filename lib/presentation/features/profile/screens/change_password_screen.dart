@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
-
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/widgets/change_password/password_header_widget.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/widgets/change_password/security_info_widget.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/widgets/change_password/security_tips_widget.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
+import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
+import 'package:trao_doi_do_app/presentation/widgets/password_strength_widget.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({Key? key}) : super(key: key);
@@ -94,30 +98,19 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         await Future.delayed(const Duration(seconds: 2));
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Đổi mật khẩu thành công!'),
-              backgroundColor: Colors.green,
-              duration: Duration(seconds: 3),
-            ),
-          );
-          
+          context.showSuccessSnackBar('Đổi mật khẩu thành công!');
+
           // Xóa form sau khi thành công
           _currentPasswordController.clear();
           _newPasswordController.clear();
           _confirmPasswordController.clear();
-          
+
           // Quay lại màn hình trước đó
           context.pop();
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi khi đổi mật khẩu: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          context.showErrorSnackBar('Lỗi khi đổi mật khẩu: $e');
         }
       } finally {
         if (mounted) {
@@ -129,9 +122,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
 
     return Scaffold(
       backgroundColor: colorScheme.background,
@@ -152,53 +145,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           child: Column(
             children: [
               // Header Section
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [colorScheme.primary, colorScheme.primary],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    vertical: isTablet ? 40 : 30,
-                    horizontal: 24,
-                  ),
-                  child: Column(
-                    children: [
-                      // Icon bảo mật
-                      Container(
-                        width: isTablet ? 120 : 100,
-                        height: isTablet ? 120 : 100,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(60),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
-                            width: 3,
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.security_outlined,
-                          size: isTablet ? 60 : 50,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(height: isTablet ? 16 : 12),
-                      Text(
-                        'Bảo mật tài khoản',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: isTablet ? 16 : 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
+              const PasswordHeaderWidget(),
               // Form Section
               Padding(
                 padding: EdgeInsets.all(isTablet ? 32 : 24),
@@ -214,51 +161,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         SizedBox(height: isTablet ? 32 : 24),
 
                         // Thông tin bảo mật
-                        Container(
-                          padding: EdgeInsets.all(isTablet ? 20 : 16),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primaryContainer.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: colorScheme.primaryContainer.withOpacity(0.3),
-                              width: 1,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.info_outline,
-                                    color: colorScheme.primary,
-                                    size: isTablet ? 20 : 18,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Lưu ý bảo mật:',
-                                    style: TextStyle(
-                                      color: colorScheme.primary,
-                                      fontSize: isTablet ? 16 : 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: isTablet ? 12 : 8),
-                              Text(
-                                '• Mật khẩu mới phải khác mật khẩu hiện tại\n'
-                                '• Không chia sẻ mật khẩu với người khác\n'
-                                '• Sử dụng mật khẩu mạnh để bảo vệ tài khoản',
-                                style: TextStyle(
-                                  color: theme.hintColor,
-                                  fontSize: isTablet ? 14 : 12,
-                                  height: 1.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        const SecurityInfoWidget(),
                         SizedBox(height: isTablet ? 32 : 24),
 
                         // Mật khẩu hiện tại
@@ -266,7 +169,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           controller: _currentPasswordController,
                           focusNode: _currentPasswordFocusNode,
                           obscureText: !_isCurrentPasswordVisible,
-                          decoration: _inputDecoration(
+                          decoration: CustomInputDecoration.build(
                             context,
                             label: 'Mật khẩu hiện tại',
                             hint: 'Nhập mật khẩu hiện tại',
@@ -279,8 +182,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                 color: theme.hintColor,
                               ),
                               onPressed: () {
-                                setState(() =>
-                                    _isCurrentPasswordVisible = !_isCurrentPasswordVisible);
+                                setState(
+                                  () =>
+                                      _isCurrentPasswordVisible =
+                                          !_isCurrentPasswordVisible,
+                                );
                               },
                             ),
                           ),
@@ -293,8 +199,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             }
                             return null;
                           },
-                          onFieldSubmitted: (_) =>
-                              _newPasswordFocusNode.requestFocus(),
+                          onFieldSubmitted:
+                              (_) => _newPasswordFocusNode.requestFocus(),
                         ),
                         SizedBox(height: isTablet ? 24 : 20),
 
@@ -303,7 +209,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           controller: _newPasswordController,
                           focusNode: _newPasswordFocusNode,
                           obscureText: !_isNewPasswordVisible,
-                          decoration: _inputDecoration(
+                          decoration: CustomInputDecoration.build(
                             context,
                             label: 'Mật khẩu mới',
                             hint: 'Nhập mật khẩu mới',
@@ -316,8 +222,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                 color: theme.hintColor,
                               ),
                               onPressed: () {
-                                setState(() =>
-                                    _isNewPasswordVisible = !_isNewPasswordVisible);
+                                setState(
+                                  () =>
+                                      _isNewPasswordVisible =
+                                          !_isNewPasswordVisible,
+                                );
                               },
                             ),
                           ),
@@ -334,56 +243,20 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             return null;
                           },
                           onChanged: _checkPasswordStrength,
-                          onFieldSubmitted: (_) =>
-                              _confirmPasswordFocusNode.requestFocus(),
+                          onFieldSubmitted:
+                              (_) => _confirmPasswordFocusNode.requestFocus(),
                         ),
                         SizedBox(height: isTablet ? 16 : 12),
 
                         // Password strength indicator
                         if (_newPasswordController.text.isNotEmpty) ...[
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    'Độ mạnh mật khẩu: ',
-                                    style: TextStyle(
-                                      color: theme.hintColor,
-                                      fontSize: isTablet ? 14 : 12,
-                                    ),
-                                  ),
-                                  Text(
-                                    _passwordStrengthText,
-                                    style: TextStyle(
-                                      color: _passwordStrengthColor,
-                                      fontSize: isTablet ? 14 : 12,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 8),
-                              LinearProgressIndicator(
-                                value: _passwordStrengthScore,
-                                backgroundColor: Colors.grey[300],
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  _passwordStrengthColor,
-                                ),
-                              ),
-                              SizedBox(height: 12),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 4,
-                                children: [
-                                  _buildPasswordRequirement('Ít nhất 8 ký tự', _hasMinLength),
-                                  _buildPasswordRequirement('Chữ hoa', _hasUppercase),
-                                  _buildPasswordRequirement('Chữ thường', _hasLowercase),
-                                  _buildPasswordRequirement('Số', _hasNumbers),
-                                  _buildPasswordRequirement('Ký tự đặc biệt', _hasSpecialChar),
-                                ],
-                              ),
-                            ],
+                          PasswordStrengthWidget(
+                            password: _newPasswordController.text,
+                            hasMinLength: _hasMinLength,
+                            hasUppercase: _hasUppercase,
+                            hasLowercase: _hasLowercase,
+                            hasNumbers: _hasNumbers,
+                            hasSpecialChar: _hasSpecialChar,
                           ),
                           SizedBox(height: isTablet ? 24 : 20),
                         ],
@@ -393,7 +266,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           controller: _confirmPasswordController,
                           focusNode: _confirmPasswordFocusNode,
                           obscureText: !_isConfirmPasswordVisible,
-                          decoration: _inputDecoration(
+                          decoration: CustomInputDecoration.build(
                             context,
                             label: 'Xác nhận mật khẩu mới',
                             hint: 'Nhập lại mật khẩu mới',
@@ -406,8 +279,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                 color: theme.hintColor,
                               ),
                               onPressed: () {
-                                setState(() =>
-                                    _isConfirmPasswordVisible = !_isConfirmPasswordVisible);
+                                setState(
+                                  () =>
+                                      _isConfirmPasswordVisible =
+                                          !_isConfirmPasswordVisible,
+                                );
                               },
                             ),
                           ),
@@ -425,56 +301,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                         SizedBox(height: isTablet ? 32 : 24),
 
                         // Lời khuyên bảo mật
-                        Container(
-                          padding: EdgeInsets.all(isTablet ? 20 : 16),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceVariant.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.tips_and_updates_outlined,
-                                    color: colorScheme.primary,
-                                    size: isTablet ? 20 : 18,
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Mẹo tạo mật khẩu mạnh:',
-                                    style: TextStyle(
-                                      color: theme.hintColor,
-                                      fontSize: isTablet ? 16 : 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: isTablet ? 12 : 8),
-                              Text(
-                                '• Kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt\n'
-                                '• Sử dụng cụm từ dễ nhớ nhưng khó đoán\n'
-                                '• Tránh sử dụng thông tin cá nhân như tên, ngày sinh',
-                                style: TextStyle(
-                                  color: theme.hintColor,
-                                  fontSize: isTablet ? 14 : 12,
-                                  height: 1.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        const SecurityTipsWidget(),
                         SizedBox(height: isTablet ? 32 : 24),
 
                         // Nút đổi mật khẩu
                         SizedBox(
                           height: isTablet ? 56 : 50,
                           child: ElevatedButton.icon(
-                            onPressed: (_isLoading || !_isPasswordStrong)
-                                ? null
-                                : _handleChangePassword,
+                            onPressed:
+                                (_isLoading || !_isPasswordStrong)
+                                    ? null
+                                    : _handleChangePassword,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: colorScheme.primary,
                               foregroundColor: colorScheme.onPrimary,
@@ -482,18 +319,20 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            icon: _isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
+                            icon:
+                                _isLoading
+                                    ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
                                       ),
-                                    ),
-                                  )
-                                : const Icon(Icons.security),
+                                    )
+                                    : const Icon(Icons.security),
                             label: Text(
                               _isLoading ? 'Đang cập nhật...' : 'Đổi mật khẩu',
                               style: TextStyle(
@@ -517,18 +356,20 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   }
 
   Widget _buildPasswordRequirement(String text, bool isMet) {
-    final theme = Theme.of(context);
+    final theme = context.theme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isMet
-            ? Colors.green.withOpacity(0.1)
-            : Colors.grey.withOpacity(0.1),
+        color:
+            isMet
+                ? Colors.green.withOpacity(0.1)
+                : Colors.grey.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isMet
-              ? Colors.green.withOpacity(0.3)
-              : Colors.grey.withOpacity(0.3),
+          color:
+              isMet
+                  ? Colors.green.withOpacity(0.3)
+                  : Colors.grey.withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -562,7 +403,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     Widget? suffix,
     bool isDisabled = false,
   }) {
-    final theme = Theme.of(context);
+    final theme = context.theme;
     return InputDecoration(
       labelText: label,
       hintText: hint,
@@ -576,9 +417,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         fontWeight: FontWeight.w500,
       ),
       floatingLabelStyle: TextStyle(
-        color: isDisabled
-            ? theme.hintColor.withOpacity(0.5)
-            : theme.colorScheme.primary,
+        color:
+            isDisabled
+                ? theme.hintColor.withOpacity(0.5)
+                : theme.colorScheme.primary,
         fontSize: 14,
         fontWeight: FontWeight.w600,
       ),
@@ -586,14 +428,16 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         padding: const EdgeInsets.only(right: 12),
         child: Icon(
           icon,
-          color: isDisabled ? theme.hintColor.withOpacity(0.5) : theme.hintColor,
+          color:
+              isDisabled ? theme.hintColor.withOpacity(0.5) : theme.hintColor,
           size: 22,
         ),
       ),
       prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 50),
-      suffixIcon: suffix != null
-          ? Padding(padding: const EdgeInsets.only(left: 12), child: suffix)
-          : (isDisabled ? const Icon(Icons.lock_outline, size: 20) : null),
+      suffixIcon:
+          suffix != null
+              ? Padding(padding: const EdgeInsets.only(left: 12), child: suffix)
+              : (isDisabled ? const Icon(Icons.lock_outline, size: 20) : null),
       contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 0),
       border: UnderlineInputBorder(
         borderSide: BorderSide(

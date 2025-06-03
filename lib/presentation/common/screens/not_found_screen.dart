@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 
 class NotFoundScreen extends StatelessWidget {
   final String? path;
@@ -12,7 +12,7 @@ class NotFoundScreen extends StatelessWidget {
   }
 
   void _handleGoBack(BuildContext context) {
-    if (context.canPop()) {
+    if (context.canPop) {
       context.pop();
     } else {
       _handleGoHome(context);
@@ -21,10 +21,10 @@ class NotFoundScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
+    final isDark = context.isDarkMode;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -237,56 +237,56 @@ class NotFoundScreen extends StatelessWidget {
                         SizedBox(height: isTablet ? 32 : 24),
 
                         // Suggestions
-                        Container(
-                          padding: EdgeInsets.all(isTablet ? 20 : 16),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primaryContainer.withOpacity(
-                              0.1,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: colorScheme.primaryContainer.withOpacity(
-                                0.3,
-                              ),
-                              width: 1,
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.lightbulb_outline,
-                                    color: colorScheme.primary,
-                                    size: isTablet ? 24 : 20,
-                                  ),
-                                  SizedBox(width: isTablet ? 12 : 8),
-                                  Text(
-                                    'Có thể bạn muốn:',
-                                    style: TextStyle(
-                                      color: colorScheme.primary,
-                                      fontSize: isTablet ? 16 : 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: isTablet ? 16 : 12),
-                              Text(
-                                '• Kiểm tra lại đường dẫn URL\n'
-                                '• Quay về trang chủ\n'
-                                '• Sử dụng thanh điều hướng\n'
-                                '• Liên hệ hỗ trợ nếu cần thiết',
-                                style: TextStyle(
-                                  color: theme.hintColor,
-                                  fontSize: isTablet ? 14 : 12,
-                                  height: 1.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        // Container(
+                        //   padding: EdgeInsets.all(isTablet ? 20 : 16),
+                        //   decoration: BoxDecoration(
+                        //     color: colorScheme.primaryContainer.withOpacity(
+                        //       0.1,
+                        //     ),
+                        //     borderRadius: BorderRadius.circular(12),
+                        //     border: Border.all(
+                        //       color: colorScheme.primaryContainer.withOpacity(
+                        //         0.3,
+                        //       ),
+                        //       width: 1,
+                        //     ),
+                        //   ),
+                        //   child: Column(
+                        //     crossAxisAlignment: CrossAxisAlignment.start,
+                        //     children: [
+                        //       Row(
+                        //         children: [
+                        //           Icon(
+                        //             Icons.lightbulb_outline,
+                        //             color: colorScheme.primary,
+                        //             size: isTablet ? 24 : 20,
+                        //           ),
+                        //           SizedBox(width: isTablet ? 12 : 8),
+                        //           Text(
+                        //             'Có thể bạn muốn:',
+                        //             style: TextStyle(
+                        //               color: colorScheme.primary,
+                        //               fontSize: isTablet ? 16 : 14,
+                        //               fontWeight: FontWeight.w600,
+                        //             ),
+                        //           ),
+                        //         ],
+                        //       ),
+                        //       SizedBox(height: isTablet ? 16 : 12),
+                        //       Text(
+                        //         '• Kiểm tra lại đường dẫn URL\n'
+                        //         '• Quay về trang chủ\n'
+                        //         '• Sử dụng thanh điều hướng\n'
+                        //         '• Liên hệ hỗ trợ nếu cần thiết',
+                        //         style: TextStyle(
+                        //           color: theme.hintColor,
+                        //           fontSize: isTablet ? 14 : 12,
+                        //           height: 1.5,
+                        //         ),
+                        //       ),
+                        //     ],
+                        //   ),
+                        // ),
                         SizedBox(height: isTablet ? 40 : 32),
 
                         // Action buttons
@@ -346,44 +346,39 @@ class NotFoundScreen extends StatelessWidget {
                         SizedBox(height: isTablet ? 24 : 20),
 
                         // Help section
-                        Divider(color: theme.dividerColor),
-                        SizedBox(height: isTablet ? 24 : 20),
+                        // Divider(color: theme.dividerColor),
+                        // SizedBox(height: isTablet ? 24 : 20),
 
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Cần hỗ trợ? ',
-                              style: TextStyle(
-                                color: theme.hintColor,
-                                fontSize: isTablet ? 16 : 14,
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                // Navigate to support/contact page
-                                // context.goNamed('support');
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Chức năng hỗ trợ đang được phát triển',
-                                    ),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              },
-                              child: Text(
-                                'Liên hệ chúng tôi',
-                                style: TextStyle(
-                                  color: colorScheme.primary,
-                                  fontSize: isTablet ? 16 : 14,
-                                  fontWeight: FontWeight.w600,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                        // Row(
+                        //   mainAxisAlignment: MainAxisAlignment.center,
+                        //   children: [
+                        //     Text(
+                        //       'Cần hỗ trợ? ',
+                        //       style: TextStyle(
+                        //         color: theme.hintColor,
+                        //         fontSize: isTablet ? 16 : 14,
+                        //       ),
+                        //     ),
+                        //     GestureDetector(
+                        //       onTap: () {
+                        //         // Navigate to support/contact page
+                        //         // context.goNamed('support');
+                        //         context.showInfoSnackBar(
+                        //           'Chức năng hỗ trợ đang được phát triển',
+                        //         );
+                        //       },
+                        //       child: Text(
+                        //         'Liên hệ chúng tôi',
+                        //         style: TextStyle(
+                        //           color: colorScheme.primary,
+                        //           fontSize: isTablet ? 16 : 14,
+                        //           fontWeight: FontWeight.w600,
+                        //           decoration: TextDecoration.underline,
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
                         SizedBox(height: isTablet ? 40 : 32),
                       ],
                     ),

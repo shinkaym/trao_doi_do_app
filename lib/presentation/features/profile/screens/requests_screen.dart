@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
 
 class RequestsScreen extends ConsumerStatefulWidget {
@@ -183,19 +183,13 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen>
         _isLoading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Đã cập nhật danh sách yêu cầu'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      context.showSuccessSnackBar('Đã cập nhật danh sách yêu cầu');
     }
   }
 
   void _onRequestTap(Map<String, dynamic> request) {
     // Navigate to request detail screen
     context.pushNamed('request-detail', pathParameters: {'id': request['id']});
-
   }
 
   // Filter requests based on current tab
@@ -217,9 +211,9 @@ class _RequestsScreenState extends ConsumerState<RequestsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
     final filteredRequests = _filteredRequests;
 
     return Scaffold(

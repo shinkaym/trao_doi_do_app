@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:trao_doi_do_app/core/constants/nav_bar_constants.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 
 class CustomBottomNavigation extends StatefulWidget {
   final int currentIndex;
@@ -53,10 +54,9 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final isDark = theme.brightness == Brightness.dark;
+    final isTablet = context.isTablet;
+    final colorScheme = context.colorScheme;
+    final isDark = context.isDarkMode;
 
     return Container(
       decoration: BoxDecoration(
@@ -83,11 +83,12 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation>
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: NavBarConstants.navigationItems.asMap().entries.map((entry) {
-              final index = entry.key;
-              final item = entry.value;
-              return _buildNavItem(context, item, index, isTablet);
-            }).toList(),
+            children:
+                NavBarConstants.navigationItems.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final item = entry.value;
+                  return _buildNavItem(context, item, index, isTablet);
+                }).toList(),
           ),
         ),
       ),
@@ -100,8 +101,8 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation>
     int index,
     bool isTablet,
   ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
     final isSelected = widget.currentIndex == index;
 
     if (item.isSpecial) {
@@ -122,9 +123,10 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation>
                   horizontal: isTablet ? 12 : 8,
                 ),
                 decoration: BoxDecoration(
-                  color: isSelected 
-                      ? colorScheme.primary.withOpacity(0.1)
-                      : Colors.transparent,
+                  color:
+                      isSelected
+                          ? colorScheme.primary.withOpacity(0.1)
+                          : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
@@ -134,17 +136,19 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation>
                       duration: const Duration(milliseconds: 200),
                       padding: EdgeInsets.all(isTablet ? 4 : 2),
                       decoration: BoxDecoration(
-                        color: isSelected 
-                            ? colorScheme.primary.withOpacity(0.2)
-                            : Colors.transparent,
+                        color:
+                            isSelected
+                                ? colorScheme.primary.withOpacity(0.2)
+                                : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         isSelected ? item.activeIcon : item.inactiveIcon,
                         size: isTablet ? 26 : 22,
-                        color: isSelected 
-                            ? colorScheme.primary
-                            : theme.hintColor.withOpacity(0.7),
+                        color:
+                            isSelected
+                                ? colorScheme.primary
+                                : theme.hintColor.withOpacity(0.7),
                       ),
                     ),
                     if (widget.showLabels) ...[
@@ -153,10 +157,12 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation>
                         duration: const Duration(milliseconds: 200),
                         style: TextStyle(
                           fontSize: isTablet ? 12 : 10,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                          color: isSelected 
-                              ? colorScheme.primary
-                              : theme.hintColor.withOpacity(0.8),
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color:
+                              isSelected
+                                  ? colorScheme.primary
+                                  : theme.hintColor.withOpacity(0.8),
                         ),
                         child: Text(
                           item.label,
@@ -182,8 +188,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation>
     int index,
     bool isTablet,
   ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = context.colorScheme;
     final isSelected = widget.currentIndex == index;
 
     return Container(
@@ -196,16 +201,25 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation>
           height: isTablet ? 60 : 50,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: isSelected 
-                  ? [colorScheme.primary, colorScheme.primary.withOpacity(0.8)]
-                  : [colorScheme.primaryContainer, colorScheme.primaryContainer.withOpacity(0.8)],
+              colors:
+                  isSelected
+                      ? [
+                        colorScheme.primary,
+                        colorScheme.primary.withOpacity(0.8),
+                      ]
+                      : [
+                        colorScheme.primaryContainer,
+                        colorScheme.primaryContainer.withOpacity(0.8),
+                      ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: (isSelected ? colorScheme.primary : colorScheme.primaryContainer)
+                color: (isSelected
+                        ? colorScheme.primary
+                        : colorScheme.primaryContainer)
                     .withOpacity(0.3),
                 blurRadius: 8,
                 offset: const Offset(0, 4),
@@ -218,7 +232,8 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation>
               Icon(
                 isSelected ? item.activeIcon : item.inactiveIcon,
                 size: isTablet ? 28 : 24,
-                color: isSelected ? Colors.white : colorScheme.onPrimaryContainer,
+                color:
+                    isSelected ? Colors.white : colorScheme.onPrimaryContainer,
               ),
               if (widget.showLabels) ...[
                 SizedBox(height: isTablet ? 2 : 1),
@@ -227,7 +242,10 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation>
                   style: TextStyle(
                     fontSize: isTablet ? 10 : 8,
                     fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : colorScheme.onPrimaryContainer,
+                    color:
+                        isSelected
+                            ? Colors.white
+                            : colorScheme.onPrimaryContainer,
                   ),
                   textAlign: TextAlign.center,
                 ),

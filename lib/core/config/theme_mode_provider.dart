@@ -1,28 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-// Provider cho SharedPreferences
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError('SharedPreferences must be initialized in main()');
-});
-
-// Provider cho theme mode với persistence
+// Provider cho theme mode với secure storage persistence
 final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>(
-  (ref) => ThemeModeNotifier(ref.read(sharedPreferencesProvider)),
+  (ref) => ThemeModeNotifier(),
 );
 
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  final SharedPreferences _prefs;
+  static const FlutterSecureStorage _secureStorage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    iOptions: IOSOptions(),
+  );
   static const String _key = 'theme_mode';
 
-  ThemeModeNotifier(this._prefs) : super(ThemeMode.light) {
+  ThemeModeNotifier() : super(ThemeMode.light) {
     _loadTheme();
   }
 
-  void _loadTheme() {
-    final themeIndex = _prefs.getInt(_key) ?? 0;
-    state = ThemeMode.values[themeIndex];
+  Future<void> _loadTheme() async {
+    try {
+      final themeIndexStr = await _secureStorage.read(key: _key);
+      if (themeIndexStr != null) {
+        final themeIndex = int.tryParse(themeIndexStr) ?? 0;
+        if (themeIndex >= 0 && themeIndex < ThemeMode.values.length) {
+          state = ThemeMode.values[themeIndex];
+        }
+      }
+    } catch (e) {
+      // If there's an error reading from secure storage, use default theme
+      state = ThemeMode.light;
+    }
   }
 
   Future<void> toggleTheme() async {
@@ -31,7 +39,16 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   }
 
   Future<void> setTheme(ThemeMode mode) async {
-    state = mode;
-    await _prefs.setInt(_key, mode.index);
+    try {
+      state = mode;
+      await _secureStorage.write(key: _key, value: mode.index.toString());
+    } catch (e) {
+      // Handle error if needed
+      debugPrint('Error saving theme mode: $e');
+    }
   }
+
+  bool get isDarkMode => state == ThemeMode.dark;
+  bool get isLightMode => state == ThemeMode.light;
+  bool get isSystemMode => state == ThemeMode.system;
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
 
 // Model cho tin nhắn
@@ -39,7 +39,6 @@ class ChatInfo {
   final String otherUserId;
   final String otherUserName;
   final String otherUserAvatar;
-  final bool isOnline;
   final DateTime? lastSeen;
 
   const ChatInfo({
@@ -51,7 +50,6 @@ class ChatInfo {
     required this.otherUserId,
     required this.otherUserName,
     required this.otherUserAvatar,
-    required this.isOnline,
     this.lastSeen,
   });
 }
@@ -101,7 +99,6 @@ class _InterestChatScreenState extends ConsumerState<InterestChatScreen> {
       otherUserId: 'user1',
       otherUserName: 'Nguyễn Văn A',
       otherUserAvatar: '',
-      isOnline: true,
       lastSeen: null,
     );
 
@@ -288,9 +285,9 @@ class _InterestChatScreenState extends ConsumerState<InterestChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
 
     if (_isLoading) {
       return Scaffold(
@@ -397,24 +394,6 @@ class _InterestChatScreenState extends ConsumerState<InterestChatScreen> {
                               color: colorScheme.primary,
                             ),
                   ),
-                  // Online indicator
-                  if (_chatInfo!.isOnline)
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Container(
-                        width: isTablet ? 12 : 10,
-                        height: isTablet ? 12 : 10,
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: colorScheme.surface,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
                 ],
               ),
 
@@ -434,20 +413,6 @@ class _InterestChatScreenState extends ConsumerState<InterestChatScreen> {
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      _chatInfo!.isOnline
-                          ? 'Đang online'
-                          : _chatInfo!.lastSeen != null
-                          ? 'Hoạt động ${_formatTimeAgo(_chatInfo!.lastSeen!)}'
-                          : 'Offline',
-                      style: TextStyle(
-                        fontSize: isTablet ? 12 : 11,
-                        color:
-                            _chatInfo!.isOnline
-                                ? Colors.green
-                                : theme.hintColor,
-                      ),
-                    ),
                   ],
                 ),
               ),
@@ -455,15 +420,6 @@ class _InterestChatScreenState extends ConsumerState<InterestChatScreen> {
           ),
         ),
       ),
-      actions: [
-        IconButton(
-          onPressed: () {
-            // Show more options
-            _showMoreOptions(context);
-          },
-          icon: const Icon(Icons.more_vert),
-        ),
-      ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
         child: Container(
@@ -970,140 +926,6 @@ class _InterestChatScreenState extends ConsumerState<InterestChatScreen> {
     );
   }
 
-  void _showMoreOptions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Tùy chọn',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-              ),
-              const SizedBox(height: 20),
-              ListTile(
-                leading: const Icon(Icons.person),
-                title: const Text('Xem hồ sơ'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _handleUserProfileTap();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.article),
-                title: const Text('Xem bài đăng'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _handlePostTap();
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.block),
-                title: const Text('Chặn người dùng'),
-                textColor: Colors.red,
-                iconColor: Colors.red,
-                onTap: () {
-                  Navigator.pop(context);
-                  _showBlockUserDialog(context);
-                },
-              ),
-              ListTile(
-                leading: const Icon(Icons.report),
-                title: const Text('Báo cáo'),
-                textColor: Colors.red,
-                iconColor: Colors.red,
-                onTap: () {
-                  Navigator.pop(context);
-                  _showReportDialog(context);
-                },
-              ),
-              const SizedBox(height: 10),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _showBlockUserDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Chặn người dùng'),
-          content: Text(
-            'Bạn có chắc chắn muốn chặn ${_chatInfo!.otherUserName}? '
-            'Bạn sẽ không thể nhận tin nhắn từ người này nữa.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Hủy'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                // Handle block user
-                _blockUser();
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Chặn'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showReportDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Báo cáo người dùng'),
-          content: const Text(
-            'Bạn có muốn báo cáo người dùng này vì vi phạm quy định?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Hủy'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                // Handle report user
-                _reportUser();
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Báo cáo'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _blockUser() {
-    // TODO: Implement block user functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Đã chặn ${_chatInfo!.otherUserName}'),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-
-  void _reportUser() {
-    // TODO: Implement report user functionality
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Đã gửi báo cáo thành công')));
-  }
-
   String _formatMessageTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
@@ -1116,21 +938,6 @@ class _InterestChatScreenState extends ConsumerState<InterestChatScreen> {
       return '${difference.inMinutes}p';
     } else {
       return 'Vừa xong';
-    }
-  }
-
-  String _formatTimeAgo(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays} ngày trước';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} giờ trước';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} phút trước';
-    } else {
-      return 'vừa xong';
     }
   }
 

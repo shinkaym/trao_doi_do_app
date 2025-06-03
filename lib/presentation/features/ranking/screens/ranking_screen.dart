@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
 
 class RankingScreen extends ConsumerStatefulWidget {
@@ -15,7 +15,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isLoading = false;
   bool _hasMoreData = true;
-  
+
   // Mock current user data
   final Map<String, dynamic> _currentUserRank = {
     'rank': 15,
@@ -24,7 +24,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
     'goodDeeds': 42,
     'avatar': '',
   };
-  
+
   // Mock leaderboard data
   List<Map<String, dynamic>> _leaderboardData = [
     {
@@ -112,7 +112,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels >= 
+    if (_scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent * 0.8) {
       _loadMoreData();
     }
@@ -120,7 +120,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
 
   Future<void> _loadMoreData() async {
     if (_isLoading || !_hasMoreData) return;
-    
+
     setState(() {
       _isLoading = true;
     });
@@ -131,13 +131,14 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
     // Mock loading more data
     List<Map<String, dynamic>> newData = [];
     int currentLength = _leaderboardData.length;
-    
+
     for (int i = 1; i <= 10; i++) {
-      if (currentLength + i > 50) { // Simulate end of data at 50 users
+      if (currentLength + i > 50) {
+        // Simulate end of data at 50 users
         _hasMoreData = false;
         break;
       }
-      
+
       newData.add({
         'rank': currentLength + i,
         'name': 'Người dùng ${currentLength + i}',
@@ -164,28 +165,23 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
     setState(() {
       _isLoading = true;
     });
-    
+
     await Future.delayed(const Duration(seconds: 1));
-    
+
     if (mounted) {
       setState(() {
         _isLoading = false;
       });
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Đã cập nhật bảng xếp hạng'),
-          backgroundColor: Colors.green,
-        ),
-      );
+
+      context.showSuccessSnackBar('Đã cập nhật bảng xếp hạng');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
 
     return Scaffold(
       backgroundColor: colorScheme.background,
@@ -213,7 +209,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
               SliverToBoxAdapter(
                 child: _buildCurrentUserSection(isTablet, theme, colorScheme),
               ),
-              
+
               // Leaderboard Header
               SliverToBoxAdapter(
                 child: Padding(
@@ -243,12 +239,10 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                   ),
                 ),
               ),
-              
+
               // Leaderboard List
               SliverPadding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 32 : 24,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: isTablet ? 32 : 24),
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
@@ -266,17 +260,16 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                       }
                       return null;
                     },
-                    childCount: _leaderboardData.length + 
-                        (_isLoading ? 1 : 0) + 
+                    childCount:
+                        _leaderboardData.length +
+                        (_isLoading ? 1 : 0) +
                         (!_hasMoreData ? 1 : 0),
                   ),
                 ),
               ),
-              
+
               // Bottom padding
-              SliverToBoxAdapter(
-                child: SizedBox(height: isTablet ? 32 : 24),
-              ),
+              SliverToBoxAdapter(child: SizedBox(height: isTablet ? 32 : 24)),
             ],
           ),
         ),
@@ -284,16 +277,17 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
     );
   }
 
-  Widget _buildCurrentUserSection(bool isTablet, ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildCurrentUserSection(
+    bool isTablet,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
     return Container(
       margin: EdgeInsets.all(isTablet ? 32 : 24),
       padding: EdgeInsets.all(isTablet ? 24 : 20),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            colorScheme.primary,
-            colorScheme.primary.withOpacity(0.8),
-          ],
+          colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -327,7 +321,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
             ],
           ),
           SizedBox(height: isTablet ? 20 : 16),
-          
+
           Row(
             children: [
               // Avatar and Rank
@@ -345,24 +339,26 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                 child: Stack(
                   children: [
                     Center(
-                      child: _currentUserRank['avatar']!.isNotEmpty
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(35),
-                              child: Image.network(
-                                _currentUserRank['avatar']!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Icon(
-                                  Icons.person,
-                                  size: isTablet ? 40 : 35,
-                                  color: Colors.white,
+                      child:
+                          _currentUserRank['avatar']!.isNotEmpty
+                              ? ClipRRect(
+                                borderRadius: BorderRadius.circular(35),
+                                child: Image.network(
+                                  _currentUserRank['avatar']!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder:
+                                      (context, error, stackTrace) => Icon(
+                                        Icons.person,
+                                        size: isTablet ? 40 : 35,
+                                        color: Colors.white,
+                                      ),
                                 ),
+                              )
+                              : Icon(
+                                Icons.person,
+                                size: isTablet ? 40 : 35,
+                                color: Colors.white,
                               ),
-                            )
-                          : Icon(
-                              Icons.person,
-                              size: isTablet ? 40 : 35,
-                              color: Colors.white,
-                            ),
                     ),
                     Positioned(
                       top: 0,
@@ -389,9 +385,9 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                   ],
                 ),
               ),
-              
+
               SizedBox(width: isTablet ? 20 : 16),
-              
+
               // User Info
               Expanded(
                 child: Column(
@@ -406,7 +402,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                       ),
                     ),
                     SizedBox(height: isTablet ? 8 : 6),
-                    
+
                     Row(
                       children: [
                         _buildStatItem(
@@ -481,34 +477,39 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
   ) {
     final rank = user['rank'] as int;
     final isTopFive = rank <= 5;
-    
+
     return Container(
       margin: EdgeInsets.only(bottom: isTablet ? 16 : 12),
       padding: EdgeInsets.all(isTablet ? 20 : 16),
       decoration: BoxDecoration(
-        color: isTopFive 
-            ? colorScheme.primaryContainer.withOpacity(0.1)
-            : colorScheme.surface,
+        color:
+            isTopFive
+                ? colorScheme.primaryContainer.withOpacity(0.1)
+                : colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isTopFive 
-              ? colorScheme.primary.withOpacity(0.3)
-              : colorScheme.outline.withOpacity(0.2),
+          color:
+              isTopFive
+                  ? colorScheme.primary.withOpacity(0.3)
+                  : colorScheme.outline.withOpacity(0.2),
           width: isTopFive ? 2 : 1,
         ),
-        boxShadow: isTopFive ? [
-          BoxShadow(
-            color: colorScheme.primary.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ] : [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
-            blurRadius: 5,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        boxShadow:
+            isTopFive
+                ? [
+                  BoxShadow(
+                    color: colorScheme.primary.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+                : [
+                  BoxShadow(
+                    color: colorScheme.shadow.withOpacity(0.05),
+                    blurRadius: 5,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
       ),
       child: Row(
         children: [
@@ -519,34 +520,41 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
             decoration: BoxDecoration(
               color: _getRankColor(rank, colorScheme),
               borderRadius: BorderRadius.circular(25),
-              boxShadow: isTopFive ? [
-                BoxShadow(
-                  color: _getRankColor(rank, colorScheme).withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ] : null,
+              boxShadow:
+                  isTopFive
+                      ? [
+                        BoxShadow(
+                          color: _getRankColor(
+                            rank,
+                            colorScheme,
+                          ).withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ]
+                      : null,
             ),
             child: Center(
-              child: isTopFive 
-                  ? Icon(
-                      _getRankIcon(rank),
-                      color: Colors.white,
-                      size: isTablet ? 24 : 20,
-                    )
-                  : Text(
-                      '$rank',
-                      style: TextStyle(
-                        fontSize: isTablet ? 16 : 14,
-                        fontWeight: FontWeight.bold,
+              child:
+                  isTopFive
+                      ? Icon(
+                        _getRankIcon(rank),
                         color: Colors.white,
+                        size: isTablet ? 24 : 20,
+                      )
+                      : Text(
+                        '$rank',
+                        style: TextStyle(
+                          fontSize: isTablet ? 16 : 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
             ),
           ),
-          
+
           SizedBox(width: isTablet ? 16 : 12),
-          
+
           // Avatar
           Container(
             width: isTablet ? 50 : 45,
@@ -559,28 +567,30 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                 width: 1,
               ),
             ),
-            child: user['avatar']!.isNotEmpty
-                ? ClipRRect(
-                    borderRadius: BorderRadius.circular(24),
-                    child: Image.network(
-                      user['avatar']!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Icon(
-                        Icons.person,
-                        size: isTablet ? 24 : 20,
-                        color: theme.hintColor,
+            child:
+                user['avatar']!.isNotEmpty
+                    ? ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Image.network(
+                        user['avatar']!,
+                        fit: BoxFit.cover,
+                        errorBuilder:
+                            (context, error, stackTrace) => Icon(
+                              Icons.person,
+                              size: isTablet ? 24 : 20,
+                              color: theme.hintColor,
+                            ),
                       ),
+                    )
+                    : Icon(
+                      Icons.person,
+                      size: isTablet ? 24 : 20,
+                      color: theme.hintColor,
                     ),
-                  )
-                : Icon(
-                    Icons.person,
-                    size: isTablet ? 24 : 20,
-                    color: theme.hintColor,
-                  ),
           ),
-          
+
           SizedBox(width: isTablet ? 16 : 12),
-          
+
           // User Info
           Expanded(
             child: Column(
@@ -615,7 +625,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
               ],
             ),
           ),
-          
+
           // Points
           Container(
             padding: EdgeInsets.symmetric(

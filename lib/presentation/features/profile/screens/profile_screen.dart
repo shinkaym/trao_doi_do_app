@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:trao_doi_do_app/core/config/theme_mode_provider.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -47,12 +47,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   setState(() {
                     _isLoggedIn = false;
                   });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Đã đăng xuất thành công'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
+                  context.showSuccessSnackBar('Đã đăng xuất thành công');
                 },
                 child: const Text('Đăng xuất'),
               ),
@@ -69,8 +64,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     context.pushNamed('change-password');
   }
 
-  void _handleMyRequests() {
-    context.pushNamed('requests');
+  void _handlePostHistory() {
+    context.pushNamed('post-history');
   }
 
   void _handleNotifications() {
@@ -79,9 +74,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
 
     // Watch the current theme mode from Riverpod
     final currentThemeMode = ref.watch(themeModeProvider);
@@ -93,60 +88,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         notificationCount: 3, // Số thông báo (có thể lấy từ provider/state)
         onNotificationTap: _handleNotifications,
         showBackButton: false, // Không hiển thị nút back vì đây là trang chính
-        additionalActions:
-            _isLoggedIn
-                ? [
-                  // Thêm menu action cho user đã đăng nhập
-                  PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert, color: Colors.white),
-                    onSelected: (String value) {
-                      switch (value) {
-                        case 'settings':
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Cài đặt - Chức năng đang phát triển',
-                              ),
-                            ),
-                          );
-                          break;
-                        case 'help':
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text(
-                                'Trợ giúp - Chức năng đang phát triển',
-                              ),
-                            ),
-                          );
-                          break;
-                      }
-                    },
-                    itemBuilder:
-                        (BuildContext context) => [
-                          const PopupMenuItem<String>(
-                            value: 'settings',
-                            child: Row(
-                              children: [
-                                Icon(Icons.settings_outlined, size: 20),
-                                SizedBox(width: 12),
-                                Text('Cài đặt'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'help',
-                            child: Row(
-                              children: [
-                                Icon(Icons.help_outline, size: 20),
-                                SizedBox(width: 12),
-                                Text('Trợ giúp'),
-                              ],
-                            ),
-                          ),
-                        ],
-                  ),
-                ]
-                : null,
       ),
       body: SafeArea(
         top: false,
@@ -322,11 +263,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           isTablet: isTablet,
           theme: theme,
           colorScheme: colorScheme,
-          icon: Icons.list_alt_outlined,
-          title: 'Các yêu cầu đã gửi',
-          subtitle: 'Xem lịch sử các yêu cầu',
-          onTap: _handleMyRequests,
+          icon: Icons.history, // Gợi ý biểu tượng phù hợp hơn
+          title: 'Lịch sử bài đăng',
+          subtitle: 'Xem các bài đăng trước đây',
+          onTap: _handlePostHistory, // Đổi tên hàm cho đúng ý nghĩa
         ),
+
         SizedBox(height: isTablet ? 16 : 12),
 
         // Theme Settings
@@ -577,15 +519,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
               // Show feedback to user
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      value
-                          ? 'Đã chuyển sang chế độ tối'
-                          : 'Đã chuyển sang chế độ sáng',
-                    ),
-                    duration: const Duration(seconds: 2),
-                  ),
+                context.showInfoSnackBar(
+                  value
+                      ? 'Đã chuyển sang chế độ tối'
+                      : 'Đã chuyển sang chế độ sáng',
                 );
               }
             },

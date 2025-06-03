@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
 
 // Enum cho loại bài đăng
@@ -44,9 +44,6 @@ class _PostsScreenState extends ConsumerState<PostsScreen> {
   PostType _selectedType = PostType.all;
   SortOrder _selectedSort = SortOrder.newest;
   String _searchQuery = '';
-  bool _isSearchExpanded = false;
-  List<String> _searchHistory = [];
-  List<String> _searchSuggestions = [];
 
   // Mock data cho danh sách bài đăng
   List<Map<String, dynamic>> _allPosts = [
@@ -184,8 +181,6 @@ class _PostsScreenState extends ConsumerState<PostsScreen> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    _searchFocusNode.addListener(_onSearchFocusChange);
-    _initializeSearchSuggestions();
     _filterPosts();
   }
 
@@ -195,23 +190,6 @@ class _PostsScreenState extends ConsumerState<PostsScreen> {
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
-  }
-
-  void _initializeSearchSuggestions() {
-    // Tạo danh sách gợi ý từ các tags và từ khóa phổ biến
-    Set<String> suggestions = {};
-    for (var post in _allPosts) {
-      if (post['tags'] != null) {
-        suggestions.addAll((post['tags'] as List).cast<String>());
-      }
-    }
-    _searchSuggestions = suggestions.toList()..sort();
-  }
-
-  void _onSearchFocusChange() {
-    setState(() {
-      _isSearchExpanded = _searchFocusNode.hasFocus;
-    });
   }
 
   void _onScroll() {
@@ -343,21 +321,7 @@ class _PostsScreenState extends ConsumerState<PostsScreen> {
       _searchQuery = query;
     });
 
-    // Thêm vào lịch sử tìm kiếm
-    if (query.isNotEmpty && !_searchHistory.contains(query)) {
-      _searchHistory.insert(0, query);
-      if (_searchHistory.length > 10) {
-        _searchHistory.removeLast();
-      }
-    }
-
     _filterPosts();
-  }
-
-  void _handleSearchSuggestionTap(String suggestion) {
-    _searchController.text = suggestion;
-    _handleSearch(suggestion);
-    _searchFocusNode.unfocus();
   }
 
   void _clearSearch() {
@@ -396,12 +360,7 @@ class _PostsScreenState extends ConsumerState<PostsScreen> {
         _isLoading = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Đã cập nhật danh sách bài đăng'),
-          backgroundColor: Colors.green,
-        ),
-      );
+      context.showSuccessSnackBar('Đã cập nhật danh sách bài đăng');
     }
   }
 
@@ -422,9 +381,9 @@ class _PostsScreenState extends ConsumerState<PostsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
 
     return Scaffold(
       backgroundColor: colorScheme.background,
@@ -443,11 +402,6 @@ class _PostsScreenState extends ConsumerState<PostsScreen> {
               // Enhanced Search and Filter Section
               _buildEnhancedSearchSection(isTablet, theme, colorScheme),
 
-              // Search Suggestions Overlay
-              if (_isSearchExpanded &&
-                  (_searchHistory.isNotEmpty || _searchSuggestions.isNotEmpty))
-                _buildSearchSuggestions(isTablet, theme, colorScheme),
-
               // Content
               Expanded(
                 child:
@@ -456,14 +410,6 @@ class _PostsScreenState extends ConsumerState<PostsScreen> {
                         : CustomScrollView(
                           controller: _scrollController,
                           slivers: [
-                            // Search Results Header
-                            if (_searchQuery.isNotEmpty)
-                              _buildSearchResultsHeader(
-                                isTablet,
-                                theme,
-                                colorScheme,
-                              ),
-
                             // Posts List
                             SliverPadding(
                               padding: EdgeInsets.symmetric(
@@ -644,107 +590,6 @@ class _PostsScreenState extends ConsumerState<PostsScreen> {
             ),
           ],
         ],
-      ),
-    );
-  }
-
-  Widget _buildSearchSuggestions(
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return Container(
-      constraints: BoxConstraints(maxHeight: isTablet ? 300 : 200),
-      margin: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: ListView(
-        shrinkWrap: true,
-        children: [
-          // Search History
-          if (_searchHistory.isNotEmpty) ...[
-            Padding(
-              padding: EdgeInsets.all(isTablet ? 16 : 12),
-              child: Row(
-                children: [
-                  Icon(Icons.history, size: isTablet ? 18 : 16),
-                  SizedBox(width: 8),
-                  Text(
-                    'Tìm kiếm gần đây',
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ..._searchHistory.map(
-              (history) => ListTile(
-                leading: const Icon(Icons.restore, size: 18),
-                title: Text(history),
-                trailing: IconButton(
-                  icon: const Icon(Icons.close, size: 16),
-                  onPressed: () {
-                    setState(() {
-                      _searchHistory.remove(history);
-                    });
-                  },
-                ),
-                onTap: () => _handleSearchSuggestionTap(history),
-                dense: true,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSearchResultsHeader(
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return SliverToBoxAdapter(
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isTablet ? 32 : 16,
-          vertical: isTablet ? 16 : 12,
-        ),
-        child: Row(
-          children: [
-            Icon(
-              Icons.search,
-              color: colorScheme.primary,
-              size: isTablet ? 20 : 18,
-            ),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Kết quả tìm kiếm cho "${_searchQuery}"',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.primary,
-                ),
-              ),
-            ),
-            TextButton.icon(
-              onPressed: _clearSearch,
-              icon: const Icon(Icons.clear, size: 16),
-              label: const Text('Xóa'),
-              style: TextButton.styleFrom(foregroundColor: theme.hintColor),
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -116,10 +116,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
+    final isTablet = context.isTablet;
+    final colorScheme = context.colorScheme;
+    final isDark = context.isDarkMode;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -169,7 +168,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   Widget _buildHeader(BuildContext context, bool isTablet) {
-    final theme = Theme.of(context);
+    final theme = context.theme;
 
     return Padding(
       padding: EdgeInsets.all(isTablet ? 24 : 16),
@@ -248,7 +247,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     OnboardingData data,
     bool isTablet,
   ) {
-    final theme = Theme.of(context);
+    final theme = context.theme;
 
     return Padding(
       padding: EdgeInsets.symmetric(
@@ -326,8 +325,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   Widget _buildBottomSection(BuildContext context, bool isTablet) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final theme = context.theme;
 
     return Padding(
       padding: EdgeInsets.all(isTablet ? 32 : 24),

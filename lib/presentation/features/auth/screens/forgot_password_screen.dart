@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/presentation/features/auth/widgets/app_header_widget.dart';
+import 'package:trao_doi_do_app/presentation/features/auth/widgets/auth_divider_widget.dart';
+import 'package:trao_doi_do_app/presentation/features/auth/widgets/info_card_widget.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({Key? key}) : super(key: key);
@@ -43,12 +46,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       });
 
       // Hiển thị thông báo thành công
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('OTP đã được gửi đến ${_emailController.text}'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 3),
-        ),
+      context.showSuccessSnackBar(
+        'OTP đã được gửi đến ${_emailController.text}',
       );
 
       // Bắt đầu đếm ngược
@@ -83,22 +82,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       // Giả lập OTP đúng (trong thực tế sẽ gọi API)
       if (_currentOtp == '123456') {
         // OTP đúng - chuyển đến màn hình đặt lại mật khẩu
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('OTP xác thực thành công!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        context.showSuccessSnackBar('OTP xác thực thành công!');
+
         // Chuyển đến màn hình reset password
         context.goNamed('reset-password', extra: _emailController.text);
       } else {
         // OTP sai
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('OTP không chính xác. Vui lòng thử lại.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        context.showErrorSnackBar('OTP không chính xác. Vui lòng thử lại.');
+
         _otpController.clear();
         setState(() => _currentOtp = '');
       }
@@ -131,10 +122,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
+    final isTablet = context.isTablet;
+    final colorScheme = context.colorScheme;
+    final isDark = context.isDarkMode;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -152,7 +142,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             onPressed: () {
               if (_isEmailSent) {
                 _handleBackToEmail();
-              } else if (context.canPop()) {
+              } else if (context.canPop) {
                 context.pop();
               } else {
                 context.goNamed('login');
@@ -169,60 +159,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [colorScheme.primary, colorScheme.primary],
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: isTablet ? 60 : 40,
-                      horizontal: 24,
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: isTablet ? 100 : 80,
-                          height: isTablet ? 100 : 80,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Icon(
-                            _isEmailSent
-                                ? Icons.security_outlined
-                                : Icons.lock_reset_outlined,
-                            size: isTablet ? 50 : 40,
-                            color: Colors.white,
-                          ),
-                        ),
-                        SizedBox(height: isTablet ? 24 : 16),
-                        Text(
-                          _isEmailSent ? 'Nhập mã OTP' : 'Quên mật khẩu',
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: isTablet ? 32 : 28,
-                          ),
-                        ),
-                        SizedBox(height: isTablet ? 12 : 8),
-                        Text(
-                          _isEmailSent
-                              ? 'Nhập mã OTP được gửi đến email của bạn'
-                              : 'Nhập email để đặt lại mật khẩu',
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: isTablet ? 18 : 16,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
-                  ),
+                AppHeaderWidget(
+                  title: _isEmailSent ? 'Nhập mã OTP' : 'Quên mật khẩu',
+                  subtitle:
+                      _isEmailSent
+                          ? 'Nhập mã OTP được gửi đến email của bạn'
+                          : 'Nhập email để đặt lại mật khẩu',
+                  icon:
+                      _isEmailSent
+                          ? Icons.security_outlined
+                          : Icons.lock_reset_outlined,
                 ),
 
                 Padding(
@@ -244,9 +190,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Widget _buildFormContent() {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
 
     return Form(
       key: _formKey,
@@ -256,36 +202,11 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           SizedBox(height: isTablet ? 40 : 32),
 
           // Mô tả
-          Container(
-            padding: EdgeInsets.all(isTablet ? 20 : 16),
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: colorScheme.primaryContainer.withOpacity(0.3),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  color: colorScheme.primary,
-                  size: isTablet ? 24 : 20,
-                ),
-                SizedBox(width: isTablet ? 16 : 12),
-                Expanded(
-                  child: Text(
-                    'Nhập địa chỉ email đã đăng ký. Chúng tôi sẽ gửi mã OTP qua email của bạn.',
-                    style: TextStyle(
-                      color: theme.hintColor,
-                      fontSize: isTablet ? 16 : 14,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          InfoCardWidget(
+            icon: Icons.info_outline,
+            title: '',
+            content:
+                'Nhập địa chỉ email đã đăng ký. Chúng tôi sẽ gửi mã OTP qua email của bạn.',
           ),
           SizedBox(height: isTablet ? 32 : 24),
 
@@ -397,9 +318,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 
   Widget _buildOtpContent() {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -407,50 +328,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         SizedBox(height: isTablet ? 40 : 32),
 
         // Email info
-        Container(
-          padding: EdgeInsets.all(isTablet ? 20 : 16),
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: colorScheme.primaryContainer.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.email_outlined,
-                color: colorScheme.primary,
-                size: isTablet ? 24 : 20,
-              ),
-              SizedBox(width: isTablet ? 16 : 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Mã OTP đã được gửi đến:',
-                      style: TextStyle(
-                        color: theme.hintColor,
-                        fontSize: isTablet ? 14 : 12,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      _emailController.text,
-                      style: TextStyle(
-                        color: colorScheme.primary,
-                        fontSize: isTablet ? 16 : 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+        EmailInfoCard(email: _emailController.text),
+
         SizedBox(height: isTablet ? 32 : 24),
 
         // OTP Input
@@ -472,13 +351,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           animationType: AnimationType.fade,
           pinTheme: PinTheme(
-            shape: PinCodeFieldShape.box,
+            shape:
+                PinCodeFieldShape.underline, // Thay đổi từ box thành underline
             borderRadius: BorderRadius.circular(8),
             fieldHeight: isTablet ? 60 : 50,
             fieldWidth: isTablet ? 50 : 40,
-            activeFillColor: colorScheme.surface,
-            selectedFillColor: colorScheme.surface,
-            inactiveFillColor: colorScheme.surface,
+            activeFillColor: Colors.transparent, // Làm trong suốt
+            selectedFillColor: Colors.transparent, // Làm trong suốt
+            inactiveFillColor: Colors.transparent, // Làm trong suốt
             activeColor: colorScheme.primary,
             selectedColor: colorScheme.primary,
             inactiveColor: theme.dividerColor,
@@ -568,62 +448,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         SizedBox(height: isTablet ? 24 : 20),
 
         // Help text
-        Container(
-          padding: EdgeInsets.all(isTablet ? 20 : 16),
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceVariant.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Lưu ý:',
-                style: TextStyle(
-                  color: theme.hintColor,
-                  fontSize: isTablet ? 16 : 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              SizedBox(height: isTablet ? 12 : 8),
-              Text(
-                '• Kiểm tra cả thư mục spam/junk\n'
-                '• Mã OTP có hiệu lực trong 5 phút\n'
-                '• Nhập đúng 6 chữ số để xác thực',
-                style: TextStyle(
-                  color: theme.hintColor,
-                  fontSize: isTablet ? 14 : 12,
-                  height: 1.5,
-                ),
-              ),
-            ],
-          ),
-        ),
+        const AuthDividerWidget(),
         SizedBox(height: isTablet ? 32 : 24),
 
         // Back to login
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Nhớ mật khẩu? ',
-              style: TextStyle(
-                color: theme.hintColor,
-                fontSize: isTablet ? 16 : 14,
-              ),
-            ),
-            GestureDetector(
-              onTap: _handleBackToLogin,
-              child: Text(
-                'Đăng nhập',
-                style: TextStyle(
-                  color: colorScheme.primary,
-                  fontSize: isTablet ? 16 : 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
+        AuthLinkWidget(
+          question: 'Nhớ mật khẩu? ',
+          linkText: 'Đăng nhập',
+          onTap: _handleBackToLogin,
         ),
         SizedBox(height: isTablet ? 40 : 32),
       ],
@@ -637,7 +469,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     required IconData icon,
     Widget? suffix,
   }) {
-    final theme = Theme.of(context);
+    final theme = context.theme;
+
     return InputDecoration(
       labelText: label,
       hintText: hint,

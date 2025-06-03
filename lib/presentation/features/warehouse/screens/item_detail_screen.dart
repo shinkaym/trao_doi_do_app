@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 
 class ItemDetailScreen extends ConsumerStatefulWidget {
   final String itemId;
-  
-  const ItemDetailScreen({
-    Key? key,
-    required this.itemId,
-  }) : super(key: key);
+
+  const ItemDetailScreen({Key? key, required this.itemId}) : super(key: key);
 
   @override
   ConsumerState<ItemDetailScreen> createState() => _ItemDetailScreenState();
@@ -20,7 +17,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
   late PageController _pageController;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
+
   int _currentImageIndex = 0;
   bool _isLoading = false;
   bool _isRegistered = false;
@@ -37,14 +34,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOut,
-    ));
-    
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+
     _loadItemData();
   }
 
@@ -67,7 +60,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
     _item = {
       'id': widget.itemId,
       'title': 'Áo sơ mi trắng size M',
-      'description': 'Áo sơ mi trắng chất liệu cotton cao cấp, được giặt sạch và bảo quản cẩn thận. Áo còn rất mới, chỉ mặc vài lần. Phù hợp cho công sở hoặc các sự kiện trang trọng. Màu trắng tinh khôi, dễ phối đồ.',
+      'description':
+          'Áo sơ mi trắng chất liệu cotton cao cấp, được giặt sạch và bảo quản cẩn thận. Áo còn rất mới, chỉ mặc vài lần. Phù hợp cho công sở hoặc các sự kiện trang trọng. Màu trắng tinh khôi, dễ phối đồ.',
       'type': 'old', // or 'lost'
       'category': 'Quần áo',
       'condition': 'Tốt',
@@ -87,7 +81,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
       'status': 'available',
       'donor': {
         'name': 'Nguyễn Văn A',
-        'avatar': 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
+        'avatar':
+            'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
         'phone': '0901234567',
         'email': 'nguyenvana@email.com',
         'rating': 4.8,
@@ -159,73 +154,86 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
   Future<bool> _showRegisterDialog() async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xác nhận đăng ký'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Bạn có chắc chắn muốn đăng ký nhận món đồ này?'),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.shade200),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.info_outline, 
-                           size: 16, color: Colors.orange.shade700),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Lưu ý quan trọng:',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.orange.shade700,
-                        ),
-                      ),
-                    ],
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Xác nhận đăng ký'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Bạn có chắc chắn muốn đăng ký nhận món đồ này?'),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange.shade200),
                   ),
-                  const SizedBox(height: 8),
-                  ..._item!['rules'].map<Widget>((rule) => Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('• ', style: TextStyle(color: Colors.orange.shade700)),
-                        Expanded(
-                          child: Text(
-                            rule,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            size: 16,
+                            color: Colors.orange.shade700,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Lưu ý quan trọng:',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
                               color: Colors.orange.shade700,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  )).toList(),
-                ],
-              ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ..._item!['rules']
+                          .map<Widget>(
+                            (rule) => Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '• ',
+                                    style: TextStyle(
+                                      color: Colors.orange.shade700,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      rule,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.orange.shade700,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Hủy'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Hủy'),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                child: const Text('Xác nhận'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Xác nhận'),
-          ),
-        ],
-      ),
     );
     return result ?? false;
   }
@@ -234,54 +242,50 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: Colors.green.shade100,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.check_circle,
-                size: 50,
-                color: Colors.green.shade600,
-              ),
+      builder:
+          (context) => AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.check_circle,
+                    size: 50,
+                    color: Colors.green.shade600,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Đăng ký thành công!',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Chúng tôi đã ghi nhận đăng ký của bạn. Người tặng sẽ liên hệ với bạn sớm nhất.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Đăng ký thành công!',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    context.pop(); // Return to previous screen
+                  },
+                  child: const Text('Đồng ý'),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Chúng tôi đã ghi nhận đăng ký của bạn. Người tặng sẽ liên hệ với bạn sớm nhất.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey.shade600,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                context.pop(); // Return to previous screen
-              },
-              child: const Text('Đồng ý'),
-            ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -292,104 +296,101 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
+      builder:
+          (context) => Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                CircleAvatar(
-                  radius: 30,
-                  backgroundImage: NetworkImage(donor['avatar']),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        donor['name'],
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(
+                const SizedBox(height: 20),
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundImage: NetworkImage(donor['avatar']),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.star, size: 16, color: Colors.amber),
-                          const SizedBox(width: 4),
-                          Text('${donor['rating']}'),
-                          const SizedBox(width: 12),
-                          Text('${donor['totalDonations']} món đã tặng'),
+                          Text(
+                            donor['name'],
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Icon(Icons.star, size: 16, color: Colors.amber),
+                              const SizedBox(width: 4),
+                              Text('${donor['rating']}'),
+                              const SizedBox(width: 12),
+                              Text('${donor['totalDonations']} món đã tặng'),
+                            ],
+                          ),
                         ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          // Handle call
+                          Navigator.pop(context);
+                        },
+                        icon: const Icon(Icons.phone),
+                        label: const Text('Gọi điện'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          // Handle message
+                          Navigator.pop(context);
+                        },
+                        icon: const Icon(Icons.message),
+                        label: const Text('Nhắn tin'),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // Handle call
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.phone),
-                    label: const Text('Gọi điện'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // Handle message
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.message),
-                    label: const Text('Nhắn tin'),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
   void _handleShare() {
     // Handle share functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã sao chép link chia sẻ')),
-    );
+    context.showInfoSnackBar('Đã sao chép link chia sẻ');
   }
 
   void _handleFavorite() {
     // Handle favorite functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Đã thêm vào danh sách yêu thích')),
-    );
+    context.showInfoSnackBar('Đã thêm vào danh sách yêu thích');
   }
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
 
     if (_isLoading && _item == null) {
       return Scaffold(
@@ -402,9 +403,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
             icon: const Icon(Icons.arrow_back),
           ),
         ),
-        body: const Center(
-          child: CircularProgressIndicator(),
-        ),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -419,9 +418,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
             icon: const Icon(Icons.arrow_back),
           ),
         ),
-        body: const Center(
-          child: Text('Không tìm thấy thông tin món đồ'),
-        ),
+        body: const Center(child: Text('Không tìm thấy thông tin món đồ')),
       );
     }
 
@@ -471,7 +468,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
                   ),
                   child: IconButton(
                     onPressed: _handleFavorite,
-                    icon: const Icon(Icons.favorite_border, color: Colors.white),
+                    icon: const Icon(
+                      Icons.favorite_border,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ],
@@ -491,8 +491,8 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
                         return Image.network(
                           images[index],
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              Container(
+                          errorBuilder:
+                              (context, error, stackTrace) => Container(
                                 color: Colors.grey.shade300,
                                 child: const Icon(
                                   Icons.image_outlined,
@@ -503,7 +503,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
                         );
                       },
                     ),
-                    
+
                     // Image Counter
                     Positioned(
                       bottom: 20,
@@ -527,26 +527,28 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
                         ),
                       ),
                     ),
-                    
+
                     // Image Dots Indicator
                     if (images.length > 1)
                       Positioned(
                         bottom: 20,
                         left: 20,
                         child: Row(
-                          children: images.asMap().entries.map((entry) {
-                            return Container(
-                              width: 8,
-                              height: 8,
-                              margin: const EdgeInsets.only(right: 6),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _currentImageIndex == entry.key
-                                    ? Colors.white
-                                    : Colors.white.withOpacity(0.4),
-                              ),
-                            );
-                          }).toList(),
+                          children:
+                              images.asMap().entries.map((entry) {
+                                return Container(
+                                  width: 8,
+                                  height: 8,
+                                  margin: const EdgeInsets.only(right: 6),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color:
+                                        _currentImageIndex == entry.key
+                                            ? Colors.white
+                                            : Colors.white.withOpacity(0.4),
+                                  ),
+                                );
+                              }).toList(),
                         ),
                       ),
                   ],
@@ -619,9 +621,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
                   vertical: isTablet ? 6 : 5,
                 ),
                 decoration: BoxDecoration(
-                  color: isLostItem
-                      ? Colors.orange.shade100
-                      : Colors.green.shade100,
+                  color:
+                      isLostItem
+                          ? Colors.orange.shade100
+                          : Colors.green.shade100,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Row(
@@ -630,9 +633,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
                     Icon(
                       isLostItem ? Icons.help_outline : Icons.shopping_bag,
                       size: isTablet ? 16 : 14,
-                      color: isLostItem
-                          ? Colors.orange.shade700
-                          : Colors.green.shade700,
+                      color:
+                          isLostItem
+                              ? Colors.orange.shade700
+                              : Colors.green.shade700,
                     ),
                     SizedBox(width: isTablet ? 6 : 4),
                     Text(
@@ -640,9 +644,10 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
                       style: TextStyle(
                         fontSize: isTablet ? 12 : 11,
                         fontWeight: FontWeight.w600,
-                        color: isLostItem
-                            ? Colors.orange.shade700
-                            : Colors.green.shade700,
+                        color:
+                            isLostItem
+                                ? Colors.orange.shade700
+                                : Colors.green.shade700,
                       ),
                     ),
                   ],
@@ -729,16 +734,36 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
     ColorScheme colorScheme,
   ) {
     final details = [
-      {'icon': Icons.category_outlined, 'label': 'Danh mục', 'value': _item!['category']},
-      {'icon': Icons.star_outline, 'label': 'Tình trạng', 'value': _item!['condition']},
+      {
+        'icon': Icons.category_outlined,
+        'label': 'Danh mục',
+        'value': _item!['category'],
+      },
+      {
+        'icon': Icons.star_outline,
+        'label': 'Tình trạng',
+        'value': _item!['condition'],
+      },
       if (_item!['size'] != null)
         {'icon': Icons.straighten, 'label': 'Kích cỡ', 'value': _item!['size']},
       if (_item!['brand'] != null)
-        {'icon': Icons.local_offer_outlined, 'label': 'Thương hiệu', 'value': _item!['brand']},
+        {
+          'icon': Icons.local_offer_outlined,
+          'label': 'Thương hiệu',
+          'value': _item!['brand'],
+        },
       if (_item!['color'] != null)
-        {'icon': Icons.palette_outlined, 'label': 'Màu sắc', 'value': _item!['color']},
+        {
+          'icon': Icons.palette_outlined,
+          'label': 'Màu sắc',
+          'value': _item!['color'],
+        },
       if (_item!['material'] != null)
-        {'icon': Icons.texture, 'label': 'Chất liệu', 'value': _item!['material']},
+        {
+          'icon': Icons.texture,
+          'label': 'Chất liệu',
+          'value': _item!['material'],
+        },
     ];
 
     return Container(
@@ -747,9 +772,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
-        ),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -763,37 +786,41 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
             ),
           ),
           SizedBox(height: isTablet ? 16 : 12),
-          ...details.map((detail) => Padding(
-            padding: EdgeInsets.only(bottom: isTablet ? 12 : 8),
-            child: Row(
-              children: [
-                Icon(
-                  detail['icon'] as IconData,
-                  size: isTablet ? 20 : 18,
-                  color: theme.hintColor,
-                ),
-                SizedBox(width: isTablet ? 12 : 10),
-                Text(
-                  '${detail['label']}:',
-                  style: TextStyle(
-                    fontSize: isTablet ? 14 : 12,
-                    color: theme.hintColor,
+          ...details
+              .map(
+                (detail) => Padding(
+                  padding: EdgeInsets.only(bottom: isTablet ? 12 : 8),
+                  child: Row(
+                    children: [
+                      Icon(
+                        detail['icon'] as IconData,
+                        size: isTablet ? 20 : 18,
+                        color: theme.hintColor,
+                      ),
+                      SizedBox(width: isTablet ? 12 : 10),
+                      Text(
+                        '${detail['label']}:',
+                        style: TextStyle(
+                          fontSize: isTablet ? 14 : 12,
+                          color: theme.hintColor,
+                        ),
+                      ),
+                      SizedBox(width: isTablet ? 8 : 6),
+                      Expanded(
+                        child: Text(
+                          detail['value'] as String,
+                          style: TextStyle(
+                            fontSize: isTablet ? 14 : 12,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                SizedBox(width: isTablet ? 8 : 6),
-                Expanded(
-                  child: Text(
-                    detail['value'] as String,
-                    style: TextStyle(
-                      fontSize: isTablet ? 14 : 12,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          )).toList(),
+              )
+              .toList(),
         ],
       ),
     );
@@ -813,9 +840,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
-        ),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -874,9 +899,7 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
-        ),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -912,497 +935,496 @@ class _ItemDetailScreenState extends ConsumerState<ItemDetailScreen>
                     SizedBox(height: isTablet ? 6 : 4),
                     Row(
                       children: [
-                        Icon(Icons.star,
-                        size: isTablet ? 16 : 14,
-                        color: Colors.amber,
-                      ),
-                      SizedBox(width: isTablet ? 4 : 3),
-                      Text(
-                        '${donor['rating']}',
-                        style: TextStyle(
-                          fontSize: isTablet ? 14 : 12,
-                          fontWeight: FontWeight.w500,
-                          color: colorScheme.onSurface,
+                        Icon(
+                          Icons.star,
+                          size: isTablet ? 16 : 14,
+                          color: Colors.amber,
                         ),
-                      ),
-                      SizedBox(width: isTablet ? 12 : 8),
-                      Text(
-                        '${donor['totalDonations']} món đã tặng',
-                        style: TextStyle(
-                          fontSize: isTablet ? 12 : 11,
-                          color: theme.hintColor,
+                        SizedBox(width: isTablet ? 4 : 3),
+                        Text(
+                          '${donor['rating']}',
+                          style: TextStyle(
+                            fontSize: isTablet ? 14 : 12,
+                            fontWeight: FontWeight.w500,
+                            color: colorScheme.onSurface,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: isTablet ? 4 : 3),
-                  Text(
-                    'Tham gia ${_formatJoinDate(donor['joinDate'])}',
-                    style: TextStyle(
-                      fontSize: isTablet ? 11 : 10,
-                      color: theme.hintColor,
+                        SizedBox(width: isTablet ? 12 : 8),
+                        Text(
+                          '${donor['totalDonations']} món đã tặng',
+                          style: TextStyle(
+                            fontSize: isTablet ? 12 : 11,
+                            color: theme.hintColor,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: isTablet ? 12 : 8),
-            OutlinedButton(
-              onPressed: _handleContact,
-              style: OutlinedButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 16 : 12,
-                  vertical: isTablet ? 8 : 6,
-                ),
-              ),
-              child: Text(
-                'Liên hệ',
-                style: TextStyle(
-                  fontSize: isTablet ? 12 : 11,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
-Widget _buildPickupOptions(
-  bool isTablet,
-  ThemeData theme,
-  ColorScheme colorScheme,
-) {
-  final pickupOptions = List<Map<String, dynamic>>.from(_item!['pickupOptions']);
-
-  return Container(
-    margin: EdgeInsets.all(isTablet ? 24 : 20),
-    padding: EdgeInsets.all(isTablet ? 20 : 16),
-    decoration: BoxDecoration(
-      color: colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(
-        color: colorScheme.outline.withOpacity(0.2),
-      ),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Cách thức nhận đồ',
-          style: TextStyle(
-            fontSize: isTablet ? 18 : 16,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface,
-          ),
-        ),
-        SizedBox(height: isTablet ? 16 : 12),
-        ...pickupOptions.map((option) => Container(
-          margin: EdgeInsets.only(bottom: isTablet ? 12 : 8),
-          padding: EdgeInsets.all(isTablet ? 16 : 12),
-          decoration: BoxDecoration(
-            color: option['available']
-                ? colorScheme.primary.withOpacity(0.05)
-                : colorScheme.outline.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: option['available']
-                  ? colorScheme.primary.withOpacity(0.2)
-                  : colorScheme.outline.withOpacity(0.2),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                option['available'] ? Icons.check_circle : Icons.cancel,
-                size: isTablet ? 20 : 18,
-                color: option['available']
-                    ? colorScheme.primary
-                    : theme.hintColor,
-              ),
-              SizedBox(width: isTablet ? 12 : 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                    SizedBox(height: isTablet ? 4 : 3),
                     Text(
-                      option['label'],
+                      'Tham gia ${_formatJoinDate(donor['joinDate'])}',
                       style: TextStyle(
-                        fontSize: isTablet ? 14 : 12,
-                        fontWeight: FontWeight.w500,
-                        color: option['available']
-                            ? colorScheme.onSurface
-                            : theme.hintColor,
-                      ),
-                    ),
-                    SizedBox(height: isTablet ? 4 : 2),
-                    Text(
-                      option['description'],
-                      style: TextStyle(
-                        fontSize: isTablet ? 12 : 11,
+                        fontSize: isTablet ? 11 : 10,
                         color: theme.hintColor,
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-        )).toList(),
-      ],
-    ),
-  );
-}
-
-Widget _buildRegistrationInfo(
-  bool isTablet,
-  ThemeData theme,
-  ColorScheme colorScheme,
-) {
-  final registeredUsers = _item!['registeredUsers'];
-  final maxRegistrations = _item!['maxRegistrations'];
-  final deadline = _item!['registrationDeadline'];
-  final progress = registeredUsers / maxRegistrations;
-
-  return Container(
-    margin: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 20),
-    padding: EdgeInsets.all(isTablet ? 20 : 16),
-    decoration: BoxDecoration(
-      color: colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(
-        color: colorScheme.outline.withOpacity(0.2),
-      ),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Thông tin đăng ký',
-          style: TextStyle(
-            fontSize: isTablet ? 18 : 16,
-            fontWeight: FontWeight.w600,
-            color: colorScheme.onSurface,
-          ),
-        ),
-        SizedBox(height: isTablet ? 16 : 12),
-        
-        // Registration Progress
-        Row(
-          children: [
-            Icon(
-              Icons.people_outline,
-              size: isTablet ? 18 : 16,
-              color: theme.hintColor,
-            ),
-            SizedBox(width: isTablet ? 8 : 6),
-            Text(
-              'Đã đăng ký: $registeredUsers/$maxRegistrations người',
-              style: TextStyle(
-                fontSize: isTablet ? 14 : 12,
-                color: colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: isTablet ? 8 : 6),
-        
-        // Progress Bar
-        LinearProgressIndicator(
-          value: progress,
-          backgroundColor: colorScheme.outline.withOpacity(0.2),
-          valueColor: AlwaysStoppedAnimation<Color>(
-            progress >= 0.8 ? Colors.orange : colorScheme.primary,
-          ),
-        ),
-        
-        SizedBox(height: isTablet ? 12 : 8),
-        
-        // Deadline
-        Row(
-          children: [
-            Icon(
-              Icons.schedule,
-              size: isTablet ? 18 : 16,
-              color: theme.hintColor,
-            ),
-            SizedBox(width: isTablet ? 8 : 6),
-            Text(
-              'Hạn đăng ký: ${_formatDeadline(deadline)}',
-              style: TextStyle(
-                fontSize: isTablet ? 14 : 12,
-                color: colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-        
-        if (registeredUsers >= maxRegistrations) ...[
-          SizedBox(height: isTablet ? 12 : 8),
-          Container(
-            padding: EdgeInsets.all(isTablet ? 12 : 8),
-            decoration: BoxDecoration(
-              color: Colors.orange.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.orange.shade200),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.info_outline,
-                  size: isTablet ? 16 : 14,
-                  color: Colors.orange.shade700,
-                ),
-                SizedBox(width: isTablet ? 8 : 6),
-                Expanded(
-                  child: Text(
-                    'Đã đủ số lượng đăng ký',
-                    style: TextStyle(
-                      fontSize: isTablet ? 12 : 11,
-                      color: Colors.orange.shade700,
-                    ),
+              SizedBox(width: isTablet ? 12 : 8),
+              OutlinedButton(
+                onPressed: _handleContact,
+                style: OutlinedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTablet ? 16 : 12,
+                    vertical: isTablet ? 8 : 6,
                   ),
                 ),
-              ],
-            ),
+                child: Text(
+                  'Liên hệ',
+                  style: TextStyle(fontSize: isTablet ? 12 : 11),
+                ),
+              ),
+            ],
           ),
         ],
-      ],
-    ),
-  );
-}
-
-Widget _buildRules(
-  bool isTablet,
-  ThemeData theme,
-  ColorScheme colorScheme,
-) {
-  final rules = List<String>.from(_item!['rules']);
-
-  return Container(
-    margin: EdgeInsets.all(isTablet ? 24 : 20),
-    padding: EdgeInsets.all(isTablet ? 20 : 16),
-    decoration: BoxDecoration(
-      color: colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(
-        color: colorScheme.outline.withOpacity(0.2),
       ),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(
-              Icons.rule_outlined,
-              size: isTablet ? 20 : 18,
-              color: colorScheme.primary,
-            ),
-            SizedBox(width: isTablet ? 8 : 6),
-            Text(
-              'Quy định khi nhận đồ',
-              style: TextStyle(
-                fontSize: isTablet ? 18 : 16,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: isTablet ? 16 : 12),
-        ...rules.map((rule) => Padding(
-          padding: EdgeInsets.only(bottom: isTablet ? 8 : 6),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: isTablet ? 6 : 5,
-                height: isTablet ? 6 : 5,
-                margin: EdgeInsets.only(
-                  top: isTablet ? 6 : 5,
-                  right: isTablet ? 12 : 10,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.primary,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              Expanded(
-                child: Text(
-                  rule,
-                  style: TextStyle(
-                    fontSize: isTablet ? 14 : 12,
-                    color: colorScheme.onSurface,
-                    height: 1.4,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        )).toList(),
-      ],
-    ),
-  );
-}
+    );
+  }
 
-Widget _buildBottomActionBar(
-  bool isTablet,
-  ThemeData theme,
-  ColorScheme colorScheme,
-  bool isLostItem,
-) {
-  final registeredUsers = _item!['registeredUsers'];
-  final maxRegistrations = _item!['maxRegistrations'];
-  final isFull = registeredUsers >= maxRegistrations;
-  final deadline = _item!['registrationDeadline'];
-  final isExpired = DateTime.now().isAfter(deadline);
+  Widget _buildPickupOptions(
+    bool isTablet,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final pickupOptions = List<Map<String, dynamic>>.from(
+      _item!['pickupOptions'],
+    );
 
-  return Container(
-    padding: EdgeInsets.all(isTablet ? 24 : 20),
-    decoration: BoxDecoration(
-      color: colorScheme.surface,
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withOpacity(0.05),
-          blurRadius: 10,
-          offset: const Offset(0, -2),
-        ),
-      ],
-    ),
-    child: SafeArea(
-      child: Row(
+    return Container(
+      margin: EdgeInsets.all(isTablet ? 24 : 20),
+      padding: EdgeInsets.all(isTablet ? 20 : 16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Contact Button
-          OutlinedButton.icon(
-            onPressed: _handleContact,
-            icon: Icon(
-              Icons.message_outlined,
-              size: isTablet ? 18 : 16,
-            ),
-            label: Text(
-              'Liên hệ',
-              style: TextStyle(
-                fontSize: isTablet ? 14 : 12,
-              ),
-            ),
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 16 : 12,
-                vertical: isTablet ? 12 : 10,
-              ),
+          Text(
+            'Cách thức nhận đồ',
+            style: TextStyle(
+              fontSize: isTablet ? 18 : 16,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
             ),
           ),
-          
-          SizedBox(width: isTablet ? 12 : 8),
-          
-          // Register Button
-          Expanded(
-            child: ElevatedButton(
-              onPressed: (_isRegistered || isFull || isExpired || _isLoading)
-                  ? null
-                  : _handleRegister,
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                  vertical: isTablet ? 14 : 12,
-                ),
-                backgroundColor: _isRegistered
-                    ? Colors.green
-                    : (isFull || isExpired)
-                        ? theme.disabledColor
-                        : colorScheme.primary,
-              ),
-              child: _isLoading
-                  ? SizedBox(
-                      width: isTablet ? 20 : 16,
-                      height: isTablet ? 20 : 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          colorScheme.onPrimary,
+          SizedBox(height: isTablet ? 16 : 12),
+          ...pickupOptions
+              .map(
+                (option) => Container(
+                  margin: EdgeInsets.only(bottom: isTablet ? 12 : 8),
+                  padding: EdgeInsets.all(isTablet ? 16 : 12),
+                  decoration: BoxDecoration(
+                    color:
+                        option['available']
+                            ? colorScheme.primary.withOpacity(0.05)
+                            : colorScheme.outline.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color:
+                          option['available']
+                              ? colorScheme.primary.withOpacity(0.2)
+                              : colorScheme.outline.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        option['available'] ? Icons.check_circle : Icons.cancel,
+                        size: isTablet ? 20 : 18,
+                        color:
+                            option['available']
+                                ? colorScheme.primary
+                                : theme.hintColor,
+                      ),
+                      SizedBox(width: isTablet ? 12 : 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              option['label'],
+                              style: TextStyle(
+                                fontSize: isTablet ? 14 : 12,
+                                fontWeight: FontWeight.w500,
+                                color:
+                                    option['available']
+                                        ? colorScheme.onSurface
+                                        : theme.hintColor,
+                              ),
+                            ),
+                            SizedBox(height: isTablet ? 4 : 2),
+                            Text(
+                              option['description'],
+                              style: TextStyle(
+                                fontSize: isTablet ? 12 : 11,
+                                color: theme.hintColor,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    )
-                  : Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          _isRegistered
-                              ? Icons.check_circle
-                              : isFull
-                                  ? Icons.close
-                                  : isExpired
-                                      ? Icons.schedule
-                                      : Icons.how_to_reg,
-                          size: isTablet ? 18 : 16,
+                    ],
+                  ),
+                ),
+              )
+              .toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegistrationInfo(
+    bool isTablet,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final registeredUsers = _item!['registeredUsers'];
+    final maxRegistrations = _item!['maxRegistrations'];
+    final deadline = _item!['registrationDeadline'];
+    final progress = registeredUsers / maxRegistrations;
+
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 20),
+      padding: EdgeInsets.all(isTablet ? 20 : 16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Thông tin đăng ký',
+            style: TextStyle(
+              fontSize: isTablet ? 18 : 16,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          SizedBox(height: isTablet ? 16 : 12),
+
+          // Registration Progress
+          Row(
+            children: [
+              Icon(
+                Icons.people_outline,
+                size: isTablet ? 18 : 16,
+                color: theme.hintColor,
+              ),
+              SizedBox(width: isTablet ? 8 : 6),
+              Text(
+                'Đã đăng ký: $registeredUsers/$maxRegistrations người',
+                style: TextStyle(
+                  fontSize: isTablet ? 14 : 12,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: isTablet ? 8 : 6),
+
+          // Progress Bar
+          LinearProgressIndicator(
+            value: progress,
+            backgroundColor: colorScheme.outline.withOpacity(0.2),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              progress >= 0.8 ? Colors.orange : colorScheme.primary,
+            ),
+          ),
+
+          SizedBox(height: isTablet ? 12 : 8),
+
+          // Deadline
+          Row(
+            children: [
+              Icon(
+                Icons.schedule,
+                size: isTablet ? 18 : 16,
+                color: theme.hintColor,
+              ),
+              SizedBox(width: isTablet ? 8 : 6),
+              Text(
+                'Hạn đăng ký: ${_formatDeadline(deadline)}',
+                style: TextStyle(
+                  fontSize: isTablet ? 14 : 12,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+
+          if (registeredUsers >= maxRegistrations) ...[
+            SizedBox(height: isTablet ? 12 : 8),
+            Container(
+              padding: EdgeInsets.all(isTablet ? 12 : 8),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: isTablet ? 16 : 14,
+                    color: Colors.orange.shade700,
+                  ),
+                  SizedBox(width: isTablet ? 8 : 6),
+                  Expanded(
+                    child: Text(
+                      'Đã đủ số lượng đăng ký',
+                      style: TextStyle(
+                        fontSize: isTablet ? 12 : 11,
+                        color: Colors.orange.shade700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRules(bool isTablet, ThemeData theme, ColorScheme colorScheme) {
+    final rules = List<String>.from(_item!['rules']);
+
+    return Container(
+      margin: EdgeInsets.all(isTablet ? 24 : 20),
+      padding: EdgeInsets.all(isTablet ? 20 : 16),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.rule_outlined,
+                size: isTablet ? 20 : 18,
+                color: colorScheme.primary,
+              ),
+              SizedBox(width: isTablet ? 8 : 6),
+              Text(
+                'Quy định khi nhận đồ',
+                style: TextStyle(
+                  fontSize: isTablet ? 18 : 16,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: isTablet ? 16 : 12),
+          ...rules
+              .map(
+                (rule) => Padding(
+                  padding: EdgeInsets.only(bottom: isTablet ? 8 : 6),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: isTablet ? 6 : 5,
+                        height: isTablet ? 6 : 5,
+                        margin: EdgeInsets.only(
+                          top: isTablet ? 6 : 5,
+                          right: isTablet ? 12 : 10,
                         ),
-                        SizedBox(width: isTablet ? 8 : 6),
-                        Text(
-                          _isRegistered
-                              ? 'Đã đăng ký'
-                              : isFull
-                                  ? 'Đã đủ người'
-                                  : isExpired
-                                      ? 'Hết hạn'
-                                      : 'Đăng ký nhận',
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          rule,
                           style: TextStyle(
                             fontSize: isTablet ? 14 : 12,
-                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface,
+                            height: 1.4,
                           ),
                         ),
-                      ],
-                    ),
-            ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+              .toList(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomActionBar(
+    bool isTablet,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    bool isLostItem,
+  ) {
+    final registeredUsers = _item!['registeredUsers'];
+    final maxRegistrations = _item!['maxRegistrations'];
+    final isFull = registeredUsers >= maxRegistrations;
+    final deadline = _item!['registrationDeadline'];
+    final isExpired = DateTime.now().isAfter(deadline);
+
+    return Container(
+      padding: EdgeInsets.all(isTablet ? 24 : 20),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
-    ),
-  );
-}
+      child: SafeArea(
+        child: Row(
+          children: [
+            // Contact Button
+            OutlinedButton.icon(
+              onPressed: _handleContact,
+              icon: Icon(Icons.message_outlined, size: isTablet ? 18 : 16),
+              label: Text(
+                'Liên hệ',
+                style: TextStyle(fontSize: isTablet ? 14 : 12),
+              ),
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 16 : 12,
+                  vertical: isTablet ? 12 : 10,
+                ),
+              ),
+            ),
 
-String _formatTime(DateTime dateTime) {
-  final now = DateTime.now();
-  final difference = now.difference(dateTime);
+            SizedBox(width: isTablet ? 12 : 8),
 
-  if (difference.inMinutes < 1) {
-    return 'Vừa xong';
-  } else if (difference.inMinutes < 60) {
-    return '${difference.inMinutes} phút trước';
-  } else if (difference.inHours < 24) {
-    return '${difference.inHours} giờ trước';
-  } else if (difference.inDays < 7) {
-    return '${difference.inDays} ngày trước';
-  } else {
-    return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+            // Register Button
+            Expanded(
+              child: ElevatedButton(
+                onPressed:
+                    (_isRegistered || isFull || isExpired || _isLoading)
+                        ? null
+                        : _handleRegister,
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: isTablet ? 14 : 12),
+                  backgroundColor:
+                      _isRegistered
+                          ? Colors.green
+                          : (isFull || isExpired)
+                          ? theme.disabledColor
+                          : colorScheme.primary,
+                ),
+                child:
+                    _isLoading
+                        ? SizedBox(
+                          width: isTablet ? 20 : 16,
+                          height: isTablet ? 20 : 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.onPrimary,
+                            ),
+                          ),
+                        )
+                        : Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _isRegistered
+                                  ? Icons.check_circle
+                                  : isFull
+                                  ? Icons.close
+                                  : isExpired
+                                  ? Icons.schedule
+                                  : Icons.how_to_reg,
+                              size: isTablet ? 18 : 16,
+                            ),
+                            SizedBox(width: isTablet ? 8 : 6),
+                            Text(
+                              _isRegistered
+                                  ? 'Đã đăng ký'
+                                  : isFull
+                                  ? 'Đã đủ người'
+                                  : isExpired
+                                  ? 'Hết hạn'
+                                  : 'Đăng ký nhận',
+                              style: TextStyle(
+                                fontSize: isTablet ? 14 : 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
-}
 
-String _formatJoinDate(DateTime joinDate) {
-  final now = DateTime.now();
-  final difference = now.difference(joinDate);
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
 
-  if (difference.inDays < 30) {
-    return '${difference.inDays} ngày trước';
-  } else if (difference.inDays < 365) {
-    final months = (difference.inDays / 30).floor();
-    return '$months tháng trước';
-  } else {
-    final years = (difference.inDays / 365).floor();
-    return '$years năm trước';
+    if (difference.inMinutes < 1) {
+      return 'Vừa xong';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes} phút trước';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} giờ trước';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays} ngày trước';
+    } else {
+      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
+    }
   }
-}
 
-String _formatDeadline(DateTime deadline) {
-  final now = DateTime.now();
-  final difference = deadline.difference(now);
+  String _formatJoinDate(DateTime joinDate) {
+    final now = DateTime.now();
+    final difference = now.difference(joinDate);
 
-  if (difference.isNegative) {
-    return 'Đã hết hạn';
-  } else if (difference.inHours < 24) {
-    return '${difference.inHours} giờ nữa';
-  } else {
-    return '${difference.inDays} ngày nữa';
+    if (difference.inDays < 30) {
+      return '${difference.inDays} ngày trước';
+    } else if (difference.inDays < 365) {
+      final months = (difference.inDays / 30).floor();
+      return '$months tháng trước';
+    } else {
+      final years = (difference.inDays / 365).floor();
+      return '$years năm trước';
+    }
   }
-}
+
+  String _formatDeadline(DateTime deadline) {
+    final now = DateTime.now();
+    final difference = deadline.difference(now);
+
+    if (difference.isNegative) {
+      return 'Đã hết hạn';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours} giờ nữa';
+    } else {
+      return '${difference.inDays} ngày nữa';
+    }
+  }
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
 
@@ -133,12 +133,7 @@ class _NotificationScreenState extends State<NotificationScreen>
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi tải thông báo: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        context.showErrorSnackBar('Lỗi khi tải thông báo: $e');
       }
     }
   }
@@ -206,12 +201,7 @@ class _NotificationScreenState extends State<NotificationScreen>
               .toList();
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Đã đánh dấu tất cả thông báo là đã đọc'),
-        backgroundColor: Colors.green,
-      ),
-    );
+    context.showSuccessSnackBar('Đã đánh dấu tất cả thông báo là đã đọc');
   }
 
   // Thêm hàm để launch URL
@@ -225,22 +215,12 @@ class _NotificationScreenState extends State<NotificationScreen>
         );
       } else {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Không thể mở liên kết: $url'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          context.showErrorSnackBar('Không thể mở liên kết: $url');
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi mở liên kết: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        context.showErrorSnackBar('Lỗi khi mở liên kết: $e');
       }
     }
   }
@@ -300,19 +280,11 @@ class _NotificationScreenState extends State<NotificationScreen>
   }
 
   void _showSystemNotificationDialog(NotificationModel notification) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text(notification.title),
-            content: Text(notification.message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Đóng'),
-              ),
-            ],
-          ),
+    context.showInfoDialog(
+      title: notification.title,
+      content: notification.message,
+      buttonText: 'Đóng',
+      icon: Icons.info_outline,
     );
   }
 
@@ -349,7 +321,7 @@ class _NotificationScreenState extends State<NotificationScreen>
   }
 
   Color _getNotificationColor(String type) {
-    final theme = Theme.of(context);
+    final theme = context.theme;
     switch (type) {
       case 'item':
         return Colors.blue;
@@ -368,8 +340,7 @@ class _NotificationScreenState extends State<NotificationScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
+    final theme = context.theme;
     final unreadCount = _notifications.where((n) => !n.isRead).length;
 
     return Scaffold(
@@ -482,7 +453,7 @@ class _NotificationScreenState extends State<NotificationScreen>
   }
 
   Widget _buildNotificationList(List<NotificationModel> notifications) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
+    final isTablet = context.isTablet;
 
     if (notifications.isEmpty) {
       return Center(
@@ -524,8 +495,8 @@ class _NotificationScreenState extends State<NotificationScreen>
   }
 
   Widget _buildNotificationItem(NotificationModel notification) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    final theme = Theme.of(context);
+    final isTablet = context.isTablet;
+    final theme = context.theme;
 
     return Card(
       elevation: notification.isRead ? 1 : 3,
