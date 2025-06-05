@@ -1,101 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/config/theme_mode_provider.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
-import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
+import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
+import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
-class ProfileScreen extends ConsumerStatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
-
-  @override
-  ConsumerState<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  // Giả lập trạng thái đăng nhập
-  bool _isLoggedIn =
-      true; // Thay đổi thành false để test trạng thái chưa đăng nhập
-
-  // User data (giả lập)
-  final Map<String, String> _userData = {
-    'name': 'Nguyễn Văn An',
-    'email': 'nguyenvanan@email.com',
-    'phone': '+84 901 234 567',
-    'avatar': '', // URL ảnh đại diện
-  };
-
-  void _handleLogin() {
-    context.pushNamed('login');
-  }
-
-  void _handleLogout() {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: const Text('Đăng xuất'),
-            content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Hủy'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  setState(() {
-                    _isLoggedIn = false;
-                  });
-                  context.showSuccessSnackBar('Đã đăng xuất thành công');
-                },
-                child: const Text('Đăng xuất'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  void _handleEditProfile() {
-    context.pushNamed('edit-profile');
-  }
-
-  void _handleChangePassword() {
-    context.pushNamed('change-password');
-  }
-
-  void _handlePostHistory() {
-    context.pushNamed('post-history');
-  }
-
-  void _handleNotifications() {
-    context.pushNamed('notifications');
-  }
+class ProfileScreen extends HookConsumerWidget {
+  const ProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
 
-    // Watch the current theme mode from Riverpod
+    // Watch auth state và theme mode
+    final authState = ref.watch(authProvider);
     final currentThemeMode = ref.watch(themeModeProvider);
 
-    return Scaffold(
-      backgroundColor: colorScheme.background,
-      appBar: CustomAppBar(
-        title: 'Hồ sơ',
-        notificationCount: 3, // Số thông báo (có thể lấy từ provider/state)
-        onNotificationTap: _handleNotifications,
-        showBackButton: false, // Không hiển thị nút back vì đây là trang chính
-      ),
+    // Listen for auth state changes để show snackbar
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.successMessage != null) {
+        context.showSuccessSnackBar(next.successMessage!);
+        // Clear success message after showing
+        Future.microtask(() => ref.read(authProvider.notifier).clearSuccess());
+      }
+
+      if (next.failure != null) {
+        context.showErrorSnackBar(next.failure!.message);
+        // Clear error after showing
+        Future.microtask(() => ref.read(authProvider.notifier).clearError());
+      }
+    });
+
+    return SmartScaffold(
       body: SafeArea(
         top: false,
         child: SingleChildScrollView(
           child: Column(
             children: [
               // Header Section
-              _buildHeaderSection(isTablet, theme, colorScheme),
+              _buildHeaderSection(
+                isTablet: isTablet,
+                theme: theme,
+                colorScheme: colorScheme,
+                authState: authState,
+                context: context,
+              ),
 
               // Content Section
               Padding(
@@ -105,18 +57,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     maxWidth: isTablet ? 600 : double.infinity,
                   ),
                   child:
-                      _isLoggedIn
+                      authState.isLoggedIn
                           ? _buildLoggedInContent(
-                            isTablet,
-                            theme,
-                            colorScheme,
-                            currentThemeMode,
+                            isTablet: isTablet,
+                            theme: theme,
+                            colorScheme: colorScheme,
+                            currentThemeMode: currentThemeMode,
+                            authState: authState,
+                            context: context,
+                            ref: ref,
                           )
                           : _buildLoggedOutContent(
-                            isTablet,
-                            theme,
-                            colorScheme,
-                            currentThemeMode,
+                            isTablet: isTablet,
+                            theme: theme,
+                            colorScheme: colorScheme,
+                            currentThemeMode: currentThemeMode,
+                            authState: authState,
+                            context: context,
+                            ref: ref,
                           ),
                 ),
               ),
@@ -127,11 +85,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildHeaderSection(
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildHeaderSection({
+    required bool isTablet,
+    required ThemeData theme,
+    required ColorScheme colorScheme,
+    required AuthState authState,
+    required BuildContext context,
+  }) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -161,11 +121,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ),
               child:
-                  _isLoggedIn && _userData['avatar']!.isNotEmpty
+                  authState.isLoggedIn &&
+                          authState.user?.avatar != null &&
+                          authState.user!.avatar.isNotEmpty
                       ? ClipRRect(
                         borderRadius: BorderRadius.circular(48),
                         child: Image.network(
-                          _userData['avatar']!,
+                          authState.user!.avatar,
                           fit: BoxFit.cover,
                           errorBuilder:
                               (context, error, stackTrace) => Icon(
@@ -176,17 +138,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         ),
                       )
                       : Icon(
-                        _isLoggedIn ? Icons.person : Icons.person_outline,
+                        authState.isLoggedIn
+                            ? Icons.person
+                            : Icons.person_outline,
                         size: isTablet ? 50 : 40,
                         color: Colors.white,
                       ),
             ),
             SizedBox(height: isTablet ? 16 : 12),
 
-            // Name, Email and Phone
-            if (_isLoggedIn) ...[
+            // User info hoặc title
+            if (authState.isLoggedIn && authState.user != null) ...[
               Text(
-                _userData['name']!,
+                authState.user!.fullName,
                 style: theme.textTheme.headlineSmall?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
@@ -195,20 +159,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
               SizedBox(height: isTablet ? 8 : 4),
               Text(
-                _userData['email']!,
+                authState.user!.email,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: Colors.white.withOpacity(0.9),
                   fontSize: isTablet ? 16 : 14,
                 ),
               ),
-              SizedBox(height: isTablet ? 4 : 2),
-              Text(
-                _userData['phone']!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withOpacity(0.9),
-                  fontSize: isTablet ? 16 : 14,
+              if (authState.user!.phoneNumber.isNotEmpty) ...[
+                SizedBox(height: isTablet ? 4 : 2),
+                Text(
+                  authState.user!.phoneNumber,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: isTablet ? 16 : 14,
+                  ),
                 ),
-              ),
+              ],
             ] else ...[
               Text(
                 'Hồ sơ cá nhân',
@@ -225,16 +191,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildLoggedInContent(
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    ThemeMode currentThemeMode,
-  ) {
+  Widget _buildLoggedInContent({
+    required bool isTablet,
+    required ThemeData theme,
+    required ColorScheme colorScheme,
+    required ThemeMode currentThemeMode,
+    required AuthState authState,
+    required BuildContext context,
+    required WidgetRef ref,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(height: isTablet ? 24 : 16),
+
+        // Show loading indicator if auth operation is in progress
+        if (authState.isLoading) ...[
+          Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
+            ),
+          ),
+          SizedBox(height: isTablet ? 24 : 16),
+        ],
 
         // Menu Items
         _buildMenuItem(
@@ -244,7 +223,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           icon: Icons.edit_outlined,
           title: 'Chỉnh sửa thông tin',
           subtitle: 'Cập nhật thông tin cá nhân',
-          onTap: _handleEditProfile,
+          onTap: () => context.pushNamed('edit-profile'),
         ),
         SizedBox(height: isTablet ? 16 : 12),
 
@@ -255,7 +234,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           icon: Icons.lock_outline,
           title: 'Đổi mật khẩu',
           subtitle: 'Thay đổi mật khẩu đăng nhập',
-          onTap: _handleChangePassword,
+          onTap: () => context.pushNamed('change-password'),
         ),
         SizedBox(height: isTablet ? 16 : 12),
 
@@ -263,23 +242,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           isTablet: isTablet,
           theme: theme,
           colorScheme: colorScheme,
-          icon: Icons.history, // Gợi ý biểu tượng phù hợp hơn
+          icon: Icons.history,
           title: 'Lịch sử bài đăng',
           subtitle: 'Xem các bài đăng trước đây',
-          onTap: _handlePostHistory, // Đổi tên hàm cho đúng ý nghĩa
+          onTap: () => context.pushNamed('post-history'),
         ),
-
         SizedBox(height: isTablet ? 16 : 12),
 
         // Theme Settings
-        _buildThemeSettings(isTablet, theme, colorScheme, currentThemeMode),
+        _buildThemeSettings(
+          isTablet: isTablet,
+          theme: theme,
+          colorScheme: colorScheme,
+          currentThemeMode: currentThemeMode,
+          context: context,
+          ref: ref,
+        ),
         SizedBox(height: isTablet ? 32 : 24),
 
         // Logout Button
         SizedBox(
           height: isTablet ? 56 : 50,
           child: ElevatedButton.icon(
-            onPressed: _handleLogout,
+            onPressed:
+                authState.isLoading ? null : () => _handleLogout(context, ref),
             style: ElevatedButton.styleFrom(
               backgroundColor: colorScheme.error,
               foregroundColor: colorScheme.onError,
@@ -287,9 +273,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            icon: const Icon(Icons.logout),
+            icon:
+                authState.isLoading
+                    ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colorScheme.onError,
+                        ),
+                      ),
+                    )
+                    : const Icon(Icons.logout),
             label: Text(
-              'Đăng xuất',
+              authState.isLoading ? 'Đang đăng xuất...' : 'Đăng xuất',
               style: TextStyle(
                 fontSize: isTablet ? 18 : 16,
                 fontWeight: FontWeight.w600,
@@ -302,12 +300,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildLoggedOutContent(
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    ThemeMode currentThemeMode,
-  ) {
+  Widget _buildLoggedOutContent({
+    required bool isTablet,
+    required ThemeData theme,
+    required ColorScheme colorScheme,
+    required ThemeMode currentThemeMode,
+    required AuthState authState,
+    required BuildContext context,
+    required WidgetRef ref,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -354,7 +355,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 width: double.infinity,
                 height: isTablet ? 56 : 50,
                 child: ElevatedButton.icon(
-                  onPressed: _handleLogin,
+                  onPressed: () => context.pushNamed('login'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: colorScheme.primary,
                     foregroundColor: colorScheme.onPrimary,
@@ -378,7 +379,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         SizedBox(height: isTablet ? 32 : 24),
 
         // Theme Settings (available even when not logged in)
-        _buildThemeSettings(isTablet, theme, colorScheme, currentThemeMode),
+        _buildThemeSettings(
+          isTablet: isTablet,
+          theme: theme,
+          colorScheme: colorScheme,
+          currentThemeMode: currentThemeMode,
+          context: context,
+          ref: ref,
+        ),
         SizedBox(height: isTablet ? 32 : 24),
       ],
     );
@@ -455,12 +463,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _buildThemeSettings(
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    ThemeMode currentThemeMode,
-  ) {
+  Widget _buildThemeSettings({
+    required bool isTablet,
+    required ThemeData theme,
+    required ColorScheme colorScheme,
+    required ThemeMode currentThemeMode,
+    required BuildContext context,
+    required WidgetRef ref,
+  }) {
     final isDarkMode = currentThemeMode == ThemeMode.dark;
 
     return Container(
@@ -518,18 +528,41 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               await ref.read(themeModeProvider.notifier).toggleTheme();
 
               // Show feedback to user
-              if (mounted) {
-                context.showInfoSnackBar(
-                  value
-                      ? 'Đã chuyển sang chế độ tối'
-                      : 'Đã chuyển sang chế độ sáng',
-                );
-              }
+              context.showInfoSnackBar(
+                value
+                    ? 'Đã chuyển sang chế độ tối'
+                    : 'Đã chuyển sang chế độ sáng',
+              );
             },
             activeColor: colorScheme.primary,
           ),
         ],
       ),
+    );
+  }
+
+  void _handleLogout(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Đăng xuất'),
+            content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Hủy'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  // Call logout from AuthNotifier
+                  ref.read(authProvider.notifier).logout();
+                },
+                child: const Text('Đăng xuất'),
+              ),
+            ],
+          ),
     );
   }
 }

@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 
 class PostDetailScreen extends ConsumerStatefulWidget {
   final String postId;
 
-  const PostDetailScreen({Key? key, required this.postId}) : super(key: key);
+  const PostDetailScreen({super.key, required this.postId});
 
   @override
   ConsumerState<PostDetailScreen> createState() => _PostDetailScreenState();
@@ -55,7 +56,6 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
     'updatedAt': DateTime.now().subtract(const Duration(minutes: 30)),
     'status': 'urgent',
     'author': 'Nguyễn Văn A',
-    'authorID': 'user_001',
     'authorAvatar': 'https://dummyimage.com/100x100/4A90E2/FFFFFF&text=A',
     'authorPhone': '0901234567',
     'authorEmail': 'nguyenvana@email.com',
@@ -475,7 +475,7 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
               ),
               const SizedBox(height: 2),
               Text(
-                _formatDateTime(_post!['createdAt']),
+                TimeUtils.formatTimeAgo(_post!['createdAt']),
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurface.withOpacity(0.6),
                 ),
@@ -591,7 +591,7 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
           _buildDetailRow(
             Icons.access_time,
             'Cập nhật',
-            _formatDateTime(_post!['updatedAt']),
+            TimeUtils.formatTimeAgo(_post!['updatedAt']),
             theme,
           ),
         ],
@@ -800,7 +800,7 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      _formatDateTime(post['createdAt']),
+                      TimeUtils.formatTimeAgo(post['createdAt']),
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurface.withOpacity(0.6),
                       ),
@@ -867,24 +867,6 @@ Mình cam kết sẽ có hậu tạ xứng đáng cho người tìm thấy và t
         ),
       ),
     );
-  }
-
-  // Helper Methods
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 1) {
-      return 'Vừa xong';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} phút trước';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} giờ trước';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} ngày trước';
-    } else {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
-    }
   }
 
   Color _getPostTypeColor(String type) {

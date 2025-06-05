@@ -1,99 +1,195 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/domain/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/widgets/auth_divider_widget.dart';
 import 'package:trao_doi_do_app/presentation/widgets/password_strength_widget.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
+import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
-class ResetPasswordScreen extends StatefulWidget {
-  final String email;
+// State classes
+class PasswordStrengthState {
+  final bool hasMinLength;
+  final bool hasUppercase;
+  final bool hasLowercase;
+  final bool hasNumbers;
+  final bool hasSpecialChar;
 
-  const ResetPasswordScreen({Key? key, required this.email}) : super(key: key);
+  const PasswordStrengthState({
+    this.hasMinLength = false,
+    this.hasUppercase = false,
+    this.hasLowercase = false,
+    this.hasNumbers = false,
+    this.hasSpecialChar = false,
+  });
 
-  @override
-  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
+  bool get isStrong =>
+      hasMinLength && hasUppercase && hasLowercase && hasNumbers && hasSpecialChar;
+
+  PasswordStrengthState copyWith({
+    bool? hasMinLength,
+    bool? hasUppercase,
+    bool? hasLowercase,
+    bool? hasNumbers,
+    bool? hasSpecialChar,
+  }) {
+    return PasswordStrengthState(
+      hasMinLength: hasMinLength ?? this.hasMinLength,
+      hasUppercase: hasUppercase ?? this.hasUppercase,
+      hasLowercase: hasLowercase ?? this.hasLowercase,
+      hasNumbers: hasNumbers ?? this.hasNumbers,
+      hasSpecialChar: hasSpecialChar ?? this.hasSpecialChar,
+    );
+  }
 }
 
-class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  final _passwordFocusNode = FocusNode();
-  final _confirmPasswordFocusNode = FocusNode();
+class ResetPasswordState {
+  final bool isLoading;
+  final bool isSuccess;
+  final String? error;
 
-  bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
-  bool _isLoading = false;
-  bool _isSuccess = false;
+  const ResetPasswordState({
+    this.isLoading = false,
+    this.isSuccess = false,
+    this.error,
+  });
 
-  // Password strength indicators
-  bool _hasMinLength = false;
-  bool _hasUppercase = false;
-  bool _hasLowercase = false;
-  bool _hasNumbers = false;
-  bool _hasSpecialChar = false;
+  ResetPasswordState copyWith({
+    bool? isLoading,
+    bool? isSuccess,
+    String? error,
+  }) {
+    return ResetPasswordState(
+      isLoading: isLoading ?? this.isLoading,
+      isSuccess: isSuccess ?? this.isSuccess,
+      error: error ?? this.error,
+    );
+  }
+}
 
-  @override
-  void dispose() {
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    _passwordFocusNode.dispose();
-    _confirmPasswordFocusNode.dispose();
-    super.dispose();
+// Providers
+final passwordStrengthProvider = StateNotifierProvider<PasswordStrengthNotifier, PasswordStrengthState>((ref) {
+  return PasswordStrengthNotifier();
+});
+
+final resetPasswordProvider = StateNotifierProvider<ResetPasswordNotifier, ResetPasswordState>((ref) {
+  return ResetPasswordNotifier();
+});
+
+// Notifiers
+class PasswordStrengthNotifier extends StateNotifier<PasswordStrengthState> {
+  PasswordStrengthNotifier() : super(const PasswordStrengthState());
+
+  void checkPasswordStrength(String password) {
+    state = PasswordStrengthState(
+      hasMinLength: password.length >= 8,
+      hasUppercase: password.contains(RegExp(r'[A-Z]')),
+      hasLowercase: password.contains(RegExp(r'[a-z]')),
+      hasNumbers: password.contains(RegExp(r'[0-9]')),
+      hasSpecialChar: password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]')),
+    );
   }
 
-  void _checkPasswordStrength(String password) {
-    setState(() {
-      _hasMinLength = password.length >= 8;
-      _hasUppercase = password.contains(RegExp(r'[A-Z]'));
-      _hasLowercase = password.contains(RegExp(r'[a-z]'));
-      _hasNumbers = password.contains(RegExp(r'[0-9]'));
-      _hasSpecialChar = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
-    });
+  void reset() {
+    state = const PasswordStrengthState();
   }
+}
 
-  bool get _isPasswordStrong {
-    return _hasMinLength &&
-        _hasUppercase &&
-        _hasLowercase &&
-        _hasNumbers &&
-        _hasSpecialChar;
-  }
+class ResetPasswordNotifier extends StateNotifier<ResetPasswordState> {
+  ResetPasswordNotifier() : super(const ResetPasswordState());
 
-  void _handleResetPassword() async {
-    if (_formKey.currentState!.validate() && _isPasswordStrong) {
-      setState(() => _isLoading = true);
+  Future<void> resetPassword(String email, String password) async {
+    state = state.copyWith(isLoading: true, error: null);
 
+    try {
       // Giả lập API call reset password
       await Future.delayed(const Duration(seconds: 2));
 
-      setState(() {
-        _isLoading = false;
-        _isSuccess = true;
-      });
-
-      // Hiển thị thông báo thành công
-      context.showSuccessSnackBar('Đặt lại mật khẩu thành công!');
-
-      // Tự động chuyển về màn hình đăng nhập sau 3 giây
-      Future.delayed(const Duration(seconds: 3), () {
-        if (mounted) {
-          context.goNamed('login');
-        }
-      });
+      state = state.copyWith(isLoading: false, isSuccess: true);
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Có lỗi xảy ra khi đặt lại mật khẩu',
+      );
     }
   }
 
-  void _handleBackToLogin() {
-    context.goNamed('login');
+  void reset() {
+    state = const ResetPasswordState();
   }
+}
+
+class ResetPasswordScreen extends HookConsumerWidget {
+  final String email;
+
+  const ResetPasswordScreen({super.key, required this.email});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Hooks
+    final formKey = useMemoized(() => GlobalKey<FormState>());
+    final passwordController = useTextEditingController();
+    final confirmPasswordController = useTextEditingController();
+    final passwordFocusNode = useFocusNode();
+    final confirmPasswordFocusNode = useFocusNode();
+    
+    final isPasswordVisible = useState(false);
+    final isConfirmPasswordVisible = useState(false);
+
+    // Providers
+    final passwordStrength = ref.watch(passwordStrengthProvider);
+    final resetPasswordState = ref.watch(resetPasswordProvider);
+
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
     final isDark = context.isDarkMode;
+
+    // Effects
+    useEffect(() {
+      void onPasswordChanged() {
+        ref.read(passwordStrengthProvider.notifier)
+            .checkPasswordStrength(passwordController.text);
+      }
+
+      passwordController.addListener(onPasswordChanged);
+      return () => passwordController.removeListener(onPasswordChanged);
+    }, [passwordController]);
+
+    useEffect(() {
+      if (resetPasswordState.isSuccess) {
+        context.showSuccessSnackBar('Đặt lại mật khẩu thành công!');
+        
+        // Tự động chuyển về màn hình đăng nhập sau 3 giây
+        Future.delayed(const Duration(seconds: 3), () {
+          if (context.mounted) {
+            context.goNamed('login');
+          }
+        });
+      }
+      return null;
+    }, [resetPasswordState.isSuccess]);
+
+    useEffect(() {
+      if (resetPasswordState.error != null) {
+        context.showErrorSnackBar(resetPasswordState.error!);
+      }
+      return null;
+    }, [resetPasswordState.error]);
+
+    // Methods
+    void handleResetPassword() async {
+      if (formKey.currentState!.validate() && passwordStrength.isStrong) {
+        await ref.read(resetPasswordProvider.notifier)
+            .resetPassword(email, passwordController.text);
+      }
+    }
+
+    void handleBackToLogin() {
+      context.goNamed('login');
+    }
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -101,26 +197,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
-      child: Scaffold(
-        backgroundColor: colorScheme.background,
-        appBar: AppBar(
-          backgroundColor: colorScheme.primary,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              if (context.canPop) {
-                context.pop();
-              } else {
-                context.goNamed('login');
-              }
-            },
-          ),
-          systemOverlayStyle: const SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.light,
-          ),
-        ),
+      child: SmartScaffold(
+        showBackButton: true,
+        appBarType: AppBarType.minimal,
         body: SafeArea(
           top: false,
           child: SingleChildScrollView(
@@ -151,7 +230,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Icon(
-                            _isSuccess
+                            resetPasswordState.isSuccess
                                 ? Icons.check_circle_outline
                                 : Icons.lock_open_outlined,
                             size: isTablet ? 50 : 40,
@@ -160,7 +239,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                         SizedBox(height: isTablet ? 24 : 16),
                         Text(
-                          _isSuccess ? 'Thành công!' : 'Đặt lại mật khẩu',
+                          resetPasswordState.isSuccess ? 'Thành công!' : 'Đặt lại mật khẩu',
                           style: theme.textTheme.headlineMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -169,7 +248,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                         SizedBox(height: isTablet ? 12 : 8),
                         Text(
-                          _isSuccess
+                          resetPasswordState.isSuccess
                               ? 'Mật khẩu đã được cập nhật thành công'
                               : 'Tạo mật khẩu mới cho tài khoản của bạn',
                           style: theme.textTheme.bodyLarge?.copyWith(
@@ -189,10 +268,22 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                     constraints: BoxConstraints(
                       maxWidth: isTablet ? 500 : double.infinity,
                     ),
-                    child:
-                        _isSuccess
-                            ? _buildSuccessContent()
-                            : _buildFormContent(),
+                    child: resetPasswordState.isSuccess
+                        ? _buildSuccessContent(context, handleBackToLogin)
+                        : _buildFormContent(
+                            context,
+                            formKey,
+                            passwordController,
+                            confirmPasswordController,
+                            passwordFocusNode,
+                            confirmPasswordFocusNode,
+                            isPasswordVisible,
+                            isConfirmPasswordVisible,
+                            passwordStrength,
+                            resetPasswordState,
+                            handleResetPassword,
+                            handleBackToLogin,
+                          ),
                   ),
                 ),
               ],
@@ -203,13 +294,26 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildFormContent() {
+  Widget _buildFormContent(
+    BuildContext context,
+    GlobalKey<FormState> formKey,
+    TextEditingController passwordController,
+    TextEditingController confirmPasswordController,
+    FocusNode passwordFocusNode,
+    FocusNode confirmPasswordFocusNode,
+    ValueNotifier<bool> isPasswordVisible,
+    ValueNotifier<bool> isConfirmPasswordVisible,
+    PasswordStrengthState passwordStrength,
+    ResetPasswordState resetPasswordState,
+    VoidCallback handleResetPassword,
+    VoidCallback handleBackToLogin,
+  ) {
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
 
     return Form(
-      key: _formKey,
+      key: formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -247,7 +351,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
                       SizedBox(height: 4),
                       Text(
-                        widget.email,
+                        email,
                         style: TextStyle(
                           color: colorScheme.primary,
                           fontSize: isTablet ? 16 : 14,
@@ -263,85 +367,91 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           SizedBox(height: isTablet ? 32 : 24),
 
           // New Password input
-          TextFormField(
-            controller: _passwordController,
-            focusNode: _passwordFocusNode,
-            obscureText: !_isPasswordVisible,
-            decoration: CustomInputDecoration.build(
-              context,
-              label: 'Mật khẩu mới',
-              hint: 'Nhập mật khẩu mới',
-              icon: Icons.lock_outline,
-              suffix: IconButton(
-                icon: Icon(
-                  _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
-                  color: theme.hintColor,
+          ValueListenableBuilder<bool>(
+            valueListenable: isPasswordVisible,
+            builder: (context, visible, _) {
+              return TextFormField(
+                controller: passwordController,
+                focusNode: passwordFocusNode,
+                obscureText: !visible,
+                decoration: CustomInputDecoration.build(
+                  context,
+                  label: 'Mật khẩu mới',
+                  hint: 'Nhập mật khẩu mới',
+                  icon: Icons.lock_outline,
+                  suffix: IconButton(
+                    icon: Icon(
+                      visible ? Icons.visibility_off : Icons.visibility,
+                      color: theme.hintColor,
+                    ),
+                    onPressed: () {
+                      isPasswordVisible.value = !isPasswordVisible.value;
+                    },
+                  ),
                 ),
-                onPressed: () {
-                  setState(() => _isPasswordVisible = !_isPasswordVisible);
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng nhập mật khẩu mới';
+                  }
+                  if (!passwordStrength.isStrong) {
+                    return 'Mật khẩu chưa đủ mạnh';
+                  }
+                  return null;
                 },
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Vui lòng nhập mật khẩu mới';
-              }
-              if (!_isPasswordStrong) {
-                return 'Mật khẩu chưa đủ mạnh';
-              }
-              return null;
+                onFieldSubmitted: (_) => confirmPasswordFocusNode.requestFocus(),
+              );
             },
-            onChanged: _checkPasswordStrength,
-            onFieldSubmitted: (_) => _confirmPasswordFocusNode.requestFocus(),
           ),
           SizedBox(height: isTablet ? 16 : 12),
 
-          if (_passwordController.text.isNotEmpty) ...[
+          if (passwordController.text.isNotEmpty) ...[
             // Password strength indicator
             PasswordStrengthWidget(
-              password: _passwordController.text,
-              hasMinLength: _hasMinLength,
-              hasUppercase: _hasUppercase,
-              hasLowercase: _hasLowercase,
-              hasNumbers: _hasNumbers,
-              hasSpecialChar: _hasSpecialChar,
+              password: passwordController.text,
+              hasMinLength: passwordStrength.hasMinLength,
+              hasUppercase: passwordStrength.hasUppercase,
+              hasLowercase: passwordStrength.hasLowercase,
+              hasNumbers: passwordStrength.hasNumbers,
+              hasSpecialChar: passwordStrength.hasSpecialChar,
             ),
+            SizedBox(height: isTablet ? 16 : 12),
           ],
+
           // Confirm Password input
-          TextFormField(
-            controller: _confirmPasswordController,
-            focusNode: _confirmPasswordFocusNode,
-            obscureText: !_isConfirmPasswordVisible,
-            decoration: CustomInputDecoration.build(
-              context,
-              label: 'Xác nhận mật khẩu',
-              hint: 'Nhập lại mật khẩu mới',
-              icon: Icons.lock_outline,
-              suffix: IconButton(
-                icon: Icon(
-                  _isConfirmPasswordVisible
-                      ? Icons.visibility_off
-                      : Icons.visibility,
-                  color: theme.hintColor,
+          ValueListenableBuilder<bool>(
+            valueListenable: isConfirmPasswordVisible,
+            builder: (context, visible, _) {
+              return TextFormField(
+                controller: confirmPasswordController,
+                focusNode: confirmPasswordFocusNode,
+                obscureText: !visible,
+                decoration: CustomInputDecoration.build(
+                  context,
+                  label: 'Xác nhận mật khẩu',
+                  hint: 'Nhập lại mật khẩu mới',
+                  icon: Icons.lock_outline,
+                  suffix: IconButton(
+                    icon: Icon(
+                      visible ? Icons.visibility_off : Icons.visibility,
+                      color: theme.hintColor,
+                    ),
+                    onPressed: () {
+                      isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
+                    },
+                  ),
                 ),
-                onPressed: () {
-                  setState(
-                    () =>
-                        _isConfirmPasswordVisible = !_isConfirmPasswordVisible,
-                  );
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Vui lòng xác nhận mật khẩu';
+                  }
+                  if (value != passwordController.text) {
+                    return 'Mật khẩu xác nhận không khớp';
+                  }
+                  return null;
                 },
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Vui lòng xác nhận mật khẩu';
-              }
-              if (value != _passwordController.text) {
-                return 'Mật khẩu xác nhận không khớp';
-              }
-              return null;
+                onFieldSubmitted: (_) => handleResetPassword(),
+              );
             },
-            onFieldSubmitted: (_) => _handleResetPassword(),
           ),
           SizedBox(height: isTablet ? 32 : 24),
 
@@ -375,10 +485,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                 ),
                 SizedBox(height: isTablet ? 12 : 8),
                 Text(
-                  // '• Sử dụng mật khẩu duy nhất cho mỗi tài khoản\n'
                   '• Không chia sẻ mật khẩu với người khác\n'
                   '• Thay đổi mật khẩu định kỳ để đảm bảo bảo mật\n',
-                  // '• Sử dụng trình quản lý mật khẩu'
                   style: TextStyle(
                     color: theme.hintColor,
                     fontSize: isTablet ? 14 : 12,
@@ -394,10 +502,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           SizedBox(
             height: isTablet ? 56 : 50,
             child: ElevatedButton(
-              onPressed:
-                  (_isLoading || !_isPasswordStrong)
-                      ? null
-                      : _handleResetPassword,
+              onPressed: (resetPasswordState.isLoading || !passwordStrength.isStrong)
+                  ? null
+                  : handleResetPassword,
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
@@ -405,25 +512,24 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child:
-                  _isLoading
-                      ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                        ),
-                      )
-                      : Text(
-                        'Đặt lại mật khẩu',
-                        style: TextStyle(
-                          fontSize: isTablet ? 18 : 16,
-                          fontWeight: FontWeight.w600,
+              child: resetPasswordState.isLoading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.white,
                         ),
                       ),
+                    )
+                  : Text(
+                      'Đặt lại mật khẩu',
+                      style: TextStyle(
+                        fontSize: isTablet ? 18 : 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
             ),
           ),
           SizedBox(height: isTablet ? 32 : 24),
@@ -436,7 +542,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           AuthLinkWidget(
             question: 'Nhớ mật khẩu cũ? ',
             linkText: 'Đăng nhập',
-            onTap: _handleBackToLogin,
+            onTap: handleBackToLogin,
           ),
           SizedBox(height: isTablet ? 40 : 32),
         ],
@@ -444,7 +550,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     );
   }
 
-  Widget _buildSuccessContent() {
+  Widget _buildSuccessContent(BuildContext context, VoidCallback handleBackToLogin) {
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
@@ -532,7 +638,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         SizedBox(
           height: isTablet ? 56 : 50,
           child: ElevatedButton(
-            onPressed: _handleBackToLogin,
+            onPressed: handleBackToLogin,
             style: ElevatedButton.styleFrom(
               backgroundColor: colorScheme.primary,
               foregroundColor: colorScheme.onPrimary,

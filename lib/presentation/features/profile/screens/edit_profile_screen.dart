@@ -1,116 +1,116 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/domain/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/edit_profile/avatar_section.dart';
-import 'package:trao_doi_do_app/presentation/features/profile/widgets/edit_profile/image_picker_bottom_sheet.dart';
+import 'package:trao_doi_do_app/presentation/widgets/image_picker_bottom_sheet.dart';
 import 'dart:io';
-import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
+import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
+import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
-class EditProfileScreen extends StatefulWidget {
-  const EditProfileScreen({Key? key}) : super(key: key);
-
-  @override
-  State<EditProfileScreen> createState() => _EditProfileScreenState();
-}
-
-class _EditProfileScreenState extends State<EditProfileScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _majorController = TextEditingController();
-
-  bool _isLoading = false;
-  File? _selectedImage;
-  final ImagePicker _picker = ImagePicker();
-
-  final Map<String, String> _currentUserData = {
-    'name': 'Nguyễn Văn An',
-    'email': 'nguyenvanan@email.com',
-    'phone': '0909691405',
-    'major': 'Công nghệ thông tin',
-    'avatar': '',
-  };
+class EditProfileScreen extends HookConsumerWidget {
+  const EditProfileScreen({super.key});
 
   @override
-  void initState() {
-    super.initState();
-    _nameController.text = _currentUserData['name'] ?? '';
-    _phoneController.text = _currentUserData['phone'] ?? '';
-    _majorController.text = _currentUserData['major'] ?? '';
-  }
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Hooks for form controllers
+    final nameController = useTextEditingController();
+    final phoneController = useTextEditingController();
+    final majorController = useTextEditingController();
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _phoneController.dispose();
-    _majorController.dispose();
-    super.dispose();
-  }
+    // Hooks for state management
+    final formKey = useMemoized(() => GlobalKey<FormState>());
+    final isLoading = useState(false);
+    final selectedImage = useState<File?>(null);
+    final picker = useMemoized(() => ImagePicker());
 
-  Future<void> _pickImage() async {
-    try {
-      await context.showAppBottomSheet(
-        child: ImagePickerBottomSheet(
-          picker: _picker,
-          onImageSelected: (image) {
-            setState(() {
-              _selectedImage = image;
-            });
-          },
-        ),
-      );
-    } catch (e) {
-      context.showErrorSnackBar('Lỗi khi chọn ảnh: $e');
-    }
-  }
+    // Watch auth state to get user data
+    final authState = ref.watch(authProvider);
 
-  Future<void> _handleSave() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+    // Initialize controllers with user data
+    useEffect(() {
+      if (authState.user != null) {
+        nameController.text = authState.user!.fullName;
+        phoneController.text = authState.user!.phoneNumber;
+        majorController.text = authState.user!.major;
+      }
+      return null;
+    }, [authState.user]);
 
-      try {
-        await Future.delayed(const Duration(seconds: 2));
-        if (mounted) {
-          context.showSuccessSnackBar('Cập nhật thông tin thành công');
+    // Listen for auth state changes
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.successMessage != null) {
+        context.showSuccessSnackBar(next.successMessage!);
+        // Clear success message and navigate back
+        Future.microtask(() {
+          ref.read(authProvider.notifier).clearSuccess();
           context.pop();
-        }
+        });
+      }
+
+      if (next.failure != null) {
+        context.showErrorSnackBar(next.failure!.message);
+        // Clear error after showing
+        Future.microtask(() => ref.read(authProvider.notifier).clearError());
+      }
+    });
+
+    Future<void> pickImage() async {
+      try {
+        await context.showAppBottomSheet(
+          child: ImagePickerBottomSheet(
+            title: 'Chọn ảnh đại diện',
+            picker: picker,
+            onImageSelected: (image) {
+              selectedImage.value = image;
+            },
+          ),
+        );
       } catch (e) {
-        if (mounted) {
+        context.showErrorSnackBar('Lỗi khi chọn ảnh: $e');
+      }
+    }
+
+    Future<void> handleSave() async {
+      if (formKey.currentState!.validate()) {
+        isLoading.value = true;
+
+        try {
+          // Call the auth provider to update profile
+          // await ref.read(authProvider.notifier).updateProfile(
+          //   fullName: nameController.text.trim(),
+          //   phoneNumber: phoneController.text.trim(),
+          //   major: majorController.text.trim(),
+          //   avatarFile: selectedImage.value,
+          // );
+        } catch (e) {
           context.showErrorSnackBar('Lỗi khi cập nhật: $e');
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
+        } finally {
+          isLoading.value = false;
         }
       }
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
     final isTablet = context.isTablet;
 
-    return Scaffold(
-      backgroundColor: colorScheme.background,
-      appBar: CustomAppBar(
-        title: 'Chỉnh sửa thông tin',
-        showBackButton: true,
-        onBackPressed: () => context.pop(),
-        notificationCount: 3,
-        onNotificationTap: () => context.pushNamed('notifications'),
-      ),
+    return SmartScaffold(
+      title: 'Chỉnh sửa thông tin',
+      appBarType: AppBarType.standard,
+      showBackButton: true,
       body: SafeArea(
         top: false,
         child: SingleChildScrollView(
           child: Column(
             children: [
               AvatarSection(
-                selectedImage: _selectedImage,
-                currentAvatarUrl: _currentUserData['avatar'] ?? '',
-                onPickImage: _pickImage,
+                selectedImage: selectedImage.value,
+                currentAvatarUrl: authState.user?.avatar ?? '',
+                onPickImage: pickImage,
               ),
               Padding(
                 padding: EdgeInsets.all(isTablet ? 32 : 24),
@@ -119,13 +119,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     maxWidth: isTablet ? 600 : double.infinity,
                   ),
                   child: Form(
-                    key: _formKey,
+                    key: formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         SizedBox(height: isTablet ? 32 : 24),
+
+                        // Show loading indicator if auth operation is in progress
+                        if (authState.isLoading) ...[
+                          Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                          SizedBox(height: isTablet ? 24 : 16),
+                        ],
+
                         TextFormField(
-                          controller: _nameController,
+                          controller: nameController,
+                          enabled: !authState.isLoading && !isLoading.value,
                           decoration: CustomInputDecoration.build(
                             context,
                             label: 'Họ và tên',
@@ -143,8 +157,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           },
                         ),
                         SizedBox(height: isTablet ? 24 : 20),
+
                         TextFormField(
-                          initialValue: _currentUserData['email'],
+                          initialValue: authState.user?.email ?? '',
                           enabled: false,
                           decoration: CustomInputDecoration.buildDisabled(
                             context,
@@ -155,8 +170,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           ),
                         ),
                         SizedBox(height: isTablet ? 24 : 20),
+
                         TextFormField(
-                          controller: _phoneController,
+                          controller: phoneController,
+                          enabled: !authState.isLoading && !isLoading.value,
                           keyboardType: TextInputType.phone,
                           inputFormatters: [
                             FilteringTextInputFormatter.digitsOnly,
@@ -180,8 +197,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           },
                         ),
                         SizedBox(height: isTablet ? 24 : 20),
+
                         TextFormField(
-                          controller: _majorController,
+                          controller: majorController,
+                          enabled: !authState.isLoading && !isLoading.value,
                           decoration: CustomInputDecoration.build(
                             context,
                             label: 'Ngành học',
@@ -196,10 +215,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           },
                         ),
                         SizedBox(height: isTablet ? 40 : 32),
+
                         SizedBox(
                           height: isTablet ? 56 : 50,
                           child: ElevatedButton.icon(
-                            onPressed: _isLoading ? null : _handleSave,
+                            onPressed:
+                                (authState.isLoading || isLoading.value)
+                                    ? null
+                                    : handleSave,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: colorScheme.primary,
                               foregroundColor: colorScheme.onPrimary,
@@ -208,7 +231,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                               ),
                             ),
                             icon:
-                                _isLoading
+                                (authState.isLoading || isLoading.value)
                                     ? const SizedBox(
                                       width: 20,
                                       height: 20,
@@ -222,7 +245,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     )
                                     : const Icon(Icons.save),
                             label: Text(
-                              _isLoading ? 'Đang lưu...' : 'Lưu thay đổi',
+                              (authState.isLoading || isLoading.value)
+                                  ? 'Đang lưu...'
+                                  : 'Lưu thay đổi',
                               style: TextStyle(
                                 fontSize: isTablet ? 18 : 16,
                                 fontWeight: FontWeight.w600,

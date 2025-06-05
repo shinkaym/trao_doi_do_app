@@ -48,66 +48,6 @@ class NavBarConstants {
       index: 4,
     ),
   ];
-
-  // Map route patterns với parent route để xử lý sub-routes
-  static const Map<String, String> subRouteMapping = {
-    // Posts related routes
-    '/posts/post-detail': '/posts',
-
-    // Warehouse related routes
-    '/warehouse/item-detail': '/warehouse',
-
-    // Interests related routes
-    '/interests/chat': '/interests',
-
-    // Profile related routes
-    '/profile/edit': '/profile',
-    '/profile/change-password': '/profile',
-    '/profile/requests': '/profile',
-    '/profile/requests/detail': '/profile',
-  };
-
-  // Routes không thuộc bottom navigation
-  static const List<String> excludedRoutes = [
-    '/splash',
-    '/onboarding',
-    '/login',
-    '/register',
-    '/forgot-password',
-    '/reset-password',
-    '/notifications',
-  ];
-
-  // Helper method để get parent route
-  static String getParentRoute(String currentRoute) {
-    // Kiểm tra sub-route mapping trước
-    for (final entry in subRouteMapping.entries) {
-      if (currentRoute.startsWith(entry.key)) {
-        return entry.value;
-      }
-    }
-
-    // Kiểm tra main routes
-    for (final route in routes) {
-      if (currentRoute.startsWith(route)) {
-        return route;
-      }
-    }
-
-    return '/posts'; // Default fallback
-  }
-
-  // Helper method để get navigation index
-  static int getNavigationIndex(String currentRoute) {
-    final parentRoute = getParentRoute(currentRoute);
-    final index = routes.indexOf(parentRoute);
-    return index >= 0 ? index : 0;
-  }
-
-  // Helper method để check nếu route có bottom navigation
-  static bool hasBottomNavigation(String route) {
-    return !excludedRoutes.any((excluded) => route.startsWith(excluded));
-  }
 }
 
 class NavigationItemConfig {
@@ -126,10 +66,4 @@ class NavigationItemConfig {
     required this.index,
     this.isSpecial = false,
   });
-
-  // Helper method để check nếu item này active
-  bool isActive(String currentRoute) {
-    final parentRoute = NavBarConstants.getParentRoute(currentRoute);
-    return parentRoute == route;
-  }
 }

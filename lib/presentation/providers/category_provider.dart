@@ -41,9 +41,16 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
 
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, failure: failure),
-      (categories) =>
-          state = state.copyWith(isLoading: false, categories: categories),
+      (categoriesResult) =>
+          state = state.copyWith(
+            isLoading: false,
+            categories: categoriesResult.categories,
+          ),
     );
+  }
+
+  void refresh() {
+    getCategories();
   }
 }
 

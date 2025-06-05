@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
 
 // Model cho tin nhắn
@@ -57,8 +58,8 @@ class ChatInfo {
 class InterestChatScreen extends ConsumerStatefulWidget {
   final String interestId;
 
-  const InterestChatScreen({Key? key, required this.interestId})
-    : super(key: key);
+  const InterestChatScreen({super.key, required this.interestId})
+   ;
 
   @override
   ConsumerState<InterestChatScreen> createState() => _InterestChatScreenState();
@@ -593,7 +594,7 @@ class _InterestChatScreenState extends ConsumerState<InterestChatScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      _formatMessageTime(message.createdAt),
+                      TimeUtils.formatTimeAgo(message.createdAt),
                       style: TextStyle(
                         fontSize: isTablet ? 11 : 10,
                         color: theme.hintColor,
@@ -897,48 +898,33 @@ class _InterestChatScreenState extends ConsumerState<InterestChatScreen> {
     required String label,
     required VoidCallback onTap,
   }) {
+    final colorScheme = context.colorScheme;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(
-            context,
-          ).colorScheme.primaryContainer.withOpacity(0.1),
+          color: colorScheme.primaryContainer.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           children: [
-            Icon(icon, size: 32, color: Theme.of(context).colorScheme.primary),
+            Icon(icon, size: 32, color: colorScheme.primary),
             const SizedBox(height: 8),
             Text(
               label,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: Theme.of(context).colorScheme.onSurface,
+                color: colorScheme.onSurface,
               ),
             ),
           ],
         ),
       ),
     );
-  }
-
-  String _formatMessageTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 0) {
-      return '${dateTime.day}/${dateTime.month}';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}p';
-    } else {
-      return 'Vừa xong';
-    }
   }
 
   IconData _getPostTypeIcon(String type) {

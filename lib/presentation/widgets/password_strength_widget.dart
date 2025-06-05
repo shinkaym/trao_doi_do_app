@@ -10,14 +10,14 @@ class PasswordStrengthWidget extends StatelessWidget {
   final bool hasSpecialChar;
 
   const PasswordStrengthWidget({
-    Key? key,
+    super.key,
     required this.password,
     required this.hasMinLength,
     required this.hasUppercase,
     required this.hasLowercase,
     required this.hasNumbers,
     required this.hasSpecialChar,
-  }) : super(key: key);
+  });
 
   double get _passwordStrengthScore {
     int score = 0;

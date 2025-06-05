@@ -5,4 +5,6 @@ class StorageKeys {
   static const String userInfo = 'user_info';
   static const String categories = 'categories';
   static const String items = 'items';
+  static const onboardingCompleted = 'onboardingCompleted';
+  static const settings = 'settings';
 }

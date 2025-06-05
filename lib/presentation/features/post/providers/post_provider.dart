@@ -25,6 +25,7 @@ class PostState {
   final String lostLocation;
   final String lostDate;
   final String reward;
+  final String category;
   // Common for foundItem and findLost
   final int categoryID;
 
@@ -43,6 +44,7 @@ class PostState {
     this.lostLocation = '',
     this.lostDate = '',
     this.reward = '',
+    this.category = '',
     this.categoryID = 0,
   });
 
@@ -61,6 +63,7 @@ class PostState {
     String? lostLocation,
     String? lostDate,
     String? reward,
+    String? category,
     int? categoryID,
   }) {
     return PostState(
@@ -78,6 +81,7 @@ class PostState {
       lostLocation: lostLocation ?? this.lostLocation,
       lostDate: lostDate ?? this.lostDate,
       reward: reward ?? this.reward,
+      category: category ?? this.category,
       categoryID: categoryID ?? this.categoryID,
     );
   }
@@ -85,31 +89,24 @@ class PostState {
   // Helper method to generate info JSON string based on type
   String get infoJson {
     switch (type) {
-      case 1: // giveAway
-        return jsonEncode(GiveAwayInfo(description: description).toJson());
       case 2: // foundItem
         return jsonEncode(
           FoundItemInfo(
-            description: description,
             foundLocation: foundLocation,
             foundDate: foundDate,
-            categoryID: categoryID,
           ).toJson(),
         );
       case 3: // findLost
         return jsonEncode(
           FindLostInfo(
-            description: description,
             lostLocation: lostLocation,
             lostDate: lostDate,
-            categoryID: categoryID,
             reward: reward,
+            category: category,
           ).toJson(),
         );
-      case 4: // freePost
-        return jsonEncode(FreePostInfo(description: description).toJson());
       default:
-        return jsonEncode({'description': description});
+        return '{}';
     }
   }
 }
@@ -152,6 +149,10 @@ class PostNotifier extends StateNotifier<PostState> {
 
   void updateReward(String reward) {
     state = state.copyWith(reward: reward);
+  }
+
+  void updateCategory(String category) {
+    state = state.copyWith(category: category);
   }
 
   // For foundItem and findLost
@@ -200,10 +201,11 @@ class PostNotifier extends StateNotifier<PostState> {
     state = state.copyWith(isLoading: true, failure: null);
 
     final post = Post(
-      authorID: 1, // Default to 1 as specified
       title: state.title,
+      description: state.description,
       info: state.infoJson, // Use the generated JSON string
       type: state.type,
+      categoryID: (state.type == 3) ? state.categoryID : null,
       images: state.images,
       newItems: state.newItems,
       oldItems: state.oldItems,
@@ -218,7 +220,7 @@ class PostNotifier extends StateNotifier<PostState> {
           isLoading: false,
           successMessage: 'Đăng tin thành công!',
         );
-        _ref.read(itemProvider.notifier).getItems(refresh: true);
+        _ref.read(itemsListProvider.notifier).loadItems(refresh: true);
       },
     );
   }

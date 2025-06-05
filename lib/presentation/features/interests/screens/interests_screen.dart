@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
-import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
+import 'package:trao_doi_do_app/core/utils/time_utils.dart';
+import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
-// Model cho người quan tâm
 class InterestedUser {
   final String id;
   final String interestId; // Thêm dòng này
@@ -27,7 +27,6 @@ class InterestedPost {
   final String interestId; // Thêm dòng này
   final String title;
   final String author;
-  final String authorID;
   final String authorAvatar;
   final String type;
   final String location;
@@ -41,7 +40,6 @@ class InterestedPost {
     required this.interestId, // Thêm dòng này
     required this.title,
     required this.author,
-    required this.authorID,
     required this.authorAvatar,
     required this.type,
     required this.location,
@@ -76,7 +74,7 @@ class PostWithInterests {
 }
 
 class InterestsScreen extends ConsumerStatefulWidget {
-  const InterestsScreen({Key? key}) : super(key: key);
+  const InterestsScreen({super.key});
 
   @override
   ConsumerState<InterestsScreen> createState() => _InterestsScreenState();
@@ -94,7 +92,6 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
       interestId: 'interest_1',
       title: 'Tìm chiếc ví da màu nâu bị mất tại quận 1',
       author: 'Nguyễn Văn A',
-      authorID: 'user1',
       authorAvatar: '',
       type: 'findLost',
       location: 'Quận 1, TP.HCM',
@@ -108,7 +105,6 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
       interestId: 'interest_2',
       title: 'Nhặt được điện thoại iPhone tại công viên Tao Đàn',
       author: 'Trần Thị B',
-      authorID: 'user2',
       authorAvatar: '',
       type: 'foundItem',
       location: 'Quận 1, TP.HCM',
@@ -122,7 +118,6 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
       interestId: 'interest_3',
       title: 'Tặng bộ sách giáo khoa lớp 12 đầy đủ',
       author: 'Lê Văn C',
-      authorID: 'user3',
       authorAvatar: '',
       type: 'giveAway',
       location: 'Quận 3, TP.HCM',
@@ -136,7 +131,6 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
       interestId: 'interest_4',
       title: 'Tặng xe đạp cũ còn dùng được',
       author: 'Võ Văn F',
-      authorID: 'user4',
       authorAvatar: '',
       type: 'giveAway',
       location: 'Quận 10, TP.HCM',
@@ -274,24 +268,13 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
     }
   }
 
-  void _handleNotifications() {
-    context.pushNamed('notifications');
-  }
-
   @override
   Widget build(BuildContext context) {
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.background,
-      appBar: CustomAppBar(
-        title: 'Quan tâm',
-        notificationCount: 5,
-        onNotificationTap: _handleNotifications,
-        showBackButton: false,
-      ),
+    return SmartScaffold(
       body: SafeArea(
         top: false,
         child: Column(
@@ -627,7 +610,7 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
 
                     // Interested time
                     Text(
-                      'Quan tâm ${_formatTimeAgo(post.interestedAt)}',
+                      'Quan tâm ${TimeUtils.formatTimeAgo(post.interestedAt)}',
                       style: TextStyle(
                         fontSize: isTablet ? 11 : 10,
                         color: theme.hintColor,
@@ -814,7 +797,7 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
 
                         // Location and created time
                         Text(
-                          '${post.location} • ${_formatTimeAgo(post.createdAt)}',
+                          '${post.location} • ${TimeUtils.formatTimeAgo(post.createdAt)}',
                           style: TextStyle(
                             fontSize: isTablet ? 12 : 11,
                             color: theme.hintColor,
@@ -915,7 +898,7 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
                               ),
                             ),
                             Text(
-                              'Quan tâm ${_formatTimeAgo(user.interestedAt)}',
+                              'Quan tâm ${TimeUtils.formatTimeAgo(user.interestedAt)}',
                               style: TextStyle(
                                 fontSize: isTablet ? 12 : 11,
                                 color: theme.hintColor,
@@ -1093,19 +1076,6 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
         return Colors.red;
       default:
         return Colors.grey;
-    }
-  }
-
-  String _formatTimeAgo(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} phút trước';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} giờ trước';
-    } else {
-      return '${difference.inDays} ngày trước';
     }
   }
 }

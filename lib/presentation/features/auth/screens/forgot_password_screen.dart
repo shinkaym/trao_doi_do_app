@@ -1,130 +1,193 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/domain/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/widgets/app_header_widget.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/widgets/auth_divider_widget.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/widgets/info_card_widget.dart';
+import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
-class ForgotPasswordScreen extends StatefulWidget {
-  const ForgotPasswordScreen({Key? key}) : super(key: key);
+// State model cho forgot password
+class ForgotPasswordState {
+  final bool isLoading;
+  final bool isEmailSent;
+  final bool isOtpLoading;
+  final String currentOtp;
+  final int remainingTime;
+  final bool canResend;
 
-  @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  const ForgotPasswordState({
+    this.isLoading = false,
+    this.isEmailSent = false,
+    this.isOtpLoading = false,
+    this.currentOtp = '',
+    this.remainingTime = 300,
+    this.canResend = false,
+  });
+
+  ForgotPasswordState copyWith({
+    bool? isLoading,
+    bool? isEmailSent,
+    bool? isOtpLoading,
+    String? currentOtp,
+    int? remainingTime,
+    bool? canResend,
+  }) {
+    return ForgotPasswordState(
+      isLoading: isLoading ?? this.isLoading,
+      isEmailSent: isEmailSent ?? this.isEmailSent,
+      isOtpLoading: isOtpLoading ?? this.isOtpLoading,
+      currentOtp: currentOtp ?? this.currentOtp,
+      remainingTime: remainingTime ?? this.remainingTime,
+      canResend: canResend ?? this.canResend,
+    );
+  }
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _otpController = TextEditingController();
-  bool _isLoading = false;
-  bool _isEmailSent = false;
-  bool _isOtpLoading = false;
-  String _currentOtp = '';
-  int _remainingTime = 300; // 5 phút
-  bool _canResend = false;
+// Provider cho forgot password state
+final forgotPasswordProvider =
+    StateNotifierProvider<ForgotPasswordNotifier, ForgotPasswordState>((ref) {
+      return ForgotPasswordNotifier();
+    });
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _otpController.dispose();
-    super.dispose();
-  }
+class ForgotPasswordNotifier extends StateNotifier<ForgotPasswordState> {
+  ForgotPasswordNotifier() : super(const ForgotPasswordState());
 
-  void _handleSendRequest() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+  Future<void> sendOtpRequest(String email, BuildContext context) async {
+    state = state.copyWith(isLoading: true);
 
-      // Giả lập gửi yêu cầu
-      await Future.delayed(const Duration(seconds: 2));
+    // Giả lập gửi yêu cầu
+    await Future.delayed(const Duration(seconds: 2));
 
-      setState(() {
-        _isLoading = false;
-        _isEmailSent = true;
-        _remainingTime = 300; // Reset timer
-        _canResend = false;
-      });
+    state = state.copyWith(
+      isLoading: false,
+      isEmailSent: true,
+      remainingTime: 300,
+      canResend: false,
+    );
 
-      // Hiển thị thông báo thành công
-      context.showSuccessSnackBar(
-        'OTP đã được gửi đến ${_emailController.text}',
-      );
+    // Hiển thị thông báo thành công
+    context.showSuccessSnackBar('OTP đã được gửi đến $email');
 
-      // Bắt đầu đếm ngược
-      _startCountdown();
-    }
+    // Bắt đầu đếm ngược
+    _startCountdown();
   }
 
   void _startCountdown() {
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted && _remainingTime > 0) {
-        setState(() {
-          _remainingTime--;
-        });
-        _startCountdown();
-      } else if (mounted) {
-        setState(() {
-          _canResend = true;
-        });
-      }
-    });
+    if (state.remainingTime > 0) {
+      Future.delayed(const Duration(seconds: 1), () {
+        if (state.remainingTime > 0) {
+          state = state.copyWith(remainingTime: state.remainingTime - 1);
+          _startCountdown();
+        } else {
+          state = state.copyWith(canResend: true);
+        }
+      });
+    }
   }
 
-  void _handleVerifyOtp() async {
-    if (_currentOtp.length == 6) {
-      setState(() => _isOtpLoading = true);
+  Future<void> verifyOtp(String otp, String email, BuildContext context) async {
+    if (otp.length == 6) {
+      state = state.copyWith(isOtpLoading: true);
 
       // Giả lập xác thực OTP
       await Future.delayed(const Duration(seconds: 2));
 
-      setState(() => _isOtpLoading = false);
+      state = state.copyWith(isOtpLoading: false);
 
       // Giả lập OTP đúng (trong thực tế sẽ gọi API)
-      if (_currentOtp == '123456') {
+      if (otp == '123456') {
         // OTP đúng - chuyển đến màn hình đặt lại mật khẩu
         context.showSuccessSnackBar('OTP xác thực thành công!');
-
-        // Chuyển đến màn hình reset password
-        context.goNamed('reset-password', extra: _emailController.text);
+        context.goNamed('reset-password', extra: email);
       } else {
         // OTP sai
         context.showErrorSnackBar('OTP không chính xác. Vui lòng thử lại.');
-
-        _otpController.clear();
-        setState(() => _currentOtp = '');
+        updateOtp('');
       }
     }
   }
 
-  void _handleBackToLogin() {
-    context.goNamed('login');
+  void updateOtp(String otp) {
+    state = state.copyWith(currentOtp: otp);
   }
 
-  void _handleResendOtp() {
-    if (_canResend) {
-      _handleSendRequest();
+  void resendOtp(String email, BuildContext context) {
+    if (state.canResend) {
+      sendOtpRequest(email, context);
     }
   }
 
-  void _handleBackToEmail() {
-    setState(() {
-      _isEmailSent = false;
-      _currentOtp = '';
-      _otpController.clear();
-    });
+  void reset() {
+    state = const ForgotPasswordState();
   }
 
-  String _formatTime(int seconds) {
+  String formatTime(int seconds) {
     int minutes = seconds ~/ 60;
     int remainingSeconds = seconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
+}
+
+class ForgotPasswordScreen extends HookConsumerWidget {
+  const ForgotPasswordScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final emailController = useTextEditingController();
+    final otpController = useTextEditingController();
+    final formKey = useMemoized(() => GlobalKey<FormState>());
+
+    final forgotPasswordState = ref.watch(forgotPasswordProvider);
+    final forgotPasswordNotifier = ref.read(forgotPasswordProvider.notifier);
+
     final isTablet = context.isTablet;
     final colorScheme = context.colorScheme;
     final isDark = context.isDarkMode;
+
+    // Reset state khi dispose
+    useEffect(() {
+      return () {
+        forgotPasswordNotifier.reset();
+      };
+    }, []);
+
+    // Clear OTP controller khi OTP được reset
+    useEffect(() {
+      if (forgotPasswordState.currentOtp.isEmpty) {
+        otpController.clear();
+      }
+
+      return null;
+    }, [forgotPasswordState.currentOtp]);
+
+    void handleSendRequest() async {
+      if (formKey.currentState!.validate()) {
+        await forgotPasswordNotifier.sendOtpRequest(
+          emailController.text,
+          context,
+        );
+      }
+    }
+
+    void handleVerifyOtp() async {
+      await forgotPasswordNotifier.verifyOtp(
+        forgotPasswordState.currentOtp,
+        emailController.text,
+        context,
+      );
+    }
+
+    void handleBackToLogin() {
+      context.goNamed('login');
+    }
+
+    void handleResendOtp() {
+      forgotPasswordNotifier.resendOtp(emailController.text, context);
+    }
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -132,45 +195,30 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
-      child: Scaffold(
-        backgroundColor: colorScheme.background,
-        appBar: AppBar(
-          backgroundColor: colorScheme.primary,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              if (_isEmailSent) {
-                _handleBackToEmail();
-              } else if (context.canPop) {
-                context.pop();
-              } else {
-                context.goNamed('login');
-              }
-            },
-          ),
-          systemOverlayStyle: const SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.light,
-          ),
-        ),
+      child: SmartScaffold(
+        title:
+            forgotPasswordState.isEmailSent ? 'Nhập mã OTP' : 'Quên mật khẩu',
+        appBarType: AppBarType.minimal,
+        showBackButton: true,
         body: SafeArea(
           top: false,
           child: SingleChildScrollView(
             child: Column(
               children: [
                 AppHeaderWidget(
-                  title: _isEmailSent ? 'Nhập mã OTP' : 'Quên mật khẩu',
+                  title:
+                      forgotPasswordState.isEmailSent
+                          ? 'Nhập mã OTP'
+                          : 'Quên mật khẩu',
                   subtitle:
-                      _isEmailSent
+                      forgotPasswordState.isEmailSent
                           ? 'Nhập mã OTP được gửi đến email của bạn'
                           : 'Nhập email để đặt lại mật khẩu',
                   icon:
-                      _isEmailSent
+                      forgotPasswordState.isEmailSent
                           ? Icons.security_outlined
                           : Icons.lock_reset_outlined,
                 ),
-
                 Padding(
                   padding: EdgeInsets.all(isTablet ? 32 : 24),
                   child: ConstrainedBox(
@@ -178,7 +226,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       maxWidth: isTablet ? 500 : double.infinity,
                     ),
                     child:
-                        _isEmailSent ? _buildOtpContent() : _buildFormContent(),
+                        forgotPasswordState.isEmailSent
+                            ? _buildOtpContent(
+                              context,
+                              ref,
+                              otpController,
+                              emailController.text,
+                              forgotPasswordState,
+                              forgotPasswordNotifier,
+                              handleVerifyOtp,
+                              handleResendOtp,
+                              handleBackToLogin,
+                            )
+                            : _buildFormContent(
+                              context,
+                              formKey,
+                              emailController,
+                              forgotPasswordState,
+                              handleSendRequest,
+                              handleBackToLogin,
+                            ),
                   ),
                 ),
               ],
@@ -189,13 +256,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildFormContent() {
+  Widget _buildFormContent(
+    BuildContext context,
+    GlobalKey<FormState> formKey,
+    TextEditingController emailController,
+    ForgotPasswordState state,
+    VoidCallback onSendRequest,
+    VoidCallback onBackToLogin,
+  ) {
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
 
     return Form(
-      key: _formKey,
+      key: formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -212,7 +286,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
           // Email input
           TextFormField(
-            controller: _emailController,
+            controller: emailController,
             keyboardType: TextInputType.emailAddress,
             decoration: _inputDecoration(
               context,
@@ -229,7 +303,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               }
               return null;
             },
-            onFieldSubmitted: (_) => _handleSendRequest(),
+            onFieldSubmitted: (_) => onSendRequest(),
           ),
           SizedBox(height: isTablet ? 32 : 24),
 
@@ -237,7 +311,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           SizedBox(
             height: isTablet ? 56 : 50,
             child: ElevatedButton(
-              onPressed: _isLoading ? null : _handleSendRequest,
+              onPressed: state.isLoading ? null : onSendRequest,
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
@@ -246,7 +320,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
               ),
               child:
-                  _isLoading
+                  state.isLoading
                       ? const SizedBox(
                         width: 24,
                         height: 24,
@@ -299,7 +373,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
               ),
               GestureDetector(
-                onTap: _handleBackToLogin,
+                onTap: onBackToLogin,
                 child: Text(
                   'Đăng nhập',
                   style: TextStyle(
@@ -317,7 +391,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     );
   }
 
-  Widget _buildOtpContent() {
+  Widget _buildOtpContent(
+    BuildContext context,
+    WidgetRef ref,
+    TextEditingController otpController,
+    String email,
+    ForgotPasswordState state,
+    ForgotPasswordNotifier notifier,
+    VoidCallback onVerifyOtp,
+    VoidCallback onResendOtp,
+    VoidCallback onBackToLogin,
+  ) {
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
@@ -328,7 +412,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         SizedBox(height: isTablet ? 40 : 32),
 
         // Email info
-        EmailInfoCard(email: _emailController.text),
+        EmailInfoCard(email: email),
 
         SizedBox(height: isTablet ? 32 : 24),
 
@@ -346,19 +430,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         PinCodeTextField(
           appContext: context,
           length: 6,
-          controller: _otpController,
+          controller: otpController,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           animationType: AnimationType.fade,
           pinTheme: PinTheme(
-            shape:
-                PinCodeFieldShape.underline, // Thay đổi từ box thành underline
+            shape: PinCodeFieldShape.underline,
             borderRadius: BorderRadius.circular(8),
             fieldHeight: isTablet ? 60 : 50,
             fieldWidth: isTablet ? 50 : 40,
-            activeFillColor: Colors.transparent, // Làm trong suốt
-            selectedFillColor: Colors.transparent, // Làm trong suốt
-            inactiveFillColor: Colors.transparent, // Làm trong suốt
+            activeFillColor: Colors.transparent,
+            selectedFillColor: Colors.transparent,
+            inactiveFillColor: Colors.transparent,
             activeColor: colorScheme.primary,
             selectedColor: colorScheme.primary,
             inactiveColor: theme.dividerColor,
@@ -372,12 +455,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             color: colorScheme.onSurface,
           ),
           onChanged: (value) {
-            setState(() {
-              _currentOtp = value;
-            });
+            notifier.updateOtp(value);
           },
           onCompleted: (value) {
-            _handleVerifyOtp();
+            onVerifyOtp();
           },
         ),
         SizedBox(height: isTablet ? 24 : 20),
@@ -387,23 +468,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              _canResend
+              state.canResend
                   ? 'Có thể gửi lại mã'
-                  : 'Gửi lại sau: ${_formatTime(_remainingTime)}',
+                  : 'Gửi lại sau: ${notifier.formatTime(state.remainingTime)}',
               style: TextStyle(
                 color: theme.hintColor,
                 fontSize: isTablet ? 14 : 12,
               ),
             ),
             GestureDetector(
-              onTap: _canResend ? _handleResendOtp : null,
+              onTap: state.canResend ? onResendOtp : null,
               child: Text(
                 'Gửi lại mã',
                 style: TextStyle(
-                  color: _canResend ? colorScheme.primary : theme.disabledColor,
+                  color:
+                      state.canResend
+                          ? colorScheme.primary
+                          : theme.disabledColor,
                   fontSize: isTablet ? 14 : 12,
                   fontWeight: FontWeight.w600,
-                  decoration: _canResend ? TextDecoration.underline : null,
+                  decoration: state.canResend ? TextDecoration.underline : null,
                 ),
               ),
             ),
@@ -416,9 +500,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           height: isTablet ? 56 : 50,
           child: ElevatedButton(
             onPressed:
-                (_isOtpLoading || _currentOtp.length != 6)
+                (state.isOtpLoading || state.currentOtp.length != 6)
                     ? null
-                    : _handleVerifyOtp,
+                    : onVerifyOtp,
             style: ElevatedButton.styleFrom(
               backgroundColor: colorScheme.primary,
               foregroundColor: colorScheme.onPrimary,
@@ -427,7 +511,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
             ),
             child:
-                _isOtpLoading
+                state.isOtpLoading
                     ? const SizedBox(
                       width: 24,
                       height: 24,
@@ -455,7 +539,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         AuthLinkWidget(
           question: 'Nhớ mật khẩu? ',
           linkText: 'Đăng nhập',
-          onTap: _handleBackToLogin,
+          onTap: onBackToLogin,
         ),
         SizedBox(height: isTablet ? 40 : 32),
       ],
@@ -525,6 +609,82 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         fontWeight: FontWeight.w500,
         height: 1.4,
       ),
+    );
+  }
+}
+
+// Widget helper cho email info (giả sử đã có sẵn)
+class EmailInfoCard extends StatelessWidget {
+  final String email;
+
+  const EmailInfoCard({super.key, required this.email});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: context.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: context.theme.dividerColor),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.email_outlined, color: context.colorScheme.primary),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Mã OTP đã được gửi đến:\n$email',
+              style: TextStyle(fontSize: 14, color: context.theme.hintColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Widget helper cho auth link (giả sử đã có sẵn)
+class AuthLinkWidget extends StatelessWidget {
+  final String question;
+  final String linkText;
+  final VoidCallback onTap;
+
+  const AuthLinkWidget({
+    super.key,
+    required this.question,
+    required this.linkText,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          question,
+          style: TextStyle(
+            color: theme.hintColor,
+            fontSize: isTablet ? 16 : 14,
+          ),
+        ),
+        GestureDetector(
+          onTap: onTap,
+          child: Text(
+            linkText,
+            style: TextStyle(
+              color: colorScheme.primary,
+              fontSize: isTablet ? 16 : 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

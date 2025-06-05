@@ -8,11 +8,11 @@ class AvatarSection extends StatelessWidget {
   final VoidCallback onPickImage;
 
   const AvatarSection({
-    Key? key,
+    super.key,
     required this.selectedImage,
     required this.currentAvatarUrl,
     required this.onPickImage,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

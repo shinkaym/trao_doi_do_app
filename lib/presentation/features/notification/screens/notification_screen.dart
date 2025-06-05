@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/core/utils/time_utils.dart';
+import 'package:trao_doi_do_app/domain/enums/index.dart';
+import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
 
 // Model cho notification
 class NotificationModel {
@@ -30,43 +34,74 @@ class NotificationModel {
     this.webUrl,
     this.metadata,
   });
+
+  NotificationModel copyWith({
+    String? id,
+    String? title,
+    String? message,
+    String? type,
+    DateTime? createdAt,
+    bool? isRead,
+    String? imageUrl,
+    String? targetId,
+    String? deepLink,
+    String? webUrl,
+    Map<String, dynamic>? metadata,
+  }) {
+    return NotificationModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      message: message ?? this.message,
+      type: type ?? this.type,
+      createdAt: createdAt ?? this.createdAt,
+      isRead: isRead ?? this.isRead,
+      imageUrl: imageUrl ?? this.imageUrl,
+      targetId: targetId ?? this.targetId,
+      deepLink: deepLink ?? this.deepLink,
+      webUrl: webUrl ?? this.webUrl,
+      metadata: metadata ?? this.metadata,
+    );
+  }
 }
 
-class NotificationScreen extends StatefulWidget {
-  const NotificationScreen({Key? key}) : super(key: key);
+// State để quản lý notifications
+@immutable
+class NotificationState {
+  final List<NotificationModel> notifications;
+  final bool isLoading;
+  final String? error;
 
-  @override
-  State<NotificationScreen> createState() => _NotificationScreenState();
+  const NotificationState({
+    this.notifications = const [],
+    this.isLoading = false,
+    this.error,
+  });
+
+  NotificationState copyWith({
+    List<NotificationModel>? notifications,
+    bool? isLoading,
+    String? error,
+  }) {
+    return NotificationState(
+      notifications: notifications ?? this.notifications,
+      isLoading: isLoading ?? this.isLoading,
+      error: error ?? this.error,
+    );
+  }
 }
 
-class _NotificationScreenState extends State<NotificationScreen>
-    with TickerProviderStateMixin {
-  List<NotificationModel> _notifications = [];
-  bool _isLoading = true;
-  String _selectedFilter = 'all'; // 'all', 'unread', 'read'
-  late TabController _tabController;
+// Notification Provider
+class NotificationNotifier extends StateNotifier<NotificationState> {
+  NotificationNotifier() : super(const NotificationState());
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-    _loadNotifications();
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadNotifications() async {
-    setState(() => _isLoading = true);
+  Future<void> loadNotifications() async {
+    state = state.copyWith(isLoading: true, error: null);
 
     try {
       // Giả lập data thông báo
       await Future.delayed(const Duration(seconds: 1));
 
-      _notifications = [
+      final notifications = [
         NotificationModel(
           id: '1',
           title: 'Có người quan tâm đến món đồ của bạn',
@@ -116,7 +151,7 @@ class _NotificationScreenState extends State<NotificationScreen>
           type: 'system',
           createdAt: DateTime.now().subtract(const Duration(days: 2)),
           isRead: true,
-          webUrl: 'https://flutter.dev', // URL sẽ được mở bằng URL launcher
+          webUrl: 'https://flutter.dev',
         ),
         NotificationModel(
           id: '6',
@@ -129,253 +164,136 @@ class _NotificationScreenState extends State<NotificationScreen>
         ),
       ];
 
-      setState(() => _isLoading = false);
+      state = state.copyWith(notifications: notifications, isLoading: false);
     } catch (e) {
-      setState(() => _isLoading = false);
-      if (mounted) {
-        context.showErrorSnackBar('Lỗi khi tải thông báo: $e');
-      }
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Lỗi khi tải thông báo: $e',
+      );
     }
   }
 
-  List<NotificationModel> get _filteredNotifications {
-    switch (_selectedFilter) {
-      case 'unread':
-        return _notifications.where((n) => !n.isRead).toList();
-      case 'read':
-        return _notifications.where((n) => n.isRead).toList();
-      default:
-        return _notifications;
-    }
+  void markAsRead(String notificationId) {
+    final updatedNotifications =
+        state.notifications.map((notification) {
+          if (notification.id == notificationId && !notification.isRead) {
+            return notification.copyWith(isRead: true);
+          }
+          return notification;
+        }).toList();
+
+    state = state.copyWith(notifications: updatedNotifications);
+
+    // Gửi API để đánh dấu đã đọc
+    // NotificationService.markAsRead(notificationId);
   }
 
-  List<NotificationModel> _getNotificationsByType(String type) {
-    return _notifications.where((n) => n.type == type).toList();
+  void markAllAsRead() {
+    final updatedNotifications =
+        state.notifications
+            .map((notification) => notification.copyWith(isRead: true))
+            .toList();
+
+    state = state.copyWith(notifications: updatedNotifications);
   }
+}
 
-  Future<void> _markAsRead(NotificationModel notification) async {
-    if (!notification.isRead) {
-      setState(() {
-        final index = _notifications.indexWhere((n) => n.id == notification.id);
-        if (index != -1) {
-          _notifications[index] = NotificationModel(
-            id: notification.id,
-            title: notification.title,
-            message: notification.message,
-            type: notification.type,
-            createdAt: notification.createdAt,
-            isRead: true,
-            imageUrl: notification.imageUrl,
-            targetId: notification.targetId,
-            deepLink: notification.deepLink,
-            webUrl: notification.webUrl,
-            metadata: notification.metadata,
-          );
-        }
-      });
+// Providers
+final notificationProvider =
+    StateNotifierProvider<NotificationNotifier, NotificationState>(
+      (ref) => NotificationNotifier(),
+    );
 
-      // Gửi API để đánh dấu đã đọc
-      // await NotificationService.markAsRead(notification.id);
-    }
-  }
+// Computed providers
+final unreadCountProvider = Provider<int>((ref) {
+  final notifications = ref.watch(notificationProvider).notifications;
+  return notifications.where((n) => !n.isRead).length;
+});
 
-  Future<void> _markAllAsRead() async {
-    setState(() {
-      _notifications =
-          _notifications
-              .map(
-                (n) => NotificationModel(
-                  id: n.id,
-                  title: n.title,
-                  message: n.message,
-                  type: n.type,
-                  createdAt: n.createdAt,
-                  isRead: true,
-                  imageUrl: n.imageUrl,
-                  targetId: n.targetId,
-                  deepLink: n.deepLink,
-                  webUrl: n.webUrl,
-                  metadata: n.metadata,
-                ),
-              )
-              .toList();
+final notificationsByTypeProvider =
+    Provider.family<List<NotificationModel>, String>((ref, type) {
+      final notifications = ref.watch(notificationProvider).notifications;
+      return notifications.where((n) => n.type == type).toList();
     });
 
-    context.showSuccessSnackBar('Đã đánh dấu tất cả thông báo là đã đọc');
-  }
-
-  // Thêm hàm để launch URL
-  Future<void> _launchUrl(String url) async {
-    try {
-      final Uri uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(
-          uri,
-          mode: LaunchMode.externalApplication, // Mở trong browser mặc định
-        );
-      } else {
-        if (mounted) {
-          context.showErrorSnackBar('Không thể mở liên kết: $url');
-        }
+final filteredNotificationsProvider =
+    Provider.family<List<NotificationModel>, String>((ref, filter) {
+      final notifications = ref.watch(notificationProvider).notifications;
+      switch (filter) {
+        case 'unread':
+          return notifications.where((n) => !n.isRead).toList();
+        case 'read':
+          return notifications.where((n) => n.isRead).toList();
+        default:
+          return notifications;
       }
-    } catch (e) {
-      if (mounted) {
-        context.showErrorSnackBar('Lỗi khi mở liên kết: $e');
-      }
-    }
-  }
+    });
 
-  void _handleNotificationTap(NotificationModel notification) async {
-    // Đánh dấu đã đọc
-    await _markAsRead(notification);
-
-    // Điều hướng dựa trên loại thông báo
-    if (notification.webUrl != null && notification.webUrl!.isNotEmpty) {
-      // Mở URL bằng URL launcher
-      await _launchUrl(notification.webUrl!);
-    } else if (notification.deepLink != null &&
-        notification.deepLink!.isNotEmpty) {
-      context.push(notification.deepLink!);
-    } else {
-      // Fallback navigation dựa trên type
-      switch (notification.type) {
-        case 'item':
-          if (notification.targetId != null) {
-            context.pushNamed(
-              'item-detail',
-              pathParameters: {'id': notification.targetId!},
-            );
-          }
-          break;
-        case 'post':
-          if (notification.targetId != null) {
-            context.pushNamed(
-              'post-detail',
-              pathParameters: {'id': notification.targetId!},
-            );
-          }
-          break;
-        case 'trade':
-          if (notification.targetId != null) {
-            context.pushNamed(
-              'trade-detail',
-              pathParameters: {'id': notification.targetId!},
-            );
-          }
-          break;
-        case 'message':
-          if (notification.targetId != null) {
-            context.pushNamed(
-              'chat',
-              pathParameters: {'id': notification.targetId!},
-            );
-          }
-          break;
-        case 'system':
-          // Nếu không có webUrl, hiển thị dialog
-          _showSystemNotificationDialog(notification);
-          break;
-      }
-    }
-  }
-
-  void _showSystemNotificationDialog(NotificationModel notification) {
-    context.showInfoDialog(
-      title: notification.title,
-      content: notification.message,
-      buttonText: 'Đóng',
-      icon: Icons.info_outline,
-    );
-  }
-
-  String _getTimeAgo(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays} ngày trước';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} giờ trước';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} phút trước';
-    } else {
-      return 'Vừa xong';
-    }
-  }
-
-  IconData _getNotificationIcon(String type) {
-    switch (type) {
-      case 'item':
-        return Icons.shopping_bag_outlined;
-      case 'post':
-        return Icons.article_outlined;
-      case 'trade':
-        return Icons.swap_horiz;
-      case 'message':
-        return Icons.message_outlined;
-      case 'system':
-        return Icons.info_outline;
-      default:
-        return Icons.notifications_outlined;
-    }
-  }
-
-  Color _getNotificationColor(String type) {
-    final theme = context.theme;
-    switch (type) {
-      case 'item':
-        return Colors.blue;
-      case 'post':
-        return Colors.green;
-      case 'trade':
-        return Colors.orange;
-      case 'message':
-        return theme.colorScheme.primary;
-      case 'system':
-        return Colors.grey;
-      default:
-        return theme.colorScheme.primary;
-    }
-  }
+class NotificationScreen extends HookConsumerWidget {
+  const NotificationScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = context.theme;
-    final unreadCount = _notifications.where((n) => !n.isRead).length;
+    final colorScheme = context.colorScheme;
 
-    return Scaffold(
-      backgroundColor: theme.colorScheme.background,
-      appBar: CustomAppBar(
-        title: 'Thông báo',
-        showBackButton: true,
-        onBackPressed: () => context.pop(),
-        showNotificationButton: false,
-        additionalActions: [
-          if (unreadCount > 0)
-            TextButton.icon(
-              onPressed: _markAllAsRead,
-              icon: const Icon(Icons.mark_email_read_outlined, size: 18),
-              label: const Text(
-                'Đọc tất cả',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-              ),
-              style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              ),
+    final tabController = useTabController(initialLength: 4);
+
+    final notificationState = ref.watch(notificationProvider);
+    final unreadCount = ref.watch(unreadCountProvider);
+
+    useEffect(() {
+      // Load notifications when screen is first built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(notificationProvider.notifier).loadNotifications();
+      });
+      return null;
+    }, []);
+
+    // Listen to error state
+    ref.listen<NotificationState>(notificationProvider, (previous, next) {
+      if (next.error != null) {
+        context.showErrorSnackBar(next.error!);
+      }
+    });
+
+    Future<void> onRefresh() async {
+      await ref.read(notificationProvider.notifier).loadNotifications();
+    }
+
+    void onMarkAllAsRead() {
+      ref.read(notificationProvider.notifier).markAllAsRead();
+      context.showSuccessSnackBar('Đã đánh dấu tất cả thông báo là đã đọc');
+    }
+
+    return SmartScaffold(
+      title: 'Thông báo',
+      appBarType: AppBarType.standard,
+      showBackButton: true,
+      showNotification: false,
+      appBarActions: [
+        if (unreadCount > 0)
+          TextButton.icon(
+            onPressed: onMarkAllAsRead,
+            icon: const Icon(Icons.mark_email_read_outlined, size: 18),
+            label: const Text(
+              'Đọc tất cả',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
-        ],
-      ),
+            style: TextButton.styleFrom(foregroundColor: colorScheme.onPrimary),
+          ),
+      ],
       body: Column(
         children: [
           // Tab Bar
           Container(
-            color: theme.colorScheme.surface,
+            color: colorScheme.surface,
             child: TabBar(
-              controller: _tabController,
+              controller: tabController,
               isScrollable: true,
-              labelColor: theme.colorScheme.primary,
+              labelColor: colorScheme.primary,
               unselectedLabelColor: theme.hintColor,
-              indicatorColor: theme.colorScheme.primary,
+              indicatorColor: colorScheme.primary,
               labelStyle: const TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
@@ -424,25 +342,39 @@ class _NotificationScreenState extends State<NotificationScreen>
           // Content
           Expanded(
             child:
-                _isLoading
+                notificationState.isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : TabBarView(
-                      controller: _tabController,
+                      controller: tabController,
                       children: [
                         // Tất cả thông báo
-                        _buildNotificationList(_filteredNotifications),
+                        NotificationListTab(
+                          notifications: ref.watch(
+                            filteredNotificationsProvider('all'),
+                          ),
+                          onRefresh: onRefresh,
+                        ),
                         // Giao dịch
-                        _buildNotificationList(
-                          _getNotificationsByType('trade') +
-                              _getNotificationsByType('item'),
+                        NotificationListTab(
+                          notifications: [
+                            ...ref.watch(notificationsByTypeProvider('trade')),
+                            ...ref.watch(notificationsByTypeProvider('item')),
+                          ],
+                          onRefresh: onRefresh,
                         ),
                         // Tin nhắn
-                        _buildNotificationList(
-                          _getNotificationsByType('message'),
+                        NotificationListTab(
+                          notifications: ref.watch(
+                            notificationsByTypeProvider('message'),
+                          ),
+                          onRefresh: onRefresh,
                         ),
                         // Hệ thống
-                        _buildNotificationList(
-                          _getNotificationsByType('system'),
+                        NotificationListTab(
+                          notifications: ref.watch(
+                            notificationsByTypeProvider('system'),
+                          ),
+                          onRefresh: onRefresh,
                         ),
                       ],
                     ),
@@ -451,8 +383,20 @@ class _NotificationScreenState extends State<NotificationScreen>
       ),
     );
   }
+}
 
-  Widget _buildNotificationList(List<NotificationModel> notifications) {
+class NotificationListTab extends HookConsumerWidget {
+  final List<NotificationModel> notifications;
+  final VoidCallback onRefresh;
+
+  const NotificationListTab({
+    super.key,
+    required this.notifications,
+    required this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final isTablet = context.isTablet;
 
     if (notifications.isEmpty) {
@@ -480,7 +424,7 @@ class _NotificationScreenState extends State<NotificationScreen>
     }
 
     return RefreshIndicator(
-      onRefresh: _loadNotifications,
+      onRefresh: () async => onRefresh(),
       child: ListView.separated(
         padding: EdgeInsets.all(isTablet ? 16 : 12),
         itemCount: notifications.length,
@@ -488,34 +432,155 @@ class _NotificationScreenState extends State<NotificationScreen>
             (context, index) => SizedBox(height: isTablet ? 12 : 8),
         itemBuilder: (context, index) {
           final notification = notifications[index];
-          return _buildNotificationItem(notification);
+          return NotificationItem(notification: notification);
         },
       ),
     );
   }
+}
 
-  Widget _buildNotificationItem(NotificationModel notification) {
+class NotificationItem extends HookConsumerWidget {
+  final NotificationModel notification;
+
+  const NotificationItem({super.key, required this.notification})
+   ;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final isTablet = context.isTablet;
     final theme = context.theme;
+    final colorScheme = context.colorScheme;
+
+    Future<void> openUrl(String url) async {
+      try {
+        final Uri uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri);
+        } else {
+          if (context.mounted) {
+            context.showErrorSnackBar('Không thể mở liên kết: $url');
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          context.showErrorSnackBar('Lỗi khi mở liên kết: $e');
+        }
+      }
+    }
+
+    void showSystemNotificationDialog() {
+      context.showInfoDialog(
+        title: notification.title,
+        content: notification.message,
+        buttonText: 'Đóng',
+        icon: Icons.info_outline,
+      );
+    }
+
+    void handleNotificationTap() async {
+      // Đánh dấu đã đọc
+      ref.read(notificationProvider.notifier).markAsRead(notification.id);
+
+      // Điều hướng dựa trên loại thông báo
+      if (notification.webUrl != null && notification.webUrl!.isNotEmpty) {
+        await openUrl(notification.webUrl!);
+      } else if (notification.deepLink != null &&
+          notification.deepLink!.isNotEmpty) {
+        context.push(notification.deepLink!);
+      } else {
+        // Fallback navigation dựa trên type
+        switch (notification.type) {
+          case 'item':
+            if (notification.targetId != null) {
+              context.pushNamed(
+                'item-detail',
+                pathParameters: {'id': notification.targetId!},
+              );
+            }
+            break;
+          case 'post':
+            if (notification.targetId != null) {
+              context.pushNamed(
+                'post-detail',
+                pathParameters: {'id': notification.targetId!},
+              );
+            }
+            break;
+          case 'trade':
+            if (notification.targetId != null) {
+              context.pushNamed(
+                'trade-detail',
+                pathParameters: {'id': notification.targetId!},
+              );
+            }
+            break;
+          case 'message':
+            if (notification.targetId != null) {
+              context.pushNamed(
+                'chat',
+                pathParameters: {'id': notification.targetId!},
+              );
+            }
+            break;
+          case 'system':
+            showSystemNotificationDialog();
+            break;
+        }
+      }
+    }
+
+    IconData getNotificationIcon(String type) {
+      switch (type) {
+        case 'item':
+          return Icons.shopping_bag_outlined;
+        case 'post':
+          return Icons.article_outlined;
+        case 'trade':
+          return Icons.swap_horiz;
+        case 'message':
+          return Icons.message_outlined;
+        case 'system':
+          return Icons.info_outline;
+        default:
+          return Icons.notifications_outlined;
+      }
+    }
+
+    Color getNotificationColor(String type) {
+      switch (type) {
+        case 'item':
+          return Colors.blue;
+        case 'post':
+          return Colors.green;
+        case 'trade':
+          return Colors.orange;
+        case 'message':
+          return colorScheme.primary;
+        case 'system':
+          return Colors.grey;
+        default:
+          return colorScheme.primary;
+      }
+    }
 
     return Card(
       elevation: notification.isRead ? 1 : 3,
       color:
           notification.isRead
-              ? theme.colorScheme.surface
-              : theme.colorScheme.primary.withOpacity(0.01),
+              ? colorScheme.surface
+              : colorScheme.primary.withOpacity(0.01),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side:
             notification.isRead
                 ? BorderSide.none
                 : BorderSide(
-                  color: theme.colorScheme.primary.withOpacity(0.2),
+                  color: colorScheme.primary.withOpacity(0.2),
                   width: 1,
                 ),
       ),
       child: InkWell(
-        onTap: () => _handleNotificationTap(notification),
+        onTap: handleNotificationTap,
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: EdgeInsets.all(isTablet ? 20 : 16),
@@ -527,7 +592,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                 width: isTablet ? 50 : 44,
                 height: isTablet ? 50 : 44,
                 decoration: BoxDecoration(
-                  color: _getNotificationColor(
+                  color: getNotificationColor(
                     notification.type,
                   ).withOpacity(0.1),
                   borderRadius: BorderRadius.circular(25),
@@ -542,8 +607,8 @@ class _NotificationScreenState extends State<NotificationScreen>
                             fit: BoxFit.cover,
                             errorBuilder:
                                 (context, error, stackTrace) => Icon(
-                                  _getNotificationIcon(notification.type),
-                                  color: _getNotificationColor(
+                                  getNotificationIcon(notification.type),
+                                  color: getNotificationColor(
                                     notification.type,
                                   ),
                                   size: isTablet ? 26 : 22,
@@ -551,8 +616,8 @@ class _NotificationScreenState extends State<NotificationScreen>
                           ),
                         )
                         : Icon(
-                          _getNotificationIcon(notification.type),
-                          color: _getNotificationColor(notification.type),
+                          getNotificationIcon(notification.type),
+                          color: getNotificationColor(notification.type),
                           size: isTablet ? 26 : 22,
                         ),
               ),
@@ -577,7 +642,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                               color:
                                   notification.isRead
                                       ? theme.textTheme.bodyLarge?.color
-                                      : theme.colorScheme.primary,
+                                      : colorScheme.primary,
                             ),
                           ),
                         ),
@@ -586,7 +651,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary,
+                              color: colorScheme.primary,
                               borderRadius: BorderRadius.circular(4),
                             ),
                           ),
@@ -605,7 +670,7 @@ class _NotificationScreenState extends State<NotificationScreen>
                     ),
                     SizedBox(height: isTablet ? 8 : 6),
                     Text(
-                      _getTimeAgo(notification.createdAt),
+                      TimeUtils.formatTimeAgo(notification.createdAt),
                       style: TextStyle(
                         fontSize: isTablet ? 12 : 11,
                         color: theme.hintColor.withOpacity(0.8),

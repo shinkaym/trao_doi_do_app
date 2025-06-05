@@ -9,13 +9,13 @@ class InfoCardWidget extends StatelessWidget {
   final Color? borderColor;
 
   const InfoCardWidget({
-    Key? key,
+    super.key,
     required this.icon,
     required this.title,
     required this.content,
     this.backgroundColor,
     this.borderColor,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +73,7 @@ class InfoCardWidget extends StatelessWidget {
 class EmailInfoCard extends StatelessWidget {
   final String email;
 
-  const EmailInfoCard({Key? key, required this.email}) : super(key: key);
+  const EmailInfoCard({super.key, required this.email});
 
   @override
   Widget build(BuildContext context) {

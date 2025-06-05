@@ -5,7 +5,7 @@ import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 class AuthDividerWidget extends StatelessWidget {
   final String text;
 
-  const AuthDividerWidget({Key? key, this.text = 'hoặc'}) : super(key: key);
+  const AuthDividerWidget({super.key, this.text = 'hoặc'});
 
   @override
   Widget build(BuildContext context) {
@@ -37,11 +37,11 @@ class AuthLinkWidget extends StatelessWidget {
   final VoidCallback onTap;
 
   const AuthLinkWidget({
-    Key? key,
+    super.key,
     required this.question,
     required this.linkText,
     required this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

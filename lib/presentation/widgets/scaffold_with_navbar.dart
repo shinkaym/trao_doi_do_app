@@ -8,10 +8,10 @@ class ScaffoldWithNavBar extends StatelessWidget {
   final int currentIndex;
 
   const ScaffoldWithNavBar({
-    Key? key,
+    super.key,
     required this.child,
     required this.currentIndex,
-  }) : super(key: key);
+  });
 
   void _onNavTap(BuildContext context, int index) {
     if (index != currentIndex && index < NavBarConstants.routes.length) {

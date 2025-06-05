@@ -15,7 +15,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final PreferredSizeWidget? bottom;
 
   const CustomAppBar({
-    Key? key,
+    super.key,
     required this.title,
     this.showNotificationButton = true,
     this.notificationCount = 0,
@@ -26,7 +26,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.foregroundColor,
     this.additionalActions,
     this.bottom,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -50,34 +50,44 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         elevation: 2,
         shadowColor: Colors.black.withOpacity(0.1),
         toolbarHeight: toolbarHeight,
-        bottom: bottom != null 
-            ? PreferredSize(
-                preferredSize: bottom!.preferredSize,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: appBarBgColor,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        offset: const Offset(0, 1),
-                        blurRadius: 2,
-                      ),
-                    ],
+        bottom:
+            bottom != null
+                ? PreferredSize(
+                  preferredSize: bottom!.preferredSize,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: appBarBgColor,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          offset: const Offset(0, 1),
+                          blurRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: bottom!,
                   ),
-                  child: bottom!,
-                ),
-              )
-            : null,
-        leading: showBackButton
-            ? IconButton(
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: appBarFgColor,
-                  size: isTablet ? 26 : 24,
-                ),
-                onPressed: onBackPressed ?? () => Navigator.of(context).pop(),
-              )
-            : null,
+                )
+                : null,
+        leading:
+            showBackButton
+                ? IconButton(
+                  icon: Icon(
+                    Icons.arrow_back,
+                    color: appBarFgColor,
+                    size: isTablet ? 26 : 24,
+                  ),
+                  onPressed:
+                      onBackPressed ??
+                      () {
+                        if (context.canPop) {
+                          context.pop();
+                        } else {
+                          context.goNamed('posts');
+                        }
+                      },
+                )
+                : null,
         title: Row(
           children: [
             // Logo
@@ -153,7 +163,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
             color: foregroundColor,
             size: isTablet ? 28 : 24,
           ),
-          onPressed: onNotificationTap ?? () => context.pushNamed('notifications'),
+          onPressed:
+              onNotificationTap ?? () => context.pushNamed('notifications'),
           tooltip: 'Thông báo',
         ),
 
@@ -190,11 +201,24 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize {
-    final isTablet = WidgetsBinding.instance.platformDispatcher.views.first.physicalSize.width / 
-                    WidgetsBinding.instance.platformDispatcher.views.first.devicePixelRatio > 600;
+    final isTablet =
+        WidgetsBinding
+                .instance
+                .platformDispatcher
+                .views
+                .first
+                .physicalSize
+                .width /
+            WidgetsBinding
+                .instance
+                .platformDispatcher
+                .views
+                .first
+                .devicePixelRatio >
+        600;
     final toolbarHeight = isTablet ? 70.0 : 60.0;
     final bottomHeight = bottom?.preferredSize.height ?? 0.0;
-    
+
     return Size.fromHeight(toolbarHeight + bottomHeight);
   }
 }

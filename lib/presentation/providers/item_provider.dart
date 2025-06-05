@@ -1,87 +1,83 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/item.dart';
+import 'package:trao_doi_do_app/domain/entities/params/items_query.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_items_usecase.dart';
 
-class ItemState {
+class ItemsListState {
   final bool isLoading;
   final bool isLoadingMore;
   final List<Item> items;
-  final Failure? failure;
   final int currentPage;
+  final int totalPage;
+  final ItemsQuery query;
+  final Failure? failure;
   final bool hasMoreData;
-  final String? sort;
-  final String? order;
-  final String? searchBy;
-  final String? searchValue;
 
-  ItemState({
+  ItemsListState({
     this.isLoading = false,
     this.isLoadingMore = false,
     this.items = const [],
-    this.failure,
     this.currentPage = 1,
+    this.totalPage = 1,
+    this.query = const ItemsQuery(),
+    this.failure,
     this.hasMoreData = true,
-    this.sort,
-    this.order,
-    this.searchBy,
-    this.searchValue,
   });
 
-  ItemState copyWith({
+  ItemsListState copyWith({
     bool? isLoading,
     bool? isLoadingMore,
     List<Item>? items,
-    Failure? failure,
     int? currentPage,
+    int? totalPage,
+    ItemsQuery? query,
+    Failure? failure,
     bool? hasMoreData,
-    String? sort,
-    String? order,
-    String? searchBy,
-    String? searchValue,
   }) {
-    return ItemState(
+    return ItemsListState(
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       items: items ?? this.items,
-      failure: failure,
       currentPage: currentPage ?? this.currentPage,
+      totalPage: totalPage ?? this.totalPage,
+      query: query ?? this.query,
+      failure: failure,
       hasMoreData: hasMoreData ?? this.hasMoreData,
-      sort: sort ?? this.sort,
-      order: order ?? this.order,
-      searchBy: searchBy ?? this.searchBy,
-      searchValue: searchValue ?? this.searchValue,
     );
   }
 }
 
-class ItemNotifier extends StateNotifier<ItemState> {
+class ItemsListNotifier extends StateNotifier<ItemsListState> {
   final GetItemsUseCase _getItemsUseCase;
 
-  ItemNotifier(this._getItemsUseCase) : super(ItemState());
+  ItemsListNotifier(this._getItemsUseCase) : super(ItemsListState());
 
-  Future<void> getItems({bool refresh = false}) async {
-    if (refresh) {
+  // Load items with refresh option
+  Future<void> loadItems({ItemsQuery? newQuery, bool refresh = false}) async {
+    if (state.isLoading || state.isLoadingMore) return;
+
+    final query = newQuery ?? state.query;
+    final isFirstLoad = refresh || state.items.isEmpty;
+
+    if (isFirstLoad) {
       state = state.copyWith(
         isLoading: true,
         failure: null,
-        currentPage: 1,
-        hasMoreData: true,
-        items: [],
+        query: query.copyWith(page: 1),
       );
-    } else if (state.isLoading || state.isLoadingMore || !state.hasMoreData) {
-      return;
     } else {
-      state = state.copyWith(isLoadingMore: true, failure: null);
+      // Load more
+      if (!state.hasMoreData || state.currentPage >= state.totalPage) return;
+
+      state = state.copyWith(
+        isLoadingMore: true,
+        failure: null,
+        query: query.copyWith(page: state.currentPage + 1),
+      );
     }
 
-    final result = await _getItemsUseCase(
-      page: refresh ? 1 : state.currentPage,
-      sort: state.sort,
-      order: state.order,
-      searchBy: state.searchBy,
-      searchValue: state.searchValue,
-    );
+    final result = await _getItemsUseCase(state.query);
 
     result.fold(
       (failure) =>
@@ -90,48 +86,59 @@ class ItemNotifier extends StateNotifier<ItemState> {
             isLoadingMore: false,
             failure: failure,
           ),
-      (itemsResponse) {
+      (itemsResult) {
         final newItems =
-            refresh
-                ? itemsResponse.items
-                : [...state.items, ...itemsResponse.items];
+            isFirstLoad
+                ? itemsResult.items
+                : [...state.items, ...itemsResult.items];
 
         state = state.copyWith(
           isLoading: false,
           isLoadingMore: false,
           items: newItems,
-          currentPage: refresh ? 2 : state.currentPage + 1,
-          hasMoreData: state.currentPage < itemsResponse.totalPage,
+          currentPage: state.query.page,
+          totalPage: itemsResult.totalPage,
+          hasMoreData: state.query.page < itemsResult.totalPage,
         );
       },
     );
   }
 
-  // Updated method for sorting
-  void setSortOptions({String? sort, String? order}) {
-    state = state.copyWith(sort: sort, order: order);
-    getItems(refresh: true);
+  // Filter methods
+  void filterByCategory(int? categoryID) {
+    final newQuery = state.query.copyWith(categoryID: categoryID);
+    loadItems(newQuery: newQuery, refresh: true);
   }
 
-  // Updated method for searching
-  void setSearchOptions({String? searchBy, String? searchValue}) {
-    state = state.copyWith(searchBy: searchBy, searchValue: searchValue);
-    getItems(refresh: true);
-  }
-
-  // Clear all filters
-  void clearFilters() {
-    state = state.copyWith(
-      sort: null,
-      order: null,
-      searchBy: null,
-      searchValue: null,
+  void search(String? searchBy, String? searchValue) {
+    final newQuery = state.query.copyWith(
+      searchBy: searchBy,
+      searchValue: searchValue,
     );
-    getItems(refresh: true);
+    loadItems(newQuery: newQuery, refresh: true);
+  }
+
+  void sortItems(String? sort, String? order) {
+    final newQuery = state.query.copyWith(sort: sort, order: order);
+    loadItems(newQuery: newQuery, refresh: true);
+  }
+
+  void loadMore() {
+    loadItems();
+  }
+
+  void refresh() {
+    loadItems(refresh: true);
+  }
+
+  void clearFilters() {
+    final newQuery = const ItemsQuery();
+    loadItems(newQuery: newQuery, refresh: true);
   }
 }
 
-final itemProvider = StateNotifierProvider<ItemNotifier, ItemState>((ref) {
-  final getItemsUseCase = ref.watch(getItemsUseCaseProvider);
-  return ItemNotifier(getItemsUseCase);
-});
+final itemsListProvider =
+    StateNotifierProvider<ItemsListNotifier, ItemsListState>((ref) {
+      final getItemsUseCase = ref.watch(getItemsUseCaseProvider);
+      return ItemsListNotifier(getItemsUseCase);
+    });

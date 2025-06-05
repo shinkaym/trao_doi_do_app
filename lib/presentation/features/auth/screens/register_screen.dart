@@ -1,95 +1,146 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/domain/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/widgets/app_header_widget.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/widgets/auth_divider_widget.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/widgets/info_card_widget.dart';
 import 'package:trao_doi_do_app/presentation/widgets/password_strength_widget.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
+import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({Key? key}) : super(key: key);
+// Provider for password strength state
+final passwordStrengthProvider = StateProvider.autoDispose<PasswordStrength>((
+  ref,
+) {
+  return PasswordStrength();
+});
 
-  @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+// Provider for loading state
+final registerLoadingProvider = StateProvider.autoDispose<bool>((ref) {
+  return false;
+});
+
+// Password strength data class
+class PasswordStrength {
+  final bool hasMinLength;
+  final bool hasUppercase;
+  final bool hasLowercase;
+  final bool hasNumbers;
+  final bool hasSpecialChar;
+
+  const PasswordStrength({
+    this.hasMinLength = false,
+    this.hasUppercase = false,
+    this.hasLowercase = false,
+    this.hasNumbers = false,
+    this.hasSpecialChar = false,
+  });
+
+  bool get isStrong {
+    return hasMinLength &&
+        hasUppercase &&
+        hasLowercase &&
+        hasNumbers &&
+        hasSpecialChar;
+  }
+
+  PasswordStrength copyWith({
+    bool? hasMinLength,
+    bool? hasUppercase,
+    bool? hasLowercase,
+    bool? hasNumbers,
+    bool? hasSpecialChar,
+  }) {
+    return PasswordStrength(
+      hasMinLength: hasMinLength ?? this.hasMinLength,
+      hasUppercase: hasUppercase ?? this.hasUppercase,
+      hasLowercase: hasLowercase ?? this.hasLowercase,
+      hasNumbers: hasNumbers ?? this.hasNumbers,
+      hasSpecialChar: hasSpecialChar ?? this.hasSpecialChar,
+    );
+  }
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _fullNameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
-  bool _isLoading = false;
-
-  // Password strength indicators
-  bool _hasMinLength = false;
-  bool _hasUppercase = false;
-  bool _hasLowercase = false;
-  bool _hasNumbers = false;
-  bool _hasSpecialChar = false;
+class RegisterScreen extends HookConsumerWidget {
+  const RegisterScreen({super.key});
 
   @override
-  void dispose() {
-    _fullNameController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    super.dispose();
-  }
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Form key
+    final formKey = useMemoized(() => GlobalKey<FormState>());
 
-  void _checkPasswordStrength(String password) {
-    setState(() {
-      _hasMinLength = password.length >= 8;
-      _hasUppercase = password.contains(RegExp(r'[A-Z]'));
-      _hasLowercase = password.contains(RegExp(r'[a-z]'));
-      _hasNumbers = password.contains(RegExp(r'[0-9]'));
-      _hasSpecialChar = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
-    });
-  }
+    // Text controllers
+    final fullNameController = useTextEditingController();
+    final emailController = useTextEditingController();
+    final phoneController = useTextEditingController();
+    final passwordController = useTextEditingController();
+    final confirmPasswordController = useTextEditingController();
 
-  bool get _isPasswordStrong {
-    return _hasMinLength &&
-        _hasUppercase &&
-        _hasLowercase &&
-        _hasNumbers &&
-        _hasSpecialChar;
-  }
+    // Visibility states
+    final isPasswordVisible = useState(false);
+    final isConfirmPasswordVisible = useState(false);
 
-  void _handleRegister() async {
-    if (_formKey.currentState!.validate() && _isPasswordStrong) {
-      setState(() => _isLoading = true);
-      await Future.delayed(const Duration(seconds: 2));
-      setState(() => _isLoading = false);
+    // Watch providers
+    final passwordStrength = ref.watch(passwordStrengthProvider);
+    final isLoading = ref.watch(registerLoadingProvider);
 
-      // Hiển thị thông báo thành công
-      if (mounted) {
-        context.showSuccessSnackBar('Đăng ký thành công!');
-
-        // Chờ 1 giây sau khi hiển thị snackbar rồi mới chuyển trang
-        await Future.delayed(const Duration(seconds: 1));
-
-        // Điều hướng về màn hình đăng nhập
-        if (mounted) {
-          context.goNamed('login');
-        }
-      }
-    }
-  }
-
-  void _handleLogin() {
-    context.goNamed('login');
-  }
-
-  @override
-  Widget build(BuildContext context) {
     final isTablet = context.isTablet;
     final colorScheme = context.colorScheme;
     final isDark = context.isDarkMode;
+
+    // Password strength check function
+    void checkPasswordStrength(String password) {
+      final newStrength = PasswordStrength(
+        hasMinLength: password.length >= 8,
+        hasUppercase: password.contains(RegExp(r'[A-Z]')),
+        hasLowercase: password.contains(RegExp(r'[a-z]')),
+        hasNumbers: password.contains(RegExp(r'[0-9]')),
+        hasSpecialChar: password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]')),
+      );
+      ref.read(passwordStrengthProvider.notifier).state = newStrength;
+    }
+
+    // Register handler
+    Future<void> handleRegister() async {
+      if (formKey.currentState!.validate() && passwordStrength.isStrong) {
+        ref.read(registerLoadingProvider.notifier).state = true;
+
+        try {
+          await Future.delayed(const Duration(seconds: 2));
+
+          if (context.mounted) {
+            context.showSuccessSnackBar('Đăng ký thành công!');
+
+            // Wait 1 second then navigate
+            await Future.delayed(const Duration(seconds: 1));
+
+            if (context.mounted) {
+              context.goNamed('login');
+            }
+          }
+        } finally {
+          ref.read(registerLoadingProvider.notifier).state = false;
+        }
+      }
+    }
+
+    // Login handler
+    void handleLogin() {
+      context.goNamed('login');
+    }
+
+    // Listen to password changes
+    useEffect(() {
+      void listener() {
+        checkPasswordStrength(passwordController.text);
+      }
+
+      passwordController.addListener(listener);
+      return () => passwordController.removeListener(listener);
+    }, [passwordController]);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
@@ -97,26 +148,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
-      child: Scaffold(
-        backgroundColor: colorScheme.background,
-        appBar: AppBar(
-          backgroundColor: colorScheme.primary,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () {
-              if (context.canPop) {
-                context.pop();
-              } else {
-                context.goNamed('posts');
-              }
-            },
-          ),
-          systemOverlayStyle: const SystemUiOverlayStyle(
-            statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.light,
-          ),
-        ),
+      child: SmartScaffold(
+        showBackButton: true,
+        appBarType: AppBarType.minimal,
         body: SafeArea(
           top: false,
           child: SingleChildScrollView(
@@ -134,7 +168,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       maxWidth: isTablet ? 500 : double.infinity,
                     ),
                     child: Form(
-                      key: _formKey,
+                      key: formKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -142,7 +176,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                           // Họ và tên
                           TextFormField(
-                            controller: _fullNameController,
+                            controller: fullNameController,
                             textCapitalization: TextCapitalization.words,
                             decoration: CustomInputDecoration.build(
                               context,
@@ -164,7 +198,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                           // Email
                           TextFormField(
-                            controller: _emailController,
+                            controller: emailController,
                             keyboardType: TextInputType.emailAddress,
                             decoration: CustomInputDecoration.build(
                               context,
@@ -188,7 +222,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                           // Số điện thoại
                           TextFormField(
-                            controller: _phoneController,
+                            controller: phoneController,
                             keyboardType: TextInputType.phone,
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
@@ -214,8 +248,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                           // Mật khẩu
                           TextFormField(
-                            controller: _passwordController,
-                            obscureText: !_isPasswordVisible,
+                            controller: passwordController,
+                            obscureText: !isPasswordVisible.value,
                             decoration: CustomInputDecoration.build(
                               context,
                               label: 'Mật khẩu',
@@ -223,14 +257,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               icon: Icons.lock_outline,
                               suffix: IconButton(
                                 icon: Icon(
-                                  _isPasswordVisible
+                                  isPasswordVisible.value
                                       ? Icons.visibility_off
                                       : Icons.visibility,
                                 ),
                                 onPressed: () {
-                                  setState(() {
-                                    _isPasswordVisible = !_isPasswordVisible;
-                                  });
+                                  isPasswordVisible.value =
+                                      !isPasswordVisible.value;
                                 },
                               ),
                             ),
@@ -238,30 +271,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               if (value == null || value.isEmpty) {
                                 return 'Vui lòng nhập mật khẩu';
                               }
-                              if (!_isPasswordStrong) {
+                              if (!passwordStrength.isStrong) {
                                 return 'Mật khẩu chưa đủ mạnh';
                               }
                               return null;
                             },
-                            onChanged: _checkPasswordStrength,
                           ),
                           SizedBox(height: isTablet ? 16 : 12),
 
-                          if (_passwordController.text.isNotEmpty) ...[
+                          if (passwordController.text.isNotEmpty) ...[
                             // Password strength indicator
                             PasswordStrengthWidget(
-                              password: _passwordController.text,
-                              hasMinLength: _hasMinLength,
-                              hasUppercase: _hasUppercase,
-                              hasLowercase: _hasLowercase,
-                              hasNumbers: _hasNumbers,
-                              hasSpecialChar: _hasSpecialChar,
+                              password: passwordController.text,
+                              hasMinLength: passwordStrength.hasMinLength,
+                              hasUppercase: passwordStrength.hasUppercase,
+                              hasLowercase: passwordStrength.hasLowercase,
+                              hasNumbers: passwordStrength.hasNumbers,
+                              hasSpecialChar: passwordStrength.hasSpecialChar,
                             ),
                           ],
+
                           // Xác nhận mật khẩu
                           TextFormField(
-                            controller: _confirmPasswordController,
-                            obscureText: !_isConfirmPasswordVisible,
+                            controller: confirmPasswordController,
+                            obscureText: !isConfirmPasswordVisible.value,
                             decoration: CustomInputDecoration.build(
                               context,
                               label: 'Xác nhận mật khẩu',
@@ -269,15 +302,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               icon: Icons.lock_outline,
                               suffix: IconButton(
                                 icon: Icon(
-                                  _isConfirmPasswordVisible
+                                  isConfirmPasswordVisible.value
                                       ? Icons.visibility_off
                                       : Icons.visibility,
                                 ),
                                 onPressed: () {
-                                  setState(() {
-                                    _isConfirmPasswordVisible =
-                                        !_isConfirmPasswordVisible;
-                                  });
+                                  isConfirmPasswordVisible.value =
+                                      !isConfirmPasswordVisible.value;
                                 },
                               ),
                             ),
@@ -285,12 +316,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               if (value == null || value.isEmpty) {
                                 return 'Vui lòng xác nhận mật khẩu';
                               }
-                              if (value != _passwordController.text) {
+                              if (value != passwordController.text) {
                                 return 'Mật khẩu xác nhận không khớp';
                               }
                               return null;
                             },
-                            onFieldSubmitted: (_) => _handleRegister(),
+                            onFieldSubmitted: (_) => handleRegister(),
                           ),
                           SizedBox(height: isTablet ? 32 : 24),
 
@@ -311,9 +342,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             height: isTablet ? 56 : 50,
                             child: ElevatedButton(
                               onPressed:
-                                  (_isLoading || !_isPasswordStrong)
+                                  (isLoading || !passwordStrength.isStrong)
                                       ? null
-                                      : _handleRegister,
+                                      : handleRegister,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: colorScheme.primary,
                                 foregroundColor: colorScheme.onPrimary,
@@ -322,7 +353,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                               ),
                               child:
-                                  _isLoading
+                                  isLoading
                                       ? const SizedBox(
                                         width: 24,
                                         height: 24,
@@ -353,7 +384,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           AuthLinkWidget(
                             question: 'Đã có tài khoản? ',
                             linkText: 'Đăng nhập',
-                            onTap: _handleLogin,
+                            onTap: handleLogin,
                           ),
 
                           SizedBox(height: isTablet ? 40 : 32),
@@ -365,6 +396,49 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+// AuthLinkWidget - assuming it exists or you can create it
+class AuthLinkWidget extends StatelessWidget {
+  final String question;
+  final String linkText;
+  final VoidCallback onTap;
+
+  const AuthLinkWidget({
+    super.key,
+    required this.question,
+    required this.linkText,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = context.colorScheme;
+    final textTheme = context.textTheme;
+
+    return Center(
+      child: RichText(
+        text: TextSpan(
+          text: question,
+          style: textTheme.bodyMedium,
+          children: [
+            WidgetSpan(
+              child: GestureDetector(
+                onTap: onTap,
+                child: Text(
+                  linkText,
+                  style: TextStyle(
+                    color: colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

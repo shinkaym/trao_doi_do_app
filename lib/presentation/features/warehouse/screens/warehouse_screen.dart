@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
-import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
+import 'package:trao_doi_do_app/core/utils/time_utils.dart';
+import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
 // Enum cho loại đồ
 enum ItemType {
@@ -26,7 +27,7 @@ enum SortOrder {
 }
 
 class WarehouseScreen extends ConsumerStatefulWidget {
-  const WarehouseScreen({Key? key}) : super(key: key);
+  const WarehouseScreen({super.key});
 
   @override
   ConsumerState<WarehouseScreen> createState() => _WarehouseScreenState();
@@ -267,10 +268,6 @@ class _WarehouseScreenState extends ConsumerState<WarehouseScreen> {
     _filterItems();
   }
 
-  void _handleNotifications() {
-    context.pushNamed('notifications');
-  }
-
   Future<void> _handleRefresh() async {
     setState(() {
       _isLoading = true;
@@ -298,14 +295,7 @@ class _WarehouseScreenState extends ConsumerState<WarehouseScreen> {
     final theme = context.theme;
     final colorScheme = context.colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.background,
-      appBar: CustomAppBar(
-        title: 'Kho đồ',
-        notificationCount: 3,
-        onNotificationTap: _handleNotifications,
-        showBackButton: false,
-      ),
+    return SmartScaffold(
       body: SafeArea(
         top: false,
         child: RefreshIndicator(
@@ -683,7 +673,7 @@ class _WarehouseScreenState extends ConsumerState<WarehouseScreen> {
                             ),
                             SizedBox(width: isTablet ? 4 : 3),
                             Text(
-                              _formatTime(item['createdAt']),
+                              TimeUtils.formatTimeAgo(item['createdAt']),
                               style: TextStyle(
                                 fontSize: isTablet ? 11 : 10,
                                 color: theme.hintColor,
@@ -1159,21 +1149,6 @@ class _WarehouseScreenState extends ConsumerState<WarehouseScreen> {
         return 'Đã nhận';
       default:
         return 'Không xác định';
-    }
-  }
-
-  String _formatTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} phút trước';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} giờ trước';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} ngày trước';
-    } else {
-      return '${dateTime.day}/${dateTime.month}/${dateTime.year}';
     }
   }
 }

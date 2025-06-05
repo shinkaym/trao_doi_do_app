@@ -6,12 +6,14 @@ import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 class ImagePickerBottomSheet extends StatelessWidget {
   final ImagePicker picker;
   final Function(File image) onImageSelected;
+  final String title;
 
   const ImagePickerBottomSheet({
-    Key? key,
+    super.key,
     required this.picker,
     required this.onImageSelected,
-  }) : super(key: key);
+    this.title = 'Chọn ảnh',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +25,7 @@ class ImagePickerBottomSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'Chọn ảnh đại diện',
+            title,
             style: TextStyle(
               fontSize: isTablet ? 20 : 18,
               fontWeight: FontWeight.w600,

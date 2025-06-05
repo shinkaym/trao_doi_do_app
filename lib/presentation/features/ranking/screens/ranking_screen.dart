@@ -1,32 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
-import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
+import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
-class RankingScreen extends ConsumerStatefulWidget {
-  const RankingScreen({Key? key}) : super(key: key);
+// Providers for state management
+final isLoadingProvider = StateProvider<bool>((ref) => false);
+final hasMoreDataProvider = StateProvider<bool>((ref) => true);
 
-  @override
-  ConsumerState<RankingScreen> createState() => _RankingScreenState();
-}
-
-class _RankingScreenState extends ConsumerState<RankingScreen> {
-  final ScrollController _scrollController = ScrollController();
-  bool _isLoading = false;
-  bool _hasMoreData = true;
-
-  // Mock current user data
-  final Map<String, dynamic> _currentUserRank = {
+// Mock current user data provider
+final currentUserRankProvider = Provider<Map<String, dynamic>>(
+  (ref) => {
     'rank': 15,
     'name': 'Nguyễn Văn An',
     'points': 850,
     'goodDeeds': 42,
     'avatar': '',
-  };
+  },
+);
 
-  // Mock leaderboard data
-  List<Map<String, dynamic>> _leaderboardData = [
+// Initial leaderboard data provider
+final initialLeaderboardProvider = Provider<List<Map<String, dynamic>>>(
+  (ref) => [
     {
       'rank': 1,
       'name': 'Trần Thị Hương',
@@ -97,117 +93,116 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
       'goodDeeds': 52,
       'avatar': '',
     },
-  ];
+  ],
+);
 
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >=
-        _scrollController.position.maxScrollExtent * 0.8) {
-      _loadMoreData();
-    }
-  }
-
-  Future<void> _loadMoreData() async {
-    if (_isLoading || !_hasMoreData) return;
-
-    setState(() {
-      _isLoading = true;
+// Leaderboard data state provider
+final leaderboardDataProvider =
+    StateNotifierProvider<LeaderboardNotifier, List<Map<String, dynamic>>>((
+      ref,
+    ) {
+      return LeaderboardNotifier(ref.read(initialLeaderboardProvider));
     });
 
-    // Simulate API call delay
-    await Future.delayed(const Duration(seconds: 1));
+class LeaderboardNotifier extends StateNotifier<List<Map<String, dynamic>>> {
+  LeaderboardNotifier(List<Map<String, dynamic>> initialData)
+    : super(initialData);
 
-    // Mock loading more data
-    List<Map<String, dynamic>> newData = [];
-    int currentLength = _leaderboardData.length;
-
-    for (int i = 1; i <= 10; i++) {
-      if (currentLength + i > 50) {
-        // Simulate end of data at 50 users
-        _hasMoreData = false;
-        break;
-      }
-
-      newData.add({
-        'rank': currentLength + i,
-        'name': 'Người dùng ${currentLength + i}',
-        'points': 1380 - (currentLength + i - 10) * 20,
-        'goodDeeds': 52 - (currentLength + i - 10) * 1,
-        'avatar': '',
-      });
-    }
-
-    if (mounted) {
-      setState(() {
-        _leaderboardData.addAll(newData);
-        _isLoading = false;
-      });
-    }
+  void addData(List<Map<String, dynamic>> newData) {
+    state = [...state, ...newData];
   }
 
-  void _handleNotifications() {
-    context.pushNamed('notifications');
+  void reset(List<Map<String, dynamic>> data) {
+    state = data;
   }
+}
 
-  Future<void> _handleRefresh() async {
-    // Simulate refresh
-    setState(() {
-      _isLoading = true;
-    });
-
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-
-      context.showSuccessSnackBar('Đã cập nhật bảng xếp hạng');
-    }
-  }
+class RankingScreen extends HookConsumerWidget {
+  const RankingScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scrollController = useScrollController();
+    final isLoading = ref.watch(isLoadingProvider);
+    final hasMoreData = ref.watch(hasMoreDataProvider);
+    final leaderboardData = ref.watch(leaderboardDataProvider);
+    final currentUserRank = ref.watch(currentUserRankProvider);
+
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.background,
-      appBar: CustomAppBar(
-        title: 'Bảng xếp hạng',
-        notificationCount: 3,
-        onNotificationTap: _handleNotifications,
-        showBackButton: false,
-        // additionalActions: [
-        //   IconButton(
-        //     onPressed: _handleRefresh,
-        //     icon: const Icon(Icons.refresh, color: Colors.white),
-        //     tooltip: 'Làm mới',
-        //   ),
-        // ],
-      ),
+    // Load more data function
+    Future<void> loadMoreData() async {
+      if (isLoading || !hasMoreData) return;
+
+      ref.read(isLoadingProvider.notifier).state = true;
+
+      // Simulate API call delay
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Mock loading more data
+      List<Map<String, dynamic>> newData = [];
+      int currentLength = leaderboardData.length;
+
+      for (int i = 1; i <= 10; i++) {
+        if (currentLength + i > 50) {
+          // Simulate end of data at 50 users
+          ref.read(hasMoreDataProvider.notifier).state = false;
+          break;
+        }
+
+        newData.add({
+          'rank': currentLength + i,
+          'name': 'Người dùng ${currentLength + i}',
+          'points': 1380 - (currentLength + i - 10) * 20,
+          'goodDeeds': 52 - (currentLength + i - 10) * 1,
+          'avatar': '',
+        });
+      }
+
+      ref.read(leaderboardDataProvider.notifier).addData(newData);
+      ref.read(isLoadingProvider.notifier).state = false;
+    }
+
+    // Scroll listener
+    void onScroll() {
+      if (scrollController.position.pixels >=
+          scrollController.position.maxScrollExtent * 0.8) {
+        loadMoreData();
+      }
+    }
+
+    // Handle refresh
+    Future<void> handleRefresh() async {
+      ref.read(isLoadingProvider.notifier).state = true;
+      await Future.delayed(const Duration(seconds: 1));
+      ref.read(isLoadingProvider.notifier).state = false;
+      context.showSuccessSnackBar('Đã cập nhật bảng xếp hạng');
+    }
+
+    // Add scroll listener
+    useEffect(() {
+      scrollController.addListener(onScroll);
+      return () => scrollController.removeListener(onScroll);
+    }, [scrollController]);
+
+    return SmartScaffold(
       body: SafeArea(
         top: false,
         child: RefreshIndicator(
-          onRefresh: () => _handleRefresh(),
+          onRefresh: handleRefresh,
           child: CustomScrollView(
-            controller: _scrollController,
+            controller: scrollController,
             slivers: [
               // Current User Rank Section
               SliverToBoxAdapter(
-                child: _buildCurrentUserSection(isTablet, theme, colorScheme),
+                child: _buildCurrentUserSection(
+                  currentUserRank,
+                  isTablet,
+                  theme,
+                  colorScheme,
+                ),
               ),
 
               // Leaderboard Header
@@ -246,24 +241,24 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                 sliver: SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                      if (index < _leaderboardData.length) {
+                      if (index < leaderboardData.length) {
                         return _buildLeaderboardItem(
-                          _leaderboardData[index],
+                          leaderboardData[index],
                           isTablet,
                           theme,
                           colorScheme,
                         );
-                      } else if (_isLoading) {
+                      } else if (isLoading) {
                         return _buildLoadingItem(isTablet, colorScheme);
-                      } else if (!_hasMoreData) {
+                      } else if (!hasMoreData) {
                         return _buildEndOfListItem(isTablet, theme);
                       }
                       return null;
                     },
                     childCount:
-                        _leaderboardData.length +
-                        (_isLoading ? 1 : 0) +
-                        (!_hasMoreData ? 1 : 0),
+                        leaderboardData.length +
+                        (isLoading ? 1 : 0) +
+                        (!hasMoreData ? 1 : 0),
                   ),
                 ),
               ),
@@ -278,6 +273,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
   }
 
   Widget _buildCurrentUserSection(
+    Map<String, dynamic> currentUserRank,
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -340,11 +336,11 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                   children: [
                     Center(
                       child:
-                          _currentUserRank['avatar']!.isNotEmpty
+                          currentUserRank['avatar']!.isNotEmpty
                               ? ClipRRect(
                                 borderRadius: BorderRadius.circular(35),
                                 child: Image.network(
-                                  _currentUserRank['avatar']!,
+                                  currentUserRank['avatar']!,
                                   fit: BoxFit.cover,
                                   errorBuilder:
                                       (context, error, stackTrace) => Icon(
@@ -373,7 +369,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
-                          '#${_currentUserRank['rank']}',
+                          '#${currentUserRank['rank']}',
                           style: TextStyle(
                             fontSize: isTablet ? 12 : 10,
                             fontWeight: FontWeight.bold,
@@ -394,7 +390,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _currentUserRank['name'],
+                      currentUserRank['name'],
                       style: TextStyle(
                         fontSize: isTablet ? 18 : 16,
                         fontWeight: FontWeight.bold,
@@ -407,14 +403,14 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                       children: [
                         _buildStatItem(
                           icon: Icons.star,
-                          value: '${_currentUserRank['points']}',
+                          value: '${currentUserRank['points']}',
                           label: 'điểm',
                           isTablet: isTablet,
                         ),
                         SizedBox(width: isTablet ? 20 : 16),
                         _buildStatItem(
                           icon: Icons.favorite,
-                          value: '${_currentUserRank['goodDeeds']}',
+                          value: '${currentUserRank['goodDeeds']}',
                           label: 'việc tốt',
                           isTablet: isTablet,
                         ),

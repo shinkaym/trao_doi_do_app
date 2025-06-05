@@ -5,6 +5,7 @@ import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/post_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/models/post_model.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
+import 'package:trao_doi_do_app/domain/entities/params/posts_query.dart';
 import 'package:trao_doi_do_app/domain/repositories/post_repository.dart';
 
 class PostRepositoryImpl implements PostRepository {
@@ -26,6 +27,43 @@ class PostRepositoryImpl implements PostRepository {
       return Left(ValidationFailure(e.message));
     } catch (e) {
       return Left(ServerFailure('Lỗi không xác định'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, PostsResult>> getPosts(PostsQuery query) async {
+    try {
+      final apiResponse = await _remoteDataSource.getPosts(query);
+
+      if (apiResponse.code >= 200 &&
+          apiResponse.code < 300 &&
+          apiResponse.data != null) {
+        final postsData = apiResponse.data!;
+
+        final result = PostsResult(
+          posts: postsData.posts,
+          totalPage: postsData.totalPage,
+        );
+
+        return Right(result);
+      } else {
+        return Left(
+          ServerFailure(
+            apiResponse.message.isNotEmpty
+                ? apiResponse.message
+                : 'Lỗi không xác định khi tải danh sách bài đăng',
+            apiResponse.code,
+          ),
+        );
+      }
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(
+        ServerFailure('Lỗi không xác định khi tải danh sách bài đăng'),
+      );
     }
   }
 }

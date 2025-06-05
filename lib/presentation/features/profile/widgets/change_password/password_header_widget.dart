@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 
 class PasswordHeaderWidget extends StatelessWidget {
-  const PasswordHeaderWidget({Key? key}) : super(key: key);
+  const PasswordHeaderWidget({super.key});
 
   @override
   Widget build(BuildContext context) {

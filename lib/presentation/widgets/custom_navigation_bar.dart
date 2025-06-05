@@ -1,59 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/nav_bar_constants.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 
-class CustomBottomNavigation extends StatefulWidget {
+class CustomBottomNavigation extends HookConsumerWidget {
   final int currentIndex;
   final Function(int) onTap;
   final bool showLabels;
 
   const CustomBottomNavigation({
-    Key? key,
+    super.key,
     required this.currentIndex,
     required this.onTap,
     this.showLabels = true,
-  }) : super(key: key);
+  });
 
   @override
-  State<CustomBottomNavigation> createState() => _CustomBottomNavigationState();
-}
-
-class _CustomBottomNavigationState extends State<CustomBottomNavigation>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Sử dụng useAnimationController thay cho AnimationController
+    final animationController = useAnimationController(
       duration: const Duration(milliseconds: 200),
-      vsync: this,
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+
+    // Sử dụng useMemoized để tạo animation
+    final scaleAnimation = useMemoized(
+      () => Tween<double>(begin: 1.0, end: 0.95).animate(
+        CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
+      ),
+      [animationController],
     );
-  }
 
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  void _onItemTapped(int index) {
-    if (index != widget.currentIndex) {
-      HapticFeedback.lightImpact();
-      _animationController.forward().then((_) {
-        _animationController.reverse();
-      });
-      widget.onTap(index);
+    // Function để xử lý tap
+    void onItemTapped(int index) {
+      if (index != currentIndex) {
+        HapticFeedback.lightImpact();
+        animationController.forward().then((_) {
+          animationController.reverse();
+        });
+        onTap(index);
+      }
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
     final isTablet = context.isTablet;
     final colorScheme = context.colorScheme;
     final isDark = context.isDarkMode;
@@ -87,7 +76,14 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation>
                 NavBarConstants.navigationItems.asMap().entries.map((entry) {
                   final index = entry.key;
                   final item = entry.value;
-                  return _buildNavItem(context, item, index, isTablet);
+                  return _buildNavItem(
+                    context,
+                    item,
+                    index,
+                    isTablet,
+                    scaleAnimation,
+                    onItemTapped,
+                  );
                 }).toList(),
           ),
         ),
@@ -100,23 +96,25 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation>
     NavigationItemConfig item,
     int index,
     bool isTablet,
+    Animation<double> scaleAnimation,
+    Function(int) onItemTapped,
   ) {
     final theme = context.theme;
     final colorScheme = context.colorScheme;
-    final isSelected = widget.currentIndex == index;
+    final isSelected = currentIndex == index;
 
     if (item.isSpecial) {
-      return _buildSpecialButton(context, item, index, isTablet);
+      return _buildSpecialButton(context, item, index, isTablet, onItemTapped);
     }
 
     return Expanded(
       child: GestureDetector(
-        onTap: () => _onItemTapped(index),
+        onTap: () => onItemTapped(index),
         child: AnimatedBuilder(
-          animation: _scaleAnimation,
+          animation: scaleAnimation,
           builder: (context, child) {
             return Transform.scale(
-              scale: isSelected ? _scaleAnimation.value : 1.0,
+              scale: isSelected ? scaleAnimation.value : 1.0,
               child: Container(
                 padding: EdgeInsets.symmetric(
                   vertical: isTablet ? 8 : 6,
@@ -151,7 +149,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation>
                                 : theme.hintColor.withOpacity(0.7),
                       ),
                     ),
-                    if (widget.showLabels) ...[
+                    if (showLabels) ...[
                       SizedBox(height: isTablet ? 4 : 2),
                       AnimatedDefaultTextStyle(
                         duration: const Duration(milliseconds: 200),
@@ -187,14 +185,15 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation>
     NavigationItemConfig item,
     int index,
     bool isTablet,
+    Function(int) onItemTapped,
   ) {
     final colorScheme = context.colorScheme;
-    final isSelected = widget.currentIndex == index;
+    final isSelected = currentIndex == index;
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: isTablet ? 8 : 4),
       child: GestureDetector(
-        onTap: () => _onItemTapped(index),
+        onTap: () => onItemTapped(index),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           width: isTablet ? 60 : 50,
@@ -235,7 +234,7 @@ class _CustomBottomNavigationState extends State<CustomBottomNavigation>
                 color:
                     isSelected ? Colors.white : colorScheme.onPrimaryContainer,
               ),
-              if (widget.showLabels) ...[
+              if (showLabels) ...[
                 SizedBox(height: isTablet ? 2 : 1),
                 Text(
                   item.label,

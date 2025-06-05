@@ -5,10 +5,10 @@ import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 class NotFoundScreen extends StatelessWidget {
   final String? path;
 
-  const NotFoundScreen({Key? key, this.path}) : super(key: key);
+  const NotFoundScreen({super.key, this.path});
 
   void _handleGoHome(BuildContext context) {
-    context.goNamed('posts'); // hoặc tên route chính của bạn
+    context.goNamed('posts');
   }
 
   void _handleGoBack(BuildContext context) {

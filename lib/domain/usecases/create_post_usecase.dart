@@ -29,9 +29,7 @@ class CreatePostUseCase {
   ValidationFailure? _validateByType(Post post) {
     try {
       final infoJson = jsonDecode(post.info);
-      final description = infoJson['description'] as String?;
-
-      if (description == null || description.trim().isEmpty) {
+      if (post.description.trim().isEmpty) {
         return const ValidationFailure('Mô tả không được để trống');
       }
 
@@ -53,8 +51,12 @@ class CreatePostUseCase {
   }
 
   ValidationFailure? _validateGiveAway(Post post) {
+    if (post.images.isEmpty) {
+      return const ValidationFailure('Phải có ít nhất một hình ảnh cho món đồ');
+    }
+
     if (post.newItems.isEmpty && post.oldItems.isEmpty) {
-      return const ValidationFailure('Phải chọn ít nhất một món đồ');
+      return const ValidationFailure('Phải có ít nhất một món đồ');
     }
 
     // Validate newItems
@@ -93,7 +95,6 @@ class CreatePostUseCase {
 
     final foundLocation = infoJson['foundLocation'] as String?;
     final foundDate = infoJson['foundDate'] as String?;
-    final categoryID = infoJson['categoryID'] as int?;
 
     if (foundLocation == null || foundLocation.trim().isEmpty) {
       return const ValidationFailure('Địa điểm nhặt được không được để trống');
@@ -103,8 +104,31 @@ class CreatePostUseCase {
       return const ValidationFailure('Ngày nhặt được không được để trống');
     }
 
-    if (categoryID == null || categoryID <= 0) {
-      return const ValidationFailure('Phải chọn danh mục cho món đồ nhặt được');
+    if (post.newItems.isEmpty && post.oldItems.isEmpty) {
+      return const ValidationFailure('Phải có ít nhất một món đồ');
+    }
+
+    // Validate newItems
+    for (final item in post.newItems) {
+      if (item.name.trim().isEmpty) {
+        return const ValidationFailure('Tên món đồ mới không được để trống');
+      }
+      if (item.categoryID <= 0) {
+        return const ValidationFailure('Phải chọn danh mục cho món đồ mới');
+      }
+      if (item.quantity <= 0) {
+        return const ValidationFailure('Số lượng món đồ mới phải lớn hơn 0');
+      }
+    }
+
+    // Validate oldItems
+    for (final item in post.oldItems) {
+      if (item.itemID <= 0) {
+        return const ValidationFailure('ID món đồ cũ không hợp lệ');
+      }
+      if (item.quantity <= 0) {
+        return const ValidationFailure('Số lượng món đồ cũ phải lớn hơn 0');
+      }
     }
 
     return null;
@@ -116,8 +140,8 @@ class CreatePostUseCase {
   ) {
     final lostLocation = infoJson['lostLocation'] as String?;
     final lostDate = infoJson['lostDate'] as String?;
-    final categoryID = infoJson['categoryID'] as int?;
     final reward = infoJson['reward'] as String?;
+    final category = infoJson['category'] as String?;
 
     if (lostLocation == null || lostLocation.trim().isEmpty) {
       return const ValidationFailure('Địa điểm thất lạc không được để trống');
@@ -127,8 +151,8 @@ class CreatePostUseCase {
       return const ValidationFailure('Ngày thất lạc không được để trống');
     }
 
-    if (categoryID == null || categoryID <= 0) {
-      return const ValidationFailure('Phải chọn danh mục cho món đồ thất lạc');
+    if (category == null || category.trim().isEmpty) {
+      return const ValidationFailure('Danh mục không được để trống');
     }
 
     if (reward == null || reward.trim().isEmpty) {

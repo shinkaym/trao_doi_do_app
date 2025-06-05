@@ -3,19 +3,28 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:trao_doi_do_app/app.dart';
-// import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
+import 'package:trao_doi_do_app/core/constants/storage_keys.dart';
+import 'package:trao_doi_do_app/core/utils/time_utils.dart';
+import 'package:trao_doi_do_app/presentation/features/onboarding/providers/onboarding_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/splash/providers/splash_provider.dart';
+import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  TimeUtils.init();
+
   try {
-    // Load environment variables
     await dotenv.load();
-
-    // Setup dependency injection (Hive initialization)
-    // await setupDI();
-
     await Hive.initFlutter();
+    await Hive.openBox(StorageKeys.settings);
+
+    final container = ProviderContainer();
+    // Pre-load critical providers
+    container.read(authProvider);
+    container.read(isOnboardingCompletedProvider);
+    container.read(isSplashCompletedProvider);
+
     runApp(const ProviderScope(child: MyApp()));
   } catch (e, stackTrace) {
     // Error handling for initialization

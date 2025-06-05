@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 
 class SecurityTipsWidget extends StatelessWidget {
-  const SecurityTipsWidget({Key? key}) : super(key: key);
+  const SecurityTipsWidget({super.key});
 
   @override
   Widget build(BuildContext context) {

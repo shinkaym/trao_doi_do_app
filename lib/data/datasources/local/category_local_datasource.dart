@@ -10,7 +10,7 @@ abstract class CategoryLocalDataSource {
 }
 
 class CategoryLocalDataSourceImpl implements CategoryLocalDataSource {
-  static const String _boxName = 'categories';
+  static const String _boxName = StorageKeys.categories;
 
   @override
   Future<List<CategoryModel>> getCachedCategories() async {
