@@ -4,6 +4,7 @@ import 'package:trao_doi_do_app/core/error/app_exception.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/post_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/models/post_model.dart';
+import 'package:trao_doi_do_app/data/models/response/post_response_model.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/domain/entities/params/posts_query.dart';
 import 'package:trao_doi_do_app/domain/repositories/post_repository.dart';
@@ -63,6 +64,37 @@ class PostRepositoryImpl implements PostRepository {
     } catch (e) {
       return Left(
         ServerFailure('Lỗi không xác định khi tải danh sách bài đăng'),
+      );
+    }
+  }
+
+  @override
+  Future<Either<Failure, PostDetailModel>> getPostBySlug(String slug) async {
+    try {
+      final apiResponse = await _remoteDataSource.getPostBySlug(slug);
+
+      if (apiResponse.code >= 200 &&
+          apiResponse.code < 300 &&
+          apiResponse.data != null) {
+        final postDetail = apiResponse.data!.post;
+        return Right(postDetail);
+      } else {
+        return Left(
+          ServerFailure(
+            apiResponse.message.isNotEmpty
+                ? apiResponse.message
+                : 'Lỗi không xác định khi tải chi tiết bài đăng',
+            apiResponse.code,
+          ),
+        );
+      }
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(
+        ServerFailure('Lỗi không xác định khi tải chi tiết bài đăng'),
       );
     }
   }

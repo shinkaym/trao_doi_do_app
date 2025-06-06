@@ -6,7 +6,7 @@ extension SnackbarExtensions on BuildContext {
     String message, {
     Color? backgroundColor,
     Color? textColor,
-    Duration duration = const Duration(seconds: 4),
+    Duration duration = const Duration(seconds: 3),
     SnackBarAction? action,
     IconData? icon,
   }) {

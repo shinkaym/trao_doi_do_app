@@ -40,7 +40,7 @@ class ImagePickerBottomSheet extends StatelessWidget {
                 icon: Icons.camera_alt,
                 label: 'Máy ảnh',
                 onTap: () async {
-                  Navigator.pop(context);
+                  context.pop();
                   final XFile? image = await picker.pickImage(
                     source: ImageSource.camera,
                     maxWidth: 800,
@@ -57,7 +57,7 @@ class ImagePickerBottomSheet extends StatelessWidget {
                 icon: Icons.photo_library,
                 label: 'Thư viện',
                 onTap: () async {
-                  Navigator.pop(context);
+                  context.pop();
                   final XFile? image = await picker.pickImage(
                     source: ImageSource.gallery,
                     maxWidth: 800,

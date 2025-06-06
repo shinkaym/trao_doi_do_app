@@ -10,7 +10,7 @@ import 'package:trao_doi_do_app/data/models/category_model.dart';
 import 'package:trao_doi_do_app/domain/entities/item.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/presentation/features/post/providers/post_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/post/screens/create_post_screen.dart';
+import 'package:trao_doi_do_app/presentation/models/give_away_item.dart';
 import 'package:trao_doi_do_app/presentation/providers/category_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/item_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/image_picker_bottom_sheet.dart';
@@ -447,7 +447,7 @@ class AddItemDialog extends HookConsumerWidget {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.pop(),
           child: Text(
             'Hủy',
             style: TextStyle(color: context.appColors.secondaryTextColor),
@@ -495,7 +495,7 @@ class AddItemDialog extends HookConsumerWidget {
 
               postNotifier.addImage(base64Image);
               onItemAdded(item);
-              Navigator.pop(context);
+              context.pop();
             }
           },
           style: ElevatedButton.styleFrom(

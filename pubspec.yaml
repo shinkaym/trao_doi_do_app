@@ -80,6 +80,7 @@ dependencies:
   equatable: ^2.0.7
   dartz: ^0.10.1
   timeago: ^3.7.1
+  flutter_launcher_icons: ^0.14.3
 
 dev_dependencies:
   flutter_test:
@@ -136,3 +137,7 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png"  # thay đổi đường dẫn tùy bạn

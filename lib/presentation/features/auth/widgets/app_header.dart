@@ -2,12 +2,12 @@
 import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 
-class AppHeaderWidget extends StatelessWidget {
+class AppHeader extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
 
-  const AppHeaderWidget({
+  const AppHeader({
     super.key,
     required this.title,
     required this.subtitle,

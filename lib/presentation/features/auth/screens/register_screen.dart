@@ -4,9 +4,10 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/domain/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/auth/widgets/app_header_widget.dart';
-import 'package:trao_doi_do_app/presentation/features/auth/widgets/auth_divider_widget.dart';
-import 'package:trao_doi_do_app/presentation/features/auth/widgets/info_card_widget.dart';
+import 'package:trao_doi_do_app/presentation/features/auth/widgets/app_header.dart';
+import 'package:trao_doi_do_app/presentation/features/auth/widgets/info_card.dart';
+import 'package:trao_doi_do_app/presentation/models/password_strength.dart';
+import 'package:trao_doi_do_app/presentation/widgets/auth_divider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/password_strength_widget.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
@@ -22,47 +23,6 @@ final passwordStrengthProvider = StateProvider.autoDispose<PasswordStrength>((
 final registerLoadingProvider = StateProvider.autoDispose<bool>((ref) {
   return false;
 });
-
-// Password strength data class
-class PasswordStrength {
-  final bool hasMinLength;
-  final bool hasUppercase;
-  final bool hasLowercase;
-  final bool hasNumbers;
-  final bool hasSpecialChar;
-
-  const PasswordStrength({
-    this.hasMinLength = false,
-    this.hasUppercase = false,
-    this.hasLowercase = false,
-    this.hasNumbers = false,
-    this.hasSpecialChar = false,
-  });
-
-  bool get isStrong {
-    return hasMinLength &&
-        hasUppercase &&
-        hasLowercase &&
-        hasNumbers &&
-        hasSpecialChar;
-  }
-
-  PasswordStrength copyWith({
-    bool? hasMinLength,
-    bool? hasUppercase,
-    bool? hasLowercase,
-    bool? hasNumbers,
-    bool? hasSpecialChar,
-  }) {
-    return PasswordStrength(
-      hasMinLength: hasMinLength ?? this.hasMinLength,
-      hasUppercase: hasUppercase ?? this.hasUppercase,
-      hasLowercase: hasLowercase ?? this.hasLowercase,
-      hasNumbers: hasNumbers ?? this.hasNumbers,
-      hasSpecialChar: hasSpecialChar ?? this.hasSpecialChar,
-    );
-  }
-}
 
 class RegisterScreen extends HookConsumerWidget {
   const RegisterScreen({super.key});
@@ -156,7 +116,7 @@ class RegisterScreen extends HookConsumerWidget {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                AppHeaderWidget(
+                AppHeader(
                   title: 'Đăng ký',
                   subtitle: 'Tạo tài khoản mới',
                   icon: Icons.person_add_outlined,
@@ -326,7 +286,7 @@ class RegisterScreen extends HookConsumerWidget {
                           SizedBox(height: isTablet ? 32 : 24),
 
                           // Security tips
-                          InfoCardWidget(
+                          InfoCard(
                             icon: Icons.security_outlined,
                             title: 'Lời khuyên bảo mật:',
                             content:
@@ -377,11 +337,11 @@ class RegisterScreen extends HookConsumerWidget {
                           SizedBox(height: isTablet ? 32 : 24),
 
                           // Divider
-                          const AuthDividerWidget(),
+                          const AuthDivider(),
                           SizedBox(height: isTablet ? 32 : 24),
 
                           // Link đăng nhập
-                          AuthLinkWidget(
+                          AuthLink(
                             question: 'Đã có tài khoản? ',
                             linkText: 'Đăng nhập',
                             onTap: handleLogin,
@@ -402,13 +362,13 @@ class RegisterScreen extends HookConsumerWidget {
   }
 }
 
-// AuthLinkWidget - assuming it exists or you can create it
-class AuthLinkWidget extends StatelessWidget {
+// AuthLink - assuming it exists or you can create it
+class AuthLink extends StatelessWidget {
   final String question;
   final String linkText;
   final VoidCallback onTap;
 
-  const AuthLinkWidget({
+  const AuthLink({
     super.key,
     required this.question,
     required this.linkText,

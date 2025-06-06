@@ -5,8 +5,10 @@ class ApiConstants {
   static const String categories = '/categories';
   static const String items = '/items';
   static const String posts = '/posts';
-  static const String login = '/login';
+  static const String clientLogin = '/client/login';
+  static const String clientLogout = '/client/logout';
   static const String clientPosts = '/client/posts';
+  static const String interests = '/interests';
 
   // Headers
   static const String contentType = 'Content-Type';

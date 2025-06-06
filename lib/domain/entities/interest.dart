@@ -1,0 +1,79 @@
+import 'package:equatable/equatable.dart';
+
+class Interest extends Equatable {
+  final int id;
+  final int postID;
+  final int userID;
+  final String userName;
+  final String userAvatar;
+  final int status;
+
+  const Interest({
+    required this.id,
+    required this.postID,
+    required this.userID,
+    required this.userName,
+    required this.userAvatar,
+    required this.status,
+  });
+
+  @override
+  List<Object?> get props => [id, postID, userID, userName, userAvatar, status];
+}
+
+class InterestPost extends Equatable {
+  final int id;
+  final String slug;
+  final String title;
+  final int type;
+  final List<Interest> interests;
+  final List<InterestItem> items;
+
+  const InterestPost({
+    required this.id,
+    required this.slug,
+    required this.title,
+    required this.type,
+    required this.interests,
+    required this.items,
+  });
+
+  @override
+  List<Object?> get props => [id, slug, title, type, interests, items];
+}
+
+class InterestItem extends Equatable {
+  final int id;
+  final String name;
+  final String categoryName;
+  final String image;
+  final int quantity;
+
+  const InterestItem({
+    required this.id,
+    required this.name,
+    required this.categoryName,
+    required this.image,
+    required this.quantity,
+  });
+
+  @override
+  List<Object?> get props => [id, name, categoryName, image, quantity];
+}
+
+class InterestsResult {
+  final List<InterestPost> interests;
+  final int totalPage;
+
+  const InterestsResult({required this.interests, required this.totalPage});
+}
+
+class InterestActionResult extends Equatable {
+  final int interestID;
+  final String message;
+
+  const InterestActionResult({required this.interestID, required this.message});
+
+  @override
+  List<Object?> get props => [interestID, message];
+}

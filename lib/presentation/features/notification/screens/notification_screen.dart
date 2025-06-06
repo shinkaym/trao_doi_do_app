@@ -502,7 +502,7 @@ class NotificationItem extends HookConsumerWidget {
             if (notification.targetId != null) {
               context.pushNamed(
                 'post-detail',
-                pathParameters: {'id': notification.targetId!},
+                pathParameters: {'slug': notification.targetId!},
               );
             }
             break;

@@ -22,7 +22,7 @@
     </queries>
 
     <application
-        android:label="trao_doi_do_app"
+        android:label="ShareAndSave"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true"

@@ -550,12 +550,12 @@ class ProfileScreen extends HookConsumerWidget {
             content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => context.pop(),
                 child: const Text('Hủy'),
               ),
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context);
+                  context.pop();
                   // Call logout from AuthNotifier
                   ref.read(authProvider.notifier).logout();
                 },

@@ -863,7 +863,7 @@ class _InterestChatScreenState extends ConsumerState<InterestChatScreen> {
                     icon: Icons.photo,
                     label: 'Ảnh',
                     onTap: () {
-                      Navigator.pop(context);
+                      context.pop();
                       // Handle image attachment
                     },
                   ),
@@ -871,7 +871,7 @@ class _InterestChatScreenState extends ConsumerState<InterestChatScreen> {
                     icon: Icons.location_on,
                     label: 'Vị trí',
                     onTap: () {
-                      Navigator.pop(context);
+                      context.pop();
                       // Handle location sharing
                     },
                   ),
@@ -879,7 +879,7 @@ class _InterestChatScreenState extends ConsumerState<InterestChatScreen> {
                     icon: Icons.contact_phone,
                     label: 'Liên hệ',
                     onTap: () {
-                      Navigator.pop(context);
+                      context.pop();
                       // Handle contact sharing
                     },
                   ),

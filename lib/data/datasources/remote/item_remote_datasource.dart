@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/network/dio_client.dart';
 import 'package:trao_doi_do_app/data/models/response/api_response_model.dart';
-import 'package:trao_doi_do_app/data/models/response/items_response_model.dart';
+import 'package:trao_doi_do_app/data/models/response/item_response_model.dart';
 import 'package:trao_doi_do_app/domain/entities/params/items_query.dart';
 
 abstract class ItemRemoteDataSource {

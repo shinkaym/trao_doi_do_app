@@ -1,15 +1,17 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/network/dio_client.dart';
 import 'package:trao_doi_do_app/data/models/post_model.dart';
 import 'package:trao_doi_do_app/data/models/response/api_response_model.dart';
-import 'package:trao_doi_do_app/data/models/response/posts_response_model.dart';
+import 'package:trao_doi_do_app/data/models/response/post_response_model.dart';
 import 'package:trao_doi_do_app/domain/entities/params/posts_query.dart';
 
 abstract class PostRemoteDataSource {
   Future<ApiResponseModel<void>> createPost(PostModel post);
   Future<ApiResponseModel<PostsResponseModel>> getPosts(PostsQuery query);
+  Future<ApiResponseModel<PostDetailResponseModel>> getPostBySlug(String slug);
 }
 
 class PostRemoteDataSourceImpl implements PostRemoteDataSource {
@@ -34,14 +36,45 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
   Future<ApiResponseModel<PostsResponseModel>> getPosts(
     PostsQuery query,
   ) async {
+    final params = query.toQueryParams();
+    print('📥 Params gửi đi: $params');
+
     final response = await _dioClient.get(
       ApiConstants.clientPosts,
-      queryParameters: query.toQueryParams(),
+      queryParameters: params,
+      options: Options(extra: {'requiresAuth': false}),
+    );
+
+    // ✅ In toàn bộ response JSON raw
+    print(
+      '📥 JSON nhận về:\n${const JsonEncoder.withIndent('  ').convert(response.data)}',
     );
 
     return ApiResponseModel<PostsResponseModel>.fromJson(
       response.data,
       (json) => PostsResponseModel.fromJson(json as Map<String, dynamic>),
+    );
+  }
+
+  @override
+  Future<ApiResponseModel<PostDetailResponseModel>> getPostBySlug(
+    String slug,
+  ) async {
+    print('📥 Getting post by slug: $slug');
+
+    final response = await _dioClient.get(
+      '${ApiConstants.posts}/slug/$slug',
+      options: Options(extra: {'requiresAuth': false}),
+    );
+
+    // ✅ In toàn bộ response JSON raw
+    print(
+      '📥 Post detail JSON:\n${const JsonEncoder.withIndent('  ').convert(response.data)}',
+    );
+
+    return ApiResponseModel<PostDetailResponseModel>.fromJson(
+      response.data,
+      (json) => PostDetailResponseModel.fromJson(json as Map<String, dynamic>),
     );
   }
 }

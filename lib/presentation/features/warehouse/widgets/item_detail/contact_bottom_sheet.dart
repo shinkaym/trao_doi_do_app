@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 
 class ContactBottomSheet extends StatelessWidget {
   final Map<String, dynamic> donor;
@@ -60,7 +61,7 @@ class ContactBottomSheet extends StatelessWidget {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    Navigator.pop(context);
+                    context.pop();
                   },
                   icon: const Icon(Icons.phone),
                   label: const Text('Gọi điện'),
@@ -70,7 +71,7 @@ class ContactBottomSheet extends StatelessWidget {
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    Navigator.pop(context);
+                    context.pop();
                   },
                   icon: const Icon(Icons.message),
                   label: const Text('Nhắn tin'),

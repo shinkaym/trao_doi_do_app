@@ -255,11 +255,11 @@ GoRoute _buildPostsRoute() {
     builder: (context, state) => const PostsScreen(),
     routes: [
       GoRoute(
-        path: 'post-detail/:id',
+        path: 'post-detail/:slug',
         name: 'post-detail',
         builder: (context, state) {
-          final postId = state.pathParameters['id']!;
-          return PostDetailScreen(postId: postId);
+          final postSlug = state.pathParameters['slug']!;
+          return PostDetailScreen(postSlug: postSlug);
         },
       ),
       GoRoute(

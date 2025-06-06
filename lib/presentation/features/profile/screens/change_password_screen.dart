@@ -9,6 +9,17 @@ import 'package:trao_doi_do_app/presentation/features/profile/widgets/change_pas
 import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
 import 'package:trao_doi_do_app/presentation/widgets/password_strength_widget.dart';
+import 'package:trao_doi_do_app/presentation/models/password_strength.dart';
+
+// Provider cho password strength state trong change password
+final changePasswordStrengthProvider = StateProvider.autoDispose<PasswordStrength>((ref) {
+  return PasswordStrength();
+});
+
+// Provider cho loading state
+final changePasswordLoadingProvider = StateProvider.autoDispose<bool>((ref) {
+  return false;
+});
 
 class ChangePasswordScreen extends HookConsumerWidget {
   const ChangePasswordScreen({super.key});
@@ -32,44 +43,27 @@ class ChangePasswordScreen extends HookConsumerWidget {
     final isCurrentPasswordVisible = useState(false);
     final isNewPasswordVisible = useState(false);
     final isConfirmPasswordVisible = useState(false);
-    final isLoading = useState(false);
 
-    // Password strength indicators using hooks
-    final hasMinLength = useState(false);
-    final hasUppercase = useState(false);
-    final hasLowercase = useState(false);
-    final hasNumbers = useState(false);
-    final hasSpecialChar = useState(false);
-
-    // Memoized password strength calculations
-    final isPasswordStrong = useMemoized(
-      () => hasMinLength.value &&
-          hasUppercase.value &&
-          hasLowercase.value &&
-          hasNumbers.value &&
-          hasSpecialChar.value,
-      [
-        hasMinLength.value,
-        hasUppercase.value,
-        hasLowercase.value,
-        hasNumbers.value,
-        hasSpecialChar.value,
-      ],
-    );
+    // Watch providers
+    final passwordStrength = ref.watch(changePasswordStrengthProvider);
+    final isLoading = ref.watch(changePasswordLoadingProvider);
 
     // Password strength checking function
     void checkPasswordStrength(String password) {
-      hasMinLength.value = password.length >= 8;
-      hasUppercase.value = password.contains(RegExp(r'[A-Z]'));
-      hasLowercase.value = password.contains(RegExp(r'[a-z]'));
-      hasNumbers.value = password.contains(RegExp(r'[0-9]'));
-      hasSpecialChar.value = password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+      final newStrength = PasswordStrength(
+        hasMinLength: password.length >= 8,
+        hasUppercase: password.contains(RegExp(r'[A-Z]')),
+        hasLowercase: password.contains(RegExp(r'[a-z]')),
+        hasNumbers: password.contains(RegExp(r'[0-9]')),
+        hasSpecialChar: password.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]')),
+      );
+      ref.read(changePasswordStrengthProvider.notifier).state = newStrength;
     }
 
     // Handle password change function
     Future<void> handleChangePassword() async {
-      if (formKey.currentState!.validate() && isPasswordStrong) {
-        isLoading.value = true;
+      if (formKey.currentState!.validate() && passwordStrength.isStrong) {
+        ref.read(changePasswordLoadingProvider.notifier).state = true;
 
         try {
           // Giả lập API call thay đổi mật khẩu
@@ -84,11 +78,7 @@ class ChangePasswordScreen extends HookConsumerWidget {
             confirmPasswordController.clear();
 
             // Reset password strength indicators
-            hasMinLength.value = false;
-            hasUppercase.value = false;
-            hasLowercase.value = false;
-            hasNumbers.value = false;
-            hasSpecialChar.value = false;
+            ref.read(changePasswordStrengthProvider.notifier).state = PasswordStrength();
 
             // Quay lại màn hình trước đó
             context.pop();
@@ -98,12 +88,20 @@ class ChangePasswordScreen extends HookConsumerWidget {
             context.showErrorSnackBar('Lỗi khi đổi mật khẩu: $e');
           }
         } finally {
-          if (context.mounted) {
-            isLoading.value = false;
-          }
+          ref.read(changePasswordLoadingProvider.notifier).state = false;
         }
       }
     }
+
+    // Listen to new password changes
+    useEffect(() {
+      void listener() {
+        checkPasswordStrength(newPasswordController.text);
+      }
+
+      newPasswordController.addListener(listener);
+      return () => newPasswordController.removeListener(listener);
+    }, [newPasswordController]);
 
     final isTablet = context.isTablet;
     final theme = context.theme;
@@ -151,7 +149,7 @@ class ChangePasswordScreen extends HookConsumerWidget {
                         TextFormField(
                           controller: currentPasswordController,
                           focusNode: currentPasswordFocusNode,
-                          enabled: !isLoading.value,
+                          enabled: !isLoading,
                           obscureText: !isCurrentPasswordVisible.value,
                           decoration: CustomInputDecoration.build(
                             context,
@@ -188,7 +186,7 @@ class ChangePasswordScreen extends HookConsumerWidget {
                         TextFormField(
                           controller: newPasswordController,
                           focusNode: newPasswordFocusNode,
-                          enabled: !isLoading.value,
+                          enabled: !isLoading,
                           obscureText: !isNewPasswordVisible.value,
                           decoration: CustomInputDecoration.build(
                             context,
@@ -215,12 +213,11 @@ class ChangePasswordScreen extends HookConsumerWidget {
                             if (value == currentPasswordController.text) {
                               return 'Mật khẩu mới phải khác mật khẩu hiện tại';
                             }
-                            if (!isPasswordStrong) {
+                            if (!passwordStrength.isStrong) {
                               return 'Mật khẩu chưa đủ mạnh';
                             }
                             return null;
                           },
-                          onChanged: checkPasswordStrength,
                           onFieldSubmitted: (_) => confirmPasswordFocusNode.requestFocus(),
                         ),
                         SizedBox(height: isTablet ? 16 : 12),
@@ -229,11 +226,11 @@ class ChangePasswordScreen extends HookConsumerWidget {
                         if (newPasswordController.text.isNotEmpty) ...[
                           PasswordStrengthWidget(
                             password: newPasswordController.text,
-                            hasMinLength: hasMinLength.value,
-                            hasUppercase: hasUppercase.value,
-                            hasLowercase: hasLowercase.value,
-                            hasNumbers: hasNumbers.value,
-                            hasSpecialChar: hasSpecialChar.value,
+                            hasMinLength: passwordStrength.hasMinLength,
+                            hasUppercase: passwordStrength.hasUppercase,
+                            hasLowercase: passwordStrength.hasLowercase,
+                            hasNumbers: passwordStrength.hasNumbers,
+                            hasSpecialChar: passwordStrength.hasSpecialChar,
                           ),
                           SizedBox(height: isTablet ? 24 : 20),
                         ],
@@ -242,7 +239,7 @@ class ChangePasswordScreen extends HookConsumerWidget {
                         TextFormField(
                           controller: confirmPasswordController,
                           focusNode: confirmPasswordFocusNode,
-                          enabled: !isLoading.value,
+                          enabled: !isLoading,
                           obscureText: !isConfirmPasswordVisible.value,
                           decoration: CustomInputDecoration.build(
                             context,
@@ -283,7 +280,7 @@ class ChangePasswordScreen extends HookConsumerWidget {
                         SizedBox(
                           height: isTablet ? 56 : 50,
                           child: ElevatedButton.icon(
-                            onPressed: (isLoading.value || !isPasswordStrong)
+                            onPressed: (isLoading || !passwordStrength.isStrong)
                                 ? null
                                 : handleChangePassword,
                             style: ElevatedButton.styleFrom(
@@ -293,7 +290,7 @@ class ChangePasswordScreen extends HookConsumerWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            icon: isLoading.value
+                            icon: isLoading
                                 ? const SizedBox(
                                     width: 20,
                                     height: 20,
@@ -306,7 +303,7 @@ class ChangePasswordScreen extends HookConsumerWidget {
                                   )
                                 : const Icon(Icons.security),
                             label: Text(
-                              isLoading.value ? 'Đang cập nhật...' : 'Đổi mật khẩu',
+                              isLoading ? 'Đang cập nhật...' : 'Đổi mật khẩu',
                               style: TextStyle(
                                 fontSize: isTablet ? 18 : 16,
                                 fontWeight: FontWeight.w600,

@@ -4,46 +4,12 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/domain/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/auth/widgets/auth_divider_widget.dart';
+import 'package:trao_doi_do_app/presentation/models/password_strength.dart';
+import 'package:trao_doi_do_app/presentation/widgets/auth_divider.dart';
+import 'package:trao_doi_do_app/presentation/widgets/auth_link.dart';
 import 'package:trao_doi_do_app/presentation/widgets/password_strength_widget.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
-
-// State classes
-class PasswordStrengthState {
-  final bool hasMinLength;
-  final bool hasUppercase;
-  final bool hasLowercase;
-  final bool hasNumbers;
-  final bool hasSpecialChar;
-
-  const PasswordStrengthState({
-    this.hasMinLength = false,
-    this.hasUppercase = false,
-    this.hasLowercase = false,
-    this.hasNumbers = false,
-    this.hasSpecialChar = false,
-  });
-
-  bool get isStrong =>
-      hasMinLength && hasUppercase && hasLowercase && hasNumbers && hasSpecialChar;
-
-  PasswordStrengthState copyWith({
-    bool? hasMinLength,
-    bool? hasUppercase,
-    bool? hasLowercase,
-    bool? hasNumbers,
-    bool? hasSpecialChar,
-  }) {
-    return PasswordStrengthState(
-      hasMinLength: hasMinLength ?? this.hasMinLength,
-      hasUppercase: hasUppercase ?? this.hasUppercase,
-      hasLowercase: hasLowercase ?? this.hasLowercase,
-      hasNumbers: hasNumbers ?? this.hasNumbers,
-      hasSpecialChar: hasSpecialChar ?? this.hasSpecialChar,
-    );
-  }
-}
 
 class ResetPasswordState {
   final bool isLoading;
@@ -70,20 +36,22 @@ class ResetPasswordState {
 }
 
 // Providers
-final passwordStrengthProvider = StateNotifierProvider<PasswordStrengthNotifier, PasswordStrengthState>((ref) {
-  return PasswordStrengthNotifier();
-});
+final passwordStrengthProvider =
+    StateNotifierProvider<PasswordStrengthNotifier, PasswordStrength>((ref) {
+      return PasswordStrengthNotifier();
+    });
 
-final resetPasswordProvider = StateNotifierProvider<ResetPasswordNotifier, ResetPasswordState>((ref) {
-  return ResetPasswordNotifier();
-});
+final resetPasswordProvider =
+    StateNotifierProvider<ResetPasswordNotifier, ResetPasswordState>((ref) {
+      return ResetPasswordNotifier();
+    });
 
 // Notifiers
-class PasswordStrengthNotifier extends StateNotifier<PasswordStrengthState> {
-  PasswordStrengthNotifier() : super(const PasswordStrengthState());
+class PasswordStrengthNotifier extends StateNotifier<PasswordStrength> {
+  PasswordStrengthNotifier() : super(const PasswordStrength());
 
   void checkPasswordStrength(String password) {
-    state = PasswordStrengthState(
+    state = PasswordStrength(
       hasMinLength: password.length >= 8,
       hasUppercase: password.contains(RegExp(r'[A-Z]')),
       hasLowercase: password.contains(RegExp(r'[a-z]')),
@@ -93,7 +61,7 @@ class PasswordStrengthNotifier extends StateNotifier<PasswordStrengthState> {
   }
 
   void reset() {
-    state = const PasswordStrengthState();
+    state = const PasswordStrength();
   }
 }
 
@@ -134,7 +102,7 @@ class ResetPasswordScreen extends HookConsumerWidget {
     final confirmPasswordController = useTextEditingController();
     final passwordFocusNode = useFocusNode();
     final confirmPasswordFocusNode = useFocusNode();
-    
+
     final isPasswordVisible = useState(false);
     final isConfirmPasswordVisible = useState(false);
 
@@ -150,7 +118,8 @@ class ResetPasswordScreen extends HookConsumerWidget {
     // Effects
     useEffect(() {
       void onPasswordChanged() {
-        ref.read(passwordStrengthProvider.notifier)
+        ref
+            .read(passwordStrengthProvider.notifier)
             .checkPasswordStrength(passwordController.text);
       }
 
@@ -161,7 +130,7 @@ class ResetPasswordScreen extends HookConsumerWidget {
     useEffect(() {
       if (resetPasswordState.isSuccess) {
         context.showSuccessSnackBar('Đặt lại mật khẩu thành công!');
-        
+
         // Tự động chuyển về màn hình đăng nhập sau 3 giây
         Future.delayed(const Duration(seconds: 3), () {
           if (context.mounted) {
@@ -182,7 +151,8 @@ class ResetPasswordScreen extends HookConsumerWidget {
     // Methods
     void handleResetPassword() async {
       if (formKey.currentState!.validate() && passwordStrength.isStrong) {
-        await ref.read(resetPasswordProvider.notifier)
+        await ref
+            .read(resetPasswordProvider.notifier)
             .resetPassword(email, passwordController.text);
       }
     }
@@ -239,7 +209,9 @@ class ResetPasswordScreen extends HookConsumerWidget {
                         ),
                         SizedBox(height: isTablet ? 24 : 16),
                         Text(
-                          resetPasswordState.isSuccess ? 'Thành công!' : 'Đặt lại mật khẩu',
+                          resetPasswordState.isSuccess
+                              ? 'Thành công!'
+                              : 'Đặt lại mật khẩu',
                           style: theme.textTheme.headlineMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.bold,
@@ -268,22 +240,23 @@ class ResetPasswordScreen extends HookConsumerWidget {
                     constraints: BoxConstraints(
                       maxWidth: isTablet ? 500 : double.infinity,
                     ),
-                    child: resetPasswordState.isSuccess
-                        ? _buildSuccessContent(context, handleBackToLogin)
-                        : _buildFormContent(
-                            context,
-                            formKey,
-                            passwordController,
-                            confirmPasswordController,
-                            passwordFocusNode,
-                            confirmPasswordFocusNode,
-                            isPasswordVisible,
-                            isConfirmPasswordVisible,
-                            passwordStrength,
-                            resetPasswordState,
-                            handleResetPassword,
-                            handleBackToLogin,
-                          ),
+                    child:
+                        resetPasswordState.isSuccess
+                            ? _buildSuccessContent(context, handleBackToLogin)
+                            : _buildFormContent(
+                              context,
+                              formKey,
+                              passwordController,
+                              confirmPasswordController,
+                              passwordFocusNode,
+                              confirmPasswordFocusNode,
+                              isPasswordVisible,
+                              isConfirmPasswordVisible,
+                              passwordStrength,
+                              resetPasswordState,
+                              handleResetPassword,
+                              handleBackToLogin,
+                            ),
                   ),
                 ),
               ],
@@ -303,7 +276,7 @@ class ResetPasswordScreen extends HookConsumerWidget {
     FocusNode confirmPasswordFocusNode,
     ValueNotifier<bool> isPasswordVisible,
     ValueNotifier<bool> isConfirmPasswordVisible,
-    PasswordStrengthState passwordStrength,
+    PasswordStrength passwordStrength,
     ResetPasswordState resetPasswordState,
     VoidCallback handleResetPassword,
     VoidCallback handleBackToLogin,
@@ -398,7 +371,8 @@ class ResetPasswordScreen extends HookConsumerWidget {
                   }
                   return null;
                 },
-                onFieldSubmitted: (_) => confirmPasswordFocusNode.requestFocus(),
+                onFieldSubmitted:
+                    (_) => confirmPasswordFocusNode.requestFocus(),
               );
             },
           ),
@@ -436,7 +410,8 @@ class ResetPasswordScreen extends HookConsumerWidget {
                       color: theme.hintColor,
                     ),
                     onPressed: () {
-                      isConfirmPasswordVisible.value = !isConfirmPasswordVisible.value;
+                      isConfirmPasswordVisible.value =
+                          !isConfirmPasswordVisible.value;
                     },
                   ),
                 ),
@@ -502,9 +477,10 @@ class ResetPasswordScreen extends HookConsumerWidget {
           SizedBox(
             height: isTablet ? 56 : 50,
             child: ElevatedButton(
-              onPressed: (resetPasswordState.isLoading || !passwordStrength.isStrong)
-                  ? null
-                  : handleResetPassword,
+              onPressed:
+                  (resetPasswordState.isLoading || !passwordStrength.isStrong)
+                      ? null
+                      : handleResetPassword,
               style: ElevatedButton.styleFrom(
                 backgroundColor: colorScheme.primary,
                 foregroundColor: colorScheme.onPrimary,
@@ -512,34 +488,35 @@ class ResetPasswordScreen extends HookConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: resetPasswordState.isLoading
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.white,
+              child:
+                  resetPasswordState.isLoading
+                      ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      )
+                      : Text(
+                        'Đặt lại mật khẩu',
+                        style: TextStyle(
+                          fontSize: isTablet ? 18 : 16,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    )
-                  : Text(
-                      'Đặt lại mật khẩu',
-                      style: TextStyle(
-                        fontSize: isTablet ? 18 : 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
             ),
           ),
           SizedBox(height: isTablet ? 32 : 24),
 
           // Divider
-          const AuthDividerWidget(),
+          const AuthDivider(),
           SizedBox(height: isTablet ? 32 : 24),
 
           // Back to login
-          AuthLinkWidget(
+          AuthLink(
             question: 'Nhớ mật khẩu cũ? ',
             linkText: 'Đăng nhập',
             onTap: handleBackToLogin,
@@ -550,7 +527,10 @@ class ResetPasswordScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildSuccessContent(BuildContext context, VoidCallback handleBackToLogin) {
+  Widget _buildSuccessContent(
+    BuildContext context,
+    VoidCallback handleBackToLogin,
+  ) {
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;

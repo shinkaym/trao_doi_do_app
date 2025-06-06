@@ -3,10 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
-import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/auth/widgets/app_header_widget.dart';
-import 'package:trao_doi_do_app/presentation/features/auth/widgets/auth_divider_widget.dart';
+import 'package:trao_doi_do_app/presentation/features/auth/widgets/app_header.dart';
+import 'package:trao_doi_do_app/presentation/widgets/auth_divider.dart';
+import 'package:trao_doi_do_app/presentation/widgets/auth_link.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
 import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
@@ -27,48 +27,39 @@ class LoginScreen extends HookConsumerWidget {
     final colorScheme = context.colorScheme;
     final isDark = context.isDarkMode;
 
-    // Handle auth state changes
-    void handleAuthStateChange(AuthState? previous, AuthState current) {
-      // Clear any previous messages
-      if (previous?.failure != null && current.failure == null) {
+    // Listen to auth state changes
+    ref.listen<AuthState>(authProvider, (previous, current) {
+      // Show error message
+      if (current.failure != null &&
+          previous?.failure != current.failure &&
+          !current.isLoading) {
+        context.showErrorSnackBar(current.failure!.message);
         ref.read(authProvider.notifier).clearError();
       }
-      if (previous?.successMessage != null && current.successMessage == null) {
+
+      // Show success message
+      if (current.successMessage != null &&
+          previous?.successMessage != current.successMessage) {
+        context.showSuccessSnackBar(current.successMessage!);
         ref.read(authProvider.notifier).clearSuccess();
       }
 
-      // Handle success login
-      if (current.isLoggedIn && current.user != null && !current.isLoading) {
-        if (current.successMessage != null) {
-          context.showSuccessSnackBar(current.successMessage!);
-          ref.read(authProvider.notifier).clearSuccess();
-        }
-
-        // Navigate to main screen
+      // Navigate after login success
+      if (current.isLoggedIn &&
+          previous?.isLoggedIn != true &&
+          current.user != null &&
+          !current.isLoading) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (context.mounted) {
             context.goNamed('posts');
           }
         });
       }
-
-      // Handle login error
-      if (current.failure != null && !current.isLoading) {
-        context.showErrorSnackBar(getErrorMessage(current.failure!));
-        ref.read(authProvider.notifier).clearError();
-      }
-    }
-
-    // Listen to auth state changes
-    ref.listen<AuthState>(
-      authProvider,
-      (previous, current) => handleAuthStateChange(previous, current),
-    );
+    });
 
     // Handle login action
     Future<void> handleLogin() async {
       if (!formKey.currentState!.validate()) {
-        context.showWarningSnackBar("Vui lòng kiểm tra thông tin nhập vào");
         return;
       }
 
@@ -78,13 +69,9 @@ class LoginScreen extends HookConsumerWidget {
       final email = emailController.text.trim();
       final password = passwordController.text;
 
-      try {
-        await ref
-            .read(authProvider.notifier)
-            .login(email: email, password: password, device: 'mobile');
-      } catch (e) {
-        context.showErrorSnackBar("Đã xảy ra lỗi khi đăng nhập");
-      }
+      await ref
+          .read(authProvider.notifier)
+          .login(email: email, password: password, device: 'mobile');
     }
 
     // Handle forgot password
@@ -111,7 +98,7 @@ class LoginScreen extends HookConsumerWidget {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                AppHeaderWidget(
+                AppHeader(
                   title: 'Đăng nhập',
                   subtitle: 'Chào mừng bạn trở lại',
                   icon: Icons.lock_outline,
@@ -264,12 +251,12 @@ class LoginScreen extends HookConsumerWidget {
 
                           SizedBox(height: isTablet ? 32 : 24),
 
-                          const AuthDividerWidget(),
+                          const AuthDivider(),
 
                           SizedBox(height: isTablet ? 32 : 24),
 
                           // Sign Up Link
-                          AuthLinkWidget(
+                          AuthLink(
                             question: 'Bạn chưa có tài khoản? ',
                             linkText: 'Đăng ký',
                             onTap: authState.isLoading ? null : handleSignUp,
@@ -285,74 +272,6 @@ class LoginScreen extends HookConsumerWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-// Helper functions
-String getErrorMessage(Failure failure) {
-  if (failure is ValidationFailure) {
-    return failure.message;
-  } else if (failure is NetworkFailure) {
-    return 'Lỗi kết nối mạng. Vui lòng kiểm tra internet.';
-  } else if (failure is ServerFailure) {
-    if (failure.statusCode == 401) {
-      return 'Email hoặc mật khẩu không chính xác.';
-    } else if (failure.statusCode == 429) {
-      return 'Quá nhiều lần thử. Vui lòng thử lại sau.';
-    }
-    return failure.message.isNotEmpty
-        ? failure.message
-        : 'Đã xảy ra lỗi từ server.';
-  }
-  return 'Đã xảy ra lỗi không xác định.';
-}
-
-// Auth Link Widget
-class AuthLinkWidget extends StatelessWidget {
-  final String question;
-  final String linkText;
-  final VoidCallback? onTap;
-
-  const AuthLinkWidget({
-    super.key,
-    required this.question,
-    required this.linkText,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isTablet = context.isTablet;
-    final theme = context.theme;
-
-    return Center(
-      child: Wrap(
-        alignment: WrapAlignment.center,
-        children: [
-          Text(
-            question,
-            style: TextStyle(
-              color: theme.colorScheme.onSurface.withOpacity(0.7),
-              fontSize: isTablet ? 16 : 14,
-            ),
-          ),
-          GestureDetector(
-            onTap: onTap,
-            child: Text(
-              linkText,
-              style: TextStyle(
-                color:
-                    onTap != null
-                        ? theme.colorScheme.primary
-                        : theme.disabledColor,
-                fontSize: isTablet ? 16 : 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

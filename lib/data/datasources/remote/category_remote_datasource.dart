@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/network/dio_client.dart';
 import 'package:trao_doi_do_app/data/models/response/api_response_model.dart';
-import 'package:trao_doi_do_app/data/models/response/categories_response_model.dart';
+import 'package:trao_doi_do_app/data/models/response/category_response_model.dart';
 
 abstract class CategoryRemoteDataSource {
   Future<ApiResponseModel<CategoriesResponseModel>> getCategories();

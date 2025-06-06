@@ -43,27 +43,28 @@ class ApiInterceptor extends Interceptor {
 
       if (refreshToken != null) {
         try {
-          final newTokens = await _refreshToken(refreshToken);
-          final newAccessToken = newTokens['jwt'];
-          final newRefreshToken = newTokens['refreshToken'];
+          // Sử dụng response format mới
+          final response = await _refreshToken(refreshToken);
+          final newAccessToken = response['jwt'];
 
+          // Lưu token mới (chỉ có jwt, không có refreshToken mới)
           await authDataSource.saveAccessToken(newAccessToken);
-          await authDataSource.saveRefreshToken(newRefreshToken);
 
-          // Retry original request with new token
+          // Retry original request với token mới
           final requestOptions = err.requestOptions;
           requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
 
           final retryResponse = await Dio().fetch(requestOptions);
           return handler.resolve(retryResponse);
         } catch (e) {
-          // Refresh token failed
+          // Refresh token failed, clear all tokens
           await authDataSource.clearTokens();
-          // TODO: Optional: trigger logout or navigation
+          // TODO: Optional: trigger logout hoặc navigation về login
         }
       } else {
+        // Không có refresh token, clear tokens
         await authDataSource.clearTokens();
-        // TODO: Optional: trigger logout or navigation
+        // TODO: Optional: trigger logout hoặc navigation về login
       }
     }
 
@@ -81,7 +82,18 @@ class ApiInterceptor extends Interceptor {
     );
 
     if (response.statusCode == 200) {
-      return response.data['data'];
+      final data = response.data;
+      // Kiểm tra theo format API response mới
+      if (data['code'] == 0 && data['data'] != null) {
+        return data['data'];
+      } else {
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          error: data['message'] ?? 'Refresh token failed',
+        );
+      }
     } else {
       throw DioException(
         requestOptions: response.requestOptions,

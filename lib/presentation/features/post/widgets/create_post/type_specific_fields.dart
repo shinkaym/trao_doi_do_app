@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/domain/entities/category.dart';
 import 'package:trao_doi_do_app/domain/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/post/screens/create_post_screen.dart';
+import 'package:trao_doi_do_app/presentation/models/give_away_item.dart';
 
 class TypeSpecificFields extends HookConsumerWidget {
   final CreatePostType selectedType;

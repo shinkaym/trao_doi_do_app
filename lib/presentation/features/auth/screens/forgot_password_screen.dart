@@ -5,9 +5,12 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/domain/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/auth/widgets/app_header_widget.dart';
-import 'package:trao_doi_do_app/presentation/features/auth/widgets/auth_divider_widget.dart';
-import 'package:trao_doi_do_app/presentation/features/auth/widgets/info_card_widget.dart';
+import 'package:trao_doi_do_app/presentation/features/auth/widgets/app_header.dart';
+import 'package:trao_doi_do_app/presentation/features/auth/widgets/email_info_card.dart';
+import 'package:trao_doi_do_app/presentation/features/auth/widgets/info_card.dart';
+import 'package:trao_doi_do_app/presentation/widgets/auth_divider.dart';
+import 'package:trao_doi_do_app/presentation/widgets/auth_link.dart';
+import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
 // State model cho forgot password
@@ -205,7 +208,7 @@ class ForgotPasswordScreen extends HookConsumerWidget {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                AppHeaderWidget(
+                AppHeader(
                   title:
                       forgotPasswordState.isEmailSent
                           ? 'Nhập mã OTP'
@@ -276,7 +279,7 @@ class ForgotPasswordScreen extends HookConsumerWidget {
           SizedBox(height: isTablet ? 40 : 32),
 
           // Mô tả
-          InfoCardWidget(
+          InfoCard(
             icon: Icons.info_outline,
             title: '',
             content:
@@ -288,7 +291,7 @@ class ForgotPasswordScreen extends HookConsumerWidget {
           TextFormField(
             controller: emailController,
             keyboardType: TextInputType.emailAddress,
-            decoration: _inputDecoration(
+            decoration: CustomInputDecoration.build(
               context,
               label: 'Email',
               hint: 'Nhập email của bạn',
@@ -532,158 +535,16 @@ class ForgotPasswordScreen extends HookConsumerWidget {
         SizedBox(height: isTablet ? 24 : 20),
 
         // Help text
-        const AuthDividerWidget(),
+        const AuthDivider(),
         SizedBox(height: isTablet ? 32 : 24),
 
         // Back to login
-        AuthLinkWidget(
+        AuthLink(
           question: 'Nhớ mật khẩu? ',
           linkText: 'Đăng nhập',
           onTap: onBackToLogin,
         ),
         SizedBox(height: isTablet ? 40 : 32),
-      ],
-    );
-  }
-
-  InputDecoration _inputDecoration(
-    BuildContext context, {
-    required String label,
-    required String hint,
-    required IconData icon,
-    Widget? suffix,
-  }) {
-    final theme = context.theme;
-
-    return InputDecoration(
-      labelText: label,
-      hintText: hint,
-      hintStyle: TextStyle(
-        color: theme.hintColor.withOpacity(0.7),
-        fontSize: 16,
-      ),
-      labelStyle: TextStyle(
-        color: theme.hintColor,
-        fontSize: 16,
-        fontWeight: FontWeight.w500,
-      ),
-      floatingLabelStyle: TextStyle(
-        color: theme.colorScheme.primary,
-        fontSize: 14,
-        fontWeight: FontWeight.w600,
-      ),
-      prefixIcon: Padding(
-        padding: const EdgeInsets.only(right: 12),
-        child: Icon(icon, color: theme.hintColor, size: 22),
-      ),
-      prefixIconConstraints: const BoxConstraints(minWidth: 50, minHeight: 50),
-      suffixIcon:
-          suffix != null
-              ? Padding(padding: const EdgeInsets.only(left: 12), child: suffix)
-              : null,
-      contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 0),
-      border: UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: theme.dividerColor.withOpacity(0.5),
-          width: 1,
-        ),
-      ),
-      enabledBorder: UnderlineInputBorder(
-        borderSide: BorderSide(
-          color: theme.dividerColor.withOpacity(0.6),
-          width: 1,
-        ),
-      ),
-      focusedBorder: UnderlineInputBorder(
-        borderSide: BorderSide(color: theme.colorScheme.primary, width: 2.5),
-      ),
-      errorBorder: UnderlineInputBorder(
-        borderSide: BorderSide(color: theme.colorScheme.error, width: 2),
-      ),
-      focusedErrorBorder: UnderlineInputBorder(
-        borderSide: BorderSide(color: theme.colorScheme.error, width: 2.5),
-      ),
-      errorStyle: TextStyle(
-        color: theme.colorScheme.error,
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        height: 1.4,
-      ),
-    );
-  }
-}
-
-// Widget helper cho email info (giả sử đã có sẵn)
-class EmailInfoCard extends StatelessWidget {
-  final String email;
-
-  const EmailInfoCard({super.key, required this.email});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: context.theme.dividerColor),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.email_outlined, color: context.colorScheme.primary),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              'Mã OTP đã được gửi đến:\n$email',
-              style: TextStyle(fontSize: 14, color: context.theme.hintColor),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Widget helper cho auth link (giả sử đã có sẵn)
-class AuthLinkWidget extends StatelessWidget {
-  final String question;
-  final String linkText;
-  final VoidCallback onTap;
-
-  const AuthLinkWidget({
-    super.key,
-    required this.question,
-    required this.linkText,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isTablet = context.isTablet;
-    final theme = context.theme;
-    final colorScheme = context.colorScheme;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          question,
-          style: TextStyle(
-            color: theme.hintColor,
-            fontSize: isTablet ? 16 : 14,
-          ),
-        ),
-        GestureDetector(
-          onTap: onTap,
-          child: Text(
-            linkText,
-            style: TextStyle(
-              color: colorScheme.primary,
-              fontSize: isTablet ? 16 : 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
       ],
     );
   }

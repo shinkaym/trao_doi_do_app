@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:trao_doi_do_app/presentation/features/post/screens/create_post_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/create_post/image_section.dart';
+import 'package:trao_doi_do_app/presentation/models/post_image.dart';
 
 class CommonFields extends StatelessWidget {
   final TextEditingController titleController;

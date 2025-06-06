@@ -133,7 +133,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     result.fold(
       (failure) {
-        state = state.copyWith(isLoading: false, failure: failure);
+        // Dù logout API fail, vẫn clear state
+        state = AuthState(
+          failure: failure,
+          successMessage: 'Đăng xuất thành công!', // Vẫn thông báo thành công
+        );
       },
       (_) {
         state = AuthState(successMessage: 'Đăng xuất thành công!');
@@ -149,8 +153,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
         // Token refresh failed, logout user
         state = AuthState(failure: failure);
       },
-      (loginResponse) {
-        state = state.copyWith(user: loginResponse.user, isLoggedIn: true);
+      (user) {
+        // Refresh thành công, cập nhật user
+        state = state.copyWith(user: user, isLoggedIn: user != null);
       },
     );
   }

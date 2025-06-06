@@ -41,25 +41,36 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, void>> logout() async {
     try {
-      // Gọi API logout (optional)
+      // Gọi API logout trước
       try {
         await _remoteDataSource.logout();
+      } on ServerException catch (e) {
+        // Log error nhưng vẫn tiếp tục clear local data
+        print('Logout API failed: ${e.message}');
       } catch (e) {
-        // Ignore error from logout API, still clear local data
+        // Log error nhưng vẫn tiếp tục clear local data
+        print('Logout API failed: $e');
       }
 
-      // Clear local storage
+      // Clear local storage (luôn thực hiện dù API fail)
       await _localDataSource.clearTokens();
       await _clearUserInfo();
 
       return const Right(null);
     } catch (e) {
+      // Nếu clear local storage fail, vẫn cố gắng clear
+      try {
+        await _localDataSource.clearTokens();
+        await _clearUserInfo();
+      } catch (clearError) {
+        print('Failed to clear local data: $clearError');
+      }
       return Left(ServerFailure('Lỗi khi đăng xuất'));
     }
   }
 
   @override
-  Future<Either<Failure, LoginResponse>> refreshToken() async {
+  Future<Either<Failure, User?>> refreshToken() async {
     try {
       final refreshToken = await _localDataSource.getRefreshToken();
       if (refreshToken == null) {
@@ -68,12 +79,16 @@ class AuthRepositoryImpl implements AuthRepository {
 
       final response = await _remoteDataSource.refreshToken(refreshToken);
 
-      // Cập nhật tokens mới
+      // Cập nhật access token mới (chỉ có jwt)
       await _localDataSource.saveAccessToken(response.jwt);
-      await _localDataSource.saveRefreshToken(response.refreshToken);
-      await _saveUserInfo(response.user);
+      // Refresh token không đổi, giữ nguyên
 
-      return Right(response);
+      // Lấy user hiện tại từ local storage
+      final currentUser = await getCurrentUser();
+      return currentUser.fold(
+        (failure) => Left(failure),
+        (user) => Right(user),
+      );
     } on ServerException catch (e) {
       // Nếu refresh token fail, clear tokens
       await _localDataSource.clearTokens();
@@ -82,7 +97,10 @@ class AuthRepositoryImpl implements AuthRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure('Lỗi không xác định'));
+      // Clear tokens nếu có lỗi không xác định
+      await _localDataSource.clearTokens();
+      await _clearUserInfo();
+      return Left(ServerFailure('Lỗi không xác định khi refresh token'));
     }
   }
 

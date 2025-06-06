@@ -259,7 +259,7 @@ class _TextSection extends HookWidget {
         child: Column(
           children: [
             Text(
-              'SAS',
+              'ShareAndSave',
               style: theme.textTheme.headlineLarge?.copyWith(
                 color: colorScheme.onBackground,
                 fontWeight: FontWeight.bold,
@@ -269,7 +269,7 @@ class _TextSection extends HookWidget {
             ),
             SizedBox(height: isTablet ? 12 : 8),
             Text(
-              'Share and save',
+              'Share & Save',
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.hintColor,
                 fontSize: isTablet ? 18 : 16,
@@ -364,7 +364,7 @@ class _BottomBranding extends StatelessWidget {
           ),
           SizedBox(height: isTablet ? 8 : 4),
           Text(
-            '© 2024 SAS App',
+            '© 2025 ShareAndSave App',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.hintColor.withOpacity(0.4),
               fontSize: isTablet ? 12 : 10,
