@@ -53,3 +53,5 @@ enum SortOrder {
   final String sort;
   final String order;
 }
+
+enum InterestAction { create, cancel }

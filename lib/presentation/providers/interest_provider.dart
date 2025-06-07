@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
-import 'package:trao_doi_do_app/data/models/others_model.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
+import 'package:trao_doi_do_app/domain/enums/index.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_interest_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/cancel_interest_usecase.dart';
 
@@ -62,30 +62,15 @@ class InterestNotifier extends StateNotifier<InterestState> {
     );
   }
 
-  // Phương thức chính để toggle interest
-  Future<void> toggleInterest(
-    int postID,
-    List<InterestModel> currentInterests,
-    int? currentUserId,
-  ) async {
-    if (currentUserId == null) return;
-
-    // Kiểm tra trạng thái hiện tại dựa trên danh sách interests
-    final isCurrentlyInterested = _isUserInterested(
-      currentInterests,
-      currentUserId,
-    );
-
-    if (isCurrentlyInterested) {
-      await cancelInterest(postID);
-    } else {
-      await createInterest(postID);
+  Future<void> toggleInterest(int postID, InterestAction action) async {
+    switch (action) {
+      case InterestAction.create:
+        await createInterest(postID);
+        break;
+      case InterestAction.cancel:
+        await cancelInterest(postID);
+        break;
     }
-  }
-
-  // Helper method để kiểm tra user có quan tâm bài đăng không
-  bool _isUserInterested(List<InterestModel> interests, int userId) {
-    return interests.any((interest) => interest.userID == userId);
   }
 
   void clearMessages() {

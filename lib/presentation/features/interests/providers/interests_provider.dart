@@ -21,7 +21,7 @@ class InterestsListState {
     this.interests = const [],
     this.currentPage = 1,
     this.totalPage = 1,
-    this.query = const InterestsQuery(),
+    this.query = const InterestsQuery(order: 'DESC'),
     this.failure,
     this.hasMoreData = true,
     this.isLoadingPage = false,
@@ -43,7 +43,7 @@ class InterestsListState {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       interests: interests ?? this.interests,
       currentPage: currentPage ?? this.currentPage,
-      totalPage: totalPage != null ? totalPage : this.totalPage,
+      totalPage: totalPage ?? this.totalPage,
       query: query ?? this.query,
       failure: failure,
       hasMoreData: hasMoreData ?? this.hasMoreData,
@@ -64,16 +64,20 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
     bool isLoadMore = false,
     bool isGoToPage = false,
   }) async {
+    // Ngăn chặn multiple calls cùng lúc
     if (state.isLoading || state.isLoadingMore || state.isLoadingPage) return;
 
     final query = newQuery ?? state.query;
     final isFirstLoad = refresh || state.interests.isEmpty;
+    final isTypeChanged = newQuery != null && newQuery.type != state.query.type;
 
-    if (isFirstLoad) {
+    // Nếu type thay đổi, luôn load từ đầu
+    if (isTypeChanged || isFirstLoad) {
       state = state.copyWith(
         isLoading: true,
         failure: null,
         query: query.copyWith(page: 1),
+        interests: [], // Clear data khi type thay đổi
       );
     } else if (isLoadMore) {
       if (!state.hasMoreData || state.currentPage >= state.totalPage) return;
@@ -87,45 +91,55 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
       state = state.copyWith(isLoadingPage: true, failure: null, query: query);
     }
 
-    final result = await _getInterestsUseCase(query);
+    try {
+      final result = await _getInterestsUseCase(state.query);
 
-    result.fold(
-      (failure) =>
+      result.fold(
+        (failure) =>
+            state = state.copyWith(
+              isLoading: false,
+              isLoadingMore: false,
+              isLoadingPage: false,
+              failure: failure,
+            ),
+        (interestsResult) {
+          List<InterestPost> newInterests;
+
+          if (isTypeChanged || isFirstLoad) {
+            newInterests = interestsResult.interests;
+          } else if (isLoadMore) {
+            newInterests = [...state.interests, ...interestsResult.interests];
+          } else if (isGoToPage) {
+            newInterests = interestsResult.interests;
+          } else {
+            newInterests = state.interests;
+          }
+
+          final actualTotalPage = interestsResult.totalPage;
+          final actualCurrentPage = actualTotalPage > 0 ? state.query.page : 1;
+          final actualHasMoreData =
+              actualTotalPage > 0 && actualCurrentPage < actualTotalPage;
+
           state = state.copyWith(
             isLoading: false,
             isLoadingMore: false,
             isLoadingPage: false,
-            failure: failure,
-          ),
-      (interestsResult) {
-        List<InterestPost> newInterests;
-
-        if (isFirstLoad) {
-          newInterests = interestsResult.interests;
-        } else if (isLoadMore) {
-          newInterests = [...state.interests, ...interestsResult.interests];
-        } else if (isGoToPage) {
-          newInterests = interestsResult.interests;
-        } else {
-          newInterests = state.interests;
-        }
-
-        final actualTotalPage = interestsResult.totalPage;
-        final actualCurrentPage = actualTotalPage > 0 ? state.query.page : 1;
-        final actualHasMoreData =
-            actualTotalPage > 0 && actualCurrentPage < actualTotalPage;
-
-        state = state.copyWith(
-          isLoading: false,
-          isLoadingMore: false,
-          isLoadingPage: false,
-          interests: newInterests,
-          currentPage: actualCurrentPage,
-          totalPage: actualTotalPage,
-          hasMoreData: actualHasMoreData,
-        );
-      },
-    );
+            interests: newInterests,
+            currentPage: actualCurrentPage,
+            totalPage: actualTotalPage,
+            hasMoreData: actualHasMoreData,
+            failure: null, // Clear failure khi success
+          );
+        },
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        isLoadingMore: false,
+        isLoadingPage: false,
+        failure: ServerFailure('Đã xảy ra lỗi không mong muốn'),
+      );
+    }
   }
 
   // Pagination methods
@@ -149,17 +163,17 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
 
   // Filter methods
   void filterByType(int? type) {
-    final newQuery = state.query.copyWith(type: type);
+    final newQuery = state.query.copyWith(type: type, page: 1);
     loadInterests(newQuery: newQuery, refresh: true);
   }
 
   void search(String? search) {
-    final newQuery = state.query.copyWith(search: search);
+    final newQuery = state.query.copyWith(search: search, page: 1);
     loadInterests(newQuery: newQuery, refresh: true);
   }
 
   void sortInterests(String? sort, String? order) {
-    final newQuery = state.query.copyWith(sort: sort, order: order);
+    final newQuery = state.query.copyWith(sort: sort, order: order, page: 1);
     loadInterests(newQuery: newQuery, refresh: true);
   }
 
@@ -172,7 +186,14 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
   }
 }
 
-final interestsListProvider =
+// Tạo hai provider riêng biệt cho hai tab
+final interestedPostsProvider =
+    StateNotifierProvider<InterestsListNotifier, InterestsListState>((ref) {
+      final getInterestsUseCase = ref.watch(getInterestsUseCaseProvider);
+      return InterestsListNotifier(getInterestsUseCase);
+    });
+
+final postsWithInterestsProvider =
     StateNotifierProvider<InterestsListNotifier, InterestsListState>((ref) {
       final getInterestsUseCase = ref.watch(getInterestsUseCaseProvider);
       return InterestsListNotifier(getInterestsUseCase);

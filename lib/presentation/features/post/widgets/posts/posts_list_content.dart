@@ -7,7 +7,7 @@ import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/post_ca
 import 'dart:convert';
 
 import 'package:trao_doi_do_app/presentation/widgets/list_empty_state.dart';
-import 'package:trao_doi_do_app/presentation/widgets/pagination.dart';
+import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/pagination.dart';
 
 class PostsListContent extends ConsumerWidget {
   final PostsListState postsState;

@@ -82,6 +82,7 @@ class InterestRemoteDataSourceImpl implements InterestRemoteDataSource {
       (json) => InterestsResponseModel.fromJson(json as Map<String, dynamic>),
     );
   }
+
 }
 
 final interestRemoteDataSourceProvider = Provider<InterestRemoteDataSource>((

@@ -85,10 +85,17 @@ class PostDetailScreen extends HookConsumerWidget {
       }
 
       if (!interestState.isLoading) {
-        // Gọi API toggle interest
+        // Kiểm tra trạng thái hiện tại của user trong danh sách interests
+        final userInterested = isUserInterested(post.interests, currentUser.id);
+
+        // Xác định action dựa trên trạng thái hiện tại
+        final action =
+            userInterested ? InterestAction.cancel : InterestAction.create;
+
+        // Gọi API toggle interest với action đã xác định
         await ref
             .read(interestProvider.notifier)
-            .toggleInterest(post.id!, post.interests, currentUser.id);
+            .toggleInterest(post.id!, action);
 
         final updatedState = ref.read(interestProvider);
 
@@ -617,7 +624,7 @@ class PostDetailScreen extends HookConsumerWidget {
               _buildDetailRow(
                 Icons.card_giftcard,
                 'Phần thưởng',
-                '${info['reward']}đ',
+                '${info['reward']}',
                 theme,
               ),
             ],

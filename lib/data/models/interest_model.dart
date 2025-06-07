@@ -8,6 +8,7 @@ class InterestModel extends Interest {
     required super.userName,
     required super.userAvatar,
     required super.status,
+    required super.createdAt,
   });
 
   factory InterestModel.fromJson(Map<String, dynamic> json) {
@@ -18,6 +19,7 @@ class InterestModel extends Interest {
       userName: json['userName'] ?? '',
       userAvatar: json['userAvatar'] ?? '',
       status: json['status'] ?? 0,
+      createdAt: json['createdAt'] ?? '',
     );
   }
 
@@ -29,6 +31,7 @@ class InterestModel extends Interest {
       'userName': userName,
       'userAvatar': userAvatar,
       'status': status,
+      'createdAt': createdAt,
     };
   }
 }
@@ -38,6 +41,9 @@ class InterestPostModel extends InterestPost {
     required super.id,
     required super.slug,
     required super.title,
+    required super.description,
+    required super.updatedAt,
+    required super.authorID,
     required super.type,
     required super.interests,
     required super.items,
@@ -48,19 +54,32 @@ class InterestPostModel extends InterestPost {
       id: json['id'] ?? 0,
       slug: json['slug'] ?? '',
       title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      updatedAt: json['updatedAt'] ?? '',
+      authorID: json['authorID'] ?? 0,
       type: json['type'] ?? 0,
-      interests: json['interests'] != null
-          ? (json['interests'] as List)
-              .map((interest) => InterestModel.fromJson(interest as Map<String, dynamic>))
-              .cast<Interest>()
-              .toList()
-          : [],
-      items: json['items'] != null
-          ? (json['items'] as List)
-              .map((item) => InterestItemModel.fromJson(item as Map<String, dynamic>))
-              .cast<InterestItem>()
-              .toList()
-          : [],
+      interests:
+          json['interests'] != null
+              ? (json['interests'] as List)
+                  .map(
+                    (interest) => InterestModel.fromJson(
+                      interest as Map<String, dynamic>,
+                    ),
+                  )
+                  .cast<Interest>()
+                  .toList()
+              : [],
+      items:
+          json['items'] != null
+              ? (json['items'] as List)
+                  .map(
+                    (item) => InterestItemModel.fromJson(
+                      item as Map<String, dynamic>,
+                    ),
+                  )
+                  .cast<InterestItem>()
+                  .toList()
+              : [],
     );
   }
 
@@ -69,9 +88,16 @@ class InterestPostModel extends InterestPost {
       'id': id,
       'slug': slug,
       'title': title,
+      'authorID': authorID,
+      'description': description,
+      'updatedAt': updatedAt,
       'type': type,
-      'interests': interests.map((interest) => (interest as InterestModel).toJson()).toList(),
-      'items': items.map((item) => (item as InterestItemModel).toJson()).toList(),
+      'interests':
+          interests
+              .map((interest) => (interest as InterestModel).toJson())
+              .toList(),
+      'items':
+          items.map((item) => (item as InterestItemModel).toJson()).toList(),
     };
   }
 }

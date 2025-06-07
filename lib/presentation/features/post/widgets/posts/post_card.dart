@@ -215,7 +215,7 @@ class PostCard extends StatelessWidget {
                 ),
                 SizedBox(width: isTablet ? 4 : 2),
                 Text(
-                  '${reward}k',
+                  reward,
                   style: TextStyle(
                     fontSize: isTablet ? 12 : 10,
                     fontWeight: FontWeight.w600,
