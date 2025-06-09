@@ -131,6 +131,26 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, User>> getMe() async {
+    try {
+      final response = await _remoteDataSource.getMe();
+
+      // Cập nhật user info trong local storage
+      await _saveUserInfo(response.user);
+
+      return Right(response.user);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } catch (e) {
+      return Left(
+        ServerFailure('Lỗi không xác định khi lấy thông tin người dùng'),
+      );
+    }
+  }
+
   // Helper methods for user info storage
   Future<void> _saveUserInfo(User user) async {
     final userModel = UserModel.fromEntity(user);

@@ -59,11 +59,13 @@ class ApiInterceptor extends Interceptor {
         } catch (e) {
           // Refresh token failed, clear all tokens
           await authDataSource.clearTokens();
+          await authDataSource.clearUserInfo();
           // TODO: Optional: trigger logout hoặc navigation về login
         }
       } else {
         // Không có refresh token, clear tokens
         await authDataSource.clearTokens();
+        await authDataSource.clearUserInfo();
         // TODO: Optional: trigger logout hoặc navigation về login
       }
     }

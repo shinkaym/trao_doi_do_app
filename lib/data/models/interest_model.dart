@@ -104,7 +104,7 @@ class InterestPostModel extends InterestPost {
 
 class InterestItemModel extends InterestItem {
   const InterestItemModel({
-    required super.id,
+    required super.itemID,
     required super.name,
     required super.categoryName,
     required super.image,
@@ -113,7 +113,7 @@ class InterestItemModel extends InterestItem {
 
   factory InterestItemModel.fromJson(Map<String, dynamic> json) {
     return InterestItemModel(
-      id: json['id'] ?? 0,
+      itemID: json['itemID'] ?? 0,
       name: json['name'] ?? '',
       categoryName: json['categoryName'] ?? '',
       image: json['image'] ?? '',
@@ -123,7 +123,7 @@ class InterestItemModel extends InterestItem {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      'itemID': itemID,
       'name': name,
       'categoryName': categoryName,
       'image': image,

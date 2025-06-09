@@ -1,16 +1,18 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/error/app_exception.dart';
 import 'package:trao_doi_do_app/core/network/dio_client.dart';
 import 'package:trao_doi_do_app/data/models/response/api_response_model.dart';
 import 'package:trao_doi_do_app/data/models/response/refreshtoken_response.dart';
+import 'package:trao_doi_do_app/data/models/response/get_me_response_model.dart';
 import 'package:trao_doi_do_app/data/models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<LoginResponseModel> login(LoginRequestModel request);
   Future<void> logout();
   Future<RefreshTokenResponse> refreshToken(String refreshToken);
+  Future<GetMeResponseModel> getMe();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -46,7 +48,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         options: Options(extra: {'requiresAuth': true}),
       );
 
-      // Kiểm tra response nếu cần
       if (response.statusCode != 200) {
         throw ServerException('Logout failed', response.statusCode);
       }
@@ -67,7 +68,6 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         options: Options(extra: {'requiresAuth': false}),
       );
 
-      // Parse theo format API response mới
       final apiResponse = ApiResponseModel.fromJson(
         response.data,
         (data) => RefreshTokenResponse.fromJson(data as Map<String, dynamic>),
@@ -76,16 +76,36 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (apiResponse.code == 0 && apiResponse.data != null) {
         return apiResponse.data!;
       } else {
-        throw ServerException(
-          apiResponse.message, 
-          apiResponse.code,
-        );
+        throw ServerException(apiResponse.message, apiResponse.code);
       }
     } catch (e) {
       if (e is ServerException) {
         rethrow;
       }
       throw ServerException('Refresh token failed');
+    }
+  }
+
+  @override
+  Future<GetMeResponseModel> getMe() async {
+    try {
+      final response = await _dioClient.get(ApiConstants.clientGetMe);
+
+      final apiResponse = ApiResponseModel.fromJson(
+        response.data,
+        (data) => GetMeResponseModel.fromJson(data as Map<String, dynamic>),
+      );
+
+      if (apiResponse.code == 0 && apiResponse.data != null) {
+        return apiResponse.data!;
+      } else {
+        throw ServerException(apiResponse.message, apiResponse.code);
+      }
+    } catch (e) {
+      if (e is ServerException) {
+        rethrow;
+      }
+      throw ServerException('Failed to get user info');
     }
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'theme_extensions.dart';
 
 extension DialogExtensions on BuildContext {
@@ -9,17 +10,18 @@ extension DialogExtensions on BuildContext {
     return showDialog<T>(
       context: this,
       barrierDismissible: barrierDismissible,
-      builder: (context) => Theme(
-        data: theme.copyWith(
-          dialogTheme: DialogTheme(
-            backgroundColor: appColors.card,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+      builder:
+          (context) => Theme(
+            data: theme.copyWith(
+              dialogTheme: DialogTheme(
+                backgroundColor: appColors.card,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
             ),
+            child: child,
           ),
-        ),
-        child: child,
-      ),
     );
   }
 
@@ -46,14 +48,14 @@ extension DialogExtensions on BuildContext {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(this).pop(false),
+            onPressed: () => _dismissDialog(),
             child: Text(
               cancelText,
               style: TextStyle(color: appColors.secondaryTextColor),
             ),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.of(this).pop(true),
+            onPressed: () => _dismissDialog(true),
             style: ElevatedButton.styleFrom(
               backgroundColor:
                   isDangerous ? appColors.danger : appColors.primary,
@@ -90,7 +92,6 @@ extension DialogExtensions on BuildContext {
     );
   }
 
-  // Bổ sung: Info Dialog
   void showInfoDialog({
     required String title,
     required String content,
@@ -123,7 +124,7 @@ extension DialogExtensions on BuildContext {
         ),
         actions: [
           ElevatedButton(
-            onPressed: () => Navigator.of(this).pop(),
+            onPressed: () => _dismissDialog(),
             style: ElevatedButton.styleFrom(
               backgroundColor: appColors.primary,
               foregroundColor: Colors.white,
@@ -135,7 +136,6 @@ extension DialogExtensions on BuildContext {
     );
   }
 
-  // Bổ sung: Error Dialog
   void showErrorDialog({
     String title = 'Lỗi',
     required String message,
@@ -149,9 +149,7 @@ extension DialogExtensions on BuildContext {
             const SizedBox(width: 8),
             Text(
               title,
-              style: textTheme.titleLarge?.copyWith(
-                color: appColors.danger,
-              ),
+              style: textTheme.titleLarge?.copyWith(color: appColors.danger),
             ),
           ],
         ),
@@ -163,7 +161,7 @@ extension DialogExtensions on BuildContext {
         ),
         actions: [
           ElevatedButton(
-            onPressed: () => Navigator.of(this).pop(),
+            onPressed: () => _dismissDialog(),
             style: ElevatedButton.styleFrom(
               backgroundColor: appColors.danger,
               foregroundColor: Colors.white,
@@ -175,7 +173,6 @@ extension DialogExtensions on BuildContext {
     );
   }
 
-  // Bổ sung: Success Dialog
   void showSuccessDialog({
     String title = 'Thành công',
     required String message,
@@ -189,9 +186,7 @@ extension DialogExtensions on BuildContext {
             const SizedBox(width: 8),
             Text(
               title,
-              style: textTheme.titleLarge?.copyWith(
-                color: appColors.success,
-              ),
+              style: textTheme.titleLarge?.copyWith(color: appColors.success),
             ),
           ],
         ),
@@ -203,7 +198,7 @@ extension DialogExtensions on BuildContext {
         ),
         actions: [
           ElevatedButton(
-            onPressed: () => Navigator.of(this).pop(),
+            onPressed: () => _dismissDialog(),
             style: ElevatedButton.styleFrom(
               backgroundColor: appColors.success,
               foregroundColor: Colors.white,
@@ -215,7 +210,6 @@ extension DialogExtensions on BuildContext {
     );
   }
 
-  // Bổ sung: Input Dialog
   Future<String?> showInputDialog({
     required String title,
     String? hint,
@@ -253,7 +247,7 @@ extension DialogExtensions on BuildContext {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(this).pop(),
+            onPressed: () => _dismissDialog(),
             child: Text(
               cancelText,
               style: TextStyle(color: appColors.secondaryTextColor),
@@ -262,7 +256,7 @@ extension DialogExtensions on BuildContext {
           ElevatedButton(
             onPressed: () {
               if (formKey.currentState?.validate() ?? true) {
-                Navigator.of(this).pop(controller.text);
+                _dismissDialog(controller.text);
               }
             },
             style: ElevatedButton.styleFrom(
@@ -279,7 +273,6 @@ extension DialogExtensions on BuildContext {
     });
   }
 
-  // Bổ sung: Choice Dialog (Single Choice)
   Future<T?> showChoiceDialog<T>({
     required String title,
     required List<T> options,
@@ -297,31 +290,33 @@ extension DialogExtensions on BuildContext {
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: options.map((option) {
-              final isSelected = option == selectedValue;
-              return ListTile(
-                title: Text(
-                  itemBuilder(option),
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: isSelected 
-                        ? appColors.primary 
-                        : appColors.primaryTextColor,
-                  ),
-                ),
-                leading: Radio<T>(
-                  value: option,
-                  groupValue: selectedValue,
-                  activeColor: appColors.primary,
-                  onChanged: (value) => Navigator.of(this).pop(value),
-                ),
-                onTap: () => Navigator.of(this).pop(option),
-              );
-            }).toList(),
+            children:
+                options.map((option) {
+                  final isSelected = option == selectedValue;
+                  return ListTile(
+                    title: Text(
+                      itemBuilder(option),
+                      style: textTheme.bodyMedium?.copyWith(
+                        color:
+                            isSelected
+                                ? appColors.primary
+                                : appColors.primaryTextColor,
+                      ),
+                    ),
+                    leading: Radio<T>(
+                      value: option,
+                      groupValue: selectedValue,
+                      activeColor: appColors.primary,
+                      onChanged: (value) => _dismissDialog(value),
+                    ),
+                    onTap: () => _dismissDialog(option),
+                  );
+                }).toList(),
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(this).pop(),
+            onPressed: () => _dismissDialog(),
             child: Text(
               'Hủy',
               style: TextStyle(color: appColors.secondaryTextColor),
@@ -332,14 +327,6 @@ extension DialogExtensions on BuildContext {
     );
   }
 
-  // Bổ sung: Dismiss loading dialog helper
-  void dismissDialog() {
-    if (Navigator.of(this).canPop()) {
-      Navigator.of(this).pop();
-    }
-  }
-
-  // Bổ sung: Progress Dialog
   void showProgressDialog({
     required String title,
     required Stream<double> progressStream,
@@ -391,6 +378,81 @@ extension DialogExtensions on BuildContext {
             ],
           ],
         ),
+      ),
+    );
+  }
+
+  // Helper methods for GoRouter compatibility
+  void _dismissDialog([dynamic result]) {
+    if (canPop()) {
+      pop(result);
+    }
+  }
+
+  void dismissDialog() {
+    _dismissDialog();
+  }
+
+  // GoRouter safe navigation methods
+  void goAndDismissDialog(String location) {
+    _dismissDialog();
+    go(location);
+  }
+
+  void pushAndDismissDialog(String location) {
+    _dismissDialog();
+    push(location);
+  }
+
+  // Dialog with navigation action
+  Future<bool?> showConfirmDialogWithNavigation({
+    required String title,
+    required String content,
+    required String navigationPath,
+    String confirmText = 'Xác nhận',
+    String cancelText = 'Hủy',
+    bool isDangerous = false,
+    bool useGo = true, // true for go(), false for push()
+  }) {
+    return showAppDialog<bool>(
+      child: AlertDialog(
+        title: Text(
+          title,
+          style: textTheme.titleLarge?.copyWith(
+            color: appColors.primaryTextColor,
+          ),
+        ),
+        content: Text(
+          content,
+          style: textTheme.bodyMedium?.copyWith(
+            color: appColors.secondaryTextColor,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => _dismissDialog(false),
+            child: Text(
+              cancelText,
+              style: TextStyle(color: appColors.secondaryTextColor),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              _dismissDialog(true);
+              if (useGo) {
+                go(navigationPath);
+              } else {
+                push(navigationPath);
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  isDangerous ? appColors.danger : appColors.primary,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(confirmText),
+          ),
+        ],
       ),
     );
   }

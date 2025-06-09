@@ -4,6 +4,7 @@ class Post extends Equatable {
  final int? id;
   final int? authorID;
   final String? authorName;
+  final String? authorAvatar;
   final String title;
   final String description;
   final String info; // JSON string
@@ -23,6 +24,7 @@ class Post extends Equatable {
     this.id,
     this.authorID,
     this.authorName,
+    this.authorAvatar,
     required this.title,
     required this.description,
     required this.info,
@@ -44,6 +46,7 @@ class Post extends Equatable {
     id,
     authorID,
     authorName,
+    authorAvatar,
     title,
     description,
     info,

@@ -220,13 +220,13 @@ class PostDetailScreen extends HookConsumerWidget {
           slivers: [
             // SliverAppBar with images
             SliverAppBar(
-              expandedHeight: isTablet ? 400 : 300,
+              expandedHeight: isTablet ? 450 : 350, // Tăng chiều cao
               pinned: true,
               backgroundColor: colorScheme.primary,
               leading: Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withOpacity(0.6), // Tăng độ trong suốt
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -238,7 +238,7 @@ class PostDetailScreen extends HookConsumerWidget {
                 Container(
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withOpacity(0.6),
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
@@ -249,7 +249,7 @@ class PostDetailScreen extends HookConsumerWidget {
                 Container(
                   margin: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.5),
+                    color: Colors.black.withOpacity(0.6),
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
@@ -271,7 +271,6 @@ class PostDetailScreen extends HookConsumerWidget {
                 ),
               ),
             ),
-
             // Post Content
             SliverToBoxAdapter(
               child: _buildPostContent(
@@ -370,26 +369,44 @@ class PostDetailScreen extends HookConsumerWidget {
           ),
 
         // Image Dots Indicator
+        // Thay thế dots indicator hiện tại
         if (images.length > 1)
           Positioned(
             bottom: 20,
-            left: 20,
-            child: Row(
-              children:
-                  images.asMap().entries.map((entry) {
-                    return Container(
-                      width: 8,
-                      height: 8,
-                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color:
-                            currentImageIndex.value == entry.key
-                                ? Colors.white
-                                : Colors.white.withOpacity(0.4),
-                      ),
-                    );
-                  }).toList(),
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...images.asMap().entries.map((entry) {
+                      final isActive = currentImageIndex.value == entry.key;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        width: isActive ? 20 : 6,
+                        height: 6,
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(3),
+                          color:
+                              isActive
+                                  ? Colors.white
+                                  : Colors.white.withOpacity(0.4),
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ),
             ),
           ),
       ],
@@ -472,16 +489,29 @@ class PostDetailScreen extends HookConsumerWidget {
         CircleAvatar(
           radius: isTablet ? 24 : 20,
           backgroundColor: colorScheme.primary,
-          child: Text(
-            post.authorName?.isNotEmpty == true
-                ? post.authorName![0].toUpperCase()
-                : 'U',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-              fontSize: isTablet ? 18 : 16,
-            ),
-          ),
+          backgroundImage:
+              (post.authorAvatar?.isNotEmpty == true)
+                  ? MemoryImage(
+                    base64Decode(
+                      post.authorAvatar!.contains(',')
+                          ? post.authorAvatar!.split(',').last
+                          : post.authorAvatar!,
+                    ),
+                  )
+                  : null,
+          child:
+              (post.authorAvatar?.isEmpty ?? true)
+                  ? Text(
+                    post.authorName?.isNotEmpty == true
+                        ? post.authorName![0].toUpperCase()
+                        : 'U',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: isTablet ? 18 : 16,
+                    ),
+                  )
+                  : null,
         ),
 
         SizedBox(width: isTablet ? 16 : 12),
@@ -931,39 +961,37 @@ class PostDetailScreen extends HookConsumerWidget {
                       Container(
                         width: isTablet ? 54 : 46,
                         height: isTablet ? 54 : 46,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: ClipOval(
-                          child:
-                              interest.userAvatar.isNotEmpty
-                                  ? _buildBase64Image(interest.userAvatar)
-                                  : CircleAvatar(
-                                    backgroundColor: colorScheme.primary,
-                                    child: Text(
-                                      interest.userName.isNotEmpty
-                                          ? interest.userName[0].toUpperCase()
-                                          : 'U',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: isTablet ? 16 : 14,
-                                      ),
+                        decoration: BoxDecoration(shape: BoxShape.circle),
+                        child:
+                            interest.userAvatar.isNotEmpty
+                                ? CircleAvatar(
+                                  backgroundImage: MemoryImage(
+                                    base64Decode(
+                                      interest.userAvatar.contains(',')
+                                          ? interest.userAvatar.split(',').last
+                                          : interest.userAvatar,
                                     ),
                                   ),
-                        ),
+                                  backgroundColor: Colors.transparent,
+                                )
+                                : CircleAvatar(
+                                  backgroundColor: colorScheme.primary,
+                                  child: Text(
+                                    interest.userName.isNotEmpty
+                                        ? interest.userName[0].toUpperCase()
+                                        : 'U',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: isTablet ? 16 : 14,
+                                    ),
+                                  ),
+                                ),
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        interest.userName.length > 10
-                            ? '${interest.userName.substring(0, 10)}...'
+                        interest.userName.length > 15
+                            ? '${interest.userName.substring(0, 15)}...'
                             : interest.userName,
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontSize: isTablet ? 11 : 10,
@@ -1111,34 +1139,38 @@ class PostDetailScreen extends HookConsumerWidget {
     );
   }
 
+  // Thay thế _buildBase64Image với InteractiveViewer
   Widget _buildBase64Image(String base64String) {
-    try {
-      // Remove the header "data:image/jpeg;base64," if present
-      final cleanedBase64 =
-          base64String.contains(',')
-              ? base64String.split(',').last
-              : base64String;
+    return FutureBuilder<Uint8List>(
+      future: _decodeBase64(base64String),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            color: Colors.grey.shade200,
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        }
 
-      final bytes = base64Decode(cleanedBase64);
-      return Image.memory(
-        bytes,
-        fit: BoxFit.cover,
-        errorBuilder:
-            (context, error, stackTrace) => Container(
-              color: Colors.grey.shade300,
-              child: const Icon(
-                Icons.image_outlined,
-                size: 50,
-                color: Colors.grey,
-              ),
-            ),
-      );
-    } catch (e) {
-      return Container(
-        color: Colors.grey.shade300,
-        child: const Icon(Icons.broken_image, size: 50, color: Colors.grey),
-      );
-    }
+        if (snapshot.hasError || !snapshot.hasData) {
+          return Container(
+            color: Colors.grey.shade300,
+            child: const Icon(Icons.broken_image, size: 50, color: Colors.grey),
+          );
+        }
+
+        return InteractiveViewer(
+          child: Image.memory(snapshot.data!, fit: BoxFit.cover),
+        );
+      },
+    );
+  }
+
+  Future<Uint8List> _decodeBase64(String base64String) async {
+    final cleanedBase64 =
+        base64String.contains(',')
+            ? base64String.split(',').last
+            : base64String;
+    return base64Decode(cleanedBase64);
   }
 
   // Helper methods

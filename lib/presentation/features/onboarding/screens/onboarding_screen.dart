@@ -4,6 +4,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/mock_data/mock_onboarding.dart';
+import 'package:trao_doi_do_app/presentation/features/onboarding/providers/onboarding_provider.dart';
 
 class OnboardingScreen extends HookConsumerWidget {
   const OnboardingScreen({super.key});
@@ -25,8 +26,25 @@ class OnboardingScreen extends HookConsumerWidget {
     ).drive(Tween<double>(begin: 0.0, end: 1.0));
 
     final pages = mockOnboardingPages;
-
     final isLastPage = currentPage.value == pages.length - 1;
+
+    // Hàm để đánh dấu onboarding đã hoàn thành và chuyển hướng
+    Future<void> completeOnboardingAndNavigate(String route) async {
+      final completeOnboarding = ref.read(completeOnboardingProvider);
+      await completeOnboarding();
+      if (context.mounted) {
+        context.goNamed(route);
+      }
+    }
+
+    // Hàm để bỏ qua onboarding
+    Future<void> skipOnboarding() async {
+      final completeOnboarding = ref.read(completeOnboardingProvider);
+      await completeOnboarding();
+      if (context.mounted) {
+        context.goNamed('posts');
+      }
+    }
 
     void nextPage() {
       if (currentPage.value < pages.length - 1) {
@@ -35,7 +53,8 @@ class OnboardingScreen extends HookConsumerWidget {
           curve: Curves.easeInOut,
         );
       } else {
-        context.goNamed('posts');
+        // Đây là trang cuối, không cần làm gì thêm
+        // Người dùng sẽ chọn Đăng ký hoặc Đăng nhập
       }
     }
 
@@ -59,9 +78,7 @@ class OnboardingScreen extends HookConsumerWidget {
         body: SafeArea(
           child: Column(
             children: [
-              _buildHeader(context, isTablet, isLastPage, () {
-                context.goNamed('posts');
-              }),
+              _buildHeader(context, isTablet, isLastPage, skipOnboarding),
               Expanded(
                 child: PageView.builder(
                   controller: pageController,
@@ -77,12 +94,14 @@ class OnboardingScreen extends HookConsumerWidget {
               ),
               _buildBottomSection(
                 context: context,
+                ref: ref,
                 isTablet: isTablet,
                 currentPage: currentPage.value,
                 pages: pages,
                 isLastPage: isLastPage,
                 onNext: nextPage,
                 onPrevious: previousPage,
+                onCompleteAndNavigate: completeOnboardingAndNavigate,
               ),
             ],
           ),
@@ -124,18 +143,17 @@ class OnboardingScreen extends HookConsumerWidget {
                   child: Image.asset(
                     'assets/images/logo.png',
                     fit: BoxFit.cover,
-                    errorBuilder:
-                        (_, __, ___) => Container(
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.apps,
-                            color: Colors.white,
-                            size: isTablet ? 28 : 24,
-                          ),
-                        ),
+                    errorBuilder: (_, __, ___) => Container(
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.primary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.apps,
+                        color: Colors.white,
+                        size: isTablet ? 28 : 24,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -234,12 +252,14 @@ class OnboardingScreen extends HookConsumerWidget {
 
   Widget _buildBottomSection({
     required BuildContext context,
+    required WidgetRef ref,
     required bool isTablet,
     required int currentPage,
     required List<OnboardingData> pages,
     required bool isLastPage,
     required VoidCallback onNext,
     required VoidCallback onPrevious,
+    required Future<void> Function(String) onCompleteAndNavigate,
   }) {
     final theme = context.theme;
 
@@ -254,16 +274,14 @@ class OnboardingScreen extends HookConsumerWidget {
               (index) => AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 margin: EdgeInsets.symmetric(horizontal: isTablet ? 6 : 4),
-                width:
-                    currentPage == index
-                        ? (isTablet ? 40 : 32)
-                        : (isTablet ? 12 : 8),
+                width: currentPage == index
+                    ? (isTablet ? 40 : 32)
+                    : (isTablet ? 12 : 8),
                 height: isTablet ? 12 : 8,
                 decoration: BoxDecoration(
-                  color:
-                      currentPage == index
-                          ? pages[currentPage].color
-                          : theme.hintColor.withOpacity(0.3),
+                  color: currentPage == index
+                      ? pages[currentPage].color
+                      : theme.hintColor.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),
@@ -300,94 +318,92 @@ class OnboardingScreen extends HookConsumerWidget {
               SizedBox(width: isTablet ? 16 : 12),
               Expanded(
                 flex: 2,
-                child:
-                    isLastPage
-                        ? Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: () => context.goNamed('register'),
-                                style: OutlinedButton.styleFrom(
-                                  side: BorderSide(
-                                    color: pages[currentPage].color,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: isTablet ? 16 : 14,
-                                  ),
+                child: isLastPage
+                    ? Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => onCompleteAndNavigate('register'),
+                              style: OutlinedButton.styleFrom(
+                                side: BorderSide(
+                                  color: pages[currentPage].color,
                                 ),
-                                child: Text(
-                                  'Đăng ký',
-                                  style: TextStyle(
-                                    fontSize: isTablet ? 14 : 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: pages[currentPage].color,
-                                  ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  vertical: isTablet ? 16 : 14,
                                 ),
                               ),
-                            ),
-                            SizedBox(width: isTablet ? 12 : 8),
-                            Expanded(
-                              child: ElevatedButton(
-                                onPressed: () => context.goNamed('login'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: pages[currentPage].color,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  padding: EdgeInsets.symmetric(
-                                    vertical: isTablet ? 16 : 14,
-                                  ),
-                                  elevation: 4,
-                                  shadowColor: pages[currentPage].color
-                                      .withOpacity(0.3),
-                                ),
-                                child: Text(
-                                  'Đăng nhập',
-                                  style: TextStyle(
-                                    fontSize: isTablet ? 14 : 12,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              child: Text(
+                                'Đăng ký',
+                                style: TextStyle(
+                                  fontSize: isTablet ? 14 : 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: pages[currentPage].color,
                                 ),
                               ),
-                            ),
-                          ],
-                        )
-                        : ElevatedButton(
-                          onPressed: onNext,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: pages[currentPage].color,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            padding: EdgeInsets.symmetric(
-                              vertical: isTablet ? 16 : 14,
-                            ),
-                            elevation: 4,
-                            shadowColor: pages[currentPage].color.withOpacity(
-                              0.3,
                             ),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Tiếp theo',
+                          SizedBox(width: isTablet ? 12 : 8),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => onCompleteAndNavigate('login'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: pages[currentPage].color,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                padding: EdgeInsets.symmetric(
+                                  vertical: isTablet ? 16 : 14,
+                                ),
+                                elevation: 4,
+                                shadowColor: pages[currentPage]
+                                    .color
+                                    .withOpacity(0.3),
+                              ),
+                              child: Text(
+                                'Đăng nhập',
                                 style: TextStyle(
-                                  fontSize: isTablet ? 16 : 14,
+                                  fontSize: isTablet ? 14 : 12,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                              SizedBox(width: isTablet ? 12 : 8),
-                              Icon(
-                                Icons.arrow_forward,
-                                size: isTablet ? 20 : 18,
-                              ),
-                            ],
+                            ),
                           ),
+                        ],
+                      )
+                    : ElevatedButton(
+                        onPressed: onNext,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: pages[currentPage].color,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: EdgeInsets.symmetric(
+                            vertical: isTablet ? 16 : 14,
+                          ),
+                          elevation: 4,
+                          shadowColor: pages[currentPage].color.withOpacity(0.3),
                         ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Tiếp theo',
+                              style: TextStyle(
+                                fontSize: isTablet ? 16 : 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            SizedBox(width: isTablet ? 12 : 8),
+                            Icon(
+                              Icons.arrow_forward,
+                              size: isTablet ? 20 : 18,
+                            ),
+                          ],
+                        ),
+                      ),
               ),
             ],
           ),

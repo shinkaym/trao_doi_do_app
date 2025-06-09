@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
@@ -7,75 +8,38 @@ import 'package:trao_doi_do_app/domain/entities/params/interests_query.dart';
 import 'package:trao_doi_do_app/domain/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/interests_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/pagination.dart';
+import 'package:trao_doi_do_app/presentation/widgets/login_prompt.dart';
+import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/interest_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
-class InterestsScreen extends ConsumerStatefulWidget {
+class InterestsScreen extends HookConsumerWidget {
   const InterestsScreen({super.key});
 
   @override
-  ConsumerState<InterestsScreen> createState() => _InterestsScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isTablet = context.isTablet;
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
 
-class _InterestsScreenState extends ConsumerState<InterestsScreen>
-    with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-  final TextEditingController _searchController = TextEditingController();
-  bool _isInitialized = false;
+    // Hooks for state management
+    final tabController = useTabController(initialLength: 2);
+    final searchController = useTextEditingController();
+    final isInitialized = useRef(false);
 
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-
-    // Listen to tab changes
-    _tabController.addListener(_onTabChanged);
-
-    // Load data after widget is built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!_isInitialized) {
-        _loadInitialData();
-        _isInitialized = true;
+    // Get current state based on active tab
+    InterestsListState getCurrentState() {
+      final currentTab = tabController.index;
+      if (currentTab == 0) {
+        return ref.watch(interestedPostsProvider);
+      } else {
+        return ref.watch(postsWithInterestsProvider);
       }
-    });
-  }
-
-  void _loadInitialData() {
-    // Load data for current tab only
-    if (_tabController.index == 0) {
-      ref
-          .read(interestedPostsProvider.notifier)
-          .loadInterests(
-            newQuery: const InterestsQuery(
-              type: 1,
-              sort: 'createdAt',
-              order: 'DESC',
-            ),
-            refresh: true,
-          );
-    } else {
-      ref
-          .read(postsWithInterestsProvider.notifier)
-          .loadInterests(
-            newQuery: const InterestsQuery(
-              type: 2,
-              sort: 'createdAt',
-              order: 'DESC',
-            ),
-            refresh: true,
-          );
     }
-  }
 
-  void _onTabChanged() {
-    if (!_tabController.indexIsChanging) return;
-
-    final currentIndex = _tabController.index;
-
-    if (currentIndex == 0) {
-      // Tab "Tôi quan tâm"
-      final state = ref.read(interestedPostsProvider);
-      if (state.interests.isEmpty && !state.isLoading) {
+    // Load initial data
+    void loadInitialData() {
+      if (tabController.index == 0) {
         ref
             .read(interestedPostsProvider.notifier)
             .loadInterests(
@@ -86,11 +50,7 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
               ),
               refresh: true,
             );
-      }
-    } else {
-      // Tab "Quan tâm tôi"
-      final state = ref.read(postsWithInterestsProvider);
-      if (state.interests.isEmpty && !state.isLoading) {
+      } else {
         ref
             .read(postsWithInterestsProvider.notifier)
             .loadInterests(
@@ -103,116 +63,246 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
             );
       }
     }
-  }
 
-  @override
-  void dispose() {
-    _tabController.removeListener(_onTabChanged);
-    _tabController.dispose();
-    _searchController.dispose();
-    super.dispose();
-  }
+    // Load data for specific tab
+    void loadDataForTab(int tabIndex) {
+      final searchValue =
+          searchController.text.isEmpty ? null : searchController.text;
+      final currentState = getCurrentState();
 
-  void _handlePostTap(String slug) {
-    context.pushNamed('post-detail', pathParameters: {'slug': slug});
-  }
-
-  void _handleChatTap(int interestId) {
-    context.pushNamed(
-      'interest-chat',
-      pathParameters: {'interestId': interestId.toString()},
-    );
-  }
-
-  // Cập nhật method _handleLikeTap để thực hiện toggle interest
-  Future<void> _handleLikeTap(int postId, WidgetRef ref) async {
-    // Thực hiện cancel interest vì đây là tab "Tôi quan tâm"
-    await ref.read(interestProvider.notifier).cancelInterest(postId);
-    
-    // Lắng nghe kết quả
-    final interestState = ref.read(interestProvider);
-    
-    if (interestState.result != null) {
-      // Thành công - refresh lại danh sách
-      ref.read(interestedPostsProvider.notifier).refresh();
-      
-      // Clear messages sau khi xử lý
-      ref.read(interestProvider.notifier).clearMessages();
-    } else if (interestState.failure != null) {
-      // Thất bại - hiển thị lỗi
-      context.showErrorSnackBar(interestState.failure!.message);
-      
-      // Clear messages sau khi xử lý
-      ref.read(interestProvider.notifier).clearMessages();
+      if (tabIndex == 0) {
+        ref
+            .read(interestedPostsProvider.notifier)
+            .loadInterests(
+              newQuery: InterestsQuery(
+                type: 1,
+                sort: currentState.query.sort,
+                order: currentState.query.order,
+                search: searchValue,
+              ),
+              refresh: true,
+            );
+      } else {
+        ref
+            .read(postsWithInterestsProvider.notifier)
+            .loadInterests(
+              newQuery: InterestsQuery(
+                type: 2,
+                sort: currentState.query.sort,
+                order: currentState.query.order,
+                search: searchValue,
+              ),
+              refresh: true,
+            );
+      }
     }
-  }
 
-  void _onSearch(String value) {
-    final currentTab = _tabController.index;
-    final searchValue = value.isEmpty ? null : value;
+    // Apply current filters to tab
+    void applyCurrentFiltersToTab(int tabIndex) {
+      final searchValue =
+          searchController.text.isEmpty ? null : searchController.text;
+      final currentState = getCurrentState();
 
-    if (currentTab == 0) {
-      ref.read(interestedPostsProvider.notifier).search(searchValue);
-    } else {
-      ref.read(postsWithInterestsProvider.notifier).search(searchValue);
+      if (tabIndex == 0) {
+        if (searchValue != null) {
+          ref.read(interestedPostsProvider.notifier).search(searchValue);
+        }
+        ref
+            .read(interestedPostsProvider.notifier)
+            .sortInterests(currentState.query.sort, currentState.query.order);
+      } else {
+        if (searchValue != null) {
+          ref.read(postsWithInterestsProvider.notifier).search(searchValue);
+        }
+        ref
+            .read(postsWithInterestsProvider.notifier)
+            .sortInterests(currentState.query.sort, currentState.query.order);
+      }
     }
-  }
 
-  void _onSortFilter(String field, String order) {
-    final currentTab = _tabController.index;
+    // Handle tab changes
+    void onTabChanged() {
+      if (!tabController.indexIsChanging) return;
 
-    if (currentTab == 0) {
-      ref.read(interestedPostsProvider.notifier).sortInterests(field, order);
-    } else {
-      ref.read(postsWithInterestsProvider.notifier).sortInterests(field, order);
+      final currentIndex = tabController.index;
+
+      if (currentIndex == 0) {
+        final state = ref.read(interestedPostsProvider);
+        if (state.interests.isEmpty && !state.isLoading) {
+          loadDataForTab(0);
+        } else {
+          applyCurrentFiltersToTab(0);
+        }
+      } else {
+        final state = ref.read(postsWithInterestsProvider);
+        if (state.interests.isEmpty && !state.isLoading) {
+          loadDataForTab(1);
+        } else {
+          applyCurrentFiltersToTab(1);
+        }
+      }
     }
-  }
 
-  void _resetFilters() {
-    _searchController.clear();
-    final currentTab = _tabController.index;
+    // Handle search
+    void onSearch(String value) {
+      final currentTab = tabController.index;
+      final searchValue = value.trim().isEmpty ? null : value.trim();
 
-    if (currentTab == 0) {
-      ref.read(interestedPostsProvider.notifier).search(null);
-      ref
-          .read(interestedPostsProvider.notifier)
-          .sortInterests('createdAt', 'DESC');
-    } else {
-      ref.read(postsWithInterestsProvider.notifier).search(null);
-      ref
-          .read(postsWithInterestsProvider.notifier)
-          .sortInterests('createdAt', 'DESC');
+      if (currentTab == 0) {
+        if (searchValue == null) {
+          ref
+              .read(interestedPostsProvider.notifier)
+              .loadInterests(
+                newQuery: InterestsQuery(
+                  type: 1,
+                  sort: ref.read(interestedPostsProvider).query.sort,
+                  order: ref.read(interestedPostsProvider).query.order,
+                  search: null,
+                ),
+                refresh: true,
+              );
+        } else {
+          ref.read(interestedPostsProvider.notifier).search(searchValue);
+        }
+      } else {
+        if (searchValue == null) {
+          ref
+              .read(postsWithInterestsProvider.notifier)
+              .loadInterests(
+                newQuery: InterestsQuery(
+                  type: 2,
+                  sort: ref.read(postsWithInterestsProvider).query.sort,
+                  order: ref.read(postsWithInterestsProvider).query.order,
+                  search: null,
+                ),
+                refresh: true,
+              );
+        } else {
+          ref.read(postsWithInterestsProvider.notifier).search(searchValue);
+        }
+      }
     }
-  }
 
-  InterestsListState _getCurrentState() {
-    final currentTab = _tabController.index;
-    if (currentTab == 0) {
-      return ref.watch(interestedPostsProvider);
-    } else {
-      return ref.watch(postsWithInterestsProvider);
+    // Handle sort/filter
+    void onSortFilter(String field, String order) {
+      final currentTab = tabController.index;
+
+      if (currentTab == 0) {
+        ref.read(interestedPostsProvider.notifier).sortInterests(field, order);
+      } else {
+        ref
+            .read(postsWithInterestsProvider.notifier)
+            .sortInterests(field, order);
+      }
     }
-  }
 
-  @override
-  Widget build(BuildContext context) {
-    final isTablet = context.isTablet;
-    final theme = context.theme;
-    final colorScheme = context.colorScheme;
-    final state = _getCurrentState();
+    // Reset filters
+    // Reset filters - FIXED VERSION
+    void resetFilters() {
+      searchController.clear();
+      final currentTab = tabController.index;
 
-    // Lắng nghe interest state để xử lý loading và error
+      if (currentTab == 0) {
+        // Reset về trạng thái mặc định với query mới
+        ref
+            .read(interestedPostsProvider.notifier)
+            .loadInterests(
+              newQuery: const InterestsQuery(
+                type: 1,
+                sort: 'createdAt',
+                order: 'DESC',
+                search: null,
+              ),
+              refresh: true,
+            );
+      } else {
+        // Reset về trạng thái mặc định với query mới
+        ref
+            .read(postsWithInterestsProvider.notifier)
+            .loadInterests(
+              newQuery: const InterestsQuery(
+                type: 2,
+                sort: 'createdAt',
+                order: 'DESC',
+                search: null,
+              ),
+              refresh: true,
+            );
+      }
+    }
+
+    // Handle post tap
+    void handlePostTap(String slug) {
+      context.pushNamed('post-detail', pathParameters: {'slug': slug});
+    }
+
+    // Handle chat tap
+    void handleChatTap(int interestId) {
+      context.pushNamed(
+        'interest-chat',
+        pathParameters: {'interestId': interestId.toString()},
+      );
+    }
+
+    // Handle like tap
+    Future<void> handleLikeTap(int postId) async {
+      await ref.read(interestProvider.notifier).cancelInterest(postId);
+
+      final interestState = ref.read(interestProvider);
+
+      if (interestState.result != null) {
+        ref.read(interestedPostsProvider.notifier).refresh();
+        ref.read(interestProvider.notifier).clearMessages();
+      } else if (interestState.failure != null) {
+        context.showErrorSnackBar(interestState.failure!.message);
+        ref.read(interestProvider.notifier).clearMessages();
+      }
+    }
+
+    // Initialize data on first build
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!isInitialized.value) {
+          loadInitialData();
+          isInitialized.value = true;
+        }
+      });
+      return null;
+    }, []);
+
+    // Listen to tab changes
+    useEffect(() {
+      tabController.addListener(onTabChanged);
+      return () => tabController.removeListener(onTabChanged);
+    }, [tabController]);
+
+    // Listen to interest state changes
     ref.listen<InterestState>(interestProvider, (previous, next) {
       if (previous?.isLoading == true && next.isLoading == false) {
-        // Đã hoàn thành action
-        if (next.result != null) {
-          // Thành công - refresh lại danh sách
-          if (_tabController.index == 0) {
-            ref.read(interestedPostsProvider.notifier).refresh();
-          }
+        if (next.result != null && tabController.index == 0) {
+          ref.read(interestedPostsProvider.notifier).refresh();
         }
       }
     });
+
+    final authState = ref.watch(authProvider);
+    final state = getCurrentState();
+
+    if (!authState.isLoggedIn) {
+      return SmartScaffold(
+        title: 'Quan tâm',
+        appBarType: AppBarType.standard,
+        body: LoginPrompt(
+          isTablet: isTablet,
+          theme: theme,
+          colorScheme: colorScheme,
+          title: 'Đăng nhập để xem danh sách bài đăng đã và được quan tâm',
+          description:
+              'Bạn cần đăng nhập để có thể xem danh sách bài đăng đã và được quan tâm. Đăng nhập ngay để trải nghiệm đầy đủ tính năng.',
+          guestInfoText: '',
+        ),
+      );
+    }
 
     return SmartScaffold(
       title: 'Quan tâm',
@@ -220,16 +310,24 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
       body: Column(
         children: [
           // Search and Filter Section
-          _buildSearchFilterSection(isTablet, theme, colorScheme, state),
+          _buildSearchFilterSection(
+            isTablet,
+            theme,
+            colorScheme,
+            state,
+            searchController,
+            onSearch,
+            onSortFilter,
+          ),
 
           // Tab Bar
-          _buildTabBar(isTablet, theme, colorScheme),
+          _buildTabBar(isTablet, theme, colorScheme, tabController),
 
           // Tab Content
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
-                final currentTab = _tabController.index;
+                final currentTab = tabController.index;
                 if (currentTab == 0) {
                   ref.read(interestedPostsProvider.notifier).refresh();
                 } else {
@@ -237,14 +335,28 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
                 }
               },
               child: TabBarView(
-                controller: _tabController,
+                controller: tabController,
                 children: [
-                  _buildInterestedPostsTab(isTablet, theme, colorScheme, ref),
+                  _buildInterestedPostsTab(
+                    isTablet,
+                    theme,
+                    colorScheme,
+                    ref,
+                    handlePostTap,
+                    handleChatTap,
+                    handleLikeTap,
+                    searchController, // Thêm tham số này
+                    resetFilters,
+                  ),
                   _buildPostsWithInterestsTab(
                     isTablet,
                     theme,
                     colorScheme,
                     ref,
+                    handlePostTap,
+                    handleChatTap,
+                    searchController, // Thêm tham số này
+                    resetFilters,
                   ),
                 ],
               ),
@@ -258,354 +370,354 @@ class _InterestsScreenState extends ConsumerState<InterestsScreen>
               isTablet: isTablet,
               theme: theme,
               colorScheme: colorScheme,
-              currentTabIndex: _tabController.index, 
+              currentTabIndex: tabController.index,
             ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildSearchFilterSection(
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    InterestsListState state,
-  ) {
-    return Container(
-      padding: EdgeInsets.all(isTablet ? 24 : 16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          // Search Bar
-          TextField(
-            controller: _searchController,
-            onChanged: _onSearch,
-            decoration: InputDecoration(
-              hintText: 'Tìm kiếm bài đăng quan tâm...',
-              prefixIcon: const Icon(Icons.search),
-              suffixIcon:
-                  _searchController.text.isNotEmpty
-                      ? IconButton(
-                        onPressed: () {
-                          _searchController.clear();
-                          _onSearch('');
-                        },
-                        icon: const Icon(Icons.clear),
-                      )
-                      : null,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              filled: true,
-              fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 20 : 16,
-                vertical: isTablet ? 16 : 12,
-              ),
+Widget _buildSearchFilterSection(
+  bool isTablet,
+  ThemeData theme,
+  ColorScheme colorScheme,
+  InterestsListState state,
+  TextEditingController searchController,
+  Function(String) onSearch,
+  Function(String, String) onSortFilter,
+) {
+  return Container(
+    padding: EdgeInsets.all(isTablet ? 24 : 16),
+    decoration: BoxDecoration(
+      color: colorScheme.surface,
+      boxShadow: [
+        BoxShadow(
+          color: colorScheme.shadow.withOpacity(0.1),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Column(
+      children: [
+        // Search Bar
+        TextField(
+          controller: searchController,
+          onChanged: onSearch,
+          decoration: InputDecoration(
+            hintText: 'Tìm kiếm bài đăng quan tâm...',
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon:
+                searchController.text.isNotEmpty
+                    ? IconButton(
+                      onPressed: () {
+                        searchController.clear();
+                        onSearch('');
+                      },
+                      icon: const Icon(Icons.clear),
+                    )
+                    : null,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
             ),
-          ),
-
-          SizedBox(height: isTablet ? 16 : 12),
-
-          // Sort Options
-          SingleChildScrollView(
-            // scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                ChoiceChip(
-                  selected: state.query.order == 'DESC',
-                  onSelected: (selected) {
-                    if (selected) _onSortFilter('createdAt', 'DESC');
-                  },
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.schedule, size: isTablet ? 18 : 16),
-                      SizedBox(width: isTablet ? 6 : 4),
-                      const Text('Mới nhất'),
-                    ],
-                  ),
-                  backgroundColor: colorScheme.surface,
-                  selectedColor: colorScheme.primaryContainer,
-                  checkmarkColor: colorScheme.primary,
-                ),
-                SizedBox(width: isTablet ? 12 : 8),
-                ChoiceChip(
-                  selected: state.query.order == 'ASC',
-                  onSelected: (selected) {
-                    if (selected) _onSortFilter('createdAt', 'ASC');
-                  },
-                  label: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.history, size: isTablet ? 18 : 16),
-                      SizedBox(width: isTablet ? 6 : 4),
-                      const Text('Cũ nhất'),
-                    ],
-                  ),
-                  backgroundColor: colorScheme.surface,
-                  selectedColor: colorScheme.primaryContainer,
-                  checkmarkColor: colorScheme.primary,
-                ),
-              ],
+            filled: true,
+            fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
+            contentPadding: EdgeInsets.symmetric(
+              horizontal: isTablet ? 20 : 16,
+              vertical: isTablet ? 16 : 12,
             ),
-          ),
-
-          // Results Count
-          if (state.interests.isNotEmpty) ...[
-            SizedBox(height: isTablet ? 12 : 8),
-            Row(
-              children: [
-                Text(
-                  'Tìm thấy ${state.interests.length} kết quả',
-                  style: TextStyle(
-                    fontSize: isTablet ? 14 : 12,
-                    color: theme.hintColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTabBar(bool isTablet, ThemeData theme, ColorScheme colorScheme) {
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        border: Border(
-          bottom: BorderSide(
-            color: colorScheme.outline.withOpacity(0.2),
-            width: 1,
           ),
         ),
+
+        SizedBox(height: isTablet ? 16 : 12),
+
+        // Sort Options
+        Row(
+          children: [
+            ChoiceChip(
+              selected: state.query.order == 'DESC',
+              onSelected: (selected) {
+                if (selected) onSortFilter('createdAt', 'DESC');
+              },
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.schedule, size: isTablet ? 18 : 16),
+                  SizedBox(width: isTablet ? 6 : 4),
+                  const Text('Mới nhất'),
+                ],
+              ),
+              backgroundColor: colorScheme.surface,
+              selectedColor: colorScheme.primaryContainer,
+              checkmarkColor: colorScheme.secondary,
+            ),
+            SizedBox(width: isTablet ? 12 : 8),
+            ChoiceChip(
+              selected: state.query.order == 'ASC',
+              onSelected: (selected) {
+                if (selected) onSortFilter('createdAt', 'ASC');
+              },
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.history, size: isTablet ? 18 : 16),
+                  SizedBox(width: isTablet ? 6 : 4),
+                  const Text('Cũ nhất'),
+                ],
+              ),
+              backgroundColor: colorScheme.surface,
+              selectedColor: colorScheme.primaryContainer,
+              checkmarkColor: colorScheme.secondary,
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _buildTabBar(
+  bool isTablet,
+  ThemeData theme,
+  ColorScheme colorScheme,
+  TabController tabController,
+) {
+  return Container(
+    decoration: BoxDecoration(
+      color: colorScheme.surface,
+      border: Border(
+        bottom: BorderSide(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
       ),
-      child: TabBar(
-        controller: _tabController,
-        tabs: [
-          Tab(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.favorite, size: isTablet ? 20 : 18),
-                SizedBox(width: isTablet ? 8 : 6),
-                Text(
-                  'Tôi quan tâm',
-                  style: TextStyle(
-                    fontSize: isTablet ? 15 : 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+    ),
+    child: TabBar(
+      controller: tabController,
+      tabs: [
+        Tab(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.favorite, size: isTablet ? 20 : 18),
+              SizedBox(width: isTablet ? 8 : 6),
+              Text(
+                'Đang quan tâm',
+                style: TextStyle(
+                  fontSize: isTablet ? 15 : 14,
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Tab(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.people, size: isTablet ? 20 : 18),
-                SizedBox(width: isTablet ? 8 : 6),
-                Text(
-                  'Quan tâm tôi',
-                  style: TextStyle(
-                    fontSize: isTablet ? 15 : 14,
-                    fontWeight: FontWeight.w600,
-                  ),
+        ),
+        Tab(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.people, size: isTablet ? 20 : 18),
+              SizedBox(width: isTablet ? 8 : 6),
+              Text(
+                'Quan tâm',
+                style: TextStyle(
+                  fontSize: isTablet ? 15 : 14,
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-        indicatorColor: colorScheme.primary,
-        labelColor: colorScheme.primary,
-        unselectedLabelColor: colorScheme.onSurface.withOpacity(0.6),
-        padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
-      ),
-    );
-  }
+        ),
+      ],
+      indicatorColor: colorScheme.primary,
+      unselectedLabelColor: colorScheme.onSurface.withOpacity(0.6),
+      padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
+    ),
+  );
+}
 
-  Widget _buildInterestedPostsTab(
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    WidgetRef ref,
-  ) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final state = ref.watch(interestedPostsProvider);
-        final interestState = ref.watch(interestProvider);
+Widget _buildInterestedPostsTab(
+  bool isTablet,
+  ThemeData theme,
+  ColorScheme colorScheme,
+  WidgetRef ref,
+  Function(String) handlePostTap,
+  Function(int) handleChatTap,
+  Function(int) handleLikeTap,
+  TextEditingController searchController, // Thêm tham số
+  VoidCallback resetFilters,
+) {
+  return Consumer(
+    builder: (context, ref, child) {
+      final state = ref.watch(interestedPostsProvider);
+      final interestState = ref.watch(interestProvider);
 
-        if (state.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
+      if (state.isLoading) {
+        return const Center(child: CircularProgressIndicator());
+      }
 
-        if (state.failure != null) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 64, color: theme.hintColor),
-                const SizedBox(height: 16),
-                Text(
-                  'Đã xảy ra lỗi',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
+      if (state.failure != null) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: theme.hintColor),
+              const SizedBox(height: 16),
+              Text(
+                'Đã xảy ra lỗi',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  state.failure!.message,
-                  style: TextStyle(fontSize: 14, color: theme.hintColor),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    ref.read(interestedPostsProvider.notifier).refresh();
-                  },
-                  child: const Text('Thử lại'),
-                ),
-              ],
-            ),
-          );
-        }
+              ),
+              const SizedBox(height: 8),
+              Text(
+                state.failure!.message,
+                style: TextStyle(fontSize: 14, color: theme.hintColor),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  ref.read(interestedPostsProvider.notifier).refresh();
+                },
+                child: const Text('Thử lại'),
+              ),
+            ],
+          ),
+        );
+      }
 
-        if (state.interests.isEmpty) {
-          return _buildEmptyState(
+      if (state.interests.isEmpty) {
+        return _buildEmptyState(
+          isTablet,
+          theme,
+          colorScheme,
+          'Chưa có bài đăng quan tâm',
+          'Khám phá và quan tâm các bài đăng thú vị',
+          Icons.favorite_border,
+          searchController, // Sử dụng searchController từ widget chính
+          state,
+          resetFilters, // Sử dụng hàm resetFilters từ widget chính
+        );
+      }
+
+      return ListView.builder(
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 32 : 16,
+          vertical: isTablet ? 24 : 16,
+        ),
+        itemCount: state.interests.length,
+        itemBuilder: (context, index) {
+          final post = state.interests[index];
+          final postType = CreatePostType.fromValue(post.type);
+          return _buildInterestedPostCard(
+            post,
+            postType,
             isTablet,
             theme,
             colorScheme,
-            'Chưa có bài đăng quan tâm',
-            'Khám phá và quan tâm các bài đăng thú vị',
-            Icons.favorite_border,
-            showResetButton:
-                _searchController.text.isNotEmpty ||
-                state.query.order != 'DESC',
+            interestState.isLoading,
+            handlePostTap,
+            handleChatTap,
+            handleLikeTap,
           );
-        }
+        },
+      );
+    },
+  );
+}
 
-        return ListView.builder(
-          padding: EdgeInsets.symmetric(
-            horizontal: isTablet ? 32 : 16,
-            vertical: isTablet ? 24 : 16,
+Widget _buildPostsWithInterestsTab(
+  bool isTablet,
+  ThemeData theme,
+  ColorScheme colorScheme,
+  WidgetRef ref,
+  Function(String) handlePostTap,
+  Function(int) handleChatTap,
+  TextEditingController searchController, // Thêm tham số
+  VoidCallback resetFilters,
+) {
+  return Consumer(
+    builder: (context, ref, child) {
+      final state = ref.watch(postsWithInterestsProvider);
+
+      if (state.isLoading) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      if (state.failure != null) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: theme.hintColor),
+              const SizedBox(height: 16),
+              Text(
+                'Đã xảy ra lỗi',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                state.failure!.message,
+                style: TextStyle(fontSize: 14, color: theme.hintColor),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  ref.read(postsWithInterestsProvider.notifier).refresh();
+                },
+                child: const Text('Thử lại'),
+              ),
+            ],
           ),
-          itemCount: state.interests.length,
-          itemBuilder: (context, index) {
-            final post = state.interests[index];
-            final postType = CreatePostType.fromValue(post.type);
-            return _buildInterestedPostCard(
-              post,
-              postType,
-              isTablet,
-              theme,
-              colorScheme,
-              ref,
-              interestState.isLoading,
-            );
-          },
         );
-      },
-    );
-  }
+      }
 
-  Widget _buildPostsWithInterestsTab(
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    WidgetRef ref,
-  ) {
-    return Consumer(
-      builder: (context, ref, child) {
-        final state = ref.watch(postsWithInterestsProvider);
+      if (state.interests.isEmpty) {
+        return _buildEmptyState(
+          isTablet,
+          theme,
+          colorScheme,
+          'Chưa có bài đăng được quan tâm',
+          'Tạo bài đăng để nhận được sự quan tâm từ cộng đồng',
+          Icons.post_add,
+          searchController, // Sử dụng searchController từ widget chính
+          state,
+          resetFilters, // Sử dụng hàm resetFilters từ widget chính
+        );
+      }
 
-        if (state.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (state.failure != null) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 64, color: theme.hintColor),
-                const SizedBox(height: 16),
-                Text(
-                  'Đã xảy ra lỗi',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  state.failure!.message,
-                  style: TextStyle(fontSize: 14, color: theme.hintColor),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    ref.read(postsWithInterestsProvider.notifier).refresh();
-                  },
-                  child: const Text('Thử lại'),
-                ),
-              ],
-            ),
-          );
-        }
-
-        if (state.interests.isEmpty) {
-          return _buildEmptyState(
+      return ListView.builder(
+        padding: EdgeInsets.symmetric(
+          horizontal: isTablet ? 32 : 16,
+          vertical: isTablet ? 24 : 16,
+        ),
+        itemCount: state.interests.length,
+        itemBuilder: (context, index) {
+          final post = state.interests[index];
+          final postType = CreatePostType.fromValue(post.type);
+          return _buildPostWithInterestsCard(
+            post,
+            postType,
             isTablet,
             theme,
             colorScheme,
-            'Chưa có bài đăng được quan tâm',
-            'Tạo bài đăng để nhận được sự quan tâm từ cộng đồng',
-            Icons.post_add,
-            showResetButton:
-                _searchController.text.isNotEmpty ||
-                state.query.order != 'DESC',
+            handlePostTap,
+            handleChatTap,
           );
-        }
-
-        return ListView.builder(
-          padding: EdgeInsets.symmetric(
-            horizontal: isTablet ? 32 : 16,
-            vertical: isTablet ? 24 : 16,
-          ),
-          itemCount: state.interests.length,
-          itemBuilder: (context, index) {
-            final post = state.interests[index];
-            final postType = CreatePostType.fromValue(post.type);
-            return _buildPostWithInterestsCard(
-              post,
-              postType,
-              isTablet,
-              theme,
-              colorScheme,
-              ref,
-            );
-          },
-        );
-      },
-    );
-  }
+        },
+      );
+    },
+  );
+}
 
 Widget _buildInterestedPostCard(
   InterestPost post,
@@ -613,8 +725,10 @@ Widget _buildInterestedPostCard(
   bool isTablet,
   ThemeData theme,
   ColorScheme colorScheme,
-  WidgetRef ref,
   bool isInterestLoading,
+  Function(String) handlePostTap,
+  Function(int) handleChatTap,
+  Function(int) handleLikeTap,
 ) {
   return Container(
     margin: EdgeInsets.only(bottom: isTablet ? 20 : 16),
@@ -626,7 +740,7 @@ Widget _buildInterestedPostCard(
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
-        onTap: () => _handlePostTap(post.slug),
+        onTap: () => handlePostTap(post.slug),
         child: Padding(
           padding: EdgeInsets.all(isTablet ? 20 : 16),
           child: Column(
@@ -641,7 +755,9 @@ Widget _buildInterestedPostCard(
                       vertical: isTablet ? 6 : 4,
                     ),
                     decoration: BoxDecoration(
-                      color: postType?.color.withOpacity(0.1) ?? Colors.grey.withOpacity(0.1),
+                      color:
+                          postType?.color.withOpacity(0.1) ??
+                          Colors.grey.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -705,7 +821,7 @@ Widget _buildInterestedPostCard(
                               color: colorScheme.onSurface.withOpacity(0.8),
                               height: 1.4,
                             ),
-                            maxLines: 2,
+                            maxLines: 3,
                             overflow: TextOverflow.ellipsis,
                           ),
                       ],
@@ -716,17 +832,19 @@ Widget _buildInterestedPostCard(
 
               SizedBox(height: isTablet ? 16 : 12),
 
-              // Action buttons (chat, like) với loading state
+              // Action buttons
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   InkWell(
-                    onTap: () => _handleChatTap(post.id),
+                    onTap: () => handleChatTap(post.id),
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       padding: EdgeInsets.all(isTablet ? 12 : 10),
                       decoration: BoxDecoration(
-                        border: Border.all(color: colorScheme.outline.withOpacity(0.3)),
+                        border: Border.all(
+                          color: colorScheme.outline.withOpacity(0.3),
+                        ),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
@@ -738,7 +856,8 @@ Widget _buildInterestedPostCard(
                   ),
                   SizedBox(width: isTablet ? 8 : 6),
                   InkWell(
-                    onTap: isInterestLoading ? null : () => _handleLikeTap(post.id, ref),
+                    onTap:
+                        isInterestLoading ? null : () => handleLikeTap(post.id),
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       padding: EdgeInsets.all(isTablet ? 12 : 10),
@@ -746,20 +865,21 @@ Widget _buildInterestedPostCard(
                         border: Border.all(color: Colors.red.withOpacity(0.3)),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: isInterestLoading
-                          ? SizedBox(
-                              width: isTablet ? 20 : 18,
-                              height: isTablet ? 20 : 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
+                      child:
+                          isInterestLoading
+                              ? SizedBox(
+                                width: isTablet ? 20 : 18,
+                                height: isTablet ? 20 : 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.red,
+                                ),
+                              )
+                              : Icon(
+                                Icons.favorite,
+                                size: isTablet ? 20 : 18,
                                 color: Colors.red,
                               ),
-                            )
-                          : Icon(
-                              Icons.favorite,
-                              size: isTablet ? 20 : 18,
-                              color: Colors.red,
-                            ),
                     ),
                   ),
                 ],
@@ -772,323 +892,326 @@ Widget _buildInterestedPostCard(
   );
 }
 
-  Widget _buildPostWithInterestsCard(
-    InterestPost post,
-    CreatePostType? postType,
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    WidgetRef ref,
-  ) {
-    return Container(
-      margin: EdgeInsets.only(bottom: isTablet ? 20 : 16),
-      child: Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
-          side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
-          onTap: () => _handlePostTap(post.slug),
-          child: Padding(
-            padding: EdgeInsets.all(isTablet ? 20 : 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header
-                Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isTablet ? 12 : 8,
-                        vertical: isTablet ? 6 : 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            postType?.color.withOpacity(0.1) ??
-                            Colors.grey.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            postType?.icon ?? Icons.article,
-                            size: isTablet ? 16 : 14,
+Widget _buildPostWithInterestsCard(
+  InterestPost post,
+  CreatePostType? postType,
+  bool isTablet,
+  ThemeData theme,
+  ColorScheme colorScheme,
+  Function(String) handlePostTap,
+  Function(int) handleChatTap,
+) {
+  return Container(
+    margin: EdgeInsets.only(bottom: isTablet ? 20 : 16),
+    child: Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+        side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+        onTap: () => handlePostTap(post.slug),
+        child: Padding(
+          padding: EdgeInsets.all(isTablet ? 20 : 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isTablet ? 12 : 8,
+                      vertical: isTablet ? 6 : 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          postType?.color.withOpacity(0.1) ??
+                          Colors.grey.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          postType?.icon ?? Icons.article,
+                          size: isTablet ? 16 : 14,
+                          color: postType?.color ?? Colors.grey,
+                        ),
+                        SizedBox(width: isTablet ? 6 : 4),
+                        Text(
+                          postType?.label ?? 'Khác',
+                          style: TextStyle(
+                            fontSize: isTablet ? 13 : 11,
+                            fontWeight: FontWeight.w600,
                             color: postType?.color ?? Colors.grey,
                           ),
-                          SizedBox(width: isTablet ? 6 : 4),
-                          Text(
-                            postType?.label ?? 'Khác',
-                            style: TextStyle(
-                              fontSize: isTablet ? 13 : 11,
-                              fontWeight: FontWeight.w600,
-                              color: postType?.color ?? Colors.grey,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      TimeUtils.formatTimeAgo(DateTime.parse(post.updatedAt)),
-                      style: TextStyle(
-                        fontSize: isTablet ? 13 : 11,
-                        color: theme.hintColor,
-                      ),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: isTablet ? 16 : 12),
-
-                // Post info
-                Row(
-                  children: [
-                    // Thumbnail
-                    // Title
-                    Expanded(
-                      child: Text(
-                        post.title,
-                        style: TextStyle(
-                          fontSize: isTablet ? 18 : 16,
-                          fontWeight: FontWeight.bold,
-                          color: colorScheme.onSurface,
-                          height: 1.3,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-                SizedBox(height: isTablet ? 16 : 12),
-
-                if (post.description.isNotEmpty)
+                  ),
+                  const Spacer(),
                   Text(
-                    post.description,
+                    TimeUtils.formatTimeAgo(DateTime.parse(post.updatedAt)),
                     style: TextStyle(
-                      fontSize: isTablet ? 15 : 13,
-                      color: colorScheme.onSurface.withOpacity(0.8),
-                      height: 1.4,
+                      fontSize: isTablet ? 13 : 11,
+                      color: theme.hintColor,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
                   ),
-                SizedBox(height: isTablet ? 16 : 12),
+                ],
+              ),
 
-                // Interested users count
-                Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isTablet ? 12 : 8,
-                    vertical: isTablet ? 8 : 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.favorite,
-                        size: isTablet ? 16 : 14,
-                        color: Colors.red,
-                      ),
-                      SizedBox(width: isTablet ? 6 : 4),
-                      Text(
-                        '${post.interests.length} người quan tâm',
-                        style: TextStyle(
-                          fontSize: isTablet ? 13 : 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.red,
+              SizedBox(height: isTablet ? 16 : 12),
+
+              // Post content
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          post.title,
+                          style: TextStyle(
+                            fontSize: isTablet ? 18 : 16,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.onSurface,
+                            height: 1.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                    ],
+                        SizedBox(height: isTablet ? 8 : 6),
+                        if (post.description.isNotEmpty)
+                          Text(
+                            post.description,
+                            style: TextStyle(
+                              fontSize: isTablet ? 15 : 13,
+                              color: colorScheme.onSurface.withOpacity(0.8),
+                              height: 1.4,
+                            ),
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
                   ),
+                ],
+              ),
+
+              SizedBox(height: isTablet ? 16 : 12),
+
+              // Interested users count
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 12 : 8,
+                  vertical: isTablet ? 8 : 6,
                 ),
-
-                if (post.interests.isNotEmpty) ...[
-                  SizedBox(height: isTablet ? 12 : 8),
-
-                  // List of interested users
-                  ...post.interests
-                      .take(3)
-                      .map(
-                        (user) => Container(
-                          margin: EdgeInsets.only(bottom: isTablet ? 8 : 6),
-                          padding: EdgeInsets.all(isTablet ? 12 : 8),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceVariant.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: isTablet ? 16 : 14,
-                                backgroundColor: colorScheme.primary
-                                    .withOpacity(0.1),
-                                child:
-                                    user.userAvatar.isNotEmpty
-                                        ? ClipOval(
-                                          child: Image.network(
-                                            user.userAvatar,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (
-                                              context,
-                                              error,
-                                              stackTrace,
-                                            ) {
-                                              return Icon(
-                                                Icons.person,
-                                                size: isTablet ? 16 : 14,
-                                                color: colorScheme.primary,
-                                              );
-                                            },
-                                          ),
-                                        )
-                                        : Icon(
-                                          Icons.person,
-                                          size: isTablet ? 16 : 14,
-                                          color: colorScheme.primary,
-                                        ),
-                              ),
-                              SizedBox(width: isTablet ? 12 : 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      user.userName,
-                                      style: TextStyle(
-                                        fontSize: isTablet ? 14 : 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: colorScheme.onSurface,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Quan tâm ${TimeUtils.formatTimeAgo(DateTime.parse(user.createdAt))}',
-                                      style: TextStyle(
-                                        fontSize: isTablet ? 12 : 11,
-                                        color: theme.hintColor,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              InkWell(
-                                onTap: () => _handleChatTap(user.id),
-                                borderRadius: BorderRadius.circular(6),
-                                child: Container(
-                                  padding: EdgeInsets.all(isTablet ? 8 : 6),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: colorScheme.outline.withOpacity(
-                                        0.3,
-                                      ),
-                                    ),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Icon(
-                                    Icons.chat_outlined,
-                                    size: isTablet ? 16 : 14,
-                                    color: colorScheme.primary,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                  if (post.interests.length > 3)
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.favorite,
+                      size: isTablet ? 16 : 14,
+                      color: Colors.red,
+                    ),
+                    SizedBox(width: isTablet ? 6 : 4),
                     Text(
-                      'và ${post.interests.length - 3} người khác',
+                      '${post.interests.length} người quan tâm',
                       style: TextStyle(
                         fontSize: isTablet ? 13 : 12,
-                        color: theme.hintColor,
-                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.red,
                       ),
                     ),
-                ],
+                  ],
+                ),
+              ),
+
+              if (post.interests.isNotEmpty) ...[
+                SizedBox(height: isTablet ? 12 : 8),
+
+                // List of interested users
+                ...post.interests
+                    .take(3)
+                    .map(
+                      (user) => Container(
+                        margin: EdgeInsets.only(bottom: isTablet ? 8 : 6),
+                        padding: EdgeInsets.all(isTablet ? 12 : 8),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceVariant.withOpacity(0.3),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            CircleAvatar(
+                              radius: isTablet ? 16 : 14,
+                              backgroundColor: colorScheme.primary.withOpacity(
+                                0.1,
+                              ),
+                              child:
+                                  user.userAvatar.isNotEmpty
+                                      ? ClipOval(
+                                        child: Image.network(
+                                          user.userAvatar,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            return Icon(
+                                              Icons.person,
+                                              size: isTablet ? 16 : 14,
+                                              color: colorScheme.primary,
+                                            );
+                                          },
+                                        ),
+                                      )
+                                      : Icon(
+                                        Icons.person,
+                                        size: isTablet ? 16 : 14,
+                                        color: colorScheme.primary,
+                                      ),
+                            ),
+                            SizedBox(width: isTablet ? 12 : 8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    user.userName,
+                                    style: TextStyle(
+                                      fontSize: isTablet ? 14 : 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Quan tâm ${TimeUtils.formatTimeAgo(DateTime.parse(user.createdAt))}',
+                                    style: TextStyle(
+                                      fontSize: isTablet ? 12 : 11,
+                                      color: theme.hintColor,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () => handleChatTap(user.id),
+                              borderRadius: BorderRadius.circular(6),
+                              child: Container(
+                                padding: EdgeInsets.all(isTablet ? 8 : 6),
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: colorScheme.outline.withOpacity(0.3),
+                                  ),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Icon(
+                                  Icons.chat_outlined,
+                                  size: isTablet ? 16 : 14,
+                                  color: colorScheme.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                if (post.interests.length > 3)
+                  Text(
+                    'và ${post.interests.length - 3} người khác',
+                    style: TextStyle(
+                      fontSize: isTablet ? 13 : 12,
+                      color: theme.hintColor,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
               ],
-            ),
+            ],
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
-  Widget _buildEmptyState(
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    String title,
-    String subtitle,
-    IconData icon, {
-    bool showResetButton = false,
-  }) {
-    // Kiểm tra xem có đang áp dụng bộ lọc không
-    final hasActiveFilters =
-        _searchController.text.isNotEmpty ||
-        _getCurrentState().query.order != 'DESC';
+Widget _buildEmptyState(
+  bool isTablet,
+  ThemeData theme,
+  ColorScheme colorScheme,
+  String title,
+  String subtitle,
+  IconData icon,
+  TextEditingController searchController,
+  InterestsListState state,
+  VoidCallback resetFilters,
+) {
+  // Kiểm tra xem có đang áp dụng bộ lọc không
+  final hasActiveFilters =
+      searchController.text.isNotEmpty || state.query.order != 'DESC';
 
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: isTablet ? 80 : 64, color: theme.hintColor),
-          SizedBox(height: isTablet ? 24 : 16),
-          Text(
-            title,
-            style: TextStyle(
-              fontSize: isTablet ? 18 : 16,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
-            ),
+  return Center(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, size: isTablet ? 80 : 64, color: theme.hintColor),
+        SizedBox(height: isTablet ? 24 : 16),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: isTablet ? 18 : 16,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
           ),
-          SizedBox(height: isTablet ? 12 : 8),
-          Text(
-            hasActiveFilters
-                ? 'Không tìm thấy kết quả phù hợp với bộ lọc'
-                : subtitle,
-            style: TextStyle(
-              fontSize: isTablet ? 14 : 12,
-              color: theme.hintColor,
-            ),
-            textAlign: TextAlign.center,
+        ),
+        SizedBox(height: isTablet ? 12 : 8),
+        Text(
+          hasActiveFilters
+              ? 'Không tìm thấy kết quả phù hợp với bộ lọc'
+              : subtitle,
+          style: TextStyle(
+            fontSize: isTablet ? 14 : 12,
+            color: theme.hintColor,
           ),
-
-          // Hiển thị nút đặt lại bộ lọc nếu có bộ lọc đang áp dụng
-          if (hasActiveFilters) ...[
-            SizedBox(height: isTablet ? 24 : 20),
-            ElevatedButton.icon(
-              onPressed: _resetFilters,
-              icon: Icon(Icons.refresh, size: isTablet ? 20 : 18),
-              label: Text(
-                'Đặt lại bộ lọc',
-                style: TextStyle(
-                  fontSize: isTablet ? 16 : 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 24 : 20,
-                  vertical: isTablet ? 16 : 12,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 2,
+          textAlign: TextAlign.center,
+        ),
+        // Hiển thị nút đặt lại bộ lọc nếu có bộ lọc đang áp dụng
+        if (hasActiveFilters) ...[
+          SizedBox(height: isTablet ? 24 : 20),
+          ElevatedButton.icon(
+            onPressed: resetFilters,
+            icon: Icon(Icons.refresh, size: isTablet ? 20 : 18),
+            label: Text(
+              'Đặt lại bộ lọc',
+              style: TextStyle(
+                fontSize: isTablet ? 16 : 14,
+                fontWeight: FontWeight.w600,
               ),
             ),
-          ],
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.primary,
+              foregroundColor: colorScheme.onPrimary,
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 24 : 20,
+                vertical: isTablet ? 16 : 12,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              elevation: 2,
+            ),
+          ),
         ],
-      ),
-    );
-  }
+      ],
+    ),
+  );
 }

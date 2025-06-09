@@ -34,7 +34,7 @@ class PostTypeSelection extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: isTablet ? 4 : 2,
-            childAspectRatio: isTablet ? 1.1 : 1.0,
+            childAspectRatio: isTablet ? 2 : 1.8,
             crossAxisSpacing: isTablet ? 16 : 12,
             mainAxisSpacing: isTablet ? 16 : 12,
           ),

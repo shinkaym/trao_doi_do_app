@@ -59,7 +59,7 @@ class PostCard extends StatelessWidget {
                 _buildTitleAndDescription(),
                 if (hasImages(post)) _buildImagesSection(),
                 SizedBox(height: isTablet ? 16 : 12),
-                _buildLocationAndReward(location, reward),
+                if (location.isNotEmpty) _buildLocationAndReward(location, reward),
                 if (post.authorName != null && post.authorName!.isNotEmpty)
                   _buildAuthorSection(),
               ],

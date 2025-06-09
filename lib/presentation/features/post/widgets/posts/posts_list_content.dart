@@ -156,7 +156,7 @@ class PostsListContent extends ConsumerWidget {
           final foundItemInfo = FoundItemInfo.fromJson(info);
           return foundItemInfo.foundLocation.isNotEmpty
               ? foundItemInfo.foundLocation
-              : 'Không xác định';
+              : '';
         }
 
         // For FindLost type
@@ -164,12 +164,12 @@ class PostsListContent extends ConsumerWidget {
           final findLostInfo = FindLostInfo.fromJson(info);
           return findLostInfo.lostLocation.isNotEmpty
               ? findLostInfo.lostLocation
-              : 'Không xác định';
+              : '';
         }
       }
     } catch (e) {
       // Ignore parsing errors
     }
-    return 'Không xác định';
+    return '';
   }
 }

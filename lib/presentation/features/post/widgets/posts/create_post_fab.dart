@@ -16,19 +16,12 @@ class CreatePostFAB extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 60),
-      child: FloatingActionButton.extended(
+      child: FloatingActionButton(
         onPressed: onPressed,
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         elevation: 6,
-        icon: Icon(Icons.add, size: isTablet ? 24 : 20),
-        label: Text(
-          'Đăng bài',
-          style: TextStyle(
-            fontSize: isTablet ? 16 : 14,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        child: Icon(Icons.add, size: isTablet ? 24 : 20),
       ),
     );
   }

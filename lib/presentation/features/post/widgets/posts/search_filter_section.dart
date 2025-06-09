@@ -50,8 +50,6 @@ class SearchFilterSection extends StatelessWidget {
           SizedBox(height: isTablet ? 16 : 12),
           // Filter Chips
           _buildFilterChips(),
-          // Results Count
-          if (postsCount > 0) _buildResultsCount(),
         ],
       ),
     );
@@ -110,7 +108,7 @@ class SearchFilterSection extends StatelessWidget {
                 ),
                 backgroundColor: colorScheme.surface,
                 selectedColor: colorScheme.primaryContainer,
-                checkmarkColor: colorScheme.primary,
+                checkmarkColor: colorScheme.secondary,
               ),
             ),
           ),
@@ -131,33 +129,13 @@ class SearchFilterSection extends StatelessWidget {
                   ],
                 ),
                 backgroundColor: colorScheme.surface,
-                selectedColor: colorScheme.secondaryContainer,
+                selectedColor: colorScheme.primaryContainer,
                 checkmarkColor: colorScheme.secondary,
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildResultsCount() {
-    return Column(
-      children: [
-        SizedBox(height: isTablet ? 12 : 8),
-        Row(
-          children: [
-            Text(
-              'Tìm thấy $postsCount kết quả',
-              style: TextStyle(
-                fontSize: isTablet ? 14 : 12,
-                color: theme.hintColor,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }

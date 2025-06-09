@@ -8,6 +8,7 @@ class ApiConstants {
   static const String clientLogin = '/client/login';
   static const String clientLogout = '/client/logout';
   static const String clientPosts = '/client/posts';
+  static const String clientGetMe = '/client/get-me';
   static const String interests = '/interests';
 
   // Headers

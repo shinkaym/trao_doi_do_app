@@ -40,7 +40,6 @@ class LoginScreen extends HookConsumerWidget {
       // Show success message
       if (current.successMessage != null &&
           previous?.successMessage != current.successMessage) {
-        context.showSuccessSnackBar(current.successMessage!);
         ref.read(authProvider.notifier).clearSuccess();
       }
 

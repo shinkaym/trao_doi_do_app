@@ -61,14 +61,14 @@ class InterestPost extends Equatable {
 }
 
 class InterestItem extends Equatable {
-  final int id;
+  final int itemID;
   final String name;
   final String categoryName;
   final String image;
   final int quantity;
 
   const InterestItem({
-    required this.id,
+    required this.itemID,
     required this.name,
     required this.categoryName,
     required this.image,
@@ -76,7 +76,7 @@ class InterestItem extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, name, categoryName, image, quantity];
+  List<Object?> get props => [itemID, name, categoryName, image, quantity];
 }
 
 class InterestsResult {
