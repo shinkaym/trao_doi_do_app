@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/entities/params/interests_query.dart';
@@ -1050,35 +1051,11 @@ Widget _buildPostWithInterestsCard(
                         ),
                         child: Row(
                           children: [
-                            CircleAvatar(
+                            _buildBase64Avatar(
+                              base64String: user.userAvatar,
                               radius: isTablet ? 16 : 14,
-                              backgroundColor: colorScheme.primary.withOpacity(
-                                0.1,
-                              ),
-                              child:
-                                  user.userAvatar.isNotEmpty
-                                      ? ClipOval(
-                                        child: Image.network(
-                                          user.userAvatar,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (
-                                            context,
-                                            error,
-                                            stackTrace,
-                                          ) {
-                                            return Icon(
-                                              Icons.person,
-                                              size: isTablet ? 16 : 14,
-                                              color: colorScheme.primary,
-                                            );
-                                          },
-                                        ),
-                                      )
-                                      : Icon(
-                                        Icons.person,
-                                        size: isTablet ? 16 : 14,
-                                        color: colorScheme.primary,
-                                      ),
+                              colorScheme: colorScheme,
+                              isTablet: isTablet,
                             ),
                             SizedBox(width: isTablet ? 12 : 8),
                             Expanded(
@@ -1139,6 +1116,39 @@ Widget _buildPostWithInterestsCard(
             ],
           ),
         ),
+      ),
+    ),
+  );
+}
+
+Widget _buildBase64Avatar({
+  required String base64String,
+  required double radius,
+  required ColorScheme colorScheme,
+  required bool isTablet,
+}) {
+  final bytes = Base64Utils.decodeBase64(base64String);
+
+  if (bytes == null) {
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: colorScheme.primary.withOpacity(0.1),
+      child: Icon(Icons.person, size: radius, color: colorScheme.primary),
+    );
+  }
+
+  return CircleAvatar(
+    radius: radius,
+    backgroundColor: colorScheme.primary.withOpacity(0.1),
+    child: ClipOval(
+      child: Image.memory(
+        bytes,
+        width: radius * 2,
+        height: radius * 2,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Icon(Icons.person, size: radius, color: colorScheme.primary);
+        },
       ),
     ),
   );

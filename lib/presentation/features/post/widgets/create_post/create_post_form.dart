@@ -56,6 +56,7 @@ class CreatePostForm extends HookConsumerWidget {
     // Load data when screen initializes
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(postProvider.notifier).reset();
         ref.read(categoryProvider.notifier).getCategories();
         ref.read(itemsListProvider.notifier).loadItems(refresh: true);
       });
@@ -116,6 +117,8 @@ class CreatePostForm extends HookConsumerWidget {
     }
 
     void handleTypeChange(CreatePostType type) {
+      ref.read(postProvider.notifier).reset();
+
       selectedType.value = type;
       // Reset specific fields when changing type
       images.value = [];
@@ -173,6 +176,11 @@ class CreatePostForm extends HookConsumerWidget {
     }
 
     void addGiveAwayItem() {
+      if (giveAwayItems.value.length >= 4) {
+        context.showErrorSnackBar('Chỉ được thêm tối đa 4 món đồ');
+        return;
+      }
+
       _showAddItemDialog(
         context: context,
         ref: ref,
@@ -230,6 +238,7 @@ class CreatePostForm extends HookConsumerWidget {
       final result = await useCase(post);
 
       result.fold((failure) => context.showErrorSnackBar(failure.message), (_) {
+        ref.read(postProvider.notifier).reset();
         context.showSuccessSnackBar('Đăng bài thành công!');
         context.pop();
       });

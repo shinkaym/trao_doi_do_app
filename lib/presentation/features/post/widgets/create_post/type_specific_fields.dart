@@ -193,7 +193,7 @@ class TypeSpecificFields extends HookConsumerWidget {
               ),
             ),
             ElevatedButton.icon(
-              onPressed: onAddGiveAwayItem,
+              onPressed: giveAwayItems.length >= 4 ? null : onAddGiveAwayItem,
               icon: const Icon(Icons.add, size: 18),
               label: Text(
                 selectedType == CreatePostType.foundItem

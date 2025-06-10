@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/data/models/others_model.dart';
 import 'package:trao_doi_do_app/domain/enums/index.dart';
@@ -483,24 +484,17 @@ class PostDetailScreen extends HookConsumerWidget {
     ThemeData theme,
     ColorScheme colorScheme,
   ) {
+    final avatarBytes = Base64Utils.decodeBase64(post.authorAvatar ?? '');
+
     return Row(
       children: [
-        // Author Avatar
         CircleAvatar(
           radius: isTablet ? 24 : 20,
           backgroundColor: colorScheme.primary,
           backgroundImage:
-              (post.authorAvatar?.isNotEmpty == true)
-                  ? MemoryImage(
-                    base64Decode(
-                      post.authorAvatar!.contains(',')
-                          ? post.authorAvatar!.split(',').last
-                          : post.authorAvatar!,
-                    ),
-                  )
-                  : null,
+              avatarBytes != null ? MemoryImage(avatarBytes) : null,
           child:
-              (post.authorAvatar?.isEmpty ?? true)
+              avatarBytes == null
                   ? Text(
                     post.authorName?.isNotEmpty == true
                         ? post.authorName![0].toUpperCase()
@@ -513,7 +507,6 @@ class PostDetailScreen extends HookConsumerWidget {
                   )
                   : null,
         ),
-
         SizedBox(width: isTablet ? 16 : 12),
 
         // Author Info
@@ -887,66 +880,16 @@ class PostDetailScreen extends HookConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.favorite, color: Colors.red, size: isTablet ? 24 : 20),
-              const SizedBox(width: 8),
-              Text(
-                'Người quan tâm',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              if (interests.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    '${interests.length} người',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.red,
-                    ),
-                  ),
-                ),
-            ],
+          Icon(Icons.favorite, color: Colors.red, size: isTablet ? 24 : 20),
+          const SizedBox(width: 8),
+          Text(
+            'Người quan tâm',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
           ),
-
-          const SizedBox(height: 12),
-
-          if (interests.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.favorite_border,
-                    size: 20,
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Chưa có ai quan tâm bài đăng này',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface.withOpacity(0.6),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          else ...[
+          const Spacer(),
+          if (interests.isNotEmpty) ...[
             const SizedBox(height: 8),
             SizedBox(
               height: isTablet ? 100 : 80,
@@ -956,6 +899,9 @@ class PostDetailScreen extends HookConsumerWidget {
                 separatorBuilder: (_, __) => const SizedBox(width: 12),
                 itemBuilder: (context, index) {
                   final interest = interests[index];
+                  final avatarBytes = Base64Utils.decodeBase64(
+                    interest.userAvatar,
+                  );
                   return Column(
                     children: [
                       Container(
@@ -963,15 +909,9 @@ class PostDetailScreen extends HookConsumerWidget {
                         height: isTablet ? 54 : 46,
                         decoration: BoxDecoration(shape: BoxShape.circle),
                         child:
-                            interest.userAvatar.isNotEmpty
+                            avatarBytes != null
                                 ? CircleAvatar(
-                                  backgroundImage: MemoryImage(
-                                    base64Decode(
-                                      interest.userAvatar.contains(',')
-                                          ? interest.userAvatar.split(',').last
-                                          : interest.userAvatar,
-                                    ),
-                                  ),
+                                  backgroundImage: MemoryImage(avatarBytes),
                                   backgroundColor: Colors.transparent,
                                 )
                                 : CircleAvatar(
@@ -1141,8 +1081,8 @@ class PostDetailScreen extends HookConsumerWidget {
 
   // Thay thế _buildBase64Image với InteractiveViewer
   Widget _buildBase64Image(String base64String) {
-    return FutureBuilder<Uint8List>(
-      future: _decodeBase64(base64String),
+    return FutureBuilder<Uint8List?>(
+      future: Future.value(Base64Utils.decodeBase64(base64String)),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Container(
@@ -1151,7 +1091,7 @@ class PostDetailScreen extends HookConsumerWidget {
           );
         }
 
-        if (snapshot.hasError || !snapshot.hasData) {
+        if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
           return Container(
             color: Colors.grey.shade300,
             child: const Icon(Icons.broken_image, size: 50, color: Colors.grey),
@@ -1163,14 +1103,6 @@ class PostDetailScreen extends HookConsumerWidget {
         );
       },
     );
-  }
-
-  Future<Uint8List> _decodeBase64(String base64String) async {
-    final cleanedBase64 =
-        base64String.contains(',')
-            ? base64String.split(',').last
-            : base64String;
-    return base64Decode(cleanedBase64);
   }
 
   // Helper methods

@@ -228,6 +228,14 @@ class PostNotifier extends StateNotifier<PostState> {
   void clearForm() {
     state = PostState();
   }
+
+  void reset() {
+  state = state.copyWith(
+    newItems: [],
+    oldItems: [],
+    images: [],
+  );
+}
 }
 
 final postProvider = StateNotifierProvider<PostNotifier, PostState>((ref) {

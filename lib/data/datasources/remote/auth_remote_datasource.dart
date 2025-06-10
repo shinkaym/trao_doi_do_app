@@ -48,6 +48,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         options: Options(extra: {'requiresAuth': true}),
       );
 
+      // ✅ FIXED: Kiểm tra HTTP status code 200 cho logout
       if (response.statusCode != 200) {
         throw ServerException('Logout failed', response.statusCode);
       }
@@ -73,7 +74,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         (data) => RefreshTokenResponse.fromJson(data as Map<String, dynamic>),
       );
 
-      if (apiResponse.code == 0 && apiResponse.data != null) {
+      if (apiResponse.code == 200 && apiResponse.data != null) {
         return apiResponse.data!;
       } else {
         throw ServerException(apiResponse.message, apiResponse.code);
@@ -96,7 +97,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         (data) => GetMeResponseModel.fromJson(data as Map<String, dynamic>),
       );
 
-      if (apiResponse.code == 0 && apiResponse.data != null) {
+      if (apiResponse.code == 200 && apiResponse.data != null) {
         return apiResponse.data!;
       } else {
         throw ServerException(apiResponse.message, apiResponse.code);

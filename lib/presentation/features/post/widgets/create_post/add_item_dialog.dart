@@ -6,6 +6,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/core/utils/image_utils.dart';
 import 'package:trao_doi_do_app/data/models/category_model.dart';
 import 'package:trao_doi_do_app/domain/entities/item.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
@@ -25,6 +26,24 @@ class AddItemDialog extends HookConsumerWidget {
     required this.ref,
   });
 
+  // Helper function để decode base64 image
+  Uint8List? _decodeImageSafely(String? imageString) {
+    if (imageString == null || imageString.isEmpty) return null;
+    
+    try {
+      // Kiểm tra nếu là data URI
+      if (imageString.startsWith('data:image/')) {
+        final base64String = imageString.split(',').last;
+        return base64Decode(base64String);
+      }
+      // Nếu là base64 thuần
+      return base64Decode(imageString);
+    } catch (e) {
+      print('Error decoding image: $e');
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final formKey = useMemoized(() => GlobalKey<FormState>());
@@ -41,12 +60,11 @@ class AddItemDialog extends HookConsumerWidget {
     final categoryState = ref.watch(categoryProvider);
     final categories = categoryState.categories;
     final itemState = ref.watch(itemsListProvider);
-    final filteredItems =
-        itemState.items.where((item) {
-          return item.name.toLowerCase().contains(
-            searchQuery.value.toLowerCase(),
-          );
-        }).toList();
+    final filteredItems = itemState.items.where((item) {
+      return item.name.toLowerCase().contains(
+        searchQuery.value.toLowerCase(),
+      );
+    }).toList();
 
     Future<void> _showImagePickerBottomSheet({
       required BuildContext context,
@@ -59,16 +77,15 @@ class AddItemDialog extends HookConsumerWidget {
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
-        builder:
-            (_) => ImagePickerBottomSheet(
-              picker: picker,
-              title: title,
-              onImageSelected: (file) async {
-                final bytes = await file.readAsBytes();
-                final sizeInMB = bytes.lengthInBytes / (1024 * 1024);
-                onImagePicked(bytes, sizeInMB);
-              },
-            ),
+        builder: (_) => ImagePickerBottomSheet(
+          picker: picker,
+          title: title,
+          onImageSelected: (file) async {
+            final bytes = await file.readAsBytes();
+            final sizeInMB = bytes.lengthInBytes / (1024 * 1024);
+            onImagePicked(bytes, sizeInMB);
+          },
+        ),
       );
     }
 
@@ -105,19 +122,18 @@ class AddItemDialog extends HookConsumerWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     prefixIcon: const Icon(Icons.search),
-                    suffixIcon:
-                        nameController.text.isNotEmpty
-                            ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                nameController.clear();
-                                searchQuery.value = '';
-                                selectedPresetItem.value = null;
-                                selectedImageData.value = null;
-                                showSuggestions.value = false;
-                              },
-                            )
-                            : null,
+                    suffixIcon: nameController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              nameController.clear();
+                              searchQuery.value = '';
+                              selectedPresetItem.value = null;
+                              selectedImageData.value = null;
+                              showSuggestions.value = false;
+                            },
+                          )
+                        : null,
                   ),
                   onChanged: (value) {
                     searchQuery.value = value;
@@ -156,85 +172,85 @@ class AddItemDialog extends HookConsumerWidget {
                           color: context.colorScheme.outline.withOpacity(0.2),
                         ),
                       ),
-                      child:
-                          itemState.isLoading
-                              ? const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: CircularProgressIndicator(),
-                                ),
-                              )
-                              : filteredItems.isEmpty
-                              ? const Padding(
+                      child: itemState.isLoading
+                          ? const Center(
+                              child: Padding(
                                 padding: EdgeInsets.all(16),
-                                child: Text(
-                                  'Không tìm thấy món đồ nào',
-                                  textAlign: TextAlign.center,
-                                ),
-                              )
+                                child: CircularProgressIndicator(),
+                              ),
+                            )
+                          : filteredItems.isEmpty
+                              ? const SizedBox.shrink()
                               : ListView.builder(
-                                shrinkWrap: true,
-                                itemCount: filteredItems.length,
-                                itemBuilder: (context, index) {
-                                  final item = filteredItems[index];
-                                  final category = categories.firstWhere(
-                                    (c) => c.id == item.categoryID,
-                                    orElse:
-                                        () => const CategoryModel(
-                                          id: 0,
-                                          name: 'Khác',
-                                        ),
-                                  );
+                                  shrinkWrap: true,
+                                  itemCount: filteredItems.length,
+                                  itemBuilder: (context, index) {
+                                    final item = filteredItems[index];
+                                    final category = categories.firstWhere(
+                                      (c) => c.id == item.categoryID,
+                                      orElse: () => const CategoryModel(
+                                        id: 0,
+                                        name: 'Khác',
+                                      ),
+                                    );
 
-                                  return ListTile(
-                                    dense: true,
-                                    leading: ClipRRect(
-                                      borderRadius: BorderRadius.circular(6),
-                                      child: Container(
-                                        width: 40,
-                                        height: 40,
-                                        color:
-                                            context.colorScheme.surfaceVariant,
-                                        child:
-                                            item.decodedImage != null
-                                                ? Image.memory(
-                                                  item.decodedImage!,
+                                    // Decode ảnh an toàn
+                                    final decodedImage = _decodeImageSafely(item.image);
+
+                                    return ListTile(
+                                      dense: true,
+                                      leading: ClipRRect(
+                                        borderRadius: BorderRadius.circular(6),
+                                        child: Container(
+                                          width: 40,
+                                          height: 40,
+                                          color: context.colorScheme.surfaceVariant,
+                                          child: decodedImage != null
+                                              ? Image.memory(
+                                                  decodedImage,
                                                   fit: BoxFit.cover,
-                                                )
-                                                : Icon(
-                                                  Icons.image,
-                                                  color:
-                                                      context
+                                                  errorBuilder: (context, error, stackTrace) {
+                                                    print('Error loading image: $error');
+                                                    return Icon(
+                                                      Icons.image,
+                                                      color: context
                                                           .colorScheme
                                                           .onSurfaceVariant,
+                                                      size: 20,
+                                                    );
+                                                  },
+                                                )
+                                              : Icon(
+                                                  Icons.image,
+                                                  color: context
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
                                                   size: 20,
                                                 ),
+                                        ),
                                       ),
-                                    ),
-                                    title: Text(
-                                      item.name,
-                                      style: context.textTheme.bodyMedium,
-                                    ),
-                                    subtitle: Text(
-                                      category.name,
-                                      style: context.textTheme.bodySmall
-                                          ?.copyWith(
-                                            color: context.theme.hintColor,
-                                          ),
-                                    ),
-                                    onTap: () {
-                                      nameController.text = item.name;
-                                      selectedPresetItem.value = item;
-                                      selectedCategoryID.value =
-                                          item.categoryID;
-                                      selectedImageData.value =
-                                          item.decodedImage;
-                                      showSuggestions.value = false;
-                                      isManualInput.value = false;
-                                    },
-                                  );
-                                },
-                              ),
+                                      title: Text(
+                                        item.name,
+                                        style: context.textTheme.bodyMedium,
+                                      ),
+                                      subtitle: Text(
+                                        category.name,
+                                        style: context.textTheme.bodySmall?.copyWith(
+                                          color: context.theme.hintColor,
+                                        ),
+                                      ),
+                                      onTap: () {
+                                        nameController.text = item.name;
+                                        selectedPresetItem.value = item;
+                                        selectedCategoryID.value = item.categoryID;
+                                        // Decode ảnh khi chọn
+                                        selectedImageData.value = _decodeImageSafely(item.image);
+                                        showSuggestions.value = false;
+                                        isManualInput.value = false;
+                                      },
+                                    );
+                                  },
+                                ),
                     ),
                   ),
                 ],
@@ -258,13 +274,12 @@ class AddItemDialog extends HookConsumerWidget {
                 else if (isManualInput.value)
                   DropdownButtonFormField<int>(
                     value: selectedCategoryID.value,
-                    items:
-                        categories.map((cat) {
-                          return DropdownMenuItem<int>(
-                            value: cat.id,
-                            child: Text(cat.name),
-                          );
-                        }).toList(),
+                    items: categories.map((cat) {
+                      return DropdownMenuItem<int>(
+                        value: cat.id,
+                        child: Text(cat.name),
+                      );
+                    }).toList(),
                     onChanged: (val) {
                       selectedCategoryID.value = val;
                     },
@@ -296,8 +311,7 @@ class AddItemDialog extends HookConsumerWidget {
                       categories
                           .firstWhere(
                             (c) => c.id == selectedCategoryID.value,
-                            orElse:
-                                () => const CategoryModel(id: 0, name: 'Khác'),
+                            orElse: () => const CategoryModel(id: 0, name: 'Khác'),
                           )
                           .name,
                       style: context.textTheme.bodyMedium,
@@ -322,33 +336,15 @@ class AddItemDialog extends HookConsumerWidget {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
-                        child:
-                            selectedImageData.value != null
-                                ? Image.memory(
-                                  selectedImageData.value!,
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.cover,
-                                )
-                                : InkWell(
-                                  onTap: () {
-                                    _showImagePickerBottomSheet(
-                                      context: context,
-                                      picker: picker,
-                                      title: 'Chọn ảnh món đồ',
-                                      onImagePicked: (bytes, sizeInMB) {
-                                        if (sizeInMB > 5) {
-                                          context.showErrorSnackBar(
-                                            'Ảnh vượt quá 5MB',
-                                          );
-                                          return;
-                                        }
-                                        selectedImageData.value = bytes;
-                                      },
-                                    );
-                                  },
-
-                                  child: Container(
+                        child: selectedImageData.value != null
+                            ? Image.memory(
+                                selectedImageData.value!,
+                                width: 100,
+                                height: 100,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  print('Error displaying selected image: $error');
+                                  return Container(
                                     width: 100,
                                     height: 100,
                                     decoration: BoxDecoration(
@@ -358,28 +354,61 @@ class AddItemDialog extends HookConsumerWidget {
                                       ),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.add_a_photo,
-                                          size: 20,
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      color: context.theme.hintColor,
+                                      size: 40,
+                                    ),
+                                  );
+                                },
+                              )
+                            : InkWell(
+                                onTap: () {
+                                  _showImagePickerBottomSheet(
+                                    context: context,
+                                    picker: picker,
+                                    title: 'Chọn ảnh món đồ',
+                                    onImagePicked: (bytes, sizeInMB) {
+                                      if (sizeInMB > 5) {
+                                        context.showErrorSnackBar(
+                                          'Ảnh vượt quá 5MB',
+                                        );
+                                        return;
+                                      }
+                                      selectedImageData.value = bytes;
+                                    },
+                                  );
+                                },
+                                child: Container(
+                                  width: 100,
+                                  height: 100,
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: context.colorScheme.outline
+                                          .withOpacity(0.4),
+                                    ),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.add_a_photo,
+                                        size: 20,
+                                        color: context.theme.hintColor,
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        'Chọn ảnh',
+                                        style: context.textTheme.bodySmall?.copyWith(
+                                          fontSize: 12,
                                           color: context.theme.hintColor,
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Chọn ảnh',
-                                          style: context.textTheme.bodySmall
-                                              ?.copyWith(
-                                                fontSize: 12,
-                                                color: context.theme.hintColor,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
                                 ),
+                              ),
                       ),
                       if (selectedImageData.value != null)
                         Positioned(
@@ -471,6 +500,10 @@ class AddItemDialog extends HookConsumerWidget {
                 categoryId: selectedCategoryID.value,
               );
 
+              final dataUri = ImageUtils.bytesToBase64(
+                item.imageData!,
+              );
+
               final base64Image = base64Encode(item.imageData!);
               final postNotifier = ref.read(postProvider.notifier);
 
@@ -479,7 +512,7 @@ class AddItemDialog extends HookConsumerWidget {
                   OldItem(
                     itemID: selectedPresetItem.value!.id,
                     quantity: item.quantity,
-                    image: base64Image,
+                    image: dataUri ?? '',
                   ),
                 );
               } else {
@@ -488,7 +521,7 @@ class AddItemDialog extends HookConsumerWidget {
                     name: item.name,
                     quantity: item.quantity,
                     categoryID: item.categoryId!,
-                    image: base64Image,
+                    image: dataUri ?? '',
                   ),
                 );
               }
