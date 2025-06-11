@@ -63,14 +63,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     _initializeAuth();
   }
 
-  // Tối ưu: Khởi tạo auth một cách có trật tự
   Future<void> _initializeAuth() async {
     if (state.isInitialized) return;
 
     state = state.copyWith(isLoading: true);
 
     try {
-      // Kiểm tra trạng thái đăng nhập
       final isLoggedInResult = await _isLoggedInUseCase();
 
       await isLoggedInResult.fold(
@@ -101,11 +99,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoggedIn: false,
         isInitialized: true,
         clearUser: true,
+        failure: ServerFailure('Lỗi khởi tạo: $e'),
       );
     }
   }
 
-  // Tối ưu: Load user từ local storage trước
   Future<void> _loadUserFromLocal() async {
     final result = await _getCurrentUserUseCase();
 
@@ -134,19 +132,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  // Tối ưu: Refresh user từ server trong background
   Future<void> _refreshUserFromServer() async {
     try {
       final result = await _getMeUseCase();
 
       result.fold(
         (failure) {
-          // Silent fail - không làm gì để không ảnh hưởng UX
+          // Silent fail - log only, don't affect UX
           print('Background refresh failed: ${failure.message}');
         },
         (user) {
           // Chỉ update nếu có thay đổi
-          if (state.user != user) {
+          if (state.user?.id != user.id ||
+              state.user?.email != user.email ||
+              state.user?.fullName != user.fullName ||
+              state.user?.avatar != user.avatar) {
             state = state.copyWith(user: user);
           }
         },
@@ -156,7 +156,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  // Tối ưu: Get user info với loading state riêng
   Future<void> getMe({bool showLoading = true}) async {
     if (showLoading) {
       state = state.copyWith(isLoading: true, clearFailure: true);
@@ -175,13 +174,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isLoading: showLoading ? false : state.isLoading,
           user: user,
           isLoggedIn: true,
-          successMessage: 'Cập nhật thông tin thành công!',
+          successMessage: showLoading ? 'Cập nhật thông tin thành công!' : null,
         );
       },
     );
   }
 
-  // Tối ưu: Refresh user info không loading
   Future<void> refreshUserInfo() async {
     await getMe(showLoading: false);
   }
@@ -195,7 +193,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     final request = LoginRequest(
       device: device,
-      email: email,
+      email: email.trim(),
       password: password,
     );
 
@@ -220,12 +218,23 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     state = state.copyWith(isLoading: true, clearFailure: true);
 
-    await _logoutUseCase();
+    final result = await _logoutUseCase();
 
-    // Luôn clear state dù API có fail hay không
-    state = const AuthState(
-      isInitialized: true,
-      successMessage: 'Đăng xuất thành công!',
+    result.fold(
+      (failure) {
+        // Log error but still clear local state
+        print('Logout API failed: ${failure.message}');
+        state = const AuthState(
+          isInitialized: true,
+          successMessage: 'Đăng xuất thành công!',
+        );
+      },
+      (_) {
+        state = const AuthState(
+          isInitialized: true,
+          successMessage: 'Đăng xuất thành công!',
+        );
+      },
     );
   }
 
@@ -235,7 +244,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     result.fold(
       (failure) {
         // Token refresh failed, logout user
-        state = const AuthState(isInitialized: true, isLoggedIn: false);
+        state = const AuthState(
+          isInitialized: true,
+          isLoggedIn: false,
+          failure: ServerFailure('Phiên đăng nhập đã hết hạn'),
+        );
       },
       (user) {
         // Refresh thành công
@@ -256,7 +269,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  // Tối ưu: Reset toàn bộ state
   void reset() {
     state = const AuthState();
   }

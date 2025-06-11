@@ -34,14 +34,14 @@ class AuthRepositoryImpl implements AuthRepository {
     } on ValidationException catch (e) {
       return Left(ValidationFailure(e.message));
     } catch (e) {
-      return Left(ServerFailure('Lỗi không xác định'));
+      return Left(ServerFailure('Lỗi không xác định: $e'));
     }
   }
 
   @override
   Future<Either<Failure, void>> logout() async {
     try {
-      // Gọi API logout trước
+      // Gọi API logout trước (với error handling)
       try {
         await _remoteDataSource.logout();
       } on ServerException catch (e) {
@@ -54,18 +54,18 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // Clear local storage (luôn thực hiện dù API fail)
       await _localDataSource.clearTokens();
-      await _clearUserInfo();
+      await _localDataSource.clearUserInfo();
 
       return const Right(null);
     } catch (e) {
       // Nếu clear local storage fail, vẫn cố gắng clear
       try {
         await _localDataSource.clearTokens();
-        await _clearUserInfo();
+        await _localDataSource.clearUserInfo();
       } catch (clearError) {
         print('Failed to clear local data: $clearError');
       }
-      return Left(ServerFailure('Lỗi khi đăng xuất'));
+      return Left(ServerFailure('Lỗi khi đăng xuất: $e'));
     }
   }
 
@@ -92,31 +92,35 @@ class AuthRepositoryImpl implements AuthRepository {
     } on ServerException catch (e) {
       // Nếu refresh token fail, clear tokens
       await _localDataSource.clearTokens();
-      await _clearUserInfo();
+      await _localDataSource.clearUserInfo();
       return Left(ServerFailure(e.message, e.statusCode));
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
       // Clear tokens nếu có lỗi không xác định
       await _localDataSource.clearTokens();
-      await _clearUserInfo();
-      return Left(ServerFailure('Lỗi không xác định khi refresh token'));
+      await _localDataSource.clearUserInfo();
+      return Left(ServerFailure('Lỗi không xác định khi refresh token: $e'));
     }
   }
 
   @override
   Future<Either<Failure, User?>> getCurrentUser() async {
     try {
-      final userJson = await _getUserInfo();
-      if (userJson == null) {
+      final userJson = await _localDataSource.getUserInfo();
+      if (userJson == null || userJson.isEmpty) {
         return const Right(null);
       }
 
       final userMap = jsonDecode(userJson) as Map<String, dynamic>;
       final user = UserModel.fromJson(userMap);
       return Right(user);
+    } on FormatException catch (e) {
+      // JSON parse error, clear corrupted data
+      await _localDataSource.clearUserInfo();
+      return Left(ServerFailure('Dữ liệu người dùng bị lỗi: $e'));
     } catch (e) {
-      return Left(ServerFailure('Lỗi khi lấy thông tin người dùng'));
+      return Left(ServerFailure('Lỗi khi lấy thông tin người dùng: $e'));
     }
   }
 
@@ -125,9 +129,12 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final accessToken = await _localDataSource.getAccessToken();
       final refreshToken = await _localDataSource.getRefreshToken();
-      return Right(accessToken != null && refreshToken != null);
+      return Right(accessToken != null && 
+                  refreshToken != null && 
+                  accessToken.isNotEmpty && 
+                  refreshToken.isNotEmpty);
     } catch (e) {
-      return Left(ServerFailure('Lỗi khi kiểm tra trạng thái đăng nhập'));
+      return Left(ServerFailure('Lỗi khi kiểm tra trạng thái đăng nhập: $e'));
     }
   }
 
@@ -146,24 +153,21 @@ class AuthRepositoryImpl implements AuthRepository {
       return Left(NetworkFailure(e.message));
     } catch (e) {
       return Left(
-        ServerFailure('Lỗi không xác định khi lấy thông tin người dùng'),
+        ServerFailure('Lỗi không xác định khi lấy thông tin người dùng: $e'),
       );
     }
   }
 
   // Helper methods for user info storage
   Future<void> _saveUserInfo(User user) async {
-    final userModel = UserModel.fromEntity(user);
-    final userJson = jsonEncode(userModel.toJson());
-    await _localDataSource.saveUserInfo(userJson);
-  }
-
-  Future<String?> _getUserInfo() async {
-    return await _localDataSource.getUserInfo();
-  }
-
-  Future<void> _clearUserInfo() async {
-    await _localDataSource.clearUserInfo();
+    try {
+      final userModel = UserModel.fromEntity(user);
+      final userJson = jsonEncode(userModel.toJson());
+      await _localDataSource.saveUserInfo(userJson);
+    } catch (e) {
+      print('Failed to save user info: $e');
+      // Don't throw error, just log it
+    }
   }
 }
 

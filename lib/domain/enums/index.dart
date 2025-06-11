@@ -40,6 +40,36 @@ enum PostType {
   final String label;
   final IconData icon;
   final int? value;
+
+  static PostType fromString(String type) {
+    switch (type) {
+      case 'findLost':
+        return PostType.findLost;
+      case 'foundItem':
+        return PostType.foundItem;
+      case 'giveAway':
+        return PostType.giveAway;
+      case 'freePost':
+        return PostType.freePost;
+      default:
+        return PostType.all;
+    }
+  }
+
+  Color get color {
+    switch (this) {
+      case PostType.findLost:
+        return Colors.orange;
+      case PostType.foundItem:
+        return Colors.green;
+      case PostType.giveAway:
+        return Colors.blue;
+      case PostType.freePost:
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
+  }
 }
 
 // Enum cho sắp xếp thời gian

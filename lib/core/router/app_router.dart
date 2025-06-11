@@ -72,7 +72,7 @@ class RouterState {
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/splash',
+    initialLocation: '/interests/chat/1',
     errorBuilder: (context, state) => const NotFoundScreen(),
     refreshListenable: RouterNotifier(ref),
     redirect: (context, state) {
@@ -99,7 +99,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final protectedRoutes = [
         '/profile/edit',
         '/profile/change-password',
-        '/interests/chat',
+        // '/interests/chat',
       ];
 
       for (final route in protectedRoutes) {
