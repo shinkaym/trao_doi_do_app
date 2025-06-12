@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/domain/enums/index.dart';
+import 'dart:convert';
 
 class PostCard extends StatelessWidget {
   final Post post;
@@ -237,7 +237,18 @@ class PostCard extends StatelessWidget {
         SizedBox(height: isTablet ? 12 : 8),
         Row(
           children: [
-            _buildAuthorAvatar(),
+            CircleAvatar(
+              radius: isTablet ? 12 : 10,
+              backgroundColor: colorScheme.primaryContainer,
+              child: Text(
+                post.authorName!.substring(0, 1).toUpperCase(),
+                style: TextStyle(
+                  fontSize: isTablet ? 12 : 10,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onPrimaryContainer,
+                ),
+              ),
+            ),
             SizedBox(width: isTablet ? 10 : 8),
             Expanded(
               child: Text(
@@ -257,75 +268,20 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildAuthorAvatar() {
-    // Kiểm tra xem có authorAvatar không
-    if (post.authorAvatar != null && post.authorAvatar!.isNotEmpty) {
-      return ClipOval(
-        child: SizedBox(
-          width: isTablet ? 24 : 20,
-          height: isTablet ? 24 : 20,
-          child: _buildAvatarFromBase64(post.authorAvatar!),
-        ),
-      );
-    } else {
-      // Fallback về initial letter nếu không có avatar
-      return CircleAvatar(
-        radius: isTablet ? 12 : 10,
-        backgroundColor: colorScheme.primaryContainer,
-        child: Text(
-          post.authorName!.substring(0, 1).toUpperCase(),
-          style: TextStyle(
-            fontSize: isTablet ? 12 : 10,
-            fontWeight: FontWeight.bold,
-            color: colorScheme.onPrimaryContainer,
-          ),
-        ),
-      );
-    }
-  }
-
-  Widget _buildAvatarFromBase64(String base64Avatar) {
-    final imageBytes = Base64Utils.decodeBase64(base64Avatar);
-    if (imageBytes == null) {
-      return _buildAvatarErrorWidget();
-    }
-    return Image.memory(
-      imageBytes,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return _buildAvatarErrorWidget();
-      },
-    );
-  }
-
-  Widget _buildAvatarErrorWidget() {
-    // Nếu lỗi load avatar, fallback về initial letter
-    return CircleAvatar(
-      radius: isTablet ? 12 : 10,
-      backgroundColor: colorScheme.primaryContainer,
-      child: Text(
-        post.authorName?.substring(0, 1).toUpperCase() ?? '?',
-        style: TextStyle(
-          fontSize: isTablet ? 12 : 10,
-          fontWeight: FontWeight.bold,
-          color: colorScheme.onPrimaryContainer,
-        ),
-      ),
-    );
-  }
-
   Widget _buildImageWidget(String base64Url) {
-    final imageBytes = Base64Utils.decodeBase64(base64Url);
-    if (imageBytes == null) {
+    try {
+      final base64Str = base64Url.split(',').last;
+      final imageBytes = base64Decode(base64Str);
+      return Image.memory(
+        imageBytes,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildImageErrorWidget();
+        },
+      );
+    } catch (e) {
       return _buildImageErrorWidget();
     }
-    return Image.memory(
-      imageBytes,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return _buildImageErrorWidget();
-      },
-    );
   }
 
   Widget _buildImageErrorWidget() {

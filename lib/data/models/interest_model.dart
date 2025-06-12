@@ -109,6 +109,7 @@ class InterestItemModel extends InterestItem {
     required super.categoryName,
     required super.image,
     required super.quantity,
+    required super.currentQuantity,
   });
 
   factory InterestItemModel.fromJson(Map<String, dynamic> json) {
@@ -118,6 +119,7 @@ class InterestItemModel extends InterestItem {
       categoryName: json['categoryName'] ?? '',
       image: json['image'] ?? '',
       quantity: json['quantity'] ?? 0,
+      currentQuantity: json['currentQuantity'] ?? 0,
     );
   }
 
@@ -128,6 +130,7 @@ class InterestItemModel extends InterestItem {
       'categoryName': categoryName,
       'image': image,
       'quantity': quantity,
+      'currentQuantity': currentQuantity,
     };
   }
 }

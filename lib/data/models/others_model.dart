@@ -20,7 +20,10 @@ class InterestModel {
       userID: json['userID'] ?? 0,
       userName: json['userName'] ?? '',
       userAvatar: json['userAvatar'] ?? '',
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt']) : null,
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'])
+              : null,
     );
   }
 
@@ -41,6 +44,7 @@ class ItemDetailModel {
   final String categoryName;
   final String name;
   final int quantity;
+  final int currentQuantity;
   final String image;
 
   const ItemDetailModel({
@@ -49,6 +53,7 @@ class ItemDetailModel {
     required this.categoryName,
     required this.name,
     required this.quantity,
+    required this.currentQuantity,
     required this.image,
   });
 
@@ -58,7 +63,8 @@ class ItemDetailModel {
       categoryID: json['categoryID'] ?? 0,
       categoryName: json['categoryName'] ?? '',
       name: json['name'] ?? '',
-      quantity: json['quantity'] ?? 1,
+      quantity: json['quantity'] ?? 0,
+      currentQuantity: json['currentQuantity'] ?? 0,
       image: json['image'] ?? '',
     );
   }
@@ -70,6 +76,7 @@ class ItemDetailModel {
       'categoryName': categoryName,
       'name': name,
       'quantity': quantity,
+      'currentQuantity': currentQuantity,
       'image': image,
     };
   }

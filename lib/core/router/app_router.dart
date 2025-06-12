@@ -22,6 +22,7 @@ import 'package:trao_doi_do_app/presentation/features/profile/screens/profile_sc
 import 'package:trao_doi_do_app/presentation/features/ranking/screens/ranking_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/splash/screens/splash_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/warehouse/screens/warehouse_screen.dart';
+import 'package:trao_doi_do_app/presentation/models/interest_chat_transaction_data.dart';
 import 'package:trao_doi_do_app/presentation/widgets/scaffold_with_navbar.dart';
 import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 
@@ -300,7 +301,12 @@ GoRoute _buildInterestsRoute() {
         name: 'interest-chat',
         builder: (context, state) {
           final interestId = state.pathParameters['interestId']!;
-          return InterestChatScreen(interestId: interestId);
+          final extraData = state.extra as InterestChatTransactionData?;
+          
+          return InterestChatScreen(
+            interestId: interestId,
+            // transactionData: extraData,
+          );
         },
       ),
     ],

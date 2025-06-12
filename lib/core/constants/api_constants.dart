@@ -10,6 +10,7 @@ class ApiConstants {
   static const String clientPosts = '/client/posts';
   static const String clientGetMe = '/client/get-me';
   static const String interests = '/interests';
+  static const String transactions = '/transactions';
 
   // Headers
   static const String contentType = 'Content-Type';

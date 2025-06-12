@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,7 +6,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:trao_doi_do_app/core/config/theme_mode_provider.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
-import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
@@ -25,29 +25,10 @@ class ProfileScreen extends HookConsumerWidget {
     // Tối ưu: Chỉ show loading khi chưa initialized
     final isInitialLoading = authState.isLoading && !authState.isInitialized;
 
-    // Tối ưu: Cache decoded base64 image để tránh decode lại
-    final cachedImageBytes = useMemoized(() {
-      if (!authState.isLoggedIn ||
-          authState.user?.avatar == null ||
-          authState.user!.avatar.isEmpty) {
-        return null;
-      }
-      return Base64Utils.decodeBase64(authState.user!.avatar);
-    }, [authState.user?.avatar]);
-
     // Tối ưu: Sử dụng useMemoized để tránh rebuild không cần thiết
     final avatarWidget = useMemoized(
-      () => _buildAvatarWidget(
-        authState: authState,
-        isTablet: isTablet,
-        cachedImageBytes: cachedImageBytes,
-      ),
-      [
-        authState.user?.avatar,
-        authState.isLoggedIn,
-        isTablet,
-        cachedImageBytes,
-      ],
+      () => _buildAvatarWidget(authState: authState, isTablet: isTablet),
+      [authState.user?.avatar, authState.isLoggedIn, isTablet],
     );
 
     // Listen for auth state changes để show snackbar
@@ -130,7 +111,6 @@ class ProfileScreen extends HookConsumerWidget {
   Widget _buildAvatarWidget({
     required AuthState authState,
     required bool isTablet,
-    required Uint8List? cachedImageBytes,
   }) {
     final size = isTablet ? 100.0 : 80.0;
     final iconSize = isTablet ? 50.0 : 40.0;
@@ -145,19 +125,16 @@ class ProfileScreen extends HookConsumerWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular((size / 2) - 2),
-        child: _buildAvatarContent(authState, iconSize, cachedImageBytes),
+        child: _buildAvatarContent(authState, iconSize),
       ),
     );
   }
 
-  // Tối ưu: Sử dụng cached image bytes
-  // Remove _decodeBase64Image and update _buildAvatarContent
-  Widget _buildAvatarContent(
-    AuthState authState,
-    double iconSize,
-    Uint8List? cachedImageBytes,
-  ) {
-    if (!authState.isLoggedIn || cachedImageBytes == null) {
+  // Tối ưu: Xử lý avatar base64 và network
+  Widget _buildAvatarContent(AuthState authState, double iconSize) {
+    if (!authState.isLoggedIn ||
+        authState.user?.avatar == null ||
+        authState.user!.avatar.isEmpty) {
       return Icon(
         authState.isLoggedIn ? Icons.person : Icons.person_outline,
         size: iconSize,
@@ -165,17 +142,83 @@ class ProfileScreen extends HookConsumerWidget {
       );
     }
 
-    return Image.memory(
-      cachedImageBytes,
+    final avatar = authState.user!.avatar;
+
+    // Kiểm tra nếu là base64
+    if (avatar.startsWith('data:image/') || _isBase64(avatar)) {
+      return _buildBase64Avatar(avatar, iconSize);
+    }
+
+    // Kiểm tra nếu là URL
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+      return _buildNetworkAvatar(avatar, iconSize);
+    }
+
+    // Fallback icon
+    return Icon(Icons.person, size: iconSize, color: Colors.white);
+  }
+
+  // Tối ưu: Build base64 avatar
+  Widget _buildBase64Avatar(String base64String, double iconSize) {
+    try {
+      Uint8List bytes;
+
+      if (base64String.startsWith('data:image/')) {
+        // Extract base64 from data URL
+        final base64Data = base64String.split(',').last;
+        bytes = base64Decode(base64Data);
+      } else {
+        bytes = base64Decode(base64String);
+      }
+
+      return Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        errorBuilder:
+            (context, error, stackTrace) =>
+                Icon(Icons.person, size: iconSize, color: Colors.white),
+        gaplessPlayback: true, // Tối ưu: Smooth transition
+      );
+    } catch (e) {
+      return Icon(Icons.person, size: iconSize, color: Colors.white);
+    }
+  }
+
+  // Tối ưu: Build network avatar with caching
+  Widget _buildNetworkAvatar(String url, double iconSize) {
+    return Image.network(
+      url,
       fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        debugPrint('Error displaying cached image: $error');
-        return Icon(Icons.person, size: iconSize, color: Colors.white);
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Center(
+          child: CircularProgressIndicator(
+            value:
+                loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+            color: Colors.white,
+            strokeWidth: 2,
+          ),
+        );
       },
-      gaplessPlayback: true,
-      cacheWidth: (iconSize * 2).round(),
+      errorBuilder:
+          (context, error, stackTrace) =>
+              Icon(Icons.person, size: iconSize, color: Colors.white),
+      cacheWidth: (iconSize * 2).round(), // Tối ưu: Cache với size phù hợp
       cacheHeight: (iconSize * 2).round(),
     );
+  }
+
+  // Helper: Kiểm tra string có phải base64 không
+  bool _isBase64(String str) {
+    try {
+      base64Decode(str);
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   Widget _buildHeaderSection({
@@ -190,7 +233,7 @@ class ProfileScreen extends HookConsumerWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.8)],
+          colors: [colorScheme.primary, colorScheme.primary],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
@@ -327,12 +370,39 @@ class ProfileScreen extends HookConsumerWidget {
         SizedBox(height: isTablet ? 32 : 24),
 
         // Logout Button
-        _buildLogoutButton(
-          isTablet: isTablet,
-          colorScheme: colorScheme,
-          authState: authState,
-          context: context,
-          ref: ref,
+        SizedBox(
+          height: isTablet ? 56 : 50,
+          child: ElevatedButton.icon(
+            onPressed:
+                authState.isLoading ? null : () => _handleLogout(context, ref),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: colorScheme.error,
+              foregroundColor: colorScheme.onError,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon:
+                authState.isLoading
+                    ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          colorScheme.onError,
+                        ),
+                      ),
+                    )
+                    : const Icon(Icons.logout),
+            label: Text(
+              authState.isLoading ? 'Đang đăng xuất...' : 'Đăng xuất',
+              style: TextStyle(
+                fontSize: isTablet ? 18 : 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ),
         SizedBox(height: isTablet ? 32 : 24),
       ],
@@ -354,11 +424,66 @@ class ProfileScreen extends HookConsumerWidget {
         SizedBox(height: isTablet ? 40 : 32),
 
         // Not logged in message
-        _buildNotLoggedInCard(
-          isTablet: isTablet,
-          theme: theme,
-          colorScheme: colorScheme,
-          context: context,
+        Container(
+          padding: EdgeInsets.all(isTablet ? 32 : 24),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceVariant.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: colorScheme.outline.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                Icons.person_off_outlined,
+                size: isTablet ? 64 : 48,
+                color: theme.hintColor,
+              ),
+              SizedBox(height: isTablet ? 16 : 12),
+              Text(
+                'Bạn chưa đăng nhập',
+                style: TextStyle(
+                  fontSize: isTablet ? 20 : 18,
+                  fontWeight: FontWeight.w600,
+                  color: theme.hintColor,
+                ),
+              ),
+              SizedBox(height: isTablet ? 12 : 8),
+              Text(
+                'Đăng nhập để truy cập đầy đủ tính năng',
+                style: TextStyle(
+                  fontSize: isTablet ? 16 : 14,
+                  color: theme.hintColor.withOpacity(0.8),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: isTablet ? 24 : 20),
+              SizedBox(
+                width: double.infinity,
+                height: isTablet ? 56 : 50,
+                child: ElevatedButton.icon(
+                  onPressed: () => context.pushNamed('login'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.login),
+                  label: Text(
+                    'Đăng nhập',
+                    style: TextStyle(
+                      fontSize: isTablet ? 18 : 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         SizedBox(height: isTablet ? 32 : 24),
 
@@ -373,120 +498,6 @@ class ProfileScreen extends HookConsumerWidget {
         ),
         SizedBox(height: isTablet ? 32 : 24),
       ],
-    );
-  }
-
-  // Tối ưu: Tách riêng not logged in card
-  Widget _buildNotLoggedInCard({
-    required bool isTablet,
-    required ThemeData theme,
-    required ColorScheme colorScheme,
-    required BuildContext context,
-  }) {
-    return Container(
-      padding: EdgeInsets.all(isTablet ? 32 : 24),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.person_off_outlined,
-            size: isTablet ? 64 : 48,
-            color: theme.hintColor,
-          ),
-          SizedBox(height: isTablet ? 16 : 12),
-          Text(
-            'Bạn chưa đăng nhập',
-            style: TextStyle(
-              fontSize: isTablet ? 20 : 18,
-              fontWeight: FontWeight.w600,
-              color: theme.hintColor,
-            ),
-          ),
-          SizedBox(height: isTablet ? 12 : 8),
-          Text(
-            'Đăng nhập để truy cập đầy đủ tính năng',
-            style: TextStyle(
-              fontSize: isTablet ? 16 : 14,
-              color: theme.hintColor.withOpacity(0.8),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: isTablet ? 24 : 20),
-          SizedBox(
-            width: double.infinity,
-            height: isTablet ? 56 : 50,
-            child: ElevatedButton.icon(
-              onPressed: () => context.pushNamed('login'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: colorScheme.primary,
-                foregroundColor: colorScheme.onPrimary,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              icon: const Icon(Icons.login),
-              label: Text(
-                'Đăng nhập',
-                style: TextStyle(
-                  fontSize: isTablet ? 18 : 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Tối ưu: Tách riêng logout button
-  Widget _buildLogoutButton({
-    required bool isTablet,
-    required ColorScheme colorScheme,
-    required AuthState authState,
-    required BuildContext context,
-    required WidgetRef ref,
-  }) {
-    return SizedBox(
-      height: isTablet ? 56 : 50,
-      child: ElevatedButton.icon(
-        onPressed:
-            authState.isLoading ? null : () => _handleLogout(context, ref),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: colorScheme.error,
-          foregroundColor: colorScheme.onError,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        icon:
-            authState.isLoading
-                ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      colorScheme.onError,
-                    ),
-                  ),
-                )
-                : const Icon(Icons.logout),
-        label: Text(
-          authState.isLoading ? 'Đang đăng xuất...' : 'Đăng xuất',
-          style: TextStyle(
-            fontSize: isTablet ? 18 : 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
     );
   }
 
@@ -625,7 +636,7 @@ class ProfileScreen extends HookConsumerWidget {
             value: currentThemeMode == ThemeMode.dark,
             onChanged: (bool value) async {
               await ref.read(themeModeProvider.notifier).toggleTheme();
-              HapticFeedback.lightImpact();
+              HapticFeedback.lightImpact(); // Thêm haptic feedback
             },
             activeColor: colorScheme.primary,
             activeTrackColor: colorScheme.primaryContainer,
@@ -648,7 +659,9 @@ class ProfileScreen extends HookConsumerWidget {
     );
 
     if (confirmed == true) {
+      // Thêm haptic feedback
       HapticFeedback.mediumImpact();
+      // Call logout from AuthNotifier
       ref.read(authProvider.notifier).logout();
     }
   }

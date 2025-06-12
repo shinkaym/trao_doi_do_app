@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
-import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/entities/params/interests_query.dart';
 import 'package:trao_doi_do_app/domain/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/interests_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/pagination.dart';
+import 'package:trao_doi_do_app/presentation/models/interest_chat_transaction_data.dart';
 import 'package:trao_doi_do_app/presentation/widgets/login_prompt.dart';
 import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/interest_provider.dart';
@@ -238,10 +238,20 @@ class InterestsScreen extends HookConsumerWidget {
     }
 
     // Handle chat tap
-    void handleChatTap(int interestId) {
+    void handleChatTap(
+      int interestId,
+      bool isPostOwner,
+      List<InterestItem> items,
+      InterestPost post,
+    ) {
       context.pushNamed(
         'interest-chat',
         pathParameters: {'interestId': interestId.toString()},
+        extra: InterestChatTransactionData(
+          post: post,
+          isPostOwner: isPostOwner,
+          items: items,
+        ),
       );
     }
 
@@ -544,7 +554,7 @@ Widget _buildInterestedPostsTab(
   ColorScheme colorScheme,
   WidgetRef ref,
   Function(String) handlePostTap,
-  Function(int) handleChatTap,
+  Function(int, bool, List<InterestItem>, InterestPost) handleChatTap,
   Function(int) handleLikeTap,
   TextEditingController searchController, // Thêm tham số
   VoidCallback resetFilters,
@@ -637,7 +647,7 @@ Widget _buildPostsWithInterestsTab(
   ColorScheme colorScheme,
   WidgetRef ref,
   Function(String) handlePostTap,
-  Function(int) handleChatTap,
+  Function(int, bool, List<InterestItem>, InterestPost) handleChatTap,
   TextEditingController searchController, // Thêm tham số
   VoidCallback resetFilters,
 ) {
@@ -728,7 +738,7 @@ Widget _buildInterestedPostCard(
   ColorScheme colorScheme,
   bool isInterestLoading,
   Function(String) handlePostTap,
-  Function(int) handleChatTap,
+  Function(int, bool, List<InterestItem>, InterestPost) handleChatTap,
   Function(int) handleLikeTap,
 ) {
   return Container(
@@ -838,7 +848,13 @@ Widget _buildInterestedPostCard(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   InkWell(
-                    onTap: () => handleChatTap(post.id),
+                    onTap:
+                        () => handleChatTap(
+                          post.interests[0].id,
+                          true,
+                          post.items,
+                          post,
+                        ),
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       padding: EdgeInsets.all(isTablet ? 12 : 10),
@@ -900,7 +916,7 @@ Widget _buildPostWithInterestsCard(
   ThemeData theme,
   ColorScheme colorScheme,
   Function(String) handlePostTap,
-  Function(int) handleChatTap,
+  Function(int, bool, List<InterestItem>, InterestPost) handleChatTap,
 ) {
   return Container(
     margin: EdgeInsets.only(bottom: isTablet ? 20 : 16),
@@ -1042,7 +1058,7 @@ Widget _buildPostWithInterestsCard(
                 ...post.interests
                     .take(3)
                     .map(
-                      (user) => Container(
+                      (i) => Container(
                         margin: EdgeInsets.only(bottom: isTablet ? 8 : 6),
                         padding: EdgeInsets.all(isTablet ? 12 : 8),
                         decoration: BoxDecoration(
@@ -1051,11 +1067,35 @@ Widget _buildPostWithInterestsCard(
                         ),
                         child: Row(
                           children: [
-                            _buildBase64Avatar(
-                              base64String: user.userAvatar,
+                            CircleAvatar(
                               radius: isTablet ? 16 : 14,
-                              colorScheme: colorScheme,
-                              isTablet: isTablet,
+                              backgroundColor: colorScheme.primary.withOpacity(
+                                0.1,
+                              ),
+                              child:
+                                  i.userAvatar.isNotEmpty
+                                      ? ClipOval(
+                                        child: Image.network(
+                                          i.userAvatar,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            return Icon(
+                                              Icons.person,
+                                              size: isTablet ? 16 : 14,
+                                              color: colorScheme.primary,
+                                            );
+                                          },
+                                        ),
+                                      )
+                                      : Icon(
+                                        Icons.person,
+                                        size: isTablet ? 16 : 14,
+                                        color: colorScheme.primary,
+                                      ),
                             ),
                             SizedBox(width: isTablet ? 12 : 8),
                             Expanded(
@@ -1063,7 +1103,7 @@ Widget _buildPostWithInterestsCard(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    user.userName,
+                                    i.userName,
                                     style: TextStyle(
                                       fontSize: isTablet ? 14 : 13,
                                       fontWeight: FontWeight.w600,
@@ -1071,7 +1111,7 @@ Widget _buildPostWithInterestsCard(
                                     ),
                                   ),
                                   Text(
-                                    'Quan tâm ${TimeUtils.formatTimeAgo(DateTime.parse(user.createdAt))}',
+                                    'Quan tâm ${TimeUtils.formatTimeAgo(DateTime.parse(i.createdAt))}',
                                     style: TextStyle(
                                       fontSize: isTablet ? 12 : 11,
                                       color: theme.hintColor,
@@ -1081,7 +1121,13 @@ Widget _buildPostWithInterestsCard(
                               ),
                             ),
                             InkWell(
-                              onTap: () => handleChatTap(user.id),
+                              onTap:
+                                  () => handleChatTap(
+                                    i.id,
+                                    false,
+                                    post.items,
+                                    post,
+                                  ),
                               borderRadius: BorderRadius.circular(6),
                               child: Container(
                                 padding: EdgeInsets.all(isTablet ? 8 : 6),
@@ -1116,39 +1162,6 @@ Widget _buildPostWithInterestsCard(
             ],
           ),
         ),
-      ),
-    ),
-  );
-}
-
-Widget _buildBase64Avatar({
-  required String base64String,
-  required double radius,
-  required ColorScheme colorScheme,
-  required bool isTablet,
-}) {
-  final bytes = Base64Utils.decodeBase64(base64String);
-
-  if (bytes == null) {
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: colorScheme.primary.withOpacity(0.1),
-      child: Icon(Icons.person, size: radius, color: colorScheme.primary),
-    );
-  }
-
-  return CircleAvatar(
-    radius: radius,
-    backgroundColor: colorScheme.primary.withOpacity(0.1),
-    child: ClipOval(
-      child: Image.memory(
-        bytes,
-        width: radius * 2,
-        height: radius * 2,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Icon(Icons.person, size: radius, color: colorScheme.primary);
-        },
       ),
     ),
   );

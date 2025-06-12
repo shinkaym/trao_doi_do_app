@@ -39,10 +39,4 @@ extension NavigationExtensions on BuildContext {
   void push(String location, {Object? extra}) {
     GoRouter.of(this).push(location, extra: extra);
   }
-
-  void reloadCurrentScreen() {
-    final currentLocation =
-        GoRouter.of(this).routeInformationProvider.value.uri.toString();
-    GoRouter.of(this).go(currentLocation);
-  }
 }

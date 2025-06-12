@@ -58,19 +58,20 @@ enum PostType {
 
   Color get color {
     switch (this) {
-      case PostType.findLost:
-        return Colors.orange;
-      case PostType.foundItem:
-        return Colors.green;
       case PostType.giveAway:
         return Colors.blue;
+      case PostType.foundItem:
+        return Colors.green;
+      case PostType.findLost:
+        return Colors.red;
       case PostType.freePost:
         return Colors.purple;
-      default:
+      case PostType.all:
         return Colors.grey;
     }
   }
 }
+
 
 // Enum cho sắp xếp thời gian
 enum SortOrder {

@@ -43,10 +43,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> logout() async {
     try {
-      final response = await _dioClient.post(
-        ApiConstants.clientLogout,
-        options: Options(extra: {'requiresAuth': true}),
-      );
+      final response = await _dioClient.post(ApiConstants.clientLogout);
 
       // ✅ FIXED: Kiểm tra HTTP status code 200 cho logout
       if (response.statusCode != 200) {
