@@ -196,7 +196,7 @@ class CreatePostForm extends HookConsumerWidget {
     }
 
     Post buildPost() {
-      final typeValue = selectedType.value.typeValue;
+      final typeValue = selectedType.value.value;
       final title = titleController.text.trim();
       final description = descriptionController.text.trim();
       final imagesBase64 =

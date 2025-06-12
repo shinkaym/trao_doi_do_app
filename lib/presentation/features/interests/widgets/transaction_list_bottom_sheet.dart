@@ -2,19 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/screens/interest_chat_screen.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/widgets/request_item_detail_widget.dart';
+import 'package:trao_doi_do_app/domain/entities/interest.dart';
+import 'package:trao_doi_do_app/domain/entities/transaction.dart';
+import 'package:trao_doi_do_app/domain/enums/index.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/widgets/transaction_item_detail_widget.dart';
 
-class RequestListBottomSheet extends HookConsumerWidget {
-  final List<ItemRequest> requests;
+class TransactionListBottomSheet extends HookConsumerWidget {
+  final List<Transaction> transactions;
   final bool isPostOwner;
-  final Function(ItemRequest)? onRequestUpdated;
+  final Function(Transaction)? onTransactionUpdated;
+  final List<InterestItem> items;
 
-  const RequestListBottomSheet({
+  const TransactionListBottomSheet({
     super.key,
-    required this.requests,
+    required this.transactions,
     required this.isPostOwner,
-    this.onRequestUpdated,
+    required this.items,
+    this.onTransactionUpdated,
   });
 
   @override
@@ -23,9 +27,9 @@ class RequestListBottomSheet extends HookConsumerWidget {
     final colorScheme = context.colorScheme;
     final isTablet = context.isTablet;
 
-    // Sort requests by created date (newest first)
-    final sortedRequests = [...requests]
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    // Sort transactions by created date (newest first)
+    final sortedTransactions = [...transactions]
+      ..sort((a, b) => (b.createdAt).compareTo(a.createdAt));
 
     return Container(
       decoration: BoxDecoration(
@@ -76,7 +80,7 @@ class RequestListBottomSheet extends HookConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${requests.length}',
+                    '${transactions.length}',
                     style: TextStyle(
                       color: colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.bold,
@@ -93,8 +97,8 @@ class RequestListBottomSheet extends HookConsumerWidget {
             ),
           ),
 
-          // Requests list
-          if (requests.isEmpty)
+          // Transactions list
+          if (transactions.isEmpty)
             Padding(
               padding: EdgeInsets.all(isTablet ? 48 : 32),
               child: Column(
@@ -123,18 +127,19 @@ class RequestListBottomSheet extends HookConsumerWidget {
                   horizontal: isTablet ? 24 : 16,
                   vertical: isTablet ? 8 : 4,
                 ),
-                itemCount: sortedRequests.length,
+                itemCount: sortedTransactions.length,
                 separatorBuilder:
                     (context, index) => SizedBox(height: isTablet ? 12 : 8),
                 itemBuilder: (context, index) {
-                  final request = sortedRequests[index];
-                  return _buildRequestTile(
-                    request,
+                  final transaction = sortedTransactions[index];
+                  return _buildTransactionTile(
+                    transaction,
                     theme,
                     colorScheme,
                     isTablet,
                     isPostOwner,
-                    onRequestUpdated,
+                    items,
+                    onTransactionUpdated,
                   );
                 },
               ),
@@ -147,17 +152,20 @@ class RequestListBottomSheet extends HookConsumerWidget {
     );
   }
 
-  Widget _buildRequestTile(
-    ItemRequest request,
+  Widget _buildTransactionTile(
+    Transaction transaction,
     ThemeData theme,
     ColorScheme colorScheme,
     bool isTablet,
     bool isPostOwner,
-    Function(ItemRequest)? onRequestUpdated,
+    List<InterestItem> items,
+    Function(Transaction)? onTransactionUpdated,
   ) {
-    final statusColor = _getRequestStatusColor(request.status);
-    final statusText = _getRequestStatusText(request.status, isPostOwner);
-    final statusIcon = _getRequestStatusIcon(request.status, isPostOwner);
+    final statusColor = TransactionStatus.fromValue(transaction.status).color();
+    final statusText = TransactionStatus.fromValue(
+      transaction.status,
+    ).label(isPostOwner: isPostOwner);
+    final statusIcon = TransactionStatus.fromValue(transaction.status).icon();
 
     return Container(
       decoration: BoxDecoration(
@@ -202,7 +210,9 @@ class RequestListBottomSheet extends HookConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      TimeUtils.formatTimeAgo(request.createdAt),
+                      TimeUtils.formatTimeAgo(
+                        DateTime.parse(transaction.createdAt),
+                      ),
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                         fontSize: isTablet ? 14 : 13,
@@ -210,7 +220,7 @@ class RequestListBottomSheet extends HookConsumerWidget {
                     ),
                     SizedBox(height: isTablet ? 4 : 2),
                     Text(
-                      '${request.items.length} món đồ',
+                      '${transaction.items.length} món đồ',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.hintColor,
                         fontSize: isTablet ? 13 : 12,
@@ -240,38 +250,46 @@ class RequestListBottomSheet extends HookConsumerWidget {
             ],
           ),
           children: [
-            // Request items
-            ...request.items.map((item) {
+            // Transaction items
+            ...transaction.items.map((item) {
               return Padding(
                 padding: EdgeInsets.only(bottom: isTablet ? 8 : 6),
-                child: RequestItemDetailWidget(
-                  requestItem: item,
-                  requestStatus: request.status,
+                child: TransactionItemDetailWidget(
+                  transactionItem: item,
+                  transactionStatus: transaction.status,
                   isPostOwner: isPostOwner,
+                  maxQuantity:
+                      items
+                          .firstWhere((i) => item.postItemID == i.id)
+                          .currentQuantity,
                   onQuantityUpdated: (newQuantity) {
                     // TODO: Handle quantity update
                     // This should update the item's approved quantity
-                    // and call onRequestUpdated with the modified request
+                    // and call onTransactionUpdated with the modified transaction
                   },
                   onConfirm: () {
                     // TODO: Handle confirm action
-                    // This should accept/reject the request
-                    // and call onRequestUpdated with the modified request
+                    // This should accept/reject the transaction
+                    // and call onTransactionUpdated with the modified transaction
                   },
                 ),
               );
             }).toList(),
 
-            // Request actions (for post owner with pending requests)
-            if (isPostOwner && request.status == 0) ...[
+            // Transaction actions (for post owner with pending transactions)
+            if (isPostOwner && transaction.status == 1) ...[
               SizedBox(height: isTablet ? 16 : 12),
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
                       onPressed: () {
-                        // TODO: Reject request
-                        _handleRequestAction(request, 2, onRequestUpdated);
+                        // TODO: Reject transaction
+                        _handleTransactionAction(
+                          transaction,
+                          2,
+                          onTransactionUpdated,
+                        );
                       },
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.red,
@@ -293,8 +311,12 @@ class RequestListBottomSheet extends HookConsumerWidget {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        // TODO: Accept request
-                        _handleRequestAction(request, 1, onRequestUpdated);
+                        // TODO: Accept transaction
+                        _handleTransactionAction(
+                          transaction,
+                          1,
+                          onTransactionUpdated,
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
@@ -321,51 +343,11 @@ class RequestListBottomSheet extends HookConsumerWidget {
     );
   }
 
-  void _handleRequestAction(
-    ItemRequest request,
+  void _handleTransactionAction(
+    Transaction transaction,
     int newStatus,
-    Function(ItemRequest)? onRequestUpdated,
+    Function(Transaction)? onTransactionUpdated,
   ) {
-    // TODO: Implement API call to update request status
-    // For now, just simulate the update
-    final updatedRequest = ItemRequest(
-      id: request.id,
-      userId: request.userId,
-      postId: request.postId,
-      items: request.items,
-      status: newStatus,
-      createdAt: request.createdAt,
-      updatedAt: DateTime.now(),
-    );
-
-    onRequestUpdated?.call(updatedRequest);
+    // TODO: Implement API call to update transaction status
   }
-}
-
-// Helper functions
-IconData _getRequestStatusIcon(int status, bool isPostOwner) {
-  if (status == 0) return Icons.pending;
-  if (status == 1) return Icons.check_circle;
-  if (status == 2) return Icons.cancel;
-  return Icons.help;
-}
-
-Color _getRequestStatusColor(int status) {
-  if (status == 0) return Colors.orange;
-  if (status == 1) return Colors.green;
-  if (status == 2) return Colors.red;
-  return Colors.grey;
-}
-
-String _getRequestStatusText(int status, bool isPostOwner) {
-  if (isPostOwner) {
-    if (status == 0) return 'Chưa xử lý';
-    if (status == 1) return 'Đã chấp nhận';
-    if (status == 2) return 'Đã từ chối';
-  } else {
-    if (status == 0) return 'Đã gửi';
-    if (status == 1) return 'Đã được chấp nhận';
-    if (status == 2) return 'Đã bị từ chối';
-  }
-  return 'Không xác định';
 }

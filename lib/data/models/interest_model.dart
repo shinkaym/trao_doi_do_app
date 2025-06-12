@@ -44,6 +44,8 @@ class InterestPostModel extends InterestPost {
     required super.description,
     required super.updatedAt,
     required super.authorID,
+    required super.authorName,
+    required super.authorAvatar,
     required super.type,
     required super.interests,
     required super.items,
@@ -57,6 +59,8 @@ class InterestPostModel extends InterestPost {
       description: json['description'] ?? '',
       updatedAt: json['updatedAt'] ?? '',
       authorID: json['authorID'] ?? 0,
+      authorName: json['authorName'] ?? '',
+      authorAvatar: json['authorAvatar'] ?? '',
       type: json['type'] ?? 0,
       interests:
           json['interests'] != null
@@ -89,6 +93,8 @@ class InterestPostModel extends InterestPost {
       'slug': slug,
       'title': title,
       'authorID': authorID,
+      'authorName': authorName,
+      'authorAvatar': authorAvatar,
       'description': description,
       'updatedAt': updatedAt,
       'type': type,
@@ -104,6 +110,7 @@ class InterestPostModel extends InterestPost {
 
 class InterestItemModel extends InterestItem {
   const InterestItemModel({
+    required super.id,
     required super.itemID,
     required super.name,
     required super.categoryName,
@@ -114,6 +121,7 @@ class InterestItemModel extends InterestItem {
 
   factory InterestItemModel.fromJson(Map<String, dynamic> json) {
     return InterestItemModel(
+      id: json['id'] ?? 0,
       itemID: json['itemID'] ?? 0,
       name: json['name'] ?? '',
       categoryName: json['categoryName'] ?? '',
@@ -125,6 +133,7 @@ class InterestItemModel extends InterestItem {
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
       'itemID': itemID,
       'name': name,
       'categoryName': categoryName,

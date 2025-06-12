@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -732,7 +734,7 @@ Widget _buildPostsWithInterestsTab(
 
 Widget _buildInterestedPostCard(
   InterestPost post,
-  CreatePostType? postType,
+  CreatePostType postType,
   bool isTablet,
   ThemeData theme,
   ColorScheme colorScheme,
@@ -766,26 +768,24 @@ Widget _buildInterestedPostCard(
                       vertical: isTablet ? 6 : 4,
                     ),
                     decoration: BoxDecoration(
-                      color:
-                          postType?.color.withOpacity(0.1) ??
-                          Colors.grey.withOpacity(0.1),
+                      color: postType.color().withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          postType?.icon ?? Icons.article,
+                          postType.icon(),
                           size: isTablet ? 16 : 14,
-                          color: postType?.color ?? Colors.grey,
+                          color: postType.color(),
                         ),
                         SizedBox(width: isTablet ? 6 : 4),
                         Text(
-                          postType?.label ?? 'Khác',
+                          postType.label(),
                           style: TextStyle(
                             fontSize: isTablet ? 13 : 11,
                             fontWeight: FontWeight.w600,
-                            color: postType?.color ?? Colors.grey,
+                            color: postType.color(),
                           ),
                         ),
                       ],
@@ -911,7 +911,7 @@ Widget _buildInterestedPostCard(
 
 Widget _buildPostWithInterestsCard(
   InterestPost post,
-  CreatePostType? postType,
+  CreatePostType postType,
   bool isTablet,
   ThemeData theme,
   ColorScheme colorScheme,
@@ -943,26 +943,24 @@ Widget _buildPostWithInterestsCard(
                       vertical: isTablet ? 6 : 4,
                     ),
                     decoration: BoxDecoration(
-                      color:
-                          postType?.color.withOpacity(0.1) ??
-                          Colors.grey.withOpacity(0.1),
+                      color: postType.color().withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          postType?.icon ?? Icons.article,
+                          postType.icon(),
                           size: isTablet ? 16 : 14,
-                          color: postType?.color ?? Colors.grey,
+                          color: postType.color(),
                         ),
                         SizedBox(width: isTablet ? 6 : 4),
                         Text(
-                          postType?.label ?? 'Khác',
+                          postType.label(),
                           style: TextStyle(
                             fontSize: isTablet ? 13 : 11,
                             fontWeight: FontWeight.w600,
-                            color: postType?.color ?? Colors.grey,
+                            color: postType.color(),
                           ),
                         ),
                       ],
@@ -1020,150 +1018,287 @@ Widget _buildPostWithInterestsCard(
 
               SizedBox(height: isTablet ? 16 : 12),
 
-              // Interested users count
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 12 : 8,
-                  vertical: isTablet ? 8 : 6,
+              // Interested users section with collapse
+              if (post.interests.isNotEmpty)
+                _buildInterestedUsersSection(
+                  post,
+                  isTablet,
+                  theme,
+                  colorScheme,
+                  handleChatTap,
                 ),
-                decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.favorite,
-                      size: isTablet ? 16 : 14,
-                      color: Colors.red,
-                    ),
-                    SizedBox(width: isTablet ? 6 : 4),
-                    Text(
-                      '${post.interests.length} người quan tâm',
-                      style: TextStyle(
-                        fontSize: isTablet ? 13 : 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.red,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              if (post.interests.isNotEmpty) ...[
-                SizedBox(height: isTablet ? 12 : 8),
-
-                // List of interested users
-                ...post.interests
-                    .take(3)
-                    .map(
-                      (i) => Container(
-                        margin: EdgeInsets.only(bottom: isTablet ? 8 : 6),
-                        padding: EdgeInsets.all(isTablet ? 12 : 8),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceVariant.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: isTablet ? 16 : 14,
-                              backgroundColor: colorScheme.primary.withOpacity(
-                                0.1,
-                              ),
-                              child:
-                                  i.userAvatar.isNotEmpty
-                                      ? ClipOval(
-                                        child: Image.network(
-                                          i.userAvatar,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (
-                                            context,
-                                            error,
-                                            stackTrace,
-                                          ) {
-                                            return Icon(
-                                              Icons.person,
-                                              size: isTablet ? 16 : 14,
-                                              color: colorScheme.primary,
-                                            );
-                                          },
-                                        ),
-                                      )
-                                      : Icon(
-                                        Icons.person,
-                                        size: isTablet ? 16 : 14,
-                                        color: colorScheme.primary,
-                                      ),
-                            ),
-                            SizedBox(width: isTablet ? 12 : 8),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    i.userName,
-                                    style: TextStyle(
-                                      fontSize: isTablet ? 14 : 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Quan tâm ${TimeUtils.formatTimeAgo(DateTime.parse(i.createdAt))}',
-                                    style: TextStyle(
-                                      fontSize: isTablet ? 12 : 11,
-                                      color: theme.hintColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            InkWell(
-                              onTap:
-                                  () => handleChatTap(
-                                    i.id,
-                                    false,
-                                    post.items,
-                                    post,
-                                  ),
-                              borderRadius: BorderRadius.circular(6),
-                              child: Container(
-                                padding: EdgeInsets.all(isTablet ? 8 : 6),
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                    color: colorScheme.outline.withOpacity(0.3),
-                                  ),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Icon(
-                                  Icons.chat_outlined,
-                                  size: isTablet ? 16 : 14,
-                                  color: colorScheme.primary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                if (post.interests.length > 3)
-                  Text(
-                    'và ${post.interests.length - 3} người khác',
-                    style: TextStyle(
-                      fontSize: isTablet ? 13 : 12,
-                      color: theme.hintColor,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-              ],
             ],
           ),
         ),
       ),
     ),
+  );
+}
+
+// Separate widget for interested users section with collapse functionality
+class _InterestedUsersSection extends StatefulWidget {
+  final InterestPost post;
+  final bool isTablet;
+  final ThemeData theme;
+  final ColorScheme colorScheme;
+  final Function(int, bool, List<InterestItem>, InterestPost) handleChatTap;
+
+  const _InterestedUsersSection({
+    required this.post,
+    required this.isTablet,
+    required this.theme,
+    required this.colorScheme,
+    required this.handleChatTap,
+  });
+
+  @override
+  State<_InterestedUsersSection> createState() =>
+      _InterestedUsersSectionState();
+}
+
+class _InterestedUsersSectionState extends State<_InterestedUsersSection>
+    with SingleTickerProviderStateMixin {
+  bool _isExpanded = false;
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _animation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  void _toggleExpanded() {
+    setState(() {
+      _isExpanded = !_isExpanded;
+      if (_isExpanded) {
+        _animationController.forward();
+      } else {
+        _animationController.reverse();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Interest count header with tap to expand
+        InkWell(
+          onTap: _toggleExpanded,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.isTablet ? 12 : 8,
+              vertical: widget.isTablet ? 8 : 6,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.favorite,
+                  size: widget.isTablet ? 16 : 14,
+                  color: Colors.red,
+                ),
+                SizedBox(width: widget.isTablet ? 6 : 4),
+                Text(
+                  '${widget.post.interests.length} người quan tâm',
+                  style: TextStyle(
+                    fontSize: widget.isTablet ? 13 : 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red,
+                  ),
+                ),
+                SizedBox(width: widget.isTablet ? 8 : 6),
+                AnimatedRotation(
+                  turns: _isExpanded ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 300),
+                  child: Icon(
+                    Icons.keyboard_arrow_down,
+                    size: widget.isTablet ? 18 : 16,
+                    color: Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Animated collapse content
+        SizeTransition(
+          sizeFactor: _animation,
+          child: Container(
+            margin: EdgeInsets.only(top: widget.isTablet ? 12 : 8),
+            constraints: BoxConstraints(
+              maxHeight: 200, // Limit height to show max 3 users initially
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              physics: const BouncingScrollPhysics(),
+              itemCount: widget.post.interests.length,
+              itemBuilder: (context, index) {
+                final interest = widget.post.interests[index];
+                return Container(
+                  margin: EdgeInsets.only(bottom: widget.isTablet ? 8 : 6),
+                  padding: EdgeInsets.all(widget.isTablet ? 12 : 8),
+                  decoration: BoxDecoration(
+                    color: widget.colorScheme.surfaceVariant.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      CircleAvatar(
+                        radius: widget.isTablet ? 16 : 14,
+                        backgroundColor: widget.colorScheme.primary.withOpacity(
+                          0.1,
+                        ),
+                        child:
+                            interest.userAvatar.isNotEmpty
+                                ? ClipOval(
+                                  child:
+                                      interest.userAvatar.startsWith('data:')
+                                          ? Image.memory(
+                                            base64Decode(
+                                              interest.userAvatar.split(',')[1],
+                                            ),
+                                            fit: BoxFit.cover,
+                                            width:
+                                                (widget.isTablet ? 16 : 14) * 2,
+                                            height:
+                                                (widget.isTablet ? 16 : 14) * 2,
+                                            errorBuilder: (
+                                              context,
+                                              error,
+                                              stackTrace,
+                                            ) {
+                                              return Icon(
+                                                Icons.person,
+                                                size: widget.isTablet ? 16 : 14,
+                                                color:
+                                                    widget.colorScheme.primary,
+                                              );
+                                            },
+                                          )
+                                          : Image.network(
+                                            interest.userAvatar,
+                                            fit: BoxFit.cover,
+                                            width:
+                                                (widget.isTablet ? 16 : 14) * 2,
+                                            height:
+                                                (widget.isTablet ? 16 : 14) * 2,
+                                            errorBuilder: (
+                                              context,
+                                              error,
+                                              stackTrace,
+                                            ) {
+                                              return Icon(
+                                                Icons.person,
+                                                size: widget.isTablet ? 16 : 14,
+                                                color:
+                                                    widget.colorScheme.primary,
+                                              );
+                                            },
+                                          ),
+                                )
+                                : Icon(
+                                  Icons.person,
+                                  size: widget.isTablet ? 16 : 14,
+                                  color: widget.colorScheme.primary,
+                                ),
+                      ),
+                      SizedBox(width: widget.isTablet ? 12 : 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              interest.userName,
+                              style: TextStyle(
+                                fontSize: widget.isTablet ? 14 : 13,
+                                fontWeight: FontWeight.w600,
+                                color: widget.colorScheme.onSurface,
+                              ),
+                            ),
+                            Text(
+                              'Quan tâm ${TimeUtils.formatTimeAgo(DateTime.parse(interest.createdAt))}',
+                              style: TextStyle(
+                                fontSize: widget.isTablet ? 12 : 11,
+                                color: widget.theme.hintColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      InkWell(
+                        onTap:
+                            () => widget.handleChatTap(
+                              interest.id,
+                              false,
+                              widget.post.items,
+                              widget.post,
+                            ),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: EdgeInsets.all(widget.isTablet ? 8 : 6),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: widget.colorScheme.outline.withOpacity(
+                                0.3,
+                              ),
+                            ),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Icon(
+                            Icons.chat_outlined,
+                            size: widget.isTablet ? 16 : 14,
+                            color: widget.colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// Helper function to build the interested users section
+Widget _buildInterestedUsersSection(
+  InterestPost post,
+  bool isTablet,
+  ThemeData theme,
+  ColorScheme colorScheme,
+  Function(int, bool, List<InterestItem>, InterestPost) handleChatTap,
+) {
+  return _InterestedUsersSection(
+    post: post,
+    isTablet: isTablet,
+    theme: theme,
+    colorScheme: colorScheme,
+    handleChatTap: handleChatTap,
   );
 }
 

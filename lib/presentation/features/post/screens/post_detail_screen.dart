@@ -525,15 +525,15 @@ class PostDetailScreen extends HookConsumerWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: _getPostTypeColor(post.type).withOpacity(0.1),
+            color: CreatePostType.fromValue(post.type).color().withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            _getPostTypeText(post.type),
+            CreatePostType.fromValue(post.type).label(),
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: _getPostTypeColor(post.type),
+              color: CreatePostType.fromValue(post.type).color(),
             ),
           ),
         ),
@@ -1130,15 +1130,6 @@ class PostDetailScreen extends HookConsumerWidget {
             ? base64String.split(',').last
             : base64String;
     return base64Decode(cleanedBase64);
-  }
-
-  // Helper methods
-  String _getPostTypeText(int type) {
-    return CreatePostType.fromValue(type)?.label ?? 'Khác';
-  }
-
-  Color _getPostTypeColor(int type) {
-    return CreatePostType.fromValue(type)?.color ?? Colors.grey;
   }
 
   String _formatDate(String? dateString) {

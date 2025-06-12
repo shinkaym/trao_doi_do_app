@@ -2,44 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/screens/interest_chat_screen.dart';
+import 'package:trao_doi_do_app/domain/entities/interest.dart';
 
-class RequestItemSelectionBottomSheet extends HookConsumerWidget {
-  final List<PostItem> postItems;
-  final VoidCallback? onRequestSent;
+class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
+  final List<InterestItem> postItems;
+  final String interestId;
+  final VoidCallback? onTransactionSent;
 
-  const RequestItemSelectionBottomSheet({
+  const TransactionItemSelectionBottomSheet({
     super.key,
     required this.postItems,
-    this.onRequestSent,
+    required this.interestId,
+    this.onTransactionSent,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedItems = useState<Map<String, int>>({});
+    final selectedItems = useState<Map<int, int>>({});
     final isSubmitting = useState(false);
 
     final theme = context.theme;
     final colorScheme = context.colorScheme;
     final isTablet = context.isTablet;
 
-    void updateQuantity(String itemId, int change) {
-      final currentQuantity = selectedItems.value[itemId] ?? 0;
-      final newQuantity = (currentQuantity + change).clamp(0, double.infinity).toInt();
-      
+    void updateQuantity(int id, int change) {
+      final currentQuantity = selectedItems.value[id] ?? 0;
+      final newQuantity =
+          (currentQuantity + change).clamp(0, double.infinity).toInt();
+
       if (newQuantity == 0) {
-        final newMap = Map<String, int>.from(selectedItems.value);
-        newMap.remove(itemId);
+        final newMap = Map<int, int>.from(selectedItems.value);
+        newMap.remove(id);
         selectedItems.value = newMap;
       } else {
-        selectedItems.value = {
-          ...selectedItems.value,
-          itemId: newQuantity,
-        };
+        selectedItems.value = {...selectedItems.value, id: newQuantity};
       }
     }
 
-    void submitRequest() async {
+    void submitTransaction() async {
       if (selectedItems.value.isEmpty || isSubmitting.value) return;
 
       isSubmitting.value = true;
@@ -47,17 +47,17 @@ class RequestItemSelectionBottomSheet extends HookConsumerWidget {
       try {
         // TODO: Call API to submit request
         await Future.delayed(const Duration(seconds: 1)); // Simulate API call
-        
+
         Navigator.of(context).pop();
-        onRequestSent?.call();
-        
+        onTransactionSent?.call();
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Đã gửi yêu cầu thành công!')),
         );
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Lỗi khi gửi yêu cầu: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi khi gửi yêu cầu: $e')));
       } finally {
         isSubmitting.value = false;
       }
@@ -118,26 +118,29 @@ class RequestItemSelectionBottomSheet extends HookConsumerWidget {
               shrinkWrap: true,
               padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
               itemCount: postItems.length,
-              separatorBuilder: (context, index) => Divider(
-                height: isTablet ? 24 : 16,
-                color: colorScheme.outline.withOpacity(0.2),
-              ),
+              separatorBuilder:
+                  (context, index) => Divider(
+                    height: isTablet ? 24 : 16,
+                    color: colorScheme.outline.withOpacity(0.2),
+                  ),
               itemBuilder: (context, index) {
                 final item = postItems[index];
                 final selectedQuantity = selectedItems.value[item.id] ?? 0;
-                final maxQuantity = item.quantity;
+                final maxQuantity = item.currentQuantity;
 
                 return Container(
                   padding: EdgeInsets.all(isTablet ? 16 : 12),
                   decoration: BoxDecoration(
-                    color: selectedQuantity > 0 
-                        ? colorScheme.primaryContainer.withOpacity(0.3)
-                        : colorScheme.surfaceVariant.withOpacity(0.3),
+                    color:
+                        selectedQuantity > 0
+                            ? colorScheme.primaryContainer.withOpacity(0.3)
+                            : colorScheme.surfaceVariant.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: selectedQuantity > 0
-                          ? colorScheme.primary.withOpacity(0.3)
-                          : colorScheme.outline.withOpacity(0.2),
+                      color:
+                          selectedQuantity > 0
+                              ? colorScheme.primary.withOpacity(0.3)
+                              : colorScheme.outline.withOpacity(0.2),
                     ),
                   ),
                   child: Row(
@@ -155,23 +158,24 @@ class RequestItemSelectionBottomSheet extends HookConsumerWidget {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(7),
-                          child: item.image.isNotEmpty
-                              ? Image.network(
-                                  item.image,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Icon(
-                                      Icons.image_not_supported,
-                                      color: colorScheme.outline,
-                                      size: isTablet ? 24 : 20,
-                                    );
-                                  },
-                                )
-                              : Icon(
-                                  Icons.image,
-                                  color: colorScheme.outline,
-                                  size: isTablet ? 24 : 20,
-                                ),
+                          child:
+                              item.image.isNotEmpty
+                                  ? Image.network(
+                                    item.image,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Icon(
+                                        Icons.image_not_supported,
+                                        color: colorScheme.outline,
+                                        size: isTablet ? 24 : 20,
+                                      );
+                                    },
+                                  )
+                                  : Icon(
+                                    Icons.image,
+                                    color: colorScheme.outline,
+                                    size: isTablet ? 24 : 20,
+                                  ),
                         ),
                       ),
 
@@ -208,17 +212,20 @@ class RequestItemSelectionBottomSheet extends HookConsumerWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            onPressed: selectedQuantity > 0
-                                ? () => updateQuantity(item.id, -1)
-                                : null,
+                            onPressed:
+                                selectedQuantity > 0
+                                    ? () => updateQuantity(item.id, -1)
+                                    : null,
                             icon: const Icon(Icons.remove),
                             style: IconButton.styleFrom(
-                              backgroundColor: selectedQuantity > 0
-                                  ? colorScheme.primary.withOpacity(0.1)
-                                  : colorScheme.outline.withOpacity(0.1),
-                              foregroundColor: selectedQuantity > 0
-                                  ? colorScheme.primary
-                                  : colorScheme.outline,
+                              backgroundColor:
+                                  selectedQuantity > 0
+                                      ? colorScheme.primary.withOpacity(0.1)
+                                      : colorScheme.outline.withOpacity(0.1),
+                              foregroundColor:
+                                  selectedQuantity > 0
+                                      ? colorScheme.primary
+                                      : colorScheme.outline,
                               minimumSize: Size(
                                 isTablet ? 40 : 32,
                                 isTablet ? 40 : 32,
@@ -239,17 +246,20 @@ class RequestItemSelectionBottomSheet extends HookConsumerWidget {
                           ),
 
                           IconButton(
-                            onPressed: selectedQuantity < maxQuantity
-                                ? () => updateQuantity(item.id, 1)
-                                : null,
+                            onPressed:
+                                selectedQuantity < maxQuantity
+                                    ? () => updateQuantity(item.id, 1)
+                                    : null,
                             icon: const Icon(Icons.add),
                             style: IconButton.styleFrom(
-                              backgroundColor: selectedQuantity < maxQuantity
-                                  ? colorScheme.primary.withOpacity(0.1)
-                                  : colorScheme.outline.withOpacity(0.1),
-                              foregroundColor: selectedQuantity < maxQuantity
-                                  ? colorScheme.primary
-                                  : colorScheme.outline,
+                              backgroundColor:
+                                  selectedQuantity < maxQuantity
+                                      ? colorScheme.primary.withOpacity(0.1)
+                                      : colorScheme.outline.withOpacity(0.1),
+                              foregroundColor:
+                                  selectedQuantity < maxQuantity
+                                      ? colorScheme.primary
+                                      : colorScheme.outline,
                               minimumSize: Size(
                                 isTablet ? 40 : 32,
                                 isTablet ? 40 : 32,
@@ -271,37 +281,37 @@ class RequestItemSelectionBottomSheet extends HookConsumerWidget {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: hasSelectedItems && !isSubmitting.value
-                    ? submitRequest
-                    : null,
+                onPressed:
+                    hasSelectedItems && !isSubmitting.value
+                        ? submitTransaction
+                        : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,
                   foregroundColor: colorScheme.onPrimary,
-                  padding: EdgeInsets.symmetric(
-                    vertical: isTablet ? 16 : 12,
-                  ),
+                  padding: EdgeInsets.symmetric(vertical: isTablet ? 16 : 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: isSubmitting.value
-                    ? SizedBox(
-                        height: isTablet ? 20 : 16,
-                        width: isTablet ? 20 : 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: colorScheme.onPrimary,
+                child:
+                    isSubmitting.value
+                        ? SizedBox(
+                          height: isTablet ? 20 : 16,
+                          width: isTablet ? 20 : 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: colorScheme.onPrimary,
+                          ),
+                        )
+                        : Text(
+                          hasSelectedItems
+                              ? 'Gửi yêu cầu (${selectedItems.value.length} món)'
+                              : 'Chọn ít nhất 1 món đồ',
+                          style: TextStyle(
+                            fontSize: isTablet ? 16 : 14,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      )
-                    : Text(
-                        hasSelectedItems
-                            ? 'Gửi yêu cầu (${selectedItems.value.length} món)'
-                            : 'Chọn ít nhất 1 món đồ',
-                        style: TextStyle(
-                          fontSize: isTablet ? 16 : 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
               ),
             ),
           ),
@@ -313,4 +323,3 @@ class RequestItemSelectionBottomSheet extends HookConsumerWidget {
     );
   }
 }
-

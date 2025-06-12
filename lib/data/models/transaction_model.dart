@@ -2,16 +2,16 @@ import 'package:trao_doi_do_app/domain/entities/transaction.dart';
 
 class TransactionModel extends Transaction {
   const TransactionModel({
-    super.id,
-    super.interestID,
-    super.items,
-    super.receiverID,
-    super.receiverName,
-    super.senderID,
-    super.senderName,
-    super.status,
-    super.createdAt,
-    super.updatedAt,
+    required super.id,
+    required super.interestID,
+    required super.items,
+    required super.receiverID,
+    required super.receiverName,
+    required super.senderID,
+    required super.senderName,
+    required super.status,
+    required super.createdAt,
+    required super.updatedAt,
   });
 
   factory TransactionModel.fromEntity(Transaction transaction) {
@@ -75,11 +75,11 @@ class TransactionModel extends Transaction {
 
 class TransactionItemModel extends TransactionItem {
   const TransactionItemModel({
-    super.itemID,
-    super.itemName,
-    super.itemImage,
-    super.postItemID,
-    super.quantity,
+    required super.itemID,
+    required super.itemName,
+    required super.itemImage,
+    required super.postItemID,
+    required super.quantity,
   });
 
   factory TransactionItemModel.fromEntity(TransactionItem item) {
