@@ -180,12 +180,13 @@ class InterestChatScreen extends HookConsumerWidget {
         backgroundColor: Colors.transparent,
         builder:
             (_) => TransactionListBottomSheet(
-              transactions: transactionsState.transactions,
+              transactions:
+                  transactionsState.transactions, // Sử dụng từ provider
               isPostOwner: isPostOwner.value,
               items: post.value?.items ?? [],
               onTransactionUpdated: (updatedTransaction) {
-                // Refresh transactions after update
-                transactionsNotifier.refresh();
+                // Không cần gọi refresh ở đây nữa vì đã được handle trong bottom sheet
+                // transactionsNotifier.refresh(); // Bỏ dòng này
               },
             ),
       );

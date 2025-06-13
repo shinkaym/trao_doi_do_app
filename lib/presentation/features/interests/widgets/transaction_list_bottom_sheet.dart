@@ -9,6 +9,7 @@ import 'package:trao_doi_do_app/domain/entities/transaction.dart';
 import 'package:trao_doi_do_app/domain/enums/index.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_transaction_status_usecase.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/transaction_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/providers/transactions_provider.dart';
 
 class TransactionListBottomSheet extends HookConsumerWidget {
   final List<Transaction> transactions;
@@ -29,6 +30,15 @@ class TransactionListBottomSheet extends HookConsumerWidget {
     final theme = context.theme;
     final colorScheme = context.colorScheme;
     final isTablet = context.isTablet;
+
+    // Watch transactions state để có thể refresh
+    final transactionsState = ref.watch(transactionsListProvider);
+    final transactionsNotifier = ref.read(transactionsListProvider.notifier);
+
+    // Sử dụng transactions từ provider thay vì prop
+    final currentTransactions = transactionsState.transactions.isNotEmpty 
+        ? transactionsState.transactions 
+        : transactions;
 
     return Container(
       decoration: BoxDecoration(
@@ -79,7 +89,7 @@ class TransactionListBottomSheet extends HookConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '${transactions.length}',
+                    '${currentTransactions.length}',
                     style: TextStyle(
                       color: colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.bold,
@@ -96,8 +106,15 @@ class TransactionListBottomSheet extends HookConsumerWidget {
             ),
           ),
 
+          // Loading indicator
+          if (transactionsState.isLoading)
+            Padding(
+              padding: EdgeInsets.all(isTablet ? 24 : 16),
+              child: const CircularProgressIndicator(),
+            )
+
           // Transactions list
-          if (transactions.isEmpty)
+          else if (currentTransactions.isEmpty)
             Padding(
               padding: EdgeInsets.all(isTablet ? 48 : 32),
               child: Column(
@@ -126,16 +143,21 @@ class TransactionListBottomSheet extends HookConsumerWidget {
                   horizontal: isTablet ? 24 : 16,
                   vertical: isTablet ? 8 : 4,
                 ),
-                itemCount: transactions.length,
+                itemCount: currentTransactions.length,
                 separatorBuilder:
                     (context, index) => SizedBox(height: isTablet ? 12 : 8),
                 itemBuilder: (context, index) {
-                  final transaction = transactions[index];
+                  final transaction = currentTransactions[index];
                   return _TransactionTile(
                     transaction: transaction,
                     isPostOwner: isPostOwner,
                     items: items,
-                    onTransactionUpdated: onTransactionUpdated,
+                    onTransactionUpdated: (updatedTransaction) {
+                      // Refresh transactions từ provider
+                      transactionsNotifier.refresh();
+                      // Gọi callback nếu có
+                      onTransactionUpdated?.call(updatedTransaction);
+                    },
                   );
                 },
               ),
@@ -172,6 +194,7 @@ class _TransactionTile extends HookConsumerWidget {
     final isEditing = useState(false);
     final editedItems = useState<Map<int, int>>({});
     final transactionState = ref.watch(transactionProvider);
+    final transactionsNotifier = ref.read(transactionsListProvider.notifier);
 
     final statusColor = TransactionStatus.fromValue(transaction.status).color();
     final statusText = TransactionStatus.fromValue(
@@ -201,16 +224,15 @@ class _TransactionTile extends HookConsumerWidget {
     Future<void> saveChanges() async {
       try {
         // Tạo danh sách items đã update
-        final updatedItems =
-            transaction.items.map((item) {
-              final newQuantity =
-                  editedItems.value[item.postItemID] ?? item.quantity;
-              return UpdateTransactionItemModel(
-                postItemID: item.postItemID,
-                quantity: newQuantity,
-                transactionID: transaction.id,
-              );
-            }).toList();
+        final updatedItems = transaction.items.map((item) {
+          final newQuantity =
+              editedItems.value[item.postItemID] ?? item.quantity;
+          return UpdateTransactionItemModel(
+            postItemID: item.postItemID,
+            quantity: newQuantity,
+            transactionID: transaction.id,
+          );
+        }).toList();
 
         final updateModel = UpdateTransactionModel(
           items: updatedItems,
@@ -225,6 +247,10 @@ class _TransactionTile extends HookConsumerWidget {
         if (transactionState.failure == null &&
             transactionState.updatedTransaction != null) {
           isEditing.value = false;
+          
+          // Refresh transactions list
+          await transactionsNotifier.refresh();
+          
           onTransactionUpdated?.call(transactionState.updatedTransaction!);
 
           if (context.mounted) {
@@ -503,6 +529,8 @@ class _TransactionTile extends HookConsumerWidget {
   ) async {
     try {
       final updateUseCase = ref.read(updateTransactionStatusUseCaseProvider);
+      final transactionsNotifier = ref.read(transactionsListProvider.notifier);
+      
       final result = await updateUseCase(transaction.id, newStatus);
 
       result.fold(
@@ -517,6 +545,9 @@ class _TransactionTile extends HookConsumerWidget {
           }
         },
         (updatedTransaction) {
+          // Refresh transactions list sau khi update status thành công
+          transactionsNotifier.refresh();
+          
           if (context.mounted) {
             final statusText = newStatus == 2 ? 'hoàn tất' : 'từ chối';
             ScaffoldMessenger.of(context).showSnackBar(
