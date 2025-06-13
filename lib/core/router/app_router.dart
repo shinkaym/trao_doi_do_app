@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trao_doi_do_app/presentation/common/screens/not_found_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/screens/forgot_password_screen.dart';
@@ -100,7 +100,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final protectedRoutes = [
         '/profile/edit',
         '/profile/change-password',
-        // '/interests/chat',
+        '/interests/chat',
       ];
 
       for (final route in protectedRoutes) {
@@ -302,7 +302,7 @@ GoRoute _buildInterestsRoute() {
         builder: (context, state) {
           final interestId = state.pathParameters['interestId']!;
           final extraData = state.extra as InterestChatTransactionData?;
-          
+
           return InterestChatScreen(
             interestId: interestId,
             transactionData: extraData,

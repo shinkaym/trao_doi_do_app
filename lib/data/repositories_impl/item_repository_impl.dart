@@ -1,5 +1,5 @@
 import 'package:dartz/dartz.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/app_exception.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/item_remote_datasource.dart';
@@ -42,9 +42,7 @@ class ItemRepositoryImpl implements ItemRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } catch (e) {
-      return Left(
-        ServerFailure('Lỗi không xác định khi tải danh sách items'),
-      );
+      return Left(ServerFailure('Lỗi không xác định khi tải danh sách items'));
     }
   }
 }

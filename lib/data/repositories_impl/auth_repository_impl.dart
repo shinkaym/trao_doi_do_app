@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:dartz/dartz.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/app_exception.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/data/datasources/local/auth_local_datasource.dart';
@@ -129,10 +129,12 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final accessToken = await _localDataSource.getAccessToken();
       final refreshToken = await _localDataSource.getRefreshToken();
-      return Right(accessToken != null && 
-                  refreshToken != null && 
-                  accessToken.isNotEmpty && 
-                  refreshToken.isNotEmpty);
+      return Right(
+        accessToken != null &&
+            refreshToken != null &&
+            accessToken.isNotEmpty &&
+            refreshToken.isNotEmpty,
+      );
     } catch (e) {
       return Left(ServerFailure('Lỗi khi kiểm tra trạng thái đăng nhập: $e'));
     }

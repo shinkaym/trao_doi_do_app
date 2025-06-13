@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/error/app_exception.dart';
 import 'api_interceptor.dart';

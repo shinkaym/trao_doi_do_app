@@ -1,19 +1,13 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 // State class for splash
 class SplashState {
   final bool isCompleted;
   final bool isLoading;
 
-  const SplashState({
-    this.isCompleted = false,
-    this.isLoading = true,
-  });
+  const SplashState({this.isCompleted = false, this.isLoading = true});
 
-  SplashState copyWith({
-    bool? isCompleted,
-    bool? isLoading,
-  }) {
+  SplashState copyWith({bool? isCompleted, bool? isLoading}) {
     return SplashState(
       isCompleted: isCompleted ?? this.isCompleted,
       isLoading: isLoading ?? this.isLoading,
@@ -32,7 +26,8 @@ class SplashState {
   int get hashCode => isCompleted.hashCode ^ isLoading.hashCode;
 
   @override
-  String toString() => 'SplashState(isCompleted: $isCompleted, isLoading: $isLoading)';
+  String toString() =>
+      'SplashState(isCompleted: $isCompleted, isLoading: $isLoading)';
 }
 
 // Splash notifier with better state management
@@ -59,7 +54,9 @@ class SplashNotifier extends StateNotifier<SplashState> {
 }
 
 // Provider instances
-final splashProvider = StateNotifierProvider<SplashNotifier, SplashState>((ref) {
+final splashProvider = StateNotifierProvider<SplashNotifier, SplashState>((
+  ref,
+) {
   return SplashNotifier();
 });
 

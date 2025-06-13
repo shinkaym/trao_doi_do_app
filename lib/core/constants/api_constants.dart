@@ -21,4 +21,16 @@ class ApiConstants {
   // Request timeout
   static const int connectTimeout = 30000;
   static const int receiveTimeout = 30000;
+
+  // Token expiry times (in minutes for easier calculation)
+  static const int accessTokenExpiryMinutes = 240; // 4 hours
+  static const int refreshTokenExpiryMinutes = 43200; // 30 days (30 * 24 * 60)
+
+  // Token expiry times in milliseconds for DateTime calculations
+  static const int accessTokenExpiryMs = accessTokenExpiryMinutes * 60 * 1000;
+  static const int refreshTokenExpiryMs = refreshTokenExpiryMinutes * 60 * 1000;
+
+  // Buffer time before token expires (refresh 5 minutes before expiry)
+  static const int tokenRefreshBufferMinutes = 5;
+  static const int tokenRefreshBufferMs = tokenRefreshBufferMinutes * 60 * 1000;
 }

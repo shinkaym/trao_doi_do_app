@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/interests_provider.dart';
 
-class Pagination extends ConsumerWidget {
+class Pagination extends HookConsumerWidget {
   final InterestsListState state;
   final bool isTablet;
   final ThemeData theme;

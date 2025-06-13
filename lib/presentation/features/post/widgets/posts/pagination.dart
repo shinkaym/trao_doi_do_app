@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/presentation/features/post/providers/posts_provider.dart';
 
-class Pagination extends ConsumerWidget {
+class Pagination extends HookConsumerWidget {
   final PostsListState state;
   final bool isTablet;
   final ThemeData theme;
@@ -227,9 +227,10 @@ class PageButton extends StatelessWidget {
           color: isActive ? colorScheme.primary : colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isActive
-                ? colorScheme.primary
-                : colorScheme.outline.withOpacity(0.2),
+            color:
+                isActive
+                    ? colorScheme.primary
+                    : colorScheme.outline.withOpacity(0.2),
           ),
           boxShadow: [
             BoxShadow(
@@ -250,7 +251,8 @@ class PageButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: isTablet ? 14 : 13,
                   fontWeight: FontWeight.w600,
-                  color: isActive ? colorScheme.onPrimary : colorScheme.onSurface,
+                  color:
+                      isActive ? colorScheme.onPrimary : colorScheme.onSurface,
                 ),
               ),
             ),

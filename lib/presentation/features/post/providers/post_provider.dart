@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_post_usecase.dart';
@@ -230,12 +230,8 @@ class PostNotifier extends StateNotifier<PostState> {
   }
 
   void reset() {
-  state = state.copyWith(
-    newItems: [],
-    oldItems: [],
-    images: [],
-  );
-}
+    state = state.copyWith(newItems: [], oldItems: [], images: []);
+  }
 }
 
 final postProvider = StateNotifierProvider<PostNotifier, PostState>((ref) {

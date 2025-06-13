@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 
-class AuthLoginOverlay extends ConsumerStatefulWidget {
+class AuthLoginOverlay extends HookConsumerWidget {
   final Widget child;
   final String? requiredFeature;
   final bool showOverlay;
@@ -16,107 +17,100 @@ class AuthLoginOverlay extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<AuthLoginOverlay> createState() => _AuthLoginOverlayState();
-}
-
-class _AuthLoginOverlayState extends ConsumerState<AuthLoginOverlay>
-    with TickerProviderStateMixin {
-  late AnimationController _animationController;
-  late AnimationController _backgroundController;
-  late Animation<double> _fadeAnimation;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _backgroundAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
-    );
-
-    _backgroundController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutQuart),
-    );
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
-    );
-
-    _backgroundAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _backgroundController, curve: Curves.easeOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    _backgroundController.dispose();
-    super.dispose();
-  }
-
-  void _showOverlay() {
-    _backgroundController.forward();
-    Future.delayed(const Duration(milliseconds: 100), () {
-      _animationController.forward();
-    });
-  }
-
-  void _hideOverlay() async {
-    await _animationController.reverse();
-    await _backgroundController.reverse();
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
 
+    // Animation controllers using hooks
+    final animationController = useAnimationController(
+      duration: const Duration(milliseconds: 400),
+    );
+
+    final backgroundController = useAnimationController(
+      duration: const Duration(milliseconds: 300),
+    );
+
+    // Animations using useMemoized to avoid recreation
+    final fadeAnimation = useMemoized(
+      () => Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(
+          parent: animationController,
+          curve: Curves.easeOutQuart,
+        ),
+      ),
+      [animationController],
+    );
+
+    final scaleAnimation = useMemoized(
+      () => Tween<double>(begin: 0.8, end: 1.0).animate(
+        CurvedAnimation(parent: animationController, curve: Curves.easeOutBack),
+      ),
+      [animationController],
+    );
+
+    final backgroundAnimation = useMemoized(
+      () => Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(parent: backgroundController, curve: Curves.easeOut),
+      ),
+      [backgroundController],
+    );
+
+    // Helper functions using useCallback to avoid recreation
+    final showOverlayFunc = useCallback(() {
+      backgroundController.forward();
+      Future.delayed(const Duration(milliseconds: 100), () {
+        animationController.forward();
+      });
+    }, [animationController, backgroundController]);
+
+    final hideOverlayFunc = useCallback(() async {
+      await animationController.reverse();
+      await backgroundController.reverse();
+    }, [animationController, backgroundController]);
+
     // Trigger animation when overlay should be shown
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!authState.isLoggedIn && widget.showOverlay) {
-        _showOverlay();
-      }
-    });
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!authState.isLoggedIn && showOverlay) {
+          showOverlayFunc();
+        }
+      });
+      return null;
+    }, [authState.isLoggedIn, showOverlay, showOverlayFunc]);
 
     return Stack(
       children: [
         // Main content
-        widget.child,
+        child,
 
         // Overlay
-        if (!authState.isLoggedIn && widget.showOverlay)
+        if (!authState.isLoggedIn && showOverlay)
           AnimatedBuilder(
-            animation: _backgroundAnimation,
+            animation: backgroundAnimation,
             builder: (context, child) {
               return Container(
                 color: Colors.black.withOpacity(
-                  0.7 * _backgroundAnimation.value,
+                  0.7 * backgroundAnimation.value,
                 ),
                 child: child,
               );
             },
             child: AnimatedBuilder(
-              animation: _animationController,
+              animation: animationController,
               builder: (context, child) {
                 return FadeTransition(
-                  opacity: _fadeAnimation,
+                  opacity: fadeAnimation,
                   child: ScaleTransition(
-                    scale: _scaleAnimation,
+                    scale: scaleAnimation,
                     child: _buildOverlayContent(
                       context: context,
                       isTablet: isTablet,
                       theme: theme,
                       colorScheme: colorScheme,
                       authState: authState,
+                      hideOverlay: hideOverlayFunc,
                     ),
                   ),
                 );
@@ -133,6 +127,7 @@ class _AuthLoginOverlayState extends ConsumerState<AuthLoginOverlay>
     required ThemeData theme,
     required ColorScheme colorScheme,
     required AuthState authState,
+    required VoidCallback hideOverlay,
   }) {
     return Material(
       color: Colors.transparent,
@@ -165,6 +160,7 @@ class _AuthLoginOverlayState extends ConsumerState<AuthLoginOverlay>
                   isTablet: isTablet,
                   theme: theme,
                   colorScheme: colorScheme,
+                  hideOverlay: hideOverlay,
                 ),
 
                 // Content
@@ -174,6 +170,7 @@ class _AuthLoginOverlayState extends ConsumerState<AuthLoginOverlay>
                   theme: theme,
                   colorScheme: colorScheme,
                   authState: authState,
+                  hideOverlay: hideOverlay,
                 ),
               ],
             ),
@@ -188,6 +185,7 @@ class _AuthLoginOverlayState extends ConsumerState<AuthLoginOverlay>
     required bool isTablet,
     required ThemeData theme,
     required ColorScheme colorScheme,
+    required VoidCallback hideOverlay,
   }) {
     return Container(
       width: double.infinity,
@@ -205,7 +203,7 @@ class _AuthLoginOverlayState extends ConsumerState<AuthLoginOverlay>
           Align(
             alignment: Alignment.topRight,
             child: IconButton(
-              onPressed: _hideOverlay,
+              onPressed: hideOverlay,
               icon: const Icon(Icons.close),
               color: Colors.white,
               style: IconButton.styleFrom(
@@ -249,8 +247,8 @@ class _AuthLoginOverlayState extends ConsumerState<AuthLoginOverlay>
 
           // Subtitle
           Text(
-            widget.requiredFeature != null
-                ? 'Bạn cần đăng nhập để sử dụng ${widget.requiredFeature}'
+            requiredFeature != null
+                ? 'Bạn cần đăng nhập để sử dụng $requiredFeature'
                 : 'Đăng nhập để truy cập đầy đủ tính năng',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyLarge?.copyWith(
@@ -269,6 +267,7 @@ class _AuthLoginOverlayState extends ConsumerState<AuthLoginOverlay>
     required ThemeData theme,
     required ColorScheme colorScheme,
     required AuthState authState,
+    required VoidCallback hideOverlay,
   }) {
     return Padding(
       padding: EdgeInsets.all(isTablet ? 32 : 24),
@@ -289,12 +288,18 @@ class _AuthLoginOverlayState extends ConsumerState<AuthLoginOverlay>
             isTablet: isTablet,
             colorScheme: colorScheme,
             authState: authState,
+            hideOverlay: hideOverlay,
           ),
 
           SizedBox(height: isTablet ? 16 : 12),
 
           // Skip button (optional)
-          _buildSkipButton(context: context, isTablet: isTablet, theme: theme),
+          _buildSkipButton(
+            context: context,
+            isTablet: isTablet,
+            theme: theme,
+            hideOverlay: hideOverlay,
+          ),
         ],
       ),
     );
@@ -357,7 +362,7 @@ class _AuthLoginOverlayState extends ConsumerState<AuthLoginOverlay>
                             color: colorScheme.onSurface,
                           ),
                         ),
-                        SizedBox(height: 2),
+                        const SizedBox(height: 2),
                         Text(
                           benefit['description'] as String,
                           style: TextStyle(
@@ -380,6 +385,7 @@ class _AuthLoginOverlayState extends ConsumerState<AuthLoginOverlay>
     required bool isTablet,
     required ColorScheme colorScheme,
     required AuthState authState,
+    required VoidCallback hideOverlay,
   }) {
     return Column(
       children: [
@@ -392,7 +398,7 @@ class _AuthLoginOverlayState extends ConsumerState<AuthLoginOverlay>
                 authState.isLoading
                     ? null
                     : () async {
-                      _hideOverlay();
+                      hideOverlay();
                       if (context.mounted) {
                         context.goNamed('login');
                       }
@@ -439,7 +445,7 @@ class _AuthLoginOverlayState extends ConsumerState<AuthLoginOverlay>
                 authState.isLoading
                     ? null
                     : () async {
-                      _hideOverlay();
+                      hideOverlay();
                       if (context.mounted) {
                         context.goNamed('register');
                       }
@@ -469,9 +475,10 @@ class _AuthLoginOverlayState extends ConsumerState<AuthLoginOverlay>
     required BuildContext context,
     required bool isTablet,
     required ThemeData theme,
+    required VoidCallback hideOverlay,
   }) {
     return TextButton(
-      onPressed: _hideOverlay,
+      onPressed: hideOverlay,
       child: Text(
         'Bỏ qua',
         style: TextStyle(
@@ -485,7 +492,7 @@ class _AuthLoginOverlayState extends ConsumerState<AuthLoginOverlay>
 }
 
 // Wrapper widget để sử dụng overlay dễ dàng hơn
-class AuthRequiredOverlayWrapper extends ConsumerWidget {
+class AuthRequiredOverlayWrapper extends HookConsumerWidget {
   final Widget child;
   final String? requiredFeature;
   final bool forceShow;

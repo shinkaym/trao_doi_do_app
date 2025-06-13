@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 // Provider cho theme mode với secure storage persistence
@@ -51,4 +51,55 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   bool get isDarkMode => state == ThemeMode.dark;
   bool get isLightMode => state == ThemeMode.light;
   bool get isSystemMode => state == ThemeMode.system;
+}
+
+// Example usage trong widget:
+class MyWidget extends HookConsumerWidget {
+  const MyWidget({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+    final themeModeNotifier = ref.read(themeModeProvider.notifier);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Theme Example'),
+        actions: [
+          IconButton(
+            icon: Icon(
+              themeMode == ThemeMode.dark ? Icons.light_mode : Icons.dark_mode,
+            ),
+            onPressed: () => themeModeNotifier.toggleTheme(),
+          ),
+        ],
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Current theme: ${themeMode.name}',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () => themeModeNotifier.setTheme(ThemeMode.light),
+              child: const Text('Light Theme'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () => themeModeNotifier.setTheme(ThemeMode.dark),
+              child: const Text('Dark Theme'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: () => themeModeNotifier.setTheme(ThemeMode.system),
+              child: const Text('System Theme'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

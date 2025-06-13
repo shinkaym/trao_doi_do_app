@@ -1,5 +1,6 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/utils/device_utils.dart';
 import 'package:trao_doi_do_app/data/datasources/local/auth_local_datasource.dart';
@@ -7,7 +8,7 @@ import 'package:trao_doi_do_app/data/datasources/local/auth_local_datasource.dar
 class ApiInterceptor extends Interceptor {
   final Ref ref;
   bool _isRefreshing = false;
-  final List<RequestOptions> _requestsQueue = [];
+  Completer<String>? _refreshCompleter;
 
   ApiInterceptor(this.ref);
 
@@ -19,7 +20,7 @@ class ApiInterceptor extends Interceptor {
     try {
       // Always add device ID
       final deviceId = await DeviceUtils.getDeviceId();
-      options.headers['Device-Id'] = deviceId;
+      options.headers[ApiConstants.deviceId] = deviceId;
 
       // Check if this request needs authentication
       final requiresAuth = options.extra['requiresAuth'] ?? true;
@@ -28,7 +29,7 @@ class ApiInterceptor extends Interceptor {
         final authDataSource = ref.read(authLocalDataSourceProvider);
         final token = await authDataSource.getAccessToken();
         if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
+          options.headers[ApiConstants.authorization] = 'Bearer $token';
         }
       }
 
@@ -49,68 +50,100 @@ class ApiInterceptor extends Interceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    if (err.response?.statusCode == 401) {
-      // Nếu đang refresh token, thêm vào queue
-      if (_isRefreshing) {
-        _requestsQueue.add(err.requestOptions);
-        return;
-      }
-
-      final authDataSource = ref.read(authLocalDataSourceProvider);
-      final refreshToken = await authDataSource.getRefreshToken();
-
-      if (refreshToken != null) {
-        _isRefreshing = true;
-
-        try {
-          final response = await _refreshToken(refreshToken);
-          final newAccessToken = response['jwt'];
-
-          // Lưu token mới
-          await authDataSource.saveAccessToken(newAccessToken);
-
-          // Process queued requests
-          await _processQueuedRequests(newAccessToken);
-
-          // Retry original request
-          final requestOptions = err.requestOptions;
-          requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
-
-          final retryResponse = await Dio().fetch(requestOptions);
+    if (err.response?.statusCode == 401 &&
+        (err.requestOptions.extra['requiresAuth'] ?? true)) {
+      try {
+        final newToken = await _handleTokenRefresh();
+        if (newToken != null) {
+          // Retry the original request with new token
+          final retryResponse = await _retryRequest(
+            err.requestOptions,
+            newToken,
+          );
           return handler.resolve(retryResponse);
-        } catch (e) {
-          // Refresh token failed, clear all tokens
-          await _clearAuthData();
-          // Process queued requests with error
-          await _processQueuedRequestsWithError();
-        } finally {
-          _isRefreshing = false;
         }
-      } else {
-        // Không có refresh token, clear tokens
+      } catch (e) {
+        // Token refresh failed, clear auth data
         await _clearAuthData();
+        // Let the error propagate to trigger logout in UI
       }
     }
 
     return handler.next(err);
   }
 
-  Future<Map<String, dynamic>> _refreshToken(String refreshToken) async {
+  Future<String?> _handleTokenRefresh() async {
+    // If already refreshing, wait for the existing refresh to complete
+    if (_isRefreshing && _refreshCompleter != null) {
+      try {
+        return await _refreshCompleter!.future;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Start new refresh process
+    _isRefreshing = true;
+    _refreshCompleter = Completer<String>();
+
+    try {
+      final authDataSource = ref.read(authLocalDataSourceProvider);
+      final refreshToken = await authDataSource.getRefreshToken();
+
+      if (refreshToken == null) {
+        throw Exception('No refresh token available');
+      }
+
+      final newAccessToken = await _refreshToken(refreshToken);
+
+      // Save new token
+      await authDataSource.saveAccessToken(newAccessToken);
+
+      // Complete the completer with success
+      _refreshCompleter!.complete(newAccessToken);
+
+      return newAccessToken;
+    } catch (e) {
+      // Complete the completer with error
+      _refreshCompleter!.completeError(e);
+      rethrow;
+    } finally {
+      _isRefreshing = false;
+      _refreshCompleter = null;
+    }
+  }
+
+  Future<String> _refreshToken(String refreshToken) async {
     final dio = Dio();
     dio.options.baseUrl = ApiConstants.baseUrl;
+
+    // Add device ID to refresh token request
+    final deviceId = await DeviceUtils.getDeviceId();
 
     final response = await dio.post(
       '/refresh-token',
       data: {'refreshToken': refreshToken},
       options: Options(
-        headers: {ApiConstants.contentType: ApiConstants.applicationJson},
+        headers: {
+          ApiConstants.contentType: ApiConstants.applicationJson,
+          ApiConstants.deviceId: deviceId,
+        },
       ),
     );
 
     if (response.statusCode == 200) {
       final data = response.data;
-      if (data['code'] == 200) {
-        return data['data'];
+      if (data['code'] == 200 && data['data'] != null) {
+        final newAccessToken = data['data']['jwt'];
+        if (newAccessToken == null) {
+          throw DioException(
+            requestOptions: response.requestOptions,
+            response: response,
+            type: DioExceptionType.badResponse,
+            error: 'Access token not found in refresh response',
+          );
+        }
+        return newAccessToken;
       } else {
         throw DioException(
           requestOptions: response.requestOptions,
@@ -124,27 +157,40 @@ class ApiInterceptor extends Interceptor {
         requestOptions: response.requestOptions,
         response: response,
         type: DioExceptionType.badResponse,
-        error: 'Refresh token failed',
+        error: 'Refresh token failed with status: ${response.statusCode}',
       );
     }
   }
 
-  Future<void> _processQueuedRequests(String newAccessToken) async {
-    for (final request in _requestsQueue) {
-      request.headers['Authorization'] = 'Bearer $newAccessToken';
-      // Retry each queued request (implement as needed)
-    }
-    _requestsQueue.clear();
-  }
+  Future<Response> _retryRequest(
+    RequestOptions requestOptions,
+    String newToken,
+  ) async {
+    // Create new request options with updated token
+    final newOptions = requestOptions.copyWith();
+    newOptions.headers[ApiConstants.authorization] = 'Bearer $newToken';
 
-  Future<void> _processQueuedRequestsWithError() async {
-    // Clear queued requests when refresh fails
-    _requestsQueue.clear();
+    // Use a new Dio instance to avoid interceptor loops
+    final retryDio = Dio();
+    retryDio.options.baseUrl = ApiConstants.baseUrl;
+    retryDio.options.connectTimeout = Duration(
+      milliseconds: ApiConstants.connectTimeout,
+    );
+    retryDio.options.receiveTimeout = Duration(
+      milliseconds: ApiConstants.receiveTimeout,
+    );
+
+    return await retryDio.fetch(newOptions);
   }
 
   Future<void> _clearAuthData() async {
-    final authDataSource = ref.read(authLocalDataSourceProvider);
-    await authDataSource.clearTokens();
-    await authDataSource.clearUserInfo();
+    try {
+      final authDataSource = ref.read(authLocalDataSourceProvider);
+      await authDataSource.clearTokens();
+      await authDataSource.clearUserInfo();
+    } catch (e) {
+      // Log error but don't throw to avoid masking the original error
+      print('Error clearing auth data: $e');
+    }
   }
 }

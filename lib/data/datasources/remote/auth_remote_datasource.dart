@@ -22,21 +22,28 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   @override
   Future<LoginResponseModel> login(LoginRequestModel request) async {
-    final response = await _dioClient.post(
-      ApiConstants.clientLogin,
-      data: request.toJson(),
-      options: Options(extra: {'requiresAuth': false}),
-    );
+    try {
+      final response = await _dioClient.post(
+        ApiConstants.clientLogin,
+        data: request.toJson(),
+        options: Options(extra: {'requiresAuth': false}),
+      );
 
-    final apiResponse = ApiResponseModel.fromJson(
-      response.data,
-      (data) => LoginResponseModel.fromJson(data as Map<String, dynamic>),
-    );
+      final apiResponse = ApiResponseModel.fromJson(
+        response.data,
+        (data) => LoginResponseModel.fromJson(data as Map<String, dynamic>),
+      );
 
-    if (apiResponse.code == 200 && apiResponse.data != null) {
-      return apiResponse.data!;
-    } else {
-      throw ServerException(apiResponse.message, apiResponse.code);
+      if (apiResponse.code == 200 && apiResponse.data != null) {
+        return apiResponse.data!;
+      } else {
+        throw ServerException(apiResponse.message, apiResponse.code);
+      }
+    } catch (e) {
+      if (e is ServerException) {
+        rethrow;
+      }
+      throw ServerException('Login failed: ${e.toString()}');
     }
   }
 
@@ -45,7 +52,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     try {
       final response = await _dioClient.post(ApiConstants.clientLogout);
 
-      // ✅ FIXED: Kiểm tra HTTP status code 200 cho logout
+      // Check HTTP status code for logout success
       if (response.statusCode != 200) {
         throw ServerException('Logout failed', response.statusCode);
       }
@@ -53,7 +60,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       if (e is ServerException) {
         rethrow;
       }
-      throw ServerException('Logout failed');
+      throw ServerException('Logout failed: ${e.toString()}');
     }
   }
 

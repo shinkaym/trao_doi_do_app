@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/domain/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/post/providers/posts_provider.dart';
@@ -9,7 +9,7 @@ import 'dart:convert';
 import 'package:trao_doi_do_app/presentation/widgets/list_empty_state.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/pagination.dart';
 
-class PostsListContent extends ConsumerWidget {
+class PostsListContent extends HookConsumerWidget {
   final PostsListState postsState;
   final bool isTablet;
   final ThemeData theme;
