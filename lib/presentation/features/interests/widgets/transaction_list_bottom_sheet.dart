@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
+import 'package:trao_doi_do_app/data/models/transaction_model.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
 import 'package:trao_doi_do_app/domain/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/widgets/transaction_item_detail_widget.dart';
+import 'package:trao_doi_do_app/domain/usecases/update_transaction_status_usecase.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/providers/transaction_provider.dart';
 
 class TransactionListBottomSheet extends HookConsumerWidget {
   final List<Transaction> transactions;
@@ -26,10 +29,6 @@ class TransactionListBottomSheet extends HookConsumerWidget {
     final theme = context.theme;
     final colorScheme = context.colorScheme;
     final isTablet = context.isTablet;
-
-    // Sort transactions by created date (newest first)
-    final sortedTransactions = [...transactions]
-      ..sort((a, b) => (b.createdAt).compareTo(a.createdAt));
 
     return Container(
       decoration: BoxDecoration(
@@ -127,19 +126,16 @@ class TransactionListBottomSheet extends HookConsumerWidget {
                   horizontal: isTablet ? 24 : 16,
                   vertical: isTablet ? 8 : 4,
                 ),
-                itemCount: sortedTransactions.length,
+                itemCount: transactions.length,
                 separatorBuilder:
                     (context, index) => SizedBox(height: isTablet ? 12 : 8),
                 itemBuilder: (context, index) {
-                  final transaction = sortedTransactions[index];
-                  return _buildTransactionTile(
-                    transaction,
-                    theme,
-                    colorScheme,
-                    isTablet,
-                    isPostOwner,
-                    items,
-                    onTransactionUpdated,
+                  final transaction = transactions[index];
+                  return _TransactionTile(
+                    transaction: transaction,
+                    isPostOwner: isPostOwner,
+                    items: items,
+                    onTransactionUpdated: onTransactionUpdated,
                   );
                 },
               ),
@@ -151,21 +147,115 @@ class TransactionListBottomSheet extends HookConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildTransactionTile(
-    Transaction transaction,
-    ThemeData theme,
-    ColorScheme colorScheme,
-    bool isTablet,
-    bool isPostOwner,
-    List<InterestItem> items,
-    Function(Transaction)? onTransactionUpdated,
-  ) {
+class _TransactionTile extends HookConsumerWidget {
+  final Transaction transaction;
+  final bool isPostOwner;
+  final List<InterestItem> items;
+  final Function(Transaction)? onTransactionUpdated;
+
+  const _TransactionTile({
+    required this.transaction,
+    required this.isPostOwner,
+    required this.items,
+    this.onTransactionUpdated,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = context.theme;
+    final colorScheme = context.colorScheme;
+    final isTablet = context.isTablet;
+
+    // State để track việc editing
+    final isEditing = useState(false);
+    final editedItems = useState<Map<int, int>>({});
+    final transactionState = ref.watch(transactionProvider);
+
     final statusColor = TransactionStatus.fromValue(transaction.status).color();
     final statusText = TransactionStatus.fromValue(
       transaction.status,
     ).label(isPostOwner: isPostOwner);
     final statusIcon = TransactionStatus.fromValue(transaction.status).icon();
+
+    // Initialize edited items map
+    useEffect(() {
+      editedItems.value = {
+        for (final item in transaction.items) item.postItemID: item.quantity,
+      };
+      return null;
+    }, [transaction.items]);
+
+    void updateItemQuantity(int postItemID, int newQuantity) {
+      editedItems.value = {...editedItems.value, postItemID: newQuantity};
+    }
+
+    void cancelEditing() {
+      isEditing.value = false;
+      editedItems.value = {
+        for (final item in transaction.items) item.postItemID: item.quantity,
+      };
+    }
+
+    Future<void> saveChanges() async {
+      try {
+        // Tạo danh sách items đã update
+        final updatedItems =
+            transaction.items.map((item) {
+              final newQuantity =
+                  editedItems.value[item.postItemID] ?? item.quantity;
+              return UpdateTransactionItemModel(
+                postItemID: item.postItemID,
+                quantity: newQuantity,
+                transactionID: transaction.id,
+              );
+            }).toList();
+
+        final updateModel = UpdateTransactionModel(
+          items: updatedItems,
+          status: transaction.status, // Giữ nguyên status
+        );
+
+        // Gọi update transaction
+        await ref
+            .read(transactionProvider.notifier)
+            .updateTransaction(transaction.id, updateModel);
+
+        if (transactionState.failure == null &&
+            transactionState.updatedTransaction != null) {
+          isEditing.value = false;
+          onTransactionUpdated?.call(transactionState.updatedTransaction!);
+
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Cập nhật giao dịch thành công!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        } else if (transactionState.failure != null) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(transactionState.failure!.message),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Có lỗi xảy ra: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -252,90 +342,151 @@ class TransactionListBottomSheet extends HookConsumerWidget {
           children: [
             // Transaction items
             ...transaction.items.map((item) {
+              final maxQuantity =
+                  items
+                      .firstWhere((i) => item.postItemID == i.id)
+                      .currentQuantity;
+
               return Padding(
                 padding: EdgeInsets.only(bottom: isTablet ? 8 : 6),
-                child: TransactionItemDetailWidget(
+                child: _EditableTransactionItem(
                   transactionItem: item,
                   transactionStatus: transaction.status,
                   isPostOwner: isPostOwner,
-                  maxQuantity:
-                      items
-                          .firstWhere((i) => item.postItemID == i.id)
-                          .currentQuantity,
-                  onQuantityUpdated: (newQuantity) {
-                    // TODO: Handle quantity update
-                    // This should update the item's approved quantity
-                    // and call onTransactionUpdated with the modified transaction
-                  },
-                  onConfirm: () {
-                    // TODO: Handle confirm action
-                    // This should accept/reject the transaction
-                    // and call onTransactionUpdated with the modified transaction
-                  },
+                  maxQuantity: maxQuantity,
+                  isEditing: isEditing.value,
+                  currentQuantity:
+                      editedItems.value[item.postItemID] ?? item.quantity,
+                  onQuantityChanged:
+                      (newQuantity) =>
+                          updateItemQuantity(item.postItemID, newQuantity),
                 ),
               );
             }).toList(),
 
-            // Transaction actions (for post owner with pending transactions)
+            // Transaction actions
             if (isPostOwner && transaction.status == 1) ...[
               SizedBox(height: isTablet ? 16 : 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        // TODO: Reject transaction
-                        _handleTransactionAction(
-                          transaction,
-                          2,
-                          onTransactionUpdated,
-                        );
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                        side: const BorderSide(color: Colors.red),
-                        padding: EdgeInsets.symmetric(
-                          vertical: isTablet ? 12 : 8,
-                        ),
+
+              // Edit mode actions
+              if (isEditing.value) ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed:
+                            transactionState.isLoading ? null : cancelEditing,
+                        child: const Text('Hủy'),
                       ),
-                      child: Text(
-                        'Từ chối',
-                        style: TextStyle(
-                          fontSize: isTablet ? 14 : 13,
-                          fontWeight: FontWeight.w600,
+                    ),
+                    SizedBox(width: isTablet ? 12 : 8),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed:
+                            transactionState.isLoading ? null : saveChanges,
+                        child:
+                            transactionState.isLoading
+                                ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : const Text('Lưu thay đổi'),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                // Normal actions
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed:
+                            () => _handleTransactionStatusUpdate(
+                              ref,
+                              context,
+                              transaction,
+                              3, // Cancelled
+                              onTransactionUpdated,
+                            ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          padding: EdgeInsets.symmetric(
+                            vertical: isTablet ? 12 : 8,
+                          ),
+                        ),
+                        child: Text(
+                          'Từ chối',
+                          style: TextStyle(
+                            fontSize: isTablet ? 14 : 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  SizedBox(width: isTablet ? 12 : 8),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // TODO: Accept transaction
-                        _handleTransactionAction(
-                          transaction,
-                          1,
-                          onTransactionUpdated,
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(
-                          vertical: isTablet ? 12 : 8,
+                    SizedBox(width: isTablet ? 12 : 8),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          isEditing.value = true;
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.orange,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                            vertical: isTablet ? 12 : 8,
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        'Chấp nhận',
-                        style: TextStyle(
-                          fontSize: isTablet ? 14 : 13,
-                          fontWeight: FontWeight.w600,
+                        child: Text(
+                          'Chỉnh sửa',
+                          style: TextStyle(
+                            fontSize: isTablet ? 14 : 13,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+
+                SizedBox(height: isTablet ? 12 : 8),
+
+                // Complete transaction button
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed:
+                            () => _handleTransactionStatusUpdate(
+                              ref,
+                              context,
+                              transaction,
+                              2, // Success
+                              onTransactionUpdated,
+                            ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                            vertical: isTablet ? 12 : 8,
+                          ),
+                        ),
+                        child: Text(
+                          'Hoàn tất giao dịch',
+                          style: TextStyle(
+                            fontSize: isTablet ? 14 : 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ],
         ),
@@ -343,11 +494,284 @@ class TransactionListBottomSheet extends HookConsumerWidget {
     );
   }
 
-  void _handleTransactionAction(
+  Future<void> _handleTransactionStatusUpdate(
+    WidgetRef ref,
+    BuildContext context,
     Transaction transaction,
     int newStatus,
     Function(Transaction)? onTransactionUpdated,
-  ) {
-    // TODO: Implement API call to update transaction status
+  ) async {
+    try {
+      final updateUseCase = ref.read(updateTransactionStatusUseCaseProvider);
+      final result = await updateUseCase(transaction.id, newStatus);
+
+      result.fold(
+        (failure) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(failure.message),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+        (updatedTransaction) {
+          if (context.mounted) {
+            final statusText = newStatus == 2 ? 'hoàn tất' : 'từ chối';
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Đã $statusText giao dịch thành công!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+          onTransactionUpdated?.call(updatedTransaction);
+        },
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Có lỗi xảy ra: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+}
+
+class _EditableTransactionItem extends StatelessWidget {
+  final TransactionItem transactionItem;
+  final int transactionStatus;
+  final bool isPostOwner;
+  final int maxQuantity;
+  final bool isEditing;
+  final int currentQuantity;
+  final ValueChanged<int>? onQuantityChanged;
+
+  const _EditableTransactionItem({
+    required this.transactionItem,
+    required this.transactionStatus,
+    required this.isPostOwner,
+    required this.maxQuantity,
+    required this.isEditing,
+    required this.currentQuantity,
+    this.onQuantityChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final isTablet = MediaQuery.of(context).size.width > 600;
+
+    void updateQuantity(int change) {
+      final newQuantity = (currentQuantity + change).clamp(0, maxQuantity);
+      onQuantityChanged?.call(newQuantity);
+    }
+
+    return Container(
+      padding: EdgeInsets.all(isTablet ? 16 : 12),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              // Item image
+              Container(
+                width: isTablet ? 60 : 50,
+                height: isTablet ? 60 : 50,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceVariant,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: colorScheme.outline.withOpacity(0.2),
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(7),
+                  child:
+                      transactionItem.itemImage.isNotEmpty
+                          ? Image.network(
+                            transactionItem.itemImage,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Icon(
+                                Icons.image_not_supported,
+                                color: colorScheme.outline,
+                                size: isTablet ? 24 : 20,
+                              );
+                            },
+                          )
+                          : Icon(
+                            Icons.image,
+                            color: colorScheme.outline,
+                            size: isTablet ? 24 : 20,
+                          ),
+                ),
+              ),
+
+              SizedBox(width: isTablet ? 16 : 12),
+
+              // Item info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      transactionItem.itemName,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: isTablet ? 16 : 14,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: isTablet ? 6 : 4),
+
+                    // Quantity info
+                    if (transactionStatus == 2) ...[
+                      Row(
+                        children: [
+                          Text(
+                            'Chấp nhận: ',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.green,
+                              fontSize: isTablet ? 13 : 12,
+                            ),
+                          ),
+                          Text(
+                            '$currentQuantity',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.green,
+                              fontSize: isTablet ? 13 : 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ] else ...[
+                      Row(
+                        children: [
+                          Text(
+                            'Yêu cầu: ',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.hintColor,
+                              fontSize: isTablet ? 13 : 12,
+                            ),
+                          ),
+                          Text(
+                            '$currentQuantity',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              fontSize: isTablet ? 13 : 12,
+                            ),
+                          ),
+                          if (currentQuantity != transactionItem.quantity) ...[
+                            SizedBox(width: 4),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'Đã sửa',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.primary,
+                                  fontSize: isTablet ? 10 : 9,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+
+                    if (currentQuantity != transactionItem.quantity) ...[
+                      SizedBox(height: 2),
+                      Text(
+                        'Yêu cầu gốc: ${transactionItem.quantity}',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.hintColor.withOpacity(0.7),
+                          fontSize: isTablet ? 11 : 10,
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          // Quantity controls (only when editing)
+          if (isEditing && isPostOwner && transactionStatus == 1) ...[
+            SizedBox(height: isTablet ? 16 : 12),
+            Row(
+              children: [
+                Text(
+                  'Sẵn có: $maxQuantity',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w500,
+                    fontSize: isTablet ? 14 : 13,
+                  ),
+                ),
+                const Spacer(),
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed:
+                          currentQuantity > 0 ? () => updateQuantity(-1) : null,
+                      icon: const Icon(Icons.remove_circle_outline),
+                      style: IconButton.styleFrom(
+                        foregroundColor: colorScheme.primary,
+                      ),
+                    ),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isTablet ? 16 : 12,
+                        vertical: isTablet ? 8 : 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceVariant,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$currentQuantity',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          fontSize: isTablet ? 16 : 14,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed:
+                          currentQuantity < maxQuantity
+                              ? () => updateQuantity(1)
+                              : null,
+                      icon: const Icon(Icons.add_circle_outline),
+                      style: IconButton.styleFrom(
+                        foregroundColor: colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }

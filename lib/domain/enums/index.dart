@@ -159,7 +159,7 @@ enum TransactionStatus {
   String label({required bool isPostOwner}) {
     switch (this) {
       case TransactionStatus.pending:
-        return isPostOwner ? 'Chưa xử lý' : 'Chờ phản hồi';
+        return isPostOwner ? 'Đang trong giao dịch' : 'Đang trong giao dịch';
       case TransactionStatus.accepted:
         return 'Hoàn tất';
       case TransactionStatus.rejected:

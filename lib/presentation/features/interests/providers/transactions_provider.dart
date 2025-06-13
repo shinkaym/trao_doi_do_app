@@ -166,14 +166,6 @@ class TransactionsListNotifier extends StateNotifier<TransactionsListState> {
     loadTransactions(newQuery: newQuery, refresh: true);
   }
 
-  void search(String? searchBy, String? searchValue) {
-    final newQuery = state.query.copyWith(
-      searchBy: searchBy,
-      searchValue: searchValue,
-    );
-    loadTransactions(newQuery: newQuery, refresh: true);
-  }
-
   void sortTransactions(String? sort, String? order) {
     final newQuery = state.query.copyWith(sort: sort, order: order);
     loadTransactions(newQuery: newQuery, refresh: true);
@@ -185,6 +177,7 @@ class TransactionsListNotifier extends StateNotifier<TransactionsListState> {
     int? status,
     String? sort,
     String? order,
+    int? postID, // Add this parameter
   }) {
     final newQuery = state.query.copyWith(
       searchBy: searchBy,
@@ -192,6 +185,7 @@ class TransactionsListNotifier extends StateNotifier<TransactionsListState> {
       status: status,
       sort: sort,
       order: order,
+      postID: postID, // Add this line
       page: 1,
     );
     loadTransactions(newQuery: newQuery, refresh: true);
@@ -202,8 +196,8 @@ class TransactionsListNotifier extends StateNotifier<TransactionsListState> {
     loadTransactions(isLoadMore: true);
   }
 
-  void refresh() {
-    loadTransactions(refresh: true);
+  Future<void> refresh() async {
+    await loadTransactions(refresh: true);
   }
 }
 

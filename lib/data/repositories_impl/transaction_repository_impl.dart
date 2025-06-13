@@ -121,6 +121,44 @@ class TransactionRepositoryImpl implements TransactionRepository {
       return Left(ServerFailure('Lỗi không xác định khi cập nhật giao dịch'));
     }
   }
+
+  @override
+  Future<Either<Failure, Transaction>> updateTransactionStatus(
+    int transactionID,
+    UpdateTransactionStatusModel transaction,
+  ) async {
+    try {
+      final apiResponse = await _remoteDataSource.updateTransactionStatus(
+        transactionID,
+        transaction,
+      );
+
+      if (apiResponse.code >= 200 &&
+          apiResponse.code < 300 &&
+          apiResponse.data != null) {
+        return Right(apiResponse.data!);
+      } else {
+        return Left(
+          ServerFailure(
+            apiResponse.message.isNotEmpty
+                ? apiResponse.message
+                : 'Lỗi không xác định khi cập nhật trạng thái giao dịch',
+            apiResponse.code,
+          ),
+        );
+      }
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, e.statusCode));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on ValidationException catch (e) {
+      return Left(ValidationFailure(e.message));
+    } catch (e) {
+      return Left(
+        ServerFailure('Lỗi không xác định khi cập nhật trạng thái giao dịch'),
+      );
+    }
+  }
 }
 
 final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {

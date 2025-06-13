@@ -41,16 +41,16 @@ class Transaction extends Equatable {
 }
 
 class TransactionItem extends Equatable {
-  final int itemID;
+  final int? itemID;
   final String itemName;
   final String itemImage;
   final int postItemID;
   final int quantity;
 
   const TransactionItem({
-    required this.itemID,
-    required this.itemName,
-    required this.itemImage,
+    this.itemID,
+    this.itemName = '',
+    this.itemImage = '',
     required this.postItemID,
     required this.quantity,
   });

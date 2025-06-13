@@ -32,29 +32,39 @@ class TransactionModel extends Transaction {
     );
   }
 
-  factory TransactionModel.fromJson(Map<String, dynamic> json) {
-    return TransactionModel(
-      id: json['id'],
-      interestID: json['interestID'],
-      items:
-          json['items'] != null
-              ? (json['items'] as List)
-                  .map(
-                    (item) => TransactionItemModel.fromJson(
-                      item as Map<String, dynamic>,
-                    ),
-                  )
-                  .toList()
-              : [],
-      receiverID: json['receiverID'],
-      receiverName: json['receiverName'] ?? '',
-      senderID: json['senderID'],
-      senderName: json['senderName'] ?? '',
-      status: json['status'],
-      createdAt: json['createdAt'],
-      updatedAt: json['updatedAt'],
-    );
+factory TransactionModel.fromJson(Map<String, dynamic> json) {
+  // Handle nested transaction data structure
+  Map<String, dynamic> transactionData;
+  
+  if (json.containsKey('transaction')) {
+    // API returns nested structure: { "transaction": { ... } }
+    transactionData = json['transaction'] as Map<String, dynamic>;
+  } else {
+    // Direct transaction data
+    transactionData = json;
   }
+  
+  return TransactionModel(
+    id: transactionData['id'],
+    interestID: transactionData['interestID'],
+    items: transactionData['items'] != null
+        ? (transactionData['items'] as List)
+            .map(
+              (item) => TransactionItemModel.fromJson(
+                item as Map<String, dynamic>,
+              ),
+            )
+            .toList()
+        : [],
+    receiverID: transactionData['receiverID'] ?? 0,
+    receiverName: transactionData['receiverName'] ?? '',
+    senderID: transactionData['senderID'] ?? 0,
+    senderName: transactionData['senderName'] ?? '',
+    status: transactionData['status'] ?? 1,
+    createdAt: transactionData['createdAt'] ?? DateTime.now().toIso8601String(),
+    updatedAt: transactionData['updatedAt'],
+  );
+}
 
   Map<String, dynamic> toJson() {
     return {
@@ -215,5 +225,19 @@ class UpdateTransactionItemModel {
       quantity: json['quantity'],
       transactionID: json['transactionID'],
     );
+  }
+}
+
+class UpdateTransactionStatusModel {
+  final int status;
+
+  const UpdateTransactionStatusModel({required this.status});
+
+  Map<String, dynamic> toJson() {
+    return {'status': status};
+  }
+
+  factory UpdateTransactionStatusModel.fromJson(Map<String, dynamic> json) {
+    return UpdateTransactionStatusModel(status: json['status']);
   }
 }

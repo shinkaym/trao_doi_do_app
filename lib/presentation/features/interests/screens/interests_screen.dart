@@ -851,7 +851,7 @@ Widget _buildInterestedPostCard(
                     onTap:
                         () => handleChatTap(
                           post.interests[0].id,
-                          true,
+                          false,
                           post.items,
                           post,
                         ),
@@ -1251,7 +1251,7 @@ class _InterestedUsersSectionState extends State<_InterestedUsersSection>
                         onTap:
                             () => widget.handleChatTap(
                               interest.id,
-                              false,
+                              true,
                               widget.post.items,
                               widget.post,
                             ),

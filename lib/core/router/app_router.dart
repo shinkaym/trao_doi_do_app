@@ -73,7 +73,7 @@ class RouterState {
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/interests/chat/1',
+    initialLocation: '/splash',
     errorBuilder: (context, state) => const NotFoundScreen(),
     refreshListenable: RouterNotifier(ref),
     redirect: (context, state) {
@@ -305,7 +305,7 @@ GoRoute _buildInterestsRoute() {
           
           return InterestChatScreen(
             interestId: interestId,
-            // transactionData: extraData,
+            transactionData: extraData,
           );
         },
       ),

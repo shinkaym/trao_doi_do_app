@@ -18,6 +18,10 @@ abstract class TransactionRemoteDataSource {
     int transactionID,
     UpdateTransactionModel transaction,
   );
+  Future<ApiResponseModel<TransactionModel>> updateTransactionStatus(
+    int transactionID,
+    UpdateTransactionStatusModel transaction,
+  );
 }
 
 class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
@@ -69,10 +73,22 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
       '📥 Create Transaction Response:\n${const JsonEncoder.withIndent('  ').convert(response.data)}',
     );
 
-    return ApiResponseModel<TransactionModel>.fromJson(
-      response.data,
-      (json) => TransactionModel.fromJson(json as Map<String, dynamic>),
-    );
+    return ApiResponseModel<TransactionModel>.fromJson(response.data, (json) {
+      try {
+        // The API response structure is: { "data": { "transaction": { ... } } }
+        // But ApiResponseModel.fromJson already extracts the "data" part
+        // So json here is: { "transaction": { ... } }
+
+        final transactionData = json as Map<String, dynamic>;
+
+        // Create a new TransactionModel from the extracted data
+        return TransactionModel.fromJson(transactionData);
+      } catch (e) {
+        print('❌ Error parsing transaction: $e');
+        print('❌ JSON data: $json');
+        rethrow;
+      }
+    });
   }
 
   @override
@@ -96,10 +112,49 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
       '📥 Update Transaction Response:\n${const JsonEncoder.withIndent('  ').convert(response.data)}',
     );
 
-    return ApiResponseModel<TransactionModel>.fromJson(
-      response.data,
-      (json) => TransactionModel.fromJson(json as Map<String, dynamic>),
+    return ApiResponseModel<TransactionModel>.fromJson(response.data, (json) {
+      // Extract the nested transaction data
+      final transactionData = json as Map<String, dynamic>;
+      if (transactionData.containsKey('transaction')) {
+        return TransactionModel.fromJson(
+          transactionData['transaction'] as Map<String, dynamic>,
+        );
+      }
+      // Fallback for direct transaction data
+      return TransactionModel.fromJson(transactionData);
+    });
+  }
+
+  @override
+  Future<ApiResponseModel<TransactionModel>> updateTransactionStatus(
+    int transactionID,
+    UpdateTransactionStatusModel transaction,
+  ) async {
+    final body = transaction.toJson();
+    print(
+      '📤 Update Transaction Status JSON (ID: $transactionID):\n${const JsonEncoder.withIndent('  ').convert(body)}',
     );
+
+    final response = await _dioClient.patch(
+      '${ApiConstants.transactions}/$transactionID',
+      data: body,
+    );
+
+    print(
+      '📥 Update Transaction Status Response:\n${const JsonEncoder.withIndent('  ').convert(response.data)}',
+    );
+
+    return ApiResponseModel<TransactionModel>.fromJson(response.data, (json) {
+      // Extract the nested transaction data
+      final transactionData = json as Map<String, dynamic>;
+      if (transactionData.containsKey('transaction')) {
+        return TransactionModel.fromJson(
+          transactionData['transaction'] as Map<String, dynamic>,
+        );
+      }
+      // Fallback for direct transaction data
+      return TransactionModel.fromJson(transactionData);
+    });
   }
 }
 

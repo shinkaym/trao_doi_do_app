@@ -6,6 +6,7 @@ class TransactionsQuery extends Equatable {
   final String? sort;
   final String? order; // ASC, DESC
   final int? status; // 1: Pending, 2: Success, 3: Cancelled
+  final int? postID;
   final String? searchBy;
   final String? searchValue;
 
@@ -15,6 +16,7 @@ class TransactionsQuery extends Equatable {
     this.sort,
     this.order,
     this.status,
+    this.postID,
     this.searchBy,
     this.searchValue,
   });
@@ -25,6 +27,7 @@ class TransactionsQuery extends Equatable {
     if (sort != null) params['sort'] = sort;
     if (order != null) params['order'] = order;
     if (status != null) params['status'] = status;
+    if (postID != null) params['postID'] = postID;
     if (searchBy != null) params['searchBy'] = searchBy;
     if (searchValue != null) params['searchValue'] = searchValue;
 
@@ -37,6 +40,7 @@ class TransactionsQuery extends Equatable {
     String? sort,
     String? order,
     int? status,
+    int? postID,
     String? searchBy,
     String? searchValue,
   }) {
@@ -46,6 +50,7 @@ class TransactionsQuery extends Equatable {
       sort: sort ?? this.sort,
       order: order ?? this.order,
       status: status ?? this.status,
+      postID: postID ?? this.postID,
       searchBy: searchBy ?? this.searchBy,
       searchValue: searchValue ?? this.searchValue,
     );

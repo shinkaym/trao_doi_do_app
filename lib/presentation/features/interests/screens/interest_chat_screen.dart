@@ -6,141 +6,24 @@ import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
+import 'package:trao_doi_do_app/domain/entities/params/transactions_query.dart';
 import 'package:trao_doi_do_app/domain/enums/index.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/providers/transactions_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/test/test.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/transaction_item_selection_bottom_sheet.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/transaction_list_bottom_sheet.dart';
+import 'package:trao_doi_do_app/presentation/models/interest_chat_transaction_data.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
-
-final List<Transaction> mockTransactions = [
-  // Transaction(
-  //   id: 101,
-  //   interestID: 201,
-  //   receiverID: 301,
-  //   receiverName: 'Nguyễn Văn A',
-  //   senderID: 401,
-  //   senderName: 'Trần Thị B',
-  //   status: 1,
-  //   createdAt:
-  //       DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
-  //   updatedAt: null,
-  //   items: [
-  //     TransactionItem(
-  //       itemID: 999,
-  //       postItemID: 1,
-  //       itemName: 'Bút bi',
-  //       itemImage: 'https://example.com/pen.jpg',
-  //       quantity: 2,
-  //     ),
-  //     TransactionItem(
-  //       itemID: 999,
-  //       postItemID: 2,
-  //       itemName: 'Thước kẻ',
-  //       itemImage: 'https://example.com/ruler.jpg',
-  //       quantity: 1,
-  //     ),
-  //   ],
-  // ),
-  Transaction(
-    id: 102,
-    interestID: 202,
-    receiverID: 302,
-    receiverName: 'Lê Văn C',
-    senderID: 402,
-    senderName: 'Phạm Thị D',
-    status: 2,
-    createdAt:
-        DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
-    updatedAt: DateTime.now().toIso8601String(),
-    items: [
-      TransactionItem(
-        itemID: 999,
-        postItemID: 3,
-        itemName: 'Sách toán',
-        itemImage: 'https://example.com/mathbook.jpg',
-        quantity: 1,
-      ),
-    ],
-  ),
-  Transaction(
-    id: 103,
-    interestID: 202,
-    receiverID: 302,
-    receiverName: 'Lê Văn C',
-    senderID: 402,
-    senderName: 'Phạm Thị D',
-    status: 3,
-    createdAt:
-        DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
-    updatedAt: DateTime.now().toIso8601String(),
-    items: [
-      TransactionItem(
-        itemID: 999,
-        postItemID: 3,
-        itemName: 'Sách toán',
-        itemImage: 'https://example.com/mathbook.jpg',
-        quantity: 1,
-      ),
-    ],
-  ),
-];
-
-final InterestPost mockInterestPost = InterestPost(
-  id: 101,
-  slug: 'tang-sach-cu-con-moi-855',
-  title: 'Tặng bút, thước và sách toán',
-  type: 1,
-  description: 'Mình có một vài món đồ học tập muốn tặng lại cho các bạn cần.',
-  updatedAt: DateTime.now().toIso8601String(),
-  authorID: 999,
-  authorName: 'Huấn Hoa Hồng',
-  authorAvatar: '',
-  interests: [
-    Interest(
-      id: 1,
-      userID: 1,
-      userName: "Super Admin",
-      userAvatar: '',
-      postID: 101,
-      status: 1,
-      createdAt: DateTime.now().toIso8601String(),
-    ),
-  ],
-  items: [
-    InterestItem(
-      id: 1,
-      itemID: 999,
-      name: 'Bút bi',
-      categoryName: 'Văn phòng phẩm',
-      image: 'https://example.com/pen.jpg',
-      quantity: 10,
-      currentQuantity: 5,
-    ),
-    InterestItem(
-      id: 2,
-      itemID: 999,
-      name: 'Thước kẻ',
-      categoryName: 'Văn phòng phẩm',
-      image: 'https://example.com/ruler.jpg',
-      quantity: 5,
-      currentQuantity: 2,
-    ),
-    InterestItem(
-      id: 3,
-      itemID: 999,
-      name: 'Sách toán',
-      categoryName: 'Sách',
-      image: 'https://example.com/mathbook.jpg',
-      quantity: 3,
-      currentQuantity: 1,
-    ),
-  ],
-);
 
 class InterestChatScreen extends HookConsumerWidget {
   final String interestId;
+  final InterestChatTransactionData? transactionData;
 
-  const InterestChatScreen({super.key, required this.interestId});
+  const InterestChatScreen({
+    super.key,
+    required this.interestId,
+    this.transactionData,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -153,37 +36,55 @@ class InterestChatScreen extends HookConsumerWidget {
     final chatInfo = useState<ChatInfo?>(null);
     final messages = useState<List<ChatMessage>>([]);
 
-    final transactions = useState<List<Transaction>>([]);
     final post = useState<InterestPost?>(null);
     final isPostOwner = useState<bool>(false);
 
     final displayName = useState<String>('');
     final displayAvatar = useState<String>('');
 
-    // Initialize chat data
+    // Watch transactions state
+    final transactionsState = ref.watch(transactionsListProvider);
+    final transactionsNotifier = ref.read(transactionsListProvider.notifier);
+
+    // Initialize chat data and load transactions
     useEffect(() {
-      Future.microtask(() {
+      Future.microtask(() async {
+        // Initialize chat mock data
         chatInfo.value = mockChatInfo;
         messages.value = [...mockMessages];
 
-        transactions.value = mockTransactions;
-        post.value = mockInterestPost;
-        if (post.value != null) {
-          displayName.value =
-              isPostOwner.value
-                  ? post.value!.authorName
-                  : post.value!.interests
-                      .firstWhere((i) => i.id.toString() == interestId)
-                      .userName;
+        // Set post data from route params or use mock
+        post.value = transactionData!.post;
+        isPostOwner.value = transactionData!.isPostOwner;
 
-          displayAvatar.value =
-              isPostOwner.value
-                  ? post.value!.authorAvatar
-                  : post.value!.interests
-                      .firstWhere((i) => i.id.toString() == interestId)
-                      .userAvatar;
-        }
-        // isPostOwner.value = false;
+        // Set display information
+        displayName.value =
+            isPostOwner.value
+                ? post.value!.interests
+                    .firstWhere((i) => i.id.toString() == interestId)
+                    .userName
+                : post.value!.authorName;
+        displayAvatar.value =
+            isPostOwner.value
+                ? post.value!.interests
+                    .firstWhere((i) => i.id.toString() == interestId)
+                    .userAvatar
+                : post.value!.authorAvatar;
+
+        // Load transactions with default query
+        final query = TransactionsQuery(
+          sort: 'createdAt',
+          order: 'DESC',
+          postID: post.value?.id,
+          searchBy: 'interestID',
+          searchValue: interestId,
+        );
+
+        await transactionsNotifier.loadTransactions(
+          newQuery: query,
+          refresh: true,
+        );
+
         isLoading.value = false;
 
         // Scroll to bottom after loading
@@ -193,6 +94,24 @@ class InterestChatScreen extends HookConsumerWidget {
       });
       return null;
     }, []);
+
+    // Handle transaction state changes
+    useEffect(() {
+      if (transactionsState.failure != null) {
+        // Show error message
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Lỗi tải giao dịch: ${transactionsState.failure!.message}',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        });
+      }
+      return null;
+    }, [transactionsState.failure]);
 
     void sendMessage() async {
       final messageText = messageController.text.trim();
@@ -261,39 +180,53 @@ class InterestChatScreen extends HookConsumerWidget {
         backgroundColor: Colors.transparent,
         builder:
             (_) => TransactionListBottomSheet(
-              transactions: transactions.value,
+              transactions: transactionsState.transactions,
               isPostOwner: isPostOwner.value,
-              items: mockInterestPost.items,
-              onTransactionUpdated: (updatedTransaction) {},
+              items: post.value?.items ?? [],
+              onTransactionUpdated: (updatedTransaction) {
+                // Refresh transactions after update
+                transactionsNotifier.refresh();
+              },
             ),
       );
     }
 
     void handleItemTransactionTap() {
       if (isPostOwner.value) return;
+
       final latestTransaction =
-          transactions.value.isNotEmpty ? transactions.value.first : null;
+          transactionsState.transactions.isNotEmpty
+              ? transactionsState.transactions.first
+              : null;
+
       final canCreateTransaction =
           latestTransaction == null || latestTransaction.status != 1;
+
       if (!canCreateTransaction) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Đợi yêu cầu mới nhất được phản hồi')),
         );
         return;
       }
+
       showModalBottomSheet(
         context: context,
         isScrollControlled: true,
         backgroundColor: Colors.transparent,
         builder:
             (_) => TransactionItemSelectionBottomSheet(
-              postItems: mockInterestPost.items,
-              interestId: interestId,
+              postItems: post.value?.items ?? [],
+              interestId: int.parse(interestId),
               onTransactionSent: () {
-                // Optional: refresh transaction list
+                // Refresh transactions after creating new transaction
+                transactionsNotifier.refresh();
               },
             ),
       );
+    }
+
+    void handleRefreshTransactions() {
+      transactionsNotifier.refresh();
     }
 
     final isTablet = context.isTablet;
@@ -327,16 +260,18 @@ class InterestChatScreen extends HookConsumerWidget {
         child: Column(
           children: [
             // Post info header
-            if (chatInfo.value != null)
+            if (chatInfo.value != null && post.value != null)
               _buildPostInfoHeader(
                 isTablet,
                 theme,
                 colorScheme,
-                transactions.value,
+                transactionsState.transactions,
                 post.value!,
                 isPostOwner.value,
+                transactionsState.isLoading,
                 handlePostTap,
                 handleTransactionTap,
+                handleRefreshTransactions,
               ),
 
             // Messages list
@@ -484,10 +419,12 @@ Widget _buildPostInfoHeader(
   List<Transaction> transactions,
   InterestPost post,
   bool isPostOwner,
+  bool isLoadingTransactions,
   VoidCallback onPostTap,
   VoidCallback onTransactionTap,
+  VoidCallback onRefreshTransactions,
 ) {
-  // Sử dụng enum để lấy thông tin post type
+  // Get post type information
   final postTypeEnum = CreatePostType.fromValue(post.type);
   final latestTransaction = transactions.isNotEmpty ? transactions.first : null;
 
@@ -550,20 +487,29 @@ Widget _buildPostInfoHeader(
         ),
 
         // Latest transaction info
-        if (latestTransaction != null) ...[
-          SizedBox(height: isTablet ? 8 : 6),
-          Container(
-            padding: EdgeInsets.all(isTablet ? 16 : 12),
-            decoration: BoxDecoration(
-              color: colorScheme.secondaryContainer.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: colorScheme.secondary.withOpacity(0.2)),
-            ),
-            child: InkWell(
-              onTap: onTransactionTap,
-              borderRadius: BorderRadius.circular(8),
-              child: Row(
-                children: [
+        SizedBox(height: isTablet ? 8 : 6),
+        Container(
+          padding: EdgeInsets.all(isTablet ? 16 : 12),
+          decoration: BoxDecoration(
+            color: colorScheme.secondaryContainer.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colorScheme.secondary.withOpacity(0.2)),
+          ),
+          child: InkWell(
+            onTap: isLoadingTransactions ? null : onTransactionTap,
+            borderRadius: BorderRadius.circular(8),
+            child: Row(
+              children: [
+                if (isLoadingTransactions)
+                  SizedBox(
+                    width: isTablet ? 20 : 18,
+                    height: isTablet ? 20 : 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: colorScheme.secondary,
+                    ),
+                  )
+                else if (latestTransaction != null)
                   Icon(
                     TransactionStatus.fromValue(
                       latestTransaction.status,
@@ -573,20 +519,34 @@ Widget _buildPostInfoHeader(
                         TransactionStatus.fromValue(
                           latestTransaction.status,
                         ).color(),
+                  )
+                else
+                  Icon(
+                    Icons.history,
+                    size: isTablet ? 20 : 18,
+                    color: theme.hintColor,
                   ),
-                  SizedBox(width: isTablet ? 12 : 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Yêu cầu mới nhất',
-                          style: TextStyle(
-                            fontSize: isTablet ? 12 : 11,
-                            color: theme.hintColor,
-                            fontWeight: FontWeight.w500,
-                          ),
+
+                SizedBox(width: isTablet ? 12 : 8),
+
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isLoadingTransactions
+                            ? 'Đang tải giao dịch...'
+                            : latestTransaction != null
+                            ? 'Yêu cầu mới nhất'
+                            : 'Chưa có giao dịch',
+                        style: TextStyle(
+                          fontSize: isTablet ? 12 : 11,
+                          color: theme.hintColor,
+                          fontWeight: FontWeight.w500,
                         ),
+                      ),
+
+                      if (latestTransaction != null) ...[
                         SizedBox(height: isTablet ? 4 : 2),
                         Row(
                           children: [
@@ -594,7 +554,6 @@ Widget _buildPostInfoHeader(
                               TimeUtils.formatTimeAgo(
                                 DateTime.parse(latestTransaction.createdAt),
                               ),
-
                               style: theme.textTheme.bodySmall?.copyWith(
                                 fontSize: isTablet ? 13 : 12,
                                 fontWeight: FontWeight.w500,
@@ -629,18 +588,35 @@ Widget _buildPostInfoHeader(
                           ],
                         ),
                       ],
+                    ],
+                  ),
+                ),
+
+                // Refresh button
+                if (!isLoadingTransactions)
+                  IconButton(
+                    onPressed: onRefreshTransactions,
+                    icon: Icon(
+                      Icons.refresh,
+                      size: isTablet ? 18 : 16,
+                      color: theme.hintColor,
+                    ),
+                    padding: EdgeInsets.all(isTablet ? 8 : 4),
+                    constraints: BoxConstraints(
+                      minWidth: isTablet ? 32 : 24,
+                      minHeight: isTablet ? 32 : 24,
                     ),
                   ),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: isTablet ? 16 : 14,
-                    color: theme.hintColor,
-                  ),
-                ],
-              ),
+
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: isTablet ? 16 : 14,
+                  color: theme.hintColor,
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ],
     ),
   );

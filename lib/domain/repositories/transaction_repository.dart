@@ -27,4 +27,9 @@ abstract class TransactionRepository {
     int transactionID,
     UpdateTransactionModel transaction,
   );
+
+  Future<Either<Failure, Transaction>> updateTransactionStatus(
+    int transactionID,
+    UpdateTransactionStatusModel transaction,
+  );
 }

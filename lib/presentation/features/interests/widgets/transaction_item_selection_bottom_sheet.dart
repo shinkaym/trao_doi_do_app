@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/data/models/transaction_model.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/providers/transaction_provider.dart';
 
 class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
   final List<InterestItem> postItems;
-  final String interestId;
+  final int interestId;
   final VoidCallback? onTransactionSent;
 
   const TransactionItemSelectionBottomSheet({
@@ -19,11 +21,44 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedItems = useState<Map<int, int>>({});
-    final isSubmitting = useState(false);
-
+    
     final theme = context.theme;
     final colorScheme = context.colorScheme;
     final isTablet = context.isTablet;
+
+    // Listen to transaction state
+    final transactionState = ref.watch(transactionProvider);
+    
+    // Listen to state changes for success/error handling
+    ref.listen<TransactionState>(transactionProvider, (previous, next) {
+      if (previous?.isLoading == true && next.isLoading == false) {
+        if (next.failure != null) {
+          // Show error
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(next.failure!.message),
+              backgroundColor: colorScheme.error,
+            ),
+          );
+        } else if (next.createdTransaction != null) {
+          // Success - close bottom sheet and show success message
+          Navigator.of(context).pop();
+          onTransactionSent?.call();
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(next.successMessage ?? 'Đã gửi yêu cầu thành công!'),
+              backgroundColor: colorScheme.primary,
+            ),
+          );
+          
+          // Clear the state after success
+          Future.delayed(const Duration(milliseconds: 500), () {
+            ref.read(transactionProvider.notifier).clearState();
+          });
+        }
+      }
+    });
 
     void updateQuantity(int id, int change) {
       final currentQuantity = selectedItems.value[id] ?? 0;
@@ -39,31 +74,29 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
       }
     }
 
-    void submitTransaction() async {
-      if (selectedItems.value.isEmpty || isSubmitting.value) return;
+    void submitTransaction() {
+      if (selectedItems.value.isEmpty || transactionState.isLoading) return;
 
-      isSubmitting.value = true;
+      // Create transaction items from selected items
+      final transactionItems = selectedItems.value.entries
+          .map((entry) => CreateTransactionItemModel(
+                postItemID: entry.key,
+                quantity: entry.value,
+              ))
+          .toList();
 
-      try {
-        // TODO: Call API to submit request
-        await Future.delayed(const Duration(seconds: 1)); // Simulate API call
+      // Create transaction model
+      final createTransactionModel = CreateTransactionModel(
+        interestID: interestId,
+        items: transactionItems,
+      );
 
-        Navigator.of(context).pop();
-        onTransactionSent?.call();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã gửi yêu cầu thành công!')),
-        );
-      } catch (e) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Lỗi khi gửi yêu cầu: $e')));
-      } finally {
-        isSubmitting.value = false;
-      }
+      // Call the provider to create transaction
+      ref.read(transactionProvider.notifier).createTransaction(createTransactionModel);
     }
 
     final hasSelectedItems = selectedItems.value.isNotEmpty;
+    final isLoading = transactionState.isLoading;
 
     return Container(
       decoration: BoxDecoration(
@@ -105,24 +138,55 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
                   ),
                 ),
                 IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: isLoading ? null : () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.close),
                 ),
               ],
             ),
           ),
 
+          // Error display
+          if (transactionState.failure != null)
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
+              padding: EdgeInsets.all(isTablet ? 16 : 12),
+              decoration: BoxDecoration(
+                color: colorScheme.error.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: colorScheme.error.withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.error_outline, color: colorScheme.error, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      transactionState.failure!.message,
+                      style: TextStyle(
+                        color: colorScheme.error,
+                        fontSize: isTablet ? 14 : 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // Items list
           Flexible(
             child: ListView.separated(
               shrinkWrap: true,
-              padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
+              padding: EdgeInsets.fromLTRB(
+                isTablet ? 24 : 16,
+                transactionState.failure != null ? 16 : 0,
+                isTablet ? 24 : 16,
+                0,
+              ),
               itemCount: postItems.length,
-              separatorBuilder:
-                  (context, index) => Divider(
-                    height: isTablet ? 24 : 16,
-                    color: colorScheme.outline.withOpacity(0.2),
-                  ),
+              separatorBuilder: (context, index) => Divider(
+                height: isTablet ? 24 : 16,
+                color: colorScheme.outline.withOpacity(0.2),
+              ),
               itemBuilder: (context, index) {
                 final item = postItems[index];
                 final selectedQuantity = selectedItems.value[item.id] ?? 0;
@@ -131,16 +195,14 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
                 return Container(
                   padding: EdgeInsets.all(isTablet ? 16 : 12),
                   decoration: BoxDecoration(
-                    color:
-                        selectedQuantity > 0
-                            ? colorScheme.primaryContainer.withOpacity(0.3)
-                            : colorScheme.surfaceVariant.withOpacity(0.3),
+                    color: selectedQuantity > 0
+                        ? colorScheme.primaryContainer.withOpacity(0.3)
+                        : colorScheme.surfaceVariant.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color:
-                          selectedQuantity > 0
-                              ? colorScheme.primary.withOpacity(0.3)
-                              : colorScheme.outline.withOpacity(0.2),
+                      color: selectedQuantity > 0
+                          ? colorScheme.primary.withOpacity(0.3)
+                          : colorScheme.outline.withOpacity(0.2),
                     ),
                   ),
                   child: Row(
@@ -158,24 +220,23 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(7),
-                          child:
-                              item.image.isNotEmpty
-                                  ? Image.network(
-                                    item.image,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Icon(
-                                        Icons.image_not_supported,
-                                        color: colorScheme.outline,
-                                        size: isTablet ? 24 : 20,
-                                      );
-                                    },
-                                  )
-                                  : Icon(
-                                    Icons.image,
-                                    color: colorScheme.outline,
-                                    size: isTablet ? 24 : 20,
-                                  ),
+                          child: item.image.isNotEmpty
+                              ? Image.network(
+                                  item.image,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Icon(
+                                      Icons.image_not_supported,
+                                      color: colorScheme.outline,
+                                      size: isTablet ? 24 : 20,
+                                    );
+                                  },
+                                )
+                              : Icon(
+                                  Icons.image,
+                                  color: colorScheme.outline,
+                                  size: isTablet ? 24 : 20,
+                                ),
                         ),
                       ),
 
@@ -212,20 +273,17 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            onPressed:
-                                selectedQuantity > 0
-                                    ? () => updateQuantity(item.id, -1)
-                                    : null,
+                            onPressed: selectedQuantity > 0 && !isLoading
+                                ? () => updateQuantity(item.id, -1)
+                                : null,
                             icon: const Icon(Icons.remove),
                             style: IconButton.styleFrom(
-                              backgroundColor:
-                                  selectedQuantity > 0
-                                      ? colorScheme.primary.withOpacity(0.1)
-                                      : colorScheme.outline.withOpacity(0.1),
-                              foregroundColor:
-                                  selectedQuantity > 0
-                                      ? colorScheme.primary
-                                      : colorScheme.outline,
+                              backgroundColor: selectedQuantity > 0
+                                  ? colorScheme.primary.withOpacity(0.1)
+                                  : colorScheme.outline.withOpacity(0.1),
+                              foregroundColor: selectedQuantity > 0
+                                  ? colorScheme.primary
+                                  : colorScheme.outline,
                               minimumSize: Size(
                                 isTablet ? 40 : 32,
                                 isTablet ? 40 : 32,
@@ -246,20 +304,17 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
                           ),
 
                           IconButton(
-                            onPressed:
-                                selectedQuantity < maxQuantity
-                                    ? () => updateQuantity(item.id, 1)
-                                    : null,
+                            onPressed: selectedQuantity < maxQuantity && !isLoading
+                                ? () => updateQuantity(item.id, 1)
+                                : null,
                             icon: const Icon(Icons.add),
                             style: IconButton.styleFrom(
-                              backgroundColor:
-                                  selectedQuantity < maxQuantity
-                                      ? colorScheme.primary.withOpacity(0.1)
-                                      : colorScheme.outline.withOpacity(0.1),
-                              foregroundColor:
-                                  selectedQuantity < maxQuantity
-                                      ? colorScheme.primary
-                                      : colorScheme.outline,
+                              backgroundColor: selectedQuantity < maxQuantity
+                                  ? colorScheme.primary.withOpacity(0.1)
+                                  : colorScheme.outline.withOpacity(0.1),
+                              foregroundColor: selectedQuantity < maxQuantity
+                                  ? colorScheme.primary
+                                  : colorScheme.outline,
                               minimumSize: Size(
                                 isTablet ? 40 : 32,
                                 isTablet ? 40 : 32,
@@ -281,10 +336,7 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed:
-                    hasSelectedItems && !isSubmitting.value
-                        ? submitTransaction
-                        : null,
+                onPressed: hasSelectedItems && !isLoading ? submitTransaction : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: colorScheme.primary,
                   foregroundColor: colorScheme.onPrimary,
@@ -293,25 +345,23 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child:
-                    isSubmitting.value
-                        ? SizedBox(
-                          height: isTablet ? 20 : 16,
-                          width: isTablet ? 20 : 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: colorScheme.onPrimary,
-                          ),
-                        )
-                        : Text(
-                          hasSelectedItems
-                              ? 'Gửi yêu cầu (${selectedItems.value.length} món)'
-                              : 'Chọn ít nhất 1 món đồ',
-                          style: TextStyle(
-                            fontSize: isTablet ? 16 : 14,
-                            fontWeight: FontWeight.w600,
-                          ),
+                child: isLoading
+                    ? SizedBox(
+                        height: isTablet ? 20 : 16,
+                        width: isTablet ? 20 : 16,
+                        child: CircularProgressIndicator(
+                          color: colorScheme.onPrimary,
                         ),
+                      )
+                    : Text(
+                        hasSelectedItems
+                            ? 'Gửi yêu cầu (${selectedItems.value.length} món)'
+                            : 'Chọn ít nhất 1 món đồ',
+                        style: TextStyle(
+                          fontSize: isTablet ? 16 : 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
             ),
           ),
