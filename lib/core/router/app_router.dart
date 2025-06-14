@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/presentation/common/screens/not_found_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/screens/forgot_password_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/screens/login_screen.dart';
@@ -24,7 +25,6 @@ import 'package:trao_doi_do_app/presentation/features/splash/screens/splash_scre
 import 'package:trao_doi_do_app/presentation/features/warehouse/screens/warehouse_screen.dart';
 import 'package:trao_doi_do_app/presentation/models/interest_chat_transaction_data.dart';
 import 'package:trao_doi_do_app/presentation/widgets/scaffold_with_navbar.dart';
-import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 
 // Create a separate provider for router state to prevent circular dependencies
 final _routerStateProvider = Provider<RouterState>((ref) {

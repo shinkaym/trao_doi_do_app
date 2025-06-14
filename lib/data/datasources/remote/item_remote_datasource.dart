@@ -1,5 +1,4 @@
 import 'package:dio/dio.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/network/dio_client.dart';
 import 'package:trao_doi_do_app/data/models/response/api_response_model.dart';
@@ -31,8 +30,3 @@ class ItemRemoteDataSourceImpl implements ItemRemoteDataSource {
     );
   }
 }
-
-final itemRemoteDataSourceProvider = Provider<ItemRemoteDataSource>((ref) {
-  final dioClient = ref.watch(dioClientProvider);
-  return ItemRemoteDataSourceImpl(dioClient);
-});

@@ -185,16 +185,3 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
     loadInterests(refresh: true);
   }
 }
-
-// Tạo hai provider riêng biệt cho hai tab
-final interestedPostsProvider =
-    StateNotifierProvider<InterestsListNotifier, InterestsListState>((ref) {
-      final getInterestsUseCase = ref.watch(getInterestsUseCaseProvider);
-      return InterestsListNotifier(getInterestsUseCase);
-    });
-
-final postsWithInterestsProvider =
-    StateNotifierProvider<InterestsListNotifier, InterestsListState>((ref) {
-      final getInterestsUseCase = ref.watch(getInterestsUseCaseProvider);
-      return InterestsListNotifier(getInterestsUseCase);
-    });

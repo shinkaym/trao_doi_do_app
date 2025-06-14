@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/app_exception.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/transaction_remote_datasource.dart';
@@ -160,8 +159,3 @@ class TransactionRepositoryImpl implements TransactionRepository {
     }
   }
 }
-
-final transactionRepositoryProvider = Provider<TransactionRepository>((ref) {
-  final remoteDataSource = ref.watch(transactionRemoteDataSourceProvider);
-  return TransactionRepositoryImpl(remoteDataSource);
-});

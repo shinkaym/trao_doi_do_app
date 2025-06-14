@@ -71,7 +71,6 @@ enum CreatePostType {
   }
 }
 
-
 // Enum cho loại bài đăng
 enum PostType {
   all('Tất cả', Icons.list, null),

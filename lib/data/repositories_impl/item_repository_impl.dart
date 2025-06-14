@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/app_exception.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/item_remote_datasource.dart';
@@ -46,8 +45,3 @@ class ItemRepositoryImpl implements ItemRepository {
     }
   }
 }
-
-final itemRepositoryProvider = Provider<ItemRepository>((ref) {
-  final remoteDataSource = ref.watch(itemRemoteDataSourceProvider);
-  return ItemRepositoryImpl(remoteDataSource);
-});

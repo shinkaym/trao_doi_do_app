@@ -53,10 +53,3 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
     getCategories();
   }
 }
-
-final categoryProvider = StateNotifierProvider<CategoryNotifier, CategoryState>(
-  (ref) {
-    final getCategoriesUseCase = ref.watch(getCategoriesUseCaseProvider);
-    return CategoryNotifier(getCategoriesUseCase);
-  },
-);

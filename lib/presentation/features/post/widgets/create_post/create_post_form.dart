@@ -5,20 +5,17 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
-import 'package:trao_doi_do_app/domain/enums/index.dart';
-import 'package:trao_doi_do_app/domain/usecases/create_post_usecase.dart';
-import 'package:trao_doi_do_app/presentation/features/post/providers/post_provider.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/create_post/add_item_dialog.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/create_post/common_fields.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/create_post/post_type_selection.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/create_post/type_specific_fields.dart';
 import 'package:trao_doi_do_app/presentation/models/give_away_item.dart';
 import 'package:trao_doi_do_app/presentation/models/post_image.dart';
-import 'package:trao_doi_do_app/presentation/providers/category_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/item_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/image_picker_bottom_sheet.dart';
 
 class CreatePostForm extends HookConsumerWidget {

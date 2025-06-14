@@ -1,27 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/error/app_exception.dart';
-import 'api_interceptor.dart';
-
-final dioProvider = Provider<Dio>((ref) {
-  final dio = Dio();
-
-  dio.options.baseUrl = ApiConstants.baseUrl;
-  dio.options.connectTimeout = Duration(
-    milliseconds: ApiConstants.connectTimeout,
-  );
-  dio.options.receiveTimeout = Duration(
-    milliseconds: ApiConstants.receiveTimeout,
-  );
-  dio.options.headers = {
-    ApiConstants.contentType: ApiConstants.applicationJson,
-  };
-
-  dio.interceptors.add(ApiInterceptor(ref));
-
-  return dio;
-});
 
 class DioClient {
   final Dio _dio;
@@ -137,8 +115,3 @@ class DioClient {
     return ServerException('Lỗi không xác định');
   }
 }
-
-final dioClientProvider = Provider<DioClient>((ref) {
-  final dio = ref.watch(dioProvider);
-  return DioClient(dio);
-});

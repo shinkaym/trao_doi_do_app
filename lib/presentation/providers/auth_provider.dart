@@ -1,8 +1,12 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/user.dart';
-import 'package:trao_doi_do_app/domain/usecases/auth_usecases.dart';
+import 'package:trao_doi_do_app/domain/usecases/get_current_user_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_me_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/is_logged_in_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/login_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/logout_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/refresh_token_usecase.dart';
 
 class AuthState {
   final bool isLoading;
@@ -184,6 +188,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await getMe(showLoading: false);
   }
 
+  void handleTokenExpired() {
+    // Reset auth state when token expires
+    state = const AuthState(
+      isInitialized: true,
+      isLoggedIn: false,
+      failure: ServerFailure(
+        'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+      ),
+    );
+  }
+
   Future<void> login({
     required String email,
     required String password,
@@ -273,21 +288,3 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState();
   }
 }
-
-final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  final loginUseCase = ref.watch(loginUseCaseProvider);
-  final logoutUseCase = ref.watch(logoutUseCaseProvider);
-  final getCurrentUserUseCase = ref.watch(getCurrentUserUseCaseProvider);
-  final isLoggedInUseCase = ref.watch(isLoggedInUseCaseProvider);
-  final refreshTokenUseCase = ref.watch(refreshTokenUseCaseProvider);
-  final getMeUseCase = ref.watch(getMeUseCaseProvider);
-
-  return AuthNotifier(
-    loginUseCase,
-    logoutUseCase,
-    getCurrentUserUseCase,
-    isLoggedInUseCase,
-    refreshTokenUseCase,
-    getMeUseCase,
-  );
-});

@@ -85,15 +85,3 @@ class TransactionNotifier extends StateNotifier<TransactionState> {
     state = const TransactionState();
   }
 }
-
-final transactionProvider = StateNotifierProvider<
-  TransactionNotifier,
-  TransactionState
->((ref) {
-  final createTransactionUseCase = ref.watch(createTransactionUseCaseProvider);
-  final updateTransactionUseCase = ref.watch(updateTransactionUseCaseProvider);
-  return TransactionNotifier(
-    createTransactionUseCase,
-    updateTransactionUseCase,
-  );
-});

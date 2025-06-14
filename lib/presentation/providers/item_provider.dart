@@ -136,9 +136,3 @@ class ItemsListNotifier extends StateNotifier<ItemsListState> {
     loadItems(newQuery: newQuery, refresh: true);
   }
 }
-
-final itemsListProvider =
-    StateNotifierProvider<ItemsListNotifier, ItemsListState>((ref) {
-      final getItemsUseCase = ref.watch(getItemsUseCaseProvider);
-      return ItemsListNotifier(getItemsUseCase);
-    });

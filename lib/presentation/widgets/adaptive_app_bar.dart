@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trao_doi_do_app/core/constants/app_bar_config.dart';
-import 'package:trao_doi_do_app/domain/enums/index.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
 
 class AdaptiveAppBar {

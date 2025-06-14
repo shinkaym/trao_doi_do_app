@@ -1,7 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
-import 'package:trao_doi_do_app/domain/enums/index.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_interest_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/cancel_interest_usecase.dart';
 
@@ -77,11 +77,3 @@ class InterestNotifier extends StateNotifier<InterestState> {
     state = state.copyWith(failure: null, result: null);
   }
 }
-
-final interestProvider = StateNotifierProvider<InterestNotifier, InterestState>(
-  (ref) {
-    final createInterestUseCase = ref.watch(createInterestUseCaseProvider);
-    final cancelInterestUseCase = ref.watch(cancelInterestUseCaseProvider);
-    return InterestNotifier(createInterestUseCase, cancelInterestUseCase);
-  },
-);

@@ -1,10 +1,9 @@
 import 'dart:convert';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_post_usecase.dart';
-import 'package:trao_doi_do_app/presentation/providers/category_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/item_provider.dart';
 
 class PostState {
   final bool isLoading;
@@ -233,8 +232,3 @@ class PostNotifier extends StateNotifier<PostState> {
     state = state.copyWith(newItems: [], oldItems: [], images: []);
   }
 }
-
-final postProvider = StateNotifierProvider<PostNotifier, PostState>((ref) {
-  final createPostUseCase = ref.watch(createPostUseCaseProvider);
-  return PostNotifier(createPostUseCase, ref);
-});

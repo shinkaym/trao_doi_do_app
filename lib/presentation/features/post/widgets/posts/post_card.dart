@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
-import 'package:trao_doi_do_app/domain/enums/index.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
 class PostCard extends StatelessWidget {
   final Post post;

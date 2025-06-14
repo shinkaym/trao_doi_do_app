@@ -45,9 +45,3 @@ class PostDetailNotifier extends StateNotifier<PostDetailState> {
     state = PostDetailState();
   }
 }
-
-final postDetailProvider =
-    StateNotifierProvider<PostDetailNotifier, PostDetailState>((ref) {
-      final getPostDetailUseCase = ref.watch(getPostDetailUseCaseProvider);
-      return PostDetailNotifier(getPostDetailUseCase);
-    });

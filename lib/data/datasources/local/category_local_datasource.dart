@@ -1,4 +1,3 @@
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:trao_doi_do_app/core/constants/storage_keys.dart';
 import 'package:trao_doi_do_app/core/error/app_exception.dart';
@@ -58,10 +57,3 @@ class CategoryLocalDataSourceImpl implements CategoryLocalDataSource {
     }
   }
 }
-
-// Provider để cung cấp CategoryLocalDataSource
-final categoryLocalDataSourceProvider = Provider<CategoryLocalDataSource>((
-  ref,
-) {
-  return CategoryLocalDataSourceImpl();
-});

@@ -5,16 +5,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/data/models/category_model.dart';
 import 'package:trao_doi_do_app/domain/entities/category.dart';
 import 'package:trao_doi_do_app/domain/entities/item.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
-import 'package:trao_doi_do_app/presentation/features/post/providers/post_provider.dart';
 import 'package:trao_doi_do_app/presentation/models/give_away_item.dart';
-import 'package:trao_doi_do_app/presentation/providers/category_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/item_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/image_picker_bottom_sheet.dart';
 
 class AddItemDialog extends HookConsumerWidget {
@@ -43,7 +41,7 @@ class AddItemDialog extends HookConsumerWidget {
     final searchQuery = useState('');
     final showSuggestions = useState(false);
     final picker = useMemoized(() => ImagePicker());
-    
+
     // Thêm state để quản lý thông báo lỗi
     final errorMessage = useState<String?>(null);
 
@@ -822,12 +820,14 @@ class AddItemDialog extends HookConsumerWidget {
                 onImagePicked: (bytes, sizeInMB) {
                   if (sizeInMB > 5) {
                     // Thay thế showErrorSnackBar bằng việc set errorMessage
-                    errorMessage.value = 'Ảnh vượt quá 5MB. Vui lòng chọn ảnh khác.';
+                    errorMessage.value =
+                        'Ảnh vượt quá 5MB. Vui lòng chọn ảnh khác.';
                     return;
                   }
                   selectedImageData.value = bytes;
                   // Xóa error message khi chọn ảnh thành công
-                  if (errorMessage.value != null && errorMessage.value!.contains('ảnh')) {
+                  if (errorMessage.value != null &&
+                      errorMessage.value!.contains('ảnh')) {
                     errorMessage.value = null;
                   }
                 },
@@ -1139,159 +1139,159 @@ class AddItemDialog extends HookConsumerWidget {
     );
   }
 
-// Chỉnh sửa trong method _buildActionButtons - thêm parameter errorMessage
-Widget _buildActionButtons(
-  BuildContext context,
-  ThemeData theme,
-  ColorScheme colorScheme,
-  bool isTablet,
-  GlobalKey<FormState> formKey,
-  TextEditingController nameController,
-  TextEditingController quantityController,
-  ValueNotifier<Uint8List?> selectedImageData,
-  ValueNotifier<Item?> selectedPresetItem,
-  ValueNotifier<int?> selectedCategoryID,
-  WidgetRef ref,
-  Function(GiveAwayItem) onItemAdded,
-  ValueNotifier<String?> errorMessage, // Thêm parameter này
-) {
-  return Container(
-    padding: EdgeInsets.fromLTRB(
-      isTablet ? 24 : 20,
-      isTablet ? 16 : 12,
-      isTablet ? 24 : 20,
-      isTablet ? 24 : 20,
-    ),
-    decoration: BoxDecoration(
-      color: colorScheme.surface,
-      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
-      border: Border(
-        top: BorderSide(
-          color: colorScheme.outline.withOpacity(0.1),
-          width: 1,
+  // Chỉnh sửa trong method _buildActionButtons - thêm parameter errorMessage
+  Widget _buildActionButtons(
+    BuildContext context,
+    ThemeData theme,
+    ColorScheme colorScheme,
+    bool isTablet,
+    GlobalKey<FormState> formKey,
+    TextEditingController nameController,
+    TextEditingController quantityController,
+    ValueNotifier<Uint8List?> selectedImageData,
+    ValueNotifier<Item?> selectedPresetItem,
+    ValueNotifier<int?> selectedCategoryID,
+    WidgetRef ref,
+    Function(GiveAwayItem) onItemAdded,
+    ValueNotifier<String?> errorMessage, // Thêm parameter này
+  ) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(
+        isTablet ? 24 : 20,
+        isTablet ? 16 : 12,
+        isTablet ? 24 : 20,
+        isTablet ? 24 : 20,
+      ),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
+        border: Border(
+          top: BorderSide(
+            color: colorScheme.outline.withOpacity(0.1),
+            width: 1,
+          ),
         ),
       ),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: OutlinedButton(
-            onPressed: () => context.pop(),
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.symmetric(
-                vertical: isTablet ? 16 : 14,
-                horizontal: isTablet ? 24 : 20,
-              ),
-              side: BorderSide(
-                color: colorScheme.outline.withOpacity(0.3),
-                width: 1,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              backgroundColor: colorScheme.surface,
-              foregroundColor: colorScheme.onSurfaceVariant,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.close_rounded, size: isTablet ? 20 : 18),
-                SizedBox(width: isTablet ? 8 : 6),
-                Text(
-                  'Hủy',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    fontSize: isTablet ? 16 : 14,
-                  ),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => context.pop(),
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  vertical: isTablet ? 16 : 14,
+                  horizontal: isTablet ? 24 : 20,
                 ),
-              ],
+                side: BorderSide(
+                  color: colorScheme.outline.withOpacity(0.3),
+                  width: 1,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                backgroundColor: colorScheme.surface,
+                foregroundColor: colorScheme.onSurfaceVariant,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.close_rounded, size: isTablet ? 20 : 18),
+                  SizedBox(width: isTablet ? 8 : 6),
+                  Text(
+                    'Hủy',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      fontSize: isTablet ? 16 : 14,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        SizedBox(width: isTablet ? 16 : 12),
-        Expanded(
-          flex: 2,
-          child: ElevatedButton(
-            onPressed: () {
-              if (formKey.currentState?.validate() ?? false) {
-                if (selectedImageData.value == null) {
-                  // Thay thế context.showErrorSnackBar bằng errorMessage
-                  errorMessage.value = 'Vui lòng chọn hình ảnh cho món đồ';
-                  return;
-                }
+          SizedBox(width: isTablet ? 16 : 12),
+          Expanded(
+            flex: 2,
+            child: ElevatedButton(
+              onPressed: () {
+                if (formKey.currentState?.validate() ?? false) {
+                  if (selectedImageData.value == null) {
+                    // Thay thế context.showErrorSnackBar bằng errorMessage
+                    errorMessage.value = 'Vui lòng chọn hình ảnh cho món đồ';
+                    return;
+                  }
 
-                final item = GiveAwayItem(
-                  id: DateTime.now().millisecondsSinceEpoch.toString(),
-                  name: nameController.text.trim(),
-                  description: selectedPresetItem.value?.description ?? '',
-                  imageData: selectedImageData.value,
-                  quantity: int.tryParse(quantityController.text) ?? 1,
-                  isFromPreset: selectedPresetItem.value != null,
-                  categoryId: selectedCategoryID.value,
-                );
-
-                final dataUri = Base64Utils.encodeImageToDataUri(
-                  item.imageData!,
-                );
-                final base64Image = base64Encode(item.imageData!);
-                final postNotifier = ref.read(postProvider.notifier);
-
-                if (item.isFromPreset) {
-                  postNotifier.addOldItem(
-                    OldItem(
-                      itemID: selectedPresetItem.value!.id,
-                      quantity: item.quantity,
-                      image: dataUri,
-                    ),
+                  final item = GiveAwayItem(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    name: nameController.text.trim(),
+                    description: selectedPresetItem.value?.description ?? '',
+                    imageData: selectedImageData.value,
+                    quantity: int.tryParse(quantityController.text) ?? 1,
+                    isFromPreset: selectedPresetItem.value != null,
+                    categoryId: selectedCategoryID.value,
                   );
-                } else {
-                  postNotifier.addNewItem(
-                    NewItem(
-                      name: item.name,
-                      quantity: item.quantity,
-                      categoryID: item.categoryId!,
-                      image: dataUri,
-                    ),
-                  );
-                }
 
-                postNotifier.addImage(base64Image);
-                onItemAdded(item);
-                context.pop();
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              padding: EdgeInsets.symmetric(
-                vertical: isTablet ? 16 : 14,
-                horizontal: isTablet ? 24 : 20,
-              ),
-              backgroundColor: colorScheme.primary,
-              foregroundColor: Colors.white,
-              elevation: 2,
-              shadowColor: colorScheme.primary.withOpacity(0.3),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.add_rounded, size: isTablet ? 20 : 18),
-                SizedBox(width: isTablet ? 8 : 6),
-                Text(
-                  'Thêm món đồ',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: isTablet ? 16 : 14,
-                    color: Colors.white,
-                  ),
+                  final dataUri = Base64Utils.encodeImageToDataUri(
+                    item.imageData!,
+                  );
+                  final base64Image = base64Encode(item.imageData!);
+                  final postNotifier = ref.read(postProvider.notifier);
+
+                  if (item.isFromPreset) {
+                    postNotifier.addOldItem(
+                      OldItem(
+                        itemID: selectedPresetItem.value!.id,
+                        quantity: item.quantity,
+                        image: dataUri,
+                      ),
+                    );
+                  } else {
+                    postNotifier.addNewItem(
+                      NewItem(
+                        name: item.name,
+                        quantity: item.quantity,
+                        categoryID: item.categoryId!,
+                        image: dataUri,
+                      ),
+                    );
+                  }
+
+                  postNotifier.addImage(base64Image);
+                  onItemAdded(item);
+                  context.pop();
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                padding: EdgeInsets.symmetric(
+                  vertical: isTablet ? 16 : 14,
+                  horizontal: isTablet ? 24 : 20,
                 ),
-              ],
+                backgroundColor: colorScheme.primary,
+                foregroundColor: Colors.white,
+                elevation: 2,
+                shadowColor: colorScheme.primary.withOpacity(0.3),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.add_rounded, size: isTablet ? 20 : 18),
+                  SizedBox(width: isTablet ? 8 : 6),
+                  Text(
+                    'Thêm món đồ',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontSize: isTablet ? 16 : 14,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 }

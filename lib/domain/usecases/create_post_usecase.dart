@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'package:dartz/dartz.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
-import 'package:trao_doi_do_app/data/repositories_impl/post_repository_impl.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/domain/repositories/post_repository.dart';
 
@@ -169,8 +167,3 @@ class CreatePostUseCase {
     return null;
   }
 }
-
-final createPostUseCaseProvider = Provider<CreatePostUseCase>((ref) {
-  final repository = ref.watch(postRepositoryProvider);
-  return CreatePostUseCase(repository);
-});

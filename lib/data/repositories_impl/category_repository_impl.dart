@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/app_exception.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/data/datasources/local/category_local_datasource.dart';
@@ -86,9 +85,3 @@ class CategoryRepositoryImpl implements CategoryRepository {
     }
   }
 }
-
-final categoryRepositoryProvider = Provider<CategoryRepository>((ref) {
-  final remoteDataSource = ref.watch(categoryRemoteDataSourceProvider);
-  final localDataSource = ref.watch(categoryLocalDataSourceProvider);
-  return CategoryRepositoryImpl(remoteDataSource, localDataSource);
-});

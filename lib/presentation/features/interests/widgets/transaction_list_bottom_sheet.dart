@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/data/models/transaction_model.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
-import 'package:trao_doi_do_app/domain/enums/index.dart';
-import 'package:trao_doi_do_app/domain/usecases/update_transaction_status_usecase.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/providers/transaction_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/providers/transactions_provider.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
 class TransactionListBottomSheet extends HookConsumerWidget {
   final List<Transaction> transactions;

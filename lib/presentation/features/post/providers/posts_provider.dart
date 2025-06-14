@@ -198,9 +198,3 @@ class PostsListNotifier extends StateNotifier<PostsListState> {
     loadPosts(refresh: true);
   }
 }
-
-final postsListProvider =
-    StateNotifierProvider<PostsListNotifier, PostsListState>((ref) {
-      final getPostsUseCase = ref.watch(getPostsUseCaseProvider);
-      return PostsListNotifier(getPostsUseCase);
-    });

@@ -200,11 +200,3 @@ class TransactionsListNotifier extends StateNotifier<TransactionsListState> {
     await loadTransactions(refresh: true);
   }
 }
-
-final transactionsListProvider =
-    StateNotifierProvider<TransactionsListNotifier, TransactionsListState>((
-      ref,
-    ) {
-      final getTransactionsUseCase = ref.watch(getTransactionsUseCaseProvider);
-      return TransactionsListNotifier(getTransactionsUseCase);
-    });

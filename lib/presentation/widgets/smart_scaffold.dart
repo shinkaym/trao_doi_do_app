@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/core/extensions/theme_extensions.dart';
-import 'package:trao_doi_do_app/domain/enums/index.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/widgets/adaptive_app_bar.dart';
 
 class SmartScaffold extends StatelessWidget {

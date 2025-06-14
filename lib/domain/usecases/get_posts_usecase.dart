@@ -1,7 +1,5 @@
 import 'package:dartz/dartz.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
-import 'package:trao_doi_do_app/data/repositories_impl/post_repository_impl.dart';
 import 'package:trao_doi_do_app/domain/entities/params/posts_query.dart';
 import 'package:trao_doi_do_app/domain/repositories/post_repository.dart';
 
@@ -14,8 +12,3 @@ class GetPostsUseCase {
     return await _repository.getPosts(query);
   }
 }
-
-final getPostsUseCaseProvider = Provider<GetPostsUseCase>((ref) {
-  final repository = ref.watch(postRepositoryProvider);
-  return GetPostsUseCase(repository);
-});

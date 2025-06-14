@@ -10,140 +10,173 @@ import 'package:trao_doi_do_app/core/utils/logger_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/presentation/features/onboarding/providers/onboarding_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/splash/providers/splash_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize provider container
-  final container = ProviderContainer();
+  // Initialize provider container với observers
+  final container = ProviderContainer(
+    observers: kDebugMode ? [_ProviderLogger()] : [],
+  );
 
   try {
-    // Initialize app with proper error handling
     await _initializeApp(container);
-
-    // Run the app
     runApp(
       UncontrolledProviderScope(container: container, child: const MyApp()),
     );
   } catch (e, stackTrace) {
-    // Log error if logger is available
-    try {
-      final logger = container.read(loggerProvider);
-      logger.e('❌ Critical error during app initialization', e, stackTrace);
-    } catch (_) {
-      // Fallback to print if logger fails
-      print('❌ Critical error during app initialization: $e');
-      print('Stack trace: $stackTrace');
-    }
-
-    // Show error screen
-    runApp(_buildErrorApp(e.toString()));
+    _handleCriticalError(container, e, stackTrace);
   }
 }
 
-/// Initialize the application with proper error handling
+/// Provider Observer cho debugging
+class _ProviderLogger extends ProviderObserver {
+  @override
+  void didUpdateProvider(
+    ProviderBase provider,
+    Object? previousValue,
+    Object? newValue,
+    ProviderContainer container,
+  ) {
+    print('🔄 Provider Updated: ${provider.name ?? provider.runtimeType}');
+  }
+
+  @override
+  void providerDidFail(
+    ProviderBase provider,
+    Object error,
+    StackTrace stackTrace,
+    ProviderContainer container,
+  ) {
+    print(
+      '❌ Provider Failed: ${provider.name ?? provider.runtimeType} - $error',
+    );
+  }
+}
+
+/// Optimized initialization
 Future<void> _initializeApp(ProviderContainer container) async {
   final logger = container.read(loggerProvider);
 
-  // Initialize time utilities
-  TimeUtils.init();
+  // Parallel initialization cho performance
+  await Future.wait([_initializeCore(), _initializeStorage()]);
 
-  // Load environment variables
-  await dotenv.load();
+  // Warm up critical providers
+  await _warmUpProviders(container, logger);
 
-  // Initialize Hive
-  await Hive.initFlutter();
-  await Hive.openBox(StorageKeys.settings);
-
-  // Pre-load critical providers
-  await _preloadProviders(container, logger);
-
-  logger.i('🎉 App initialization completed successfully');
+  logger.i('🎉 App initialization completed');
 }
 
-/// Pre-load critical providers to avoid cold starts
-Future<void> _preloadProviders(
+Future<void> _initializeCore() async {
+  TimeUtils.init();
+  await dotenv.load();
+}
+
+Future<void> _initializeStorage() async {
+  await Hive.initFlutter();
+  await Hive.openBox(StorageKeys.settings);
+}
+
+/// Warm up providers để tránh cold start
+Future<void> _warmUpProviders(
   ProviderContainer container,
   ILogger logger,
 ) async {
   try {
-    // Load auth provider
-    container.read(authProvider);
+    final futures = <Future>[];
 
-    // Load onboarding provider
-    container.read(isOnboardingCompletedProvider);
+    // Load critical providers concurrently
+    futures.add(Future(() => container.read(onboardingProvider)));
+    futures.add(Future(() => container.read(splashProvider)));
 
-    // Load splash provider
-    container.read(isSplashCompletedProvider);
+    await Future.wait(futures, eagerError: false);
+    logger.i('✅ Providers warmed up successfully');
   } catch (e, stackTrace) {
-    logger.w('⚠️ Some providers failed to preload', e, stackTrace);
-    // Don't rethrow - app can still function
+    logger.w('⚠️ Some providers failed to warm up', e, stackTrace);
   }
 }
 
-/// Build error app when initialization fails
-Widget _buildErrorApp(String errorMessage) {
-  return MaterialApp(
-    title: 'ShareAndSave - Error',
-    theme: ThemeData(
-      primarySwatch: Colors.red,
-      visualDensity: VisualDensity.adaptivePlatformDensity,
-    ),
-    home: Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, size: 80, color: Colors.red),
-                const SizedBox(height: 24),
-                const Text(
-                  'Ứng dụng gặp lỗi khi khởi tạo',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Vui lòng đóng ứng dụng và thử lại sau',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                // Show error details in debug mode
-                if (kDebugMode) ...[
-                  ExpansionTile(
-                    title: const Text('Chi tiết lỗi'),
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          errorMessage,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontFamily: 'monospace',
+/// Handle critical errors
+void _handleCriticalError(
+  ProviderContainer container,
+  Object error,
+  StackTrace stackTrace,
+) {
+  try {
+    final logger = container.read(loggerProvider);
+    logger.e('❌ Critical app error', error, stackTrace);
+  } catch (_) {
+    debugPrint('❌ Critical app error: $error');
+  }
+
+  runApp(_ErrorApp(error.toString()));
+}
+
+/// Improved error app
+class _ErrorApp extends StatelessWidget {
+  final String errorMessage;
+
+  const _ErrorApp(this.errorMessage);
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'App Error',
+      theme: ThemeData(
+        primarySwatch: Colors.red,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 80, color: Colors.red),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Ứng dụng gặp lỗi khi khởi tạo',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Vui lòng khởi động lại ứng dụng',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    textAlign: TextAlign.center,
+                  ),
+                  if (kDebugMode) ...[
+                    const SizedBox(height: 32),
+                    ExpansionTile(
+                      title: const Text('Chi tiết lỗi'),
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16.0),
+                          margin: const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            errorMessage,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontFamily: 'monospace',
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ],
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    // In a real app, you might want to restart the app
-                    // or show a restart dialog
-                  },
-                  icon: const Icon(Icons.refresh),
-                  label: const Text('Thử lại'),
-                ),
-              ],
+              ),
             ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }

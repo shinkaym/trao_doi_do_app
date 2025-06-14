@@ -1,5 +1,4 @@
 import 'package:dartz/dartz.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/app_exception.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/post_remote_datasource.dart';
@@ -99,8 +98,3 @@ class PostRepositoryImpl implements PostRepository {
     }
   }
 }
-
-final postRepositoryProvider = Provider<PostRepository>((ref) {
-  final remoteDataSource = ref.watch(postRemoteDataSourceProvider);
-  return PostRepositoryImpl(remoteDataSource);
-});

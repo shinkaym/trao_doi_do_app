@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/network/dio_client.dart';
 import 'package:trao_doi_do_app/data/models/response/api_response_model.dart';
@@ -83,10 +82,3 @@ class InterestRemoteDataSourceImpl implements InterestRemoteDataSource {
     );
   }
 }
-
-final interestRemoteDataSourceProvider = Provider<InterestRemoteDataSource>((
-  ref,
-) {
-  final dioClient = ref.watch(dioClientProvider);
-  return InterestRemoteDataSourceImpl(dioClient);
-});

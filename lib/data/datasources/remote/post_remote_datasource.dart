@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/network/dio_client.dart';
 import 'package:trao_doi_do_app/data/models/post_model.dart';
@@ -78,8 +77,3 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
     );
   }
 }
-
-final postRemoteDataSourceProvider = Provider<PostRemoteDataSource>((ref) {
-  final dioClient = ref.watch(dioClientProvider);
-  return PostRemoteDataSourceImpl(dioClient);
-});
