@@ -80,7 +80,7 @@ class SearchFilterSection extends StatelessWidget {
         fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
         contentPadding: EdgeInsets.symmetric(
           horizontal: isTablet ? 20 : 16,
-          vertical: isTablet ? 16 : 12,
+          vertical: isTablet ? 6 : 4,
         ),
       ),
     );
@@ -101,14 +101,35 @@ class SearchFilterSection extends StatelessWidget {
                 label: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(type.icon, size: isTablet ? 18 : 16),
+                    Icon(
+                      type.icon,
+                      size: isTablet ? 18 : 16,
+                      color:
+                          selectedType == type
+                              ? colorScheme.onPrimaryContainer
+                              : colorScheme.onSurface,
+                    ),
                     SizedBox(width: isTablet ? 6 : 4),
-                    Text(type.label),
+                    Text(
+                      type.label,
+                      style: TextStyle(
+                        color:
+                            selectedType == type
+                                ? colorScheme.onPrimaryContainer
+                                : colorScheme.onSurface,
+                      ),
+                    ),
                   ],
                 ),
                 backgroundColor: colorScheme.surface,
                 selectedColor: colorScheme.primaryContainer,
                 checkmarkColor: colorScheme.secondary,
+                labelStyle: TextStyle(
+                  color:
+                      selectedType == type
+                          ? colorScheme.onPrimaryContainer
+                          : colorScheme.onSurface,
+                ),
               ),
             ),
           ),
@@ -123,7 +144,14 @@ class SearchFilterSection extends StatelessWidget {
                 label: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(sort.icon, size: isTablet ? 18 : 16),
+                    Icon(
+                      sort.icon,
+                      size: isTablet ? 18 : 16,
+                      color:
+                          selectedSort == sort
+                              ? colorScheme.onPrimaryContainer
+                              : colorScheme.onSurface,
+                    ),
                     SizedBox(width: isTablet ? 6 : 4),
                     Text(sort.label),
                   ],
@@ -131,6 +159,12 @@ class SearchFilterSection extends StatelessWidget {
                 backgroundColor: colorScheme.surface,
                 selectedColor: colorScheme.primaryContainer,
                 checkmarkColor: colorScheme.secondary,
+                labelStyle: TextStyle(
+                  color:
+                      selectedSort == sort
+                          ? colorScheme.onPrimaryContainer
+                          : colorScheme.onSurface,
+                ),
               ),
             ),
           ),

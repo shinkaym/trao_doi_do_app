@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -232,6 +233,28 @@ class CreatePostForm extends HookConsumerWidget {
 
       final useCase = ref.read(createPostUseCaseProvider);
       final post = buildPost();
+
+      // 🟨 Ghi vào clipboard ảnh đầu tiên trong newItems nếu có
+      if (post.oldItems.isNotEmpty) {
+        final firstImage = post.oldItems.first.image;
+        await Clipboard.setData(ClipboardData(text: firstImage));
+        print('📋 Ảnh đầu tiên trong oldItems đã được copy vào clipboard.');
+      }
+
+      // 🟩 Log tạm
+      print('--- 🆕 New Items ---');
+      for (final item in post.newItems) {
+        print(
+          'Tên: ${item.name}, Số lượng: ${item.quantity}, Danh mục: ${item.categoryID}, Ảnh: ${item.image.substring(0, 30)}...',
+        );
+      }
+
+      print('--- ♻️ Old Items ---');
+      for (final item in post.oldItems) {
+        print(
+          'ID: ${item.itemID}, Số lượng: ${item.quantity}, Ảnh: ${item.image.substring(0, 30)}...',
+        );
+      }
 
       isSubmitting.value = true;
 

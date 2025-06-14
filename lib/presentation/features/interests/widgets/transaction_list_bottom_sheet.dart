@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/data/models/transaction_model.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
@@ -36,9 +37,10 @@ class TransactionListBottomSheet extends HookConsumerWidget {
     final transactionsNotifier = ref.read(transactionsListProvider.notifier);
 
     // Sử dụng transactions từ provider thay vì prop
-    final currentTransactions = transactionsState.transactions.isNotEmpty 
-        ? transactionsState.transactions 
-        : transactions;
+    final currentTransactions =
+        transactionsState.transactions.isNotEmpty
+            ? transactionsState.transactions
+            : transactions;
 
     return Container(
       decoration: BoxDecoration(
@@ -112,7 +114,6 @@ class TransactionListBottomSheet extends HookConsumerWidget {
               padding: EdgeInsets.all(isTablet ? 24 : 16),
               child: const CircularProgressIndicator(),
             )
-
           // Transactions list
           else if (currentTransactions.isEmpty)
             Padding(
@@ -224,15 +225,16 @@ class _TransactionTile extends HookConsumerWidget {
     Future<void> saveChanges() async {
       try {
         // Tạo danh sách items đã update
-        final updatedItems = transaction.items.map((item) {
-          final newQuantity =
-              editedItems.value[item.postItemID] ?? item.quantity;
-          return UpdateTransactionItemModel(
-            postItemID: item.postItemID,
-            quantity: newQuantity,
-            transactionID: transaction.id,
-          );
-        }).toList();
+        final updatedItems =
+            transaction.items.map((item) {
+              final newQuantity =
+                  editedItems.value[item.postItemID] ?? item.quantity;
+              return UpdateTransactionItemModel(
+                postItemID: item.postItemID,
+                quantity: newQuantity,
+                transactionID: transaction.id,
+              );
+            }).toList();
 
         final updateModel = UpdateTransactionModel(
           items: updatedItems,
@@ -247,10 +249,10 @@ class _TransactionTile extends HookConsumerWidget {
         if (transactionState.failure == null &&
             transactionState.updatedTransaction != null) {
           isEditing.value = false;
-          
+
           // Refresh transactions list
           await transactionsNotifier.refresh();
-          
+
           onTransactionUpdated?.call(transactionState.updatedTransaction!);
 
           if (context.mounted) {
@@ -530,7 +532,7 @@ class _TransactionTile extends HookConsumerWidget {
     try {
       final updateUseCase = ref.read(updateTransactionStatusUseCaseProvider);
       final transactionsNotifier = ref.read(transactionsListProvider.notifier);
-      
+
       final result = await updateUseCase(transaction.id, newStatus);
 
       result.fold(
@@ -547,7 +549,7 @@ class _TransactionTile extends HookConsumerWidget {
         (updatedTransaction) {
           // Refresh transactions list sau khi update status thành công
           transactionsNotifier.refresh();
-          
+
           if (context.mounted) {
             final statusText = newStatus == 2 ? 'hoàn tất' : 'từ chối';
             ScaffoldMessenger.of(context).showSnackBar(
@@ -627,24 +629,11 @@ class _EditableTransactionItem extends StatelessWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(7),
-                  child:
-                      transactionItem.itemImage.isNotEmpty
-                          ? Image.network(
-                            transactionItem.itemImage,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Icon(
-                                Icons.image_not_supported,
-                                color: colorScheme.outline,
-                                size: isTablet ? 24 : 20,
-                              );
-                            },
-                          )
-                          : Icon(
-                            Icons.image,
-                            color: colorScheme.outline,
-                            size: isTablet ? 24 : 20,
-                          ),
+                  child: _buildTransactionItemImage(
+                    itemImage: transactionItem.itemImage,
+                    isTablet: isTablet,
+                    colorScheme: colorScheme,
+                  ),
                 ),
               ),
 
@@ -805,4 +794,24 @@ class _EditableTransactionItem extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget _buildTransactionItemImage({
+  required String itemImage,
+  required bool isTablet,
+  required ColorScheme colorScheme,
+}) {
+  if (itemImage.isNotEmpty) {
+    final imageBytes = Base64Utils.decodeImageFromBase64(itemImage);
+
+    if (imageBytes != null) {
+      return Image.memory(imageBytes, fit: BoxFit.cover);
+    }
+  }
+
+  return Icon(
+    Icons.image,
+    color: colorScheme.outline,
+    size: isTablet ? 24 : 20,
+  );
 }

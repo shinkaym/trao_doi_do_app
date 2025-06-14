@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/data/models/others_model.dart';
 import 'package:trao_doi_do_app/domain/enums/index.dart';
@@ -207,10 +208,7 @@ class PostDetailScreen extends HookConsumerWidget {
     final userInterested = isUserInterested(post.interests, authState.user?.id);
     final interestCount = post.interests.length;
 
-    final images =
-        post.images.isNotEmpty
-            ? post.images
-            : ['https://dummyimage.com/800x600/E0E0E0/FFFFFF&text=No+Image'];
+    final images = post.images.isNotEmpty ? post.images : [''];
 
     return Scaffold(
       backgroundColor: colorScheme.background,
@@ -467,6 +465,28 @@ class PostDetailScreen extends HookConsumerWidget {
     );
   }
 
+  Widget _buildAvatar(PostDetailModel post, bool isTablet, ThemeData theme) {
+    final radius = isTablet ? 24.0 : 20.0;
+
+    if (post.authorAvatar != null && post.authorAvatar!.isNotEmpty) {
+      final imageBytes = Base64Utils.decodeImageFromBase64(post.authorAvatar!);
+
+      if (imageBytes != null) {
+        return CircleAvatar(
+          radius: radius,
+          backgroundImage: MemoryImage(imageBytes),
+        );
+      }
+    }
+
+    // Fallback về icon
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: theme.colorScheme.primary,
+      child: Icon(Icons.person, color: Colors.white, size: isTablet ? 18 : 16),
+    );
+  }
+
   Widget _buildPostHeader(
     PostDetailModel post,
     bool isTablet,
@@ -476,34 +496,7 @@ class PostDetailScreen extends HookConsumerWidget {
     return Row(
       children: [
         // Author Avatar
-        CircleAvatar(
-          radius: isTablet ? 24 : 20,
-          backgroundColor: colorScheme.primary,
-          backgroundImage:
-              (post.authorAvatar?.isNotEmpty == true)
-                  ? MemoryImage(
-                    base64Decode(
-                      post.authorAvatar!.contains(',')
-                          ? post.authorAvatar!.split(',').last
-                          : post.authorAvatar!,
-                    ),
-                  )
-                  : null,
-          child:
-              (post.authorAvatar?.isEmpty ?? true)
-                  ? Text(
-                    post.authorName?.isNotEmpty == true
-                        ? post.authorName![0].toUpperCase()
-                        : 'U',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: isTablet ? 18 : 16,
-                    ),
-                  )
-                  : null,
-        ),
-
+        _buildAvatar(post, isTablet, theme),
         SizedBox(width: isTablet ? 16 : 12),
 
         // Author Info
@@ -665,7 +658,7 @@ class PostDetailScreen extends HookConsumerWidget {
             _buildDetailRow(
               Icons.schedule,
               'Thời gian đăng',
-              TimeUtils.formatTimeAgo(post.createdAt!),
+              TimeUtils.formatAbsolute(post.createdAt!),
               theme,
             ),
           ],
@@ -823,6 +816,7 @@ class PostDetailScreen extends HookConsumerWidget {
           ),
 
           const SizedBox(width: 12),
+
           // Item Details
           Expanded(
             child: Column(
@@ -835,34 +829,63 @@ class PostDetailScreen extends HookConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  item.categoryName,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurface.withOpacity(0.6),
-                  ),
+                Row(
+                  children: [
+                    Text(
+                      item.categoryName,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      height: 4,
+                      width: 4,
+                      decoration: BoxDecoration(
+                        color: colorScheme.onSurface.withOpacity(0.3),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${item.currentQuantity}/${item.quantity}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          // Quantity
+
+          // Status Indicator
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            width: 6,
+            height: 32,
             decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Text(
-              'x${item.currentQuantity}',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onPrimaryContainer,
-              ),
+              color: _getStatusColor(item.currentQuantity, item.quantity),
+              borderRadius: BorderRadius.circular(3),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Color _getStatusColor(int current, int total) {
+    if (total == 0) return Colors.grey;
+
+    double percentage = current / total;
+
+    if (percentage >= 0.7) {
+      return Colors.green;
+    } else if (percentage >= 0.3) {
+      return Colors.orange;
+    } else {
+      return Colors.red;
+    }
   }
 
   // UPDATED: New interests section design
@@ -877,127 +900,387 @@ class PostDetailScreen extends HookConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.favorite, color: Colors.red, size: isTablet ? 24 : 20),
-              const SizedBox(width: 8),
-              Text(
-                'Người quan tâm',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              if (interests.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    '${interests.length} người',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.red,
-                    ),
-                  ),
-                ),
-            ],
+          _buildSectionHeader(interests, isTablet, theme, colorScheme),
+          const SizedBox(height: 16),
+          interests.isEmpty
+              ? _buildEmptyState(theme, colorScheme, isTablet)
+              : _buildInterestsList(interests, isTablet, theme, colorScheme),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(
+    List<InterestModel> interests,
+    bool isTablet,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return Container(
+      padding: EdgeInsets.all(isTablet ? 16 : 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.red.withOpacity(0.05), Colors.pink.withOpacity(0.05)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.red.withOpacity(0.1), width: 1),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.favorite_rounded,
+              color: Colors.red,
+              size: isTablet ? 20 : 18,
+            ),
           ),
-
-          const SizedBox(height: 12),
-
-          if (interests.isEmpty)
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: colorScheme.surfaceVariant.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.favorite_border,
-                    size: 20,
-                    color: colorScheme.onSurface.withOpacity(0.6),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Người quan tâm',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
                   ),
-                  const SizedBox(width: 8),
+                ),
+                if (interests.isNotEmpty)
                   Text(
-                    'Chưa có ai quan tâm bài đăng này',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurface.withOpacity(0.6),
+                    _getInterestText(interests.length),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurface.withOpacity(0.7),
+                      fontSize: isTablet ? 13 : 12,
                     ),
+                  ),
+              ],
+            ),
+          ),
+          if (interests.isNotEmpty) ...[
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 12 : 10,
+                vertical: isTablet ? 6 : 5,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.red.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-            )
-          else ...[
-            const SizedBox(height: 8),
-            SizedBox(
-              height: isTablet ? 100 : 80,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: interests.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final interest = interests[index];
-                  return Column(
-                    children: [
-                      Container(
-                        width: isTablet ? 54 : 46,
-                        height: isTablet ? 54 : 46,
-                        decoration: BoxDecoration(shape: BoxShape.circle),
-                        child:
-                            interest.userAvatar.isNotEmpty
-                                ? CircleAvatar(
-                                  backgroundImage: MemoryImage(
-                                    base64Decode(
-                                      interest.userAvatar.contains(',')
-                                          ? interest.userAvatar.split(',').last
-                                          : interest.userAvatar,
-                                    ),
-                                  ),
-                                  backgroundColor: Colors.transparent,
-                                )
-                                : CircleAvatar(
-                                  backgroundColor: colorScheme.primary,
-                                  child: Text(
-                                    interest.userName.isNotEmpty
-                                        ? interest.userName[0].toUpperCase()
-                                        : 'U',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: isTablet ? 16 : 14,
-                                    ),
-                                  ),
-                                ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        interest.userName.length > 15
-                            ? '${interest.userName.substring(0, 15)}...'
-                            : interest.userName,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: isTablet ? 11 : 10,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  );
-                },
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.favorite,
+                    size: isTablet ? 14 : 12,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    '${interests.length}',
+                    style: TextStyle(
+                      fontSize: isTablet ? 13 : 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ],
       ),
     );
+  }
+
+  Widget _buildEmptyState(
+    ThemeData theme,
+    ColorScheme colorScheme,
+    bool isTablet,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(isTablet ? 24 : 20),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.favorite_border_rounded,
+              size: isTablet ? 32 : 28,
+              color: colorScheme.primary.withOpacity(0.6),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Chưa có ai quan tâm',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface.withOpacity(0.8),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Hãy chia sẻ bài đăng để thu hút sự quan tâm',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurface.withOpacity(0.6),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInterestsList(
+    List<InterestModel> interests,
+    bool isTablet,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    // Hiển thị tối đa 6 người đầu tiên, có thể mở rộng
+    final displayCount = interests.length > 6 ? 6 : interests.length;
+    final hasMore = interests.length > 6;
+
+    return Column(
+      children: [
+        Container(
+          height: isTablet ? 110 : 90,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            itemCount: displayCount + (hasMore ? 1 : 0),
+            separatorBuilder: (_, __) => const SizedBox(width: 16),
+            itemBuilder: (context, index) {
+              if (hasMore && index == displayCount) {
+                return _buildMoreUsersIndicator(
+                  interests.length - displayCount,
+                  isTablet,
+                  theme,
+                  colorScheme,
+                );
+              }
+
+              return _buildUserCard(
+                interests[index],
+                isTablet,
+                theme,
+                colorScheme,
+              );
+            },
+          ),
+        ),
+        if (hasMore) ...[
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed:
+                () => _showAllInterestedUsers(interests, theme, colorScheme),
+            icon: Icon(Icons.expand_more, size: isTablet ? 18 : 16),
+            label: Text(
+              'Xem tất cả ${interests.length} người',
+              style: TextStyle(fontSize: isTablet ? 14 : 13),
+            ),
+            style: TextButton.styleFrom(
+              foregroundColor: colorScheme.primary,
+              padding: EdgeInsets.symmetric(
+                horizontal: isTablet ? 16 : 12,
+                vertical: isTablet ? 8 : 6,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildUserCard(
+    InterestModel interest,
+    bool isTablet,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return GestureDetector(
+      onTap: () => _onUserTap(interest),
+      child: Container(
+        width: isTablet ? 80 : 70,
+        child: Column(
+          children: [
+            Container(
+              width: isTablet ? 56 : 48,
+              height: isTablet ? 56 : 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.red.withOpacity(0.3),
+                  width: 2,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: _buildUserAvatar(interest, isTablet, theme, colorScheme),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _truncateUserName(interest.userName, 12),
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontSize: isTablet ? 12 : 11,
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurface.withOpacity(0.8),
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 2),
+            Container(
+              width: isTablet ? 20 : 16,
+              height: 2,
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.6),
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMoreUsersIndicator(
+    int moreCount,
+    bool isTablet,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    return GestureDetector(
+      onTap: () => _showAllInterestedUsers([], theme, colorScheme),
+      child: Container(
+        width: isTablet ? 80 : 70,
+        child: Column(
+          children: [
+            Container(
+              width: isTablet ? 56 : 48,
+              height: isTablet ? 56 : 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: colorScheme.primary.withOpacity(0.1),
+                border: Border.all(
+                  color: colorScheme.primary.withOpacity(0.3),
+                  width: 2,
+                  style: BorderStyle.solid,
+                ),
+              ),
+              child: Icon(
+                Icons.add,
+                color: colorScheme.primary,
+                size: isTablet ? 24 : 20,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '+$moreCount',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontSize: isTablet ? 12 : 11,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.primary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUserAvatar(
+    InterestModel interest,
+    bool isTablet,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    final radius = isTablet ? 24.0 : 20.0;
+
+    if (interest.userAvatar.isNotEmpty) {
+      final imageBytes = Base64Utils.decodeImageFromBase64(interest.userAvatar);
+
+      if (imageBytes != null) {
+        return CircleAvatar(
+          radius: radius,
+          backgroundImage: MemoryImage(imageBytes),
+          backgroundColor: Colors.grey[200],
+        );
+      }
+    }
+
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: colorScheme.primaryContainer,
+      child: Text(
+        interest.userName.isNotEmpty ? interest.userName[0].toUpperCase() : '?',
+        style: TextStyle(
+          fontSize: isTablet ? 18 : 16,
+          fontWeight: FontWeight.bold,
+          color: colorScheme.onPrimaryContainer,
+        ),
+      ),
+    );
+  }
+
+  // Helper methods
+  String _getInterestText(int count) {
+    if (count == 1) return '1 người đã quan tâm';
+    return '$count người đã quan tâm';
+  }
+
+  String _truncateUserName(String name, int maxLength) {
+    if (name.length <= maxLength) return name;
+    return '${name.substring(0, maxLength)}...';
+  }
+
+  void _onUserTap(InterestModel interest) {
+    // Navigate to user profile or show user details
+    print('Tapped on user: ${interest.userName}');
+  }
+
+  void _showAllInterestedUsers(
+    List<InterestModel> interests,
+    ThemeData theme,
+    ColorScheme colorScheme,
+  ) {
+    // Show modal or navigate to full list
+    print('Show all interested users');
   }
 
   Widget _buildBottomActionBar(
@@ -1008,7 +1291,7 @@ class PostDetailScreen extends HookConsumerWidget {
     int interestCount,
     VoidCallback onInterest,
     VoidCallback onShare,
-    WidgetRef ref, // Thêm tham số ref
+    WidgetRef ref,
   ) {
     final interestState = ref.watch(interestProvider);
 
@@ -1098,38 +1381,35 @@ class PostDetailScreen extends HookConsumerWidget {
     );
   }
 
-  // Thay thế _buildBase64Image với InteractiveViewer
   Widget _buildBase64Image(String base64String) {
-    return FutureBuilder<Uint8List>(
-      future: _decodeBase64(base64String),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Container(
-            color: Colors.grey.shade200,
-            child: const Center(child: CircularProgressIndicator()),
-          );
-        }
+    if (base64String.isNotEmpty) {
+      final imageBytes = Base64Utils.decodeImageFromBase64(base64String);
 
-        if (snapshot.hasError || !snapshot.hasData) {
-          return Container(
-            color: Colors.grey.shade300,
-            child: const Icon(Icons.broken_image, size: 50, color: Colors.grey),
-          );
-        }
-
+      if (imageBytes != null) {
         return InteractiveViewer(
-          child: Image.memory(snapshot.data!, fit: BoxFit.cover),
+          child: Image.memory(
+            imageBytes,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: Colors.grey.shade300,
+                child: const Icon(
+                  Icons.broken_image,
+                  size: 50,
+                  color: Colors.grey,
+                ),
+              );
+            },
+          ),
         );
-      },
-    );
-  }
+      }
+    }
 
-  Future<Uint8List> _decodeBase64(String base64String) async {
-    final cleanedBase64 =
-        base64String.contains(',')
-            ? base64String.split(',').last
-            : base64String;
-    return base64Decode(cleanedBase64);
+    // Fallback về broken image nếu không có ảnh hoặc có lỗi decode
+    return Container(
+      color: Colors.grey.shade300,
+      child: const Icon(Icons.broken_image, size: 50, color: Colors.grey),
+    );
   }
 
   String _formatDate(String? dateString) {

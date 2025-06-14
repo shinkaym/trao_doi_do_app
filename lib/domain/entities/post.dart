@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class Post extends Equatable {
- final int? id;
+  final int? id;
   final int? authorID;
   final String? authorName;
   final String? authorAvatar;
@@ -18,6 +18,7 @@ class Post extends Equatable {
   final List<String> tags;
   final int? interestCount;
   final int? itemCount;
+  final int? currentItemCount;
   final DateTime? createdAt;
 
   const Post({
@@ -38,6 +39,7 @@ class Post extends Equatable {
     this.tags = const [],
     this.interestCount,
     this.itemCount,
+    this.currentItemCount,
     this.createdAt,
   });
 
@@ -60,6 +62,7 @@ class Post extends Equatable {
     tags,
     interestCount,
     itemCount,
+    currentItemCount,
     createdAt,
   ];
 }

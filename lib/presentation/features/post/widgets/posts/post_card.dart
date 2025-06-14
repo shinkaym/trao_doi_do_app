@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
+import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/domain/enums/index.dart';
-import 'dart:convert';
 
 class PostCard extends StatelessWidget {
   final Post post;
@@ -61,6 +61,7 @@ class PostCard extends StatelessWidget {
                 SizedBox(height: isTablet ? 16 : 12),
                 if (location.isNotEmpty)
                   _buildLocationAndReward(location, reward),
+                _buildStatsSection(),
                 if (post.authorName != null && post.authorName!.isNotEmpty)
                   _buildAuthorSection(),
               ],
@@ -176,79 +177,149 @@ class PostCard extends StatelessWidget {
   }
 
   Widget _buildLocationAndReward(String location, String? reward) {
-    return Row(
+    return Column(
       children: [
-        Icon(
-          Icons.location_on_outlined,
-          size: isTablet ? 16 : 14,
-          color: theme.hintColor,
-        ),
-        SizedBox(width: isTablet ? 6 : 4),
-        Expanded(
-          child: Text(
-            location,
-            style: TextStyle(
-              fontSize: isTablet ? 13 : 11,
+        Row(
+          children: [
+            Icon(
+              Icons.location_on_outlined,
+              size: isTablet ? 16 : 14,
               color: theme.hintColor,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+            SizedBox(width: isTablet ? 6 : 4),
+            Expanded(
+              child: Text(
+                location,
+                style: TextStyle(
+                  fontSize: isTablet ? 13 : 11,
+                  color: theme.hintColor,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (reward != null && reward.isNotEmpty) ...[
+              SizedBox(width: isTablet ? 12 : 8),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 10 : 8,
+                  vertical: isTablet ? 4 : 2,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.card_giftcard_outlined,
+                      size: isTablet ? 14 : 12,
+                      color: Colors.orange.shade700,
+                    ),
+                    SizedBox(width: isTablet ? 4 : 2),
+                    Text(
+                      reward,
+                      style: TextStyle(
+                        fontSize: isTablet ? 12 : 10,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.orange.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
         ),
-        if (reward != null && reward.isNotEmpty) ...[
-          SizedBox(width: isTablet ? 12 : 8),
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: isTablet ? 10 : 8,
-              vertical: isTablet ? 4 : 2,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.card_giftcard_outlined,
-                  size: isTablet ? 14 : 12,
-                  color: Colors.orange.shade700,
-                ),
-                SizedBox(width: isTablet ? 4 : 2),
-                Text(
-                  reward,
-                  style: TextStyle(
-                    fontSize: isTablet ? 12 : 10,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.orange.shade700,
-                  ),
-                ),
-              ],
+        SizedBox(height: isTablet ? 12 : 8),
+      ],
+    );
+  }
+
+  Widget _buildStatsSection() {
+    final List<Widget> stats = [];
+
+    // Số lượt yêu thích
+    if (post.interestCount != null && post.interestCount! > 0) {
+      stats.add(
+        _buildStatItem(
+          Icons.favorite_outline,
+          post.interestCount.toString(),
+          Colors.red.shade600,
+        ),
+      );
+    }
+
+    // Số lượng món đồ hiện tại / tổng số
+    if (post.itemCount != null && post.itemCount! > 0) {
+      String itemText;
+      if (post.currentItemCount != null) {
+        itemText = '${post.currentItemCount}/${post.itemCount}';
+      } else {
+        itemText = post.itemCount.toString();
+      }
+
+      stats.add(
+        _buildStatItem(
+          Icons.inventory_2_outlined,
+          itemText,
+          Colors.blue.shade600,
+        ),
+      );
+    }
+
+    if (stats.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            for (int i = 0; i < stats.length; i++) ...[
+              stats[i],
+              if (i < stats.length - 1) SizedBox(width: isTablet ? 16 : 12),
+            ],
+          ],
+        ),
+        SizedBox(height: isTablet ? 12 : 8),
+      ],
+    );
+  }
+
+  Widget _buildStatItem(IconData icon, String text, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 10 : 8,
+        vertical: isTablet ? 6 : 4,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: isTablet ? 14 : 12, color: color),
+          SizedBox(width: isTablet ? 4 : 3),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: isTablet ? 12 : 10,
+              fontWeight: FontWeight.w600,
+              color: color,
             ),
           ),
         ],
-      ],
+      ),
     );
   }
 
   Widget _buildAuthorSection() {
     return Column(
       children: [
-        SizedBox(height: isTablet ? 12 : 8),
         Row(
           children: [
-            CircleAvatar(
-              radius: isTablet ? 12 : 10,
-              backgroundColor: colorScheme.primaryContainer,
-              child: Text(
-                post.authorName!.substring(0, 1).toUpperCase(),
-                style: TextStyle(
-                  fontSize: isTablet ? 12 : 10,
-                  fontWeight: FontWeight.bold,
-                  color: colorScheme.onPrimaryContainer,
-                ),
-              ),
-            ),
+            _buildAuthorAvatar(),
             SizedBox(width: isTablet ? 10 : 8),
             Expanded(
               child: Text(
@@ -268,10 +339,36 @@ class PostCard extends StatelessWidget {
     );
   }
 
+  Widget _buildAuthorAvatar() {
+    final radius = isTablet ? 12.0 : 10.0;
+
+    if (post.authorAvatar != null && post.authorAvatar!.isNotEmpty) {
+      final imageBytes = Base64Utils.decodeImageFromBase64(post.authorAvatar!);
+
+      if (imageBytes != null) {
+        return CircleAvatar(
+          radius: radius,
+          backgroundImage: MemoryImage(imageBytes),
+          child: null,
+        );
+      }
+    }
+
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: colorScheme.primaryContainer,
+      child: Icon(
+        Icons.person,
+        size: isTablet ? 14 : 12,
+        color: colorScheme.onPrimaryContainer,
+      ),
+    );
+  }
+
   Widget _buildImageWidget(String base64Url) {
-    try {
-      final base64Str = base64Url.split(',').last;
-      final imageBytes = base64Decode(base64Str);
+    final imageBytes = Base64Utils.decodeImageFromBase64(base64Url);
+
+    if (imageBytes != null) {
       return Image.memory(
         imageBytes,
         fit: BoxFit.cover,
@@ -279,9 +376,9 @@ class PostCard extends StatelessWidget {
           return _buildImageErrorWidget();
         },
       );
-    } catch (e) {
-      return _buildImageErrorWidget();
     }
+
+    return _buildImageErrorWidget();
   }
 
   Widget _buildImageErrorWidget() {

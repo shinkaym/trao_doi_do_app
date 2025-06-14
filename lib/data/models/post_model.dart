@@ -18,6 +18,7 @@ class PostModel extends Post {
     super.oldItems,
     super.tags,
     super.interestCount,
+    super.currentItemCount,
     super.itemCount,
     super.createdAt,
   });
@@ -41,6 +42,7 @@ class PostModel extends Post {
       tags: post.tags,
       interestCount: post.interestCount,
       itemCount: post.itemCount,
+      currentItemCount: post.currentItemCount,
       createdAt: post.createdAt,
     );
   }
@@ -88,6 +90,7 @@ class PostModel extends Post {
       tags: json['tags'] != null ? List<String>.from(json['tags']) : [],
       interestCount: json['interestCount'],
       itemCount: json['itemCount'],
+      currentItemCount: json['currentItemCount'],
       createdAt:
           json['createdAt'] != null
               ? DateTime.tryParse(json['createdAt'])

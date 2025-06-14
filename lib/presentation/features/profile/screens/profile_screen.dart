@@ -1,11 +1,10 @@
-import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:trao_doi_do_app/core/config/theme_mode_provider.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
@@ -27,7 +26,11 @@ class ProfileScreen extends HookConsumerWidget {
 
     // Tối ưu: Sử dụng useMemoized để tránh rebuild không cần thiết
     final avatarWidget = useMemoized(
-      () => _buildAvatarWidget(authState: authState, isTablet: isTablet),
+      () => _buildAvatarWidget(
+        authState: authState,
+        isTablet: isTablet,
+        colorScheme: colorScheme,
+      ),
       [authState.user?.avatar, authState.isLoggedIn, isTablet],
     );
 
@@ -107,118 +110,102 @@ class ProfileScreen extends HookConsumerWidget {
     );
   }
 
-  // Tối ưu: Tách avatar widget để tránh rebuild
   Widget _buildAvatarWidget({
     required AuthState authState,
     required bool isTablet,
+    required ColorScheme colorScheme,
   }) {
-    final size = isTablet ? 100.0 : 80.0;
-    final iconSize = isTablet ? 50.0 : 40.0;
+    final size = isTablet ? 120.0 : 100.0;
+    final isLoggedIn = authState.isLoggedIn;
 
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(size / 2),
-        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+        shape: BoxShape.circle,
+        // Giảm shadow cho trường hợp chưa đăng nhập
+        boxShadow:
+            isLoggedIn
+                ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ]
+                : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular((size / 2) - 2),
-        child: _buildAvatarContent(authState, iconSize),
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          // Chỉ có border nhẹ cho trường hợp chưa đăng nhập
+          border:
+              isLoggedIn
+                  ? Border.all(color: Colors.white.withOpacity(0.4), width: 3)
+                  : Border.all(color: Colors.white.withOpacity(0.2), width: 2),
+        ),
+        child: ClipOval(child: _buildAvatar(authState, isTablet, colorScheme)),
       ),
     );
   }
 
-  // Tối ưu: Xử lý avatar base64 và network
-  Widget _buildAvatarContent(AuthState authState, double iconSize) {
-    if (!authState.isLoggedIn ||
-        authState.user?.avatar == null ||
-        authState.user!.avatar.isEmpty) {
-      return Icon(
-        authState.isLoggedIn ? Icons.person : Icons.person_outline,
-        size: iconSize,
-        color: Colors.white,
+  Widget _buildAvatar(
+    AuthState authState,
+    bool isTablet,
+    ColorScheme colorScheme,
+  ) {
+    final size = isTablet ? 120.0 : 100.0;
+
+    if (authState.isLoggedIn && authState.user!.avatar.isNotEmpty) {
+      final imageBytes = Base64Utils.decodeImageFromBase64(
+        authState.user!.avatar,
       );
-    }
 
-    final avatar = authState.user!.avatar;
-
-    // Kiểm tra nếu là base64
-    if (avatar.startsWith('data:image/') || _isBase64(avatar)) {
-      return _buildBase64Avatar(avatar, iconSize);
-    }
-
-    // Kiểm tra nếu là URL
-    if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
-      return _buildNetworkAvatar(avatar, iconSize);
-    }
-
-    // Fallback icon
-    return Icon(Icons.person, size: iconSize, color: Colors.white);
-  }
-
-  // Tối ưu: Build base64 avatar
-  Widget _buildBase64Avatar(String base64String, double iconSize) {
-    try {
-      Uint8List bytes;
-
-      if (base64String.startsWith('data:image/')) {
-        // Extract base64 from data URL
-        final base64Data = base64String.split(',').last;
-        bytes = base64Decode(base64Data);
-      } else {
-        bytes = base64Decode(base64String);
-      }
-
-      return Image.memory(
-        bytes,
-        fit: BoxFit.cover,
-        errorBuilder:
-            (context, error, stackTrace) =>
-                Icon(Icons.person, size: iconSize, color: Colors.white),
-        gaplessPlayback: true, // Tối ưu: Smooth transition
-      );
-    } catch (e) {
-      return Icon(Icons.person, size: iconSize, color: Colors.white);
-    }
-  }
-
-  // Tối ưu: Build network avatar with caching
-  Widget _buildNetworkAvatar(String url, double iconSize) {
-    return Image.network(
-      url,
-      fit: BoxFit.cover,
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return Center(
-          child: CircularProgressIndicator(
-            value:
-                loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                        loadingProgress.expectedTotalBytes!
-                    : null,
-            color: Colors.white,
-            strokeWidth: 2,
+      if (imageBytes != null) {
+        return Container(
+          decoration: const BoxDecoration(shape: BoxShape.circle),
+          child: Image.memory(
+            imageBytes,
+            fit: BoxFit.cover,
+            width: size,
+            height: size,
           ),
         );
-      },
-      errorBuilder:
-          (context, error, stackTrace) =>
-              Icon(Icons.person, size: iconSize, color: Colors.white),
-      cacheWidth: (iconSize * 2).round(), // Tối ưu: Cache với size phù hợp
-      cacheHeight: (iconSize * 2).round(),
-    );
-  }
-
-  // Helper: Kiểm tra string có phải base64 không
-  bool _isBase64(String str) {
-    try {
-      base64Decode(str);
-      return true;
-    } catch (e) {
-      return false;
+      }
     }
+
+    // Thiết kế đơn giản và nhẹ nhàng hơn cho trường hợp chưa đăng nhập
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        // Gradient nhẹ nhàng hơn
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withOpacity(0.15),
+            Colors.white.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.person_outline,
+          color: Colors.white.withOpacity(0.8),
+          size: isTablet ? 48 : 40,
+        ),
+      ),
+    );
   }
 
   Widget _buildHeaderSection({
@@ -233,21 +220,21 @@ class ProfileScreen extends HookConsumerWidget {
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [colorScheme.primary, colorScheme.primary],
+          colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.8)],
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
         ),
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(
-          vertical: isTablet ? 40 : 30,
+          vertical: isTablet ? 50 : 40,
           horizontal: 24,
         ),
         child: Column(
           children: [
             // Avatar - sử dụng widget đã tối ưu
             avatarWidget,
-            SizedBox(height: isTablet ? 16 : 12),
+            SizedBox(height: isTablet ? 20 : 16),
 
             // User info hoặc title
             if (authState.isLoggedIn && authState.user != null) ...[
@@ -256,29 +243,40 @@ class ProfileScreen extends HookConsumerWidget {
                 style: theme.textTheme.headlineSmall?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: isTablet ? 24 : 20,
+                  fontSize: isTablet ? 26 : 22,
+                  letterSpacing: 0.5,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
               ),
-              SizedBox(height: isTablet ? 8 : 4),
-              Text(
-                authState.user!.email,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: Colors.white.withOpacity(0.9),
-                  fontSize: isTablet ? 16 : 14,
+              SizedBox(height: isTablet ? 8 : 6),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  authState.user!.email,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withOpacity(0.95),
+                    fontSize: isTablet ? 16 : 14,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               if (authState.user!.phoneNumber.isNotEmpty) ...[
-                SizedBox(height: isTablet ? 4 : 2),
+                SizedBox(height: isTablet ? 6 : 4),
                 Text(
                   authState.user!.phoneNumber,
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: Colors.white.withOpacity(0.9),
-                    fontSize: isTablet ? 16 : 14,
+                    fontSize: isTablet ? 15 : 13,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -290,7 +288,16 @@ class ProfileScreen extends HookConsumerWidget {
                 style: theme.textTheme.headlineSmall?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: isTablet ? 24 : 20,
+                  fontSize: isTablet ? 26 : 22,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              SizedBox(height: isTablet ? 8 : 6),
+              Text(
+                'Chưa đăng nhập',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: isTablet ? 16 : 14,
                 ),
               ),
             ],
@@ -638,7 +645,7 @@ class ProfileScreen extends HookConsumerWidget {
               await ref.read(themeModeProvider.notifier).toggleTheme();
               HapticFeedback.lightImpact(); // Thêm haptic feedback
             },
-            activeColor: colorScheme.primary,
+            // activeColor: colorScheme.primary,
             activeTrackColor: colorScheme.primaryContainer,
             inactiveThumbColor: colorScheme.outline,
             inactiveTrackColor: colorScheme.surfaceVariant,

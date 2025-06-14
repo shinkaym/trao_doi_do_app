@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
@@ -358,30 +359,7 @@ PreferredSizeWidget _buildAppBar(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Avatar
-            CircleAvatar(
-              radius: isTablet ? 20 : 18,
-              backgroundColor: colorScheme.primary.withOpacity(0.1),
-              child:
-                  displayAvatar.isNotEmpty
-                      ? ClipOval(
-                        child: Image.network(
-                          displayAvatar,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.person,
-                              size: isTablet ? 20 : 18,
-                              color: colorScheme.primary,
-                            );
-                          },
-                        ),
-                      )
-                      : Icon(
-                        Icons.person,
-                        size: isTablet ? 20 : 18,
-                        color: colorScheme.primary,
-                      ),
-            ),
+            _buildDisplayAvatar(displayAvatar, isTablet, colorScheme),
 
             SizedBox(width: isTablet ? 12 : 8),
 
@@ -409,6 +387,36 @@ PreferredSizeWidget _buildAppBar(
     bottom: PreferredSize(
       preferredSize: const Size.fromHeight(1),
       child: Container(height: 1, color: colorScheme.outline.withOpacity(0.2)),
+    ),
+  );
+}
+
+Widget _buildDisplayAvatar(
+  String displayAvatar,
+  bool isTablet,
+  ColorScheme colorScheme,
+) {
+  final radius = isTablet ? 12.0 : 10.0;
+
+  if (displayAvatar.isNotEmpty) {
+    final imageBytes = Base64Utils.decodeImageFromBase64(displayAvatar);
+
+    if (imageBytes != null) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundImage: MemoryImage(imageBytes),
+        child: null,
+      );
+    }
+  }
+
+  return CircleAvatar(
+    radius: radius,
+    backgroundColor: colorScheme.primaryContainer,
+    child: Icon(
+      Icons.person,
+      size: isTablet ? 14 : 12,
+      color: colorScheme.onPrimaryContainer,
     ),
   );
 }
@@ -646,30 +654,7 @@ Widget _buildMessageBubble(
         // Avatar for received messages
         if (!isCurrentUser) ...[
           if (showAvatar)
-            CircleAvatar(
-              radius: isTablet ? 14 : 12,
-              backgroundColor: colorScheme.primary.withOpacity(0.1),
-              child:
-                  message.senderAvatar.isNotEmpty
-                      ? ClipOval(
-                        child: Image.network(
-                          message.senderAvatar,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Icon(
-                              Icons.person,
-                              size: isTablet ? 14 : 12,
-                              color: colorScheme.primary,
-                            );
-                          },
-                        ),
-                      )
-                      : Icon(
-                        Icons.person,
-                        size: isTablet ? 14 : 12,
-                        color: colorScheme.primary,
-                      ),
-            )
+            _buildSenderAvatar(message.senderAvatar, isTablet, colorScheme)
           else
             SizedBox(width: isTablet ? 28 : 24),
 
@@ -738,6 +723,36 @@ Widget _buildMessageBubble(
           ),
         ),
       ],
+    ),
+  );
+}
+
+Widget _buildSenderAvatar(
+  String senderAvatar,
+  bool isTablet,
+  ColorScheme colorScheme,
+) {
+  final radius = isTablet ? 14.0 : 12.0;
+
+  if (senderAvatar.isNotEmpty) {
+    final imageBytes = Base64Utils.decodeImageFromBase64(senderAvatar);
+
+    if (imageBytes != null) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundImage: MemoryImage(imageBytes),
+        child: null,
+      );
+    }
+  }
+
+  return CircleAvatar(
+    radius: radius,
+    backgroundColor: colorScheme.primary.withOpacity(0.1),
+    child: Icon(
+      Icons.person,
+      size: isTablet ? 14 : 12,
+      color: colorScheme.primary,
     ),
   );
 }

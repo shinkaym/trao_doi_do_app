@@ -1,9 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/entities/params/interests_query.dart';
@@ -358,7 +357,7 @@ class InterestsScreen extends HookConsumerWidget {
                     handlePostTap,
                     handleChatTap,
                     handleLikeTap,
-                    searchController, // Thêm tham số này
+                    searchController,
                     resetFilters,
                   ),
                   _buildPostsWithInterestsTab(
@@ -368,7 +367,7 @@ class InterestsScreen extends HookConsumerWidget {
                     ref,
                     handlePostTap,
                     handleChatTap,
-                    searchController, // Thêm tham số này
+                    searchController,
                     resetFilters,
                   ),
                 ],
@@ -439,7 +438,7 @@ Widget _buildSearchFilterSection(
             fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
             contentPadding: EdgeInsets.symmetric(
               horizontal: isTablet ? 20 : 16,
-              vertical: isTablet ? 16 : 12,
+              vertical: isTablet ? 6 : 4,
             ),
           ),
         ),
@@ -457,9 +456,24 @@ Widget _buildSearchFilterSection(
               label: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.schedule, size: isTablet ? 18 : 16),
+                  Icon(
+                    Icons.schedule,
+                    size: isTablet ? 18 : 16,
+                    color:
+                        state.query.order == 'DESC'
+                            ? colorScheme.onPrimaryContainer
+                            : colorScheme.onSurface,
+                  ),
                   SizedBox(width: isTablet ? 6 : 4),
-                  const Text('Mới nhất'),
+                  Text(
+                    'Mới nhất',
+                    style: TextStyle(
+                      color:
+                          state.query.order == 'DESC'
+                              ? colorScheme.onPrimaryContainer
+                              : colorScheme.onSurface,
+                    ),
+                  ),
                 ],
               ),
               backgroundColor: colorScheme.surface,
@@ -475,9 +489,25 @@ Widget _buildSearchFilterSection(
               label: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.history, size: isTablet ? 18 : 16),
+                  Icon(
+                    Icons.history,
+                    size: isTablet ? 18 : 16,
+                    color:
+                        state.query.order == 'ASC'
+                            ? colorScheme.onPrimaryContainer
+                            : colorScheme.onSurface,
+                  ),
+
                   SizedBox(width: isTablet ? 6 : 4),
-                  const Text('Cũ nhất'),
+                  Text(
+                    'Cũ nhất',
+                    style: TextStyle(
+                      color:
+                          state.query.order == 'ASC'
+                              ? colorScheme.onPrimaryContainer
+                              : colorScheme.onSurface,
+                    ),
+                  ),
                 ],
               ),
               backgroundColor: colorScheme.surface,
@@ -1094,6 +1124,9 @@ class _InterestedUsersSectionState extends State<_InterestedUsersSection>
 
   @override
   Widget build(BuildContext context) {
+    final isTablet = context.isTablet;
+    final colorScheme = context.colorScheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1170,59 +1203,11 @@ class _InterestedUsersSectionState extends State<_InterestedUsersSection>
                         backgroundColor: widget.colorScheme.primary.withOpacity(
                           0.1,
                         ),
-                        child:
-                            interest.userAvatar.isNotEmpty
-                                ? ClipOval(
-                                  child:
-                                      interest.userAvatar.startsWith('data:')
-                                          ? Image.memory(
-                                            base64Decode(
-                                              interest.userAvatar.split(',')[1],
-                                            ),
-                                            fit: BoxFit.cover,
-                                            width:
-                                                (widget.isTablet ? 16 : 14) * 2,
-                                            height:
-                                                (widget.isTablet ? 16 : 14) * 2,
-                                            errorBuilder: (
-                                              context,
-                                              error,
-                                              stackTrace,
-                                            ) {
-                                              return Icon(
-                                                Icons.person,
-                                                size: widget.isTablet ? 16 : 14,
-                                                color:
-                                                    widget.colorScheme.primary,
-                                              );
-                                            },
-                                          )
-                                          : Image.network(
-                                            interest.userAvatar,
-                                            fit: BoxFit.cover,
-                                            width:
-                                                (widget.isTablet ? 16 : 14) * 2,
-                                            height:
-                                                (widget.isTablet ? 16 : 14) * 2,
-                                            errorBuilder: (
-                                              context,
-                                              error,
-                                              stackTrace,
-                                            ) {
-                                              return Icon(
-                                                Icons.person,
-                                                size: widget.isTablet ? 16 : 14,
-                                                color:
-                                                    widget.colorScheme.primary,
-                                              );
-                                            },
-                                          ),
-                                )
-                                : Icon(
-                                  Icons.person,
-                                  size: widget.isTablet ? 16 : 14,
-                                  color: widget.colorScheme.primary,
-                                ),
+                        child: _buildInterestAvatar(
+                          interest,
+                          isTablet,
+                          colorScheme,
+                        ),
                       ),
                       SizedBox(width: widget.isTablet ? 12 : 8),
                       Expanded(
@@ -1283,6 +1268,32 @@ class _InterestedUsersSectionState extends State<_InterestedUsersSection>
       ],
     );
   }
+}
+
+Widget _buildInterestAvatar(
+  Interest interest,
+  bool isTablet,
+  ColorScheme colorScheme,
+) {
+  final radius = isTablet ? 16.0 : 14.0;
+
+  if (interest.userAvatar.isNotEmpty) {
+    final imageBytes = Base64Utils.decodeImageFromBase64(interest.userAvatar);
+
+    if (imageBytes != null) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundImage: MemoryImage(imageBytes),
+      );
+    }
+  }
+
+  // Fallback về icon
+  return CircleAvatar(
+    radius: radius,
+    backgroundColor: colorScheme.primary,
+    child: Icon(Icons.person, color: Colors.white, size: isTablet ? 16 : 14),
+  );
 }
 
 // Helper function to build the interested users section
