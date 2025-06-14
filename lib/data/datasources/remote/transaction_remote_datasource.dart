@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/network/dio_client.dart';
 import 'package:trao_doi_do_app/data/models/response/api_response_model.dart';
@@ -33,16 +32,10 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
     TransactionsQuery query,
   ) async {
     final params = query.toQueryParams();
-    print('📥 Transaction params: $params');
 
     final response = await _dioClient.get(
       ApiConstants.transactions,
       queryParameters: params,
-    );
-
-    // ✅ Print raw JSON response
-    print(
-      '📥 Transaction JSON response:\n${const JsonEncoder.withIndent('  ').convert(response.data)}',
     );
 
     return ApiResponseModel<TransactionsResponseModel>.fromJson(
@@ -57,19 +50,10 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
     CreateTransactionModel transaction,
   ) async {
     final body = transaction.toJson();
-    // ✅ Display formatted JSON body
-    print(
-      '📤 Create Transaction JSON:\n${const JsonEncoder.withIndent('  ').convert(body)}',
-    );
 
     final response = await _dioClient.post(
       ApiConstants.transactions,
       data: body,
-    );
-
-    // ✅ Print response
-    print(
-      '📥 Create Transaction Response:\n${const JsonEncoder.withIndent('  ').convert(response.data)}',
     );
 
     return ApiResponseModel<TransactionModel>.fromJson(response.data, (json) {
@@ -83,8 +67,6 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
         // Create a new TransactionModel from the extracted data
         return TransactionModel.fromJson(transactionData);
       } catch (e) {
-        print('❌ Error parsing transaction: $e');
-        print('❌ JSON data: $json');
         rethrow;
       }
     });
@@ -96,19 +78,10 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
     UpdateTransactionModel transaction,
   ) async {
     final body = transaction.toJson();
-    // ✅ Display formatted JSON body
-    print(
-      '📤 Update Transaction JSON (ID: $transactionID):\n${const JsonEncoder.withIndent('  ').convert(body)}',
-    );
 
     final response = await _dioClient.patch(
       '${ApiConstants.transactions}/$transactionID',
       data: body,
-    );
-
-    // ✅ Print response
-    print(
-      '📥 Update Transaction Response:\n${const JsonEncoder.withIndent('  ').convert(response.data)}',
     );
 
     return ApiResponseModel<TransactionModel>.fromJson(response.data, (json) {
@@ -130,17 +103,10 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
     UpdateTransactionStatusModel transaction,
   ) async {
     final body = transaction.toJson();
-    print(
-      '📤 Update Transaction Status JSON (ID: $transactionID):\n${const JsonEncoder.withIndent('  ').convert(body)}',
-    );
 
     final response = await _dioClient.patch(
       '${ApiConstants.transactions}/$transactionID',
       data: body,
-    );
-
-    print(
-      '📥 Update Transaction Status Response:\n${const JsonEncoder.withIndent('  ').convert(response.data)}',
     );
 
     return ApiResponseModel<TransactionModel>.fromJson(response.data, (json) {

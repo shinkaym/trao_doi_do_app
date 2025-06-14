@@ -95,6 +95,8 @@ class DioClient {
   }
 
   Exception _handleError(dynamic error) {
+    final message = error.response?.data['message'];
+
     if (error is DioException) {
       switch (error.type) {
         case DioExceptionType.connectionTimeout:
@@ -105,7 +107,7 @@ class DioClient {
           return NetworkException('Lỗi kết nối mạng');
         case DioExceptionType.badResponse:
           return ServerException(
-            error.response?.data['message'] ?? 'Lỗi server',
+            message is String ? message.split(':').first.trim() : 'Lỗi server',
             error.response?.statusCode,
           );
         default:

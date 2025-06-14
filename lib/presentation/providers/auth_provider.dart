@@ -143,7 +143,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
       result.fold(
         (failure) {
           // Silent fail - log only, don't affect UX
-          print('Background refresh failed: ${failure.message}');
         },
         (user) {
           // Chỉ update nếu có thay đổi
@@ -155,9 +154,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           }
         },
       );
-    } catch (e) {
-      print('Background refresh error: $e');
-    }
+    } catch (e) {}
   }
 
   Future<void> getMe({bool showLoading = true}) async {

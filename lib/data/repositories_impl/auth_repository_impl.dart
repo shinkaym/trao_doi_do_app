@@ -43,13 +43,8 @@ class AuthRepositoryImpl implements AuthRepository {
       // Gọi API logout trước (với error handling)
       try {
         await _remoteDataSource.logout();
-      } on ServerException catch (e) {
-        // Log error nhưng vẫn tiếp tục clear local data
-        print('Logout API failed: ${e.message}');
-      } catch (e) {
-        // Log error nhưng vẫn tiếp tục clear local data
-        print('Logout API failed: $e');
-      }
+      } on ServerException {
+      } catch (e) {}
 
       // Clear local storage (luôn thực hiện dù API fail)
       await _localDataSource.clearTokens();
@@ -61,9 +56,7 @@ class AuthRepositoryImpl implements AuthRepository {
       try {
         await _localDataSource.clearTokens();
         await _localDataSource.clearUserInfo();
-      } catch (clearError) {
-        print('Failed to clear local data: $clearError');
-      }
+      } catch (clearError) {}
       return Left(ServerFailure('Lỗi khi đăng xuất: $e'));
     }
   }
@@ -166,7 +159,6 @@ class AuthRepositoryImpl implements AuthRepository {
       final userJson = jsonEncode(userModel.toJson());
       await _localDataSource.saveUserInfo(userJson);
     } catch (e) {
-      print('Failed to save user info: $e');
       // Don't throw error, just log it
     }
   }

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/network/dio_client.dart';
@@ -21,10 +20,6 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
   @override
   Future<ApiResponseModel<void>> createPost(PostModel post) async {
     final body = post.toJson();
-    // ✅ Hiển thị body dạng JSON có format
-    print(
-      '📤 JSON gửi lên:\n${const JsonEncoder.withIndent('  ').convert(body)}',
-    );
 
     final response = await _dioClient.post(ApiConstants.posts, data: body);
 
@@ -36,17 +31,11 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
     PostsQuery query,
   ) async {
     final params = query.toQueryParams();
-    print('📥 Params gửi đi: $params');
 
     final response = await _dioClient.get(
       ApiConstants.clientPosts,
       queryParameters: params,
       options: Options(extra: {'requiresAuth': false}),
-    );
-
-    // ✅ In toàn bộ response JSON raw
-    print(
-      '📥 JSON nhận về:\n${const JsonEncoder.withIndent('  ').convert(response.data)}',
     );
 
     return ApiResponseModel<PostsResponseModel>.fromJson(
@@ -59,16 +48,9 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
   Future<ApiResponseModel<PostDetailResponseModel>> getPostBySlug(
     String slug,
   ) async {
-    print('📥 Getting post by slug: $slug');
-
     final response = await _dioClient.get(
       '${ApiConstants.posts}/slug/$slug',
       options: Options(extra: {'requiresAuth': false}),
-    );
-
-    // ✅ In toàn bộ response JSON raw
-    print(
-      '📥 Post detail JSON:\n${const JsonEncoder.withIndent('  ').convert(response.data)}',
     );
 
     return ApiResponseModel<PostDetailResponseModel>.fromJson(

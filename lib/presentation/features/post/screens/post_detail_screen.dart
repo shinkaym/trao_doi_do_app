@@ -1267,19 +1267,13 @@ class PostDetailScreen extends HookConsumerWidget {
     return '${name.substring(0, maxLength)}...';
   }
 
-  void _onUserTap(InterestModel interest) {
-    // Navigate to user profile or show user details
-    print('Tapped on user: ${interest.userName}');
-  }
+  void _onUserTap(InterestModel interest) {}
 
   void _showAllInterestedUsers(
     List<InterestModel> interests,
     ThemeData theme,
     ColorScheme colorScheme,
-  ) {
-    // Show modal or navigate to full list
-    print('Show all interested users');
-  }
+  ) {}
 
   Widget _buildBottomActionBar(
     bool isTablet,
