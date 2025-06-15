@@ -237,7 +237,7 @@ class CreatePostForm extends HookConsumerWidget {
 
       result.fold((failure) => context.showErrorSnackBar(failure.message), (_) {
         ref.read(postProvider.notifier).reset();
-        context.showSuccessSnackBar('Đăng bài thành công!');
+        context.showSuccessSnackBar('Tạo bài thành công, vui lòng đợi kiểm duyệt!');
         context.pop();
       });
 

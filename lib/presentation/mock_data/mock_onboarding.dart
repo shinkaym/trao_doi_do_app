@@ -29,7 +29,7 @@ final mockOnboardingPages = [
     title: 'Mất đồ? Đừng lo!',
     subtitle: 'Tìm lại đồ thất lạc',
     description:
-        'Đăng thông tin hoặc tìm kiếm trong kho đồ thất lạc – có thể ai đó đã nhặt được món đồ của bạn.',
+        'Đăng thông tin hoặc tìm kiếm trong danh sách bài đăng – có thể ai đó đã nhặt được món đồ của bạn.',
     icon: Icons.search,
     color: Colors.blue,
   ),
