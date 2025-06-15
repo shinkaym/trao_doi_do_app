@@ -1,4 +1,5 @@
 import 'package:trao_doi_do_app/data/models/interest_model.dart';
+import 'package:trao_doi_do_app/domain/entities/response/interest_response.dart';
 
 class InterestsResponseModel {
   final List<InterestPostModel> interests;
@@ -29,6 +30,23 @@ class InterestsResponseModel {
       'totalPage': totalPage,
     };
   }
+
+  InterestsResponse toEntity() {
+    return InterestsResponse(
+      interests: interests.map((interest) => interest.toEntity()).toList(),
+      totalPage: totalPage,
+    );
+  }
+
+  factory InterestsResponseModel.fromEntity(InterestsResponse entity) {
+    return InterestsResponseModel(
+      interests:
+          entity.interests
+              .map((interest) => InterestPostModel.fromEntity(interest))
+              .toList(),
+      totalPage: entity.totalPage,
+    );
+  }
 }
 
 class InterestActionResponseModel {
@@ -42,5 +60,9 @@ class InterestActionResponseModel {
 
   Map<String, dynamic> toJson() {
     return {'interestID': interestID};
+  }
+
+  InterestActionResponse toEntity(String message) {
+    return InterestActionResponse(interestID: interestID, message: message);
   }
 }

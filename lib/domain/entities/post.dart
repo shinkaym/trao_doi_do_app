@@ -68,7 +68,7 @@ class Post extends Equatable {
 }
 
 class PostDetail extends Post {
-  final List<Interest> interests;
+  final List<PostInterest> interests;
   final List<ItemDetail> items;
 
   const PostDetail({
@@ -99,14 +99,14 @@ class PostDetail extends Post {
   List<Object?> get props => [...super.props, interests, items];
 }
 
-class Interest extends Equatable {
+class PostInterest extends Equatable {
   final int id;
   final int userID;
   final String userName;
   final String userAvatar;
   final DateTime? createdAt;
 
-  const Interest({
+  const PostInterest({
     required this.id,
     required this.userID,
     required this.userName,

@@ -34,6 +34,30 @@ class InterestModel extends Interest {
       'createdAt': createdAt,
     };
   }
+
+  Interest toEntity() {
+    return Interest(
+      id: id,
+      postID: postID,
+      userID: userID,
+      userName: userName,
+      userAvatar: userAvatar,
+      status: status,
+      createdAt: createdAt,
+    );
+  }
+
+  factory InterestModel.fromEntity(Interest entity) {
+    return InterestModel(
+      id: entity.id,
+      postID: entity.postID,
+      userID: entity.userID,
+      userName: entity.userName,
+      userAvatar: entity.userAvatar,
+      status: entity.status,
+      createdAt: entity.createdAt,
+    );
+  }
 }
 
 class InterestPostModel extends InterestPost {
@@ -100,11 +124,45 @@ class InterestPostModel extends InterestPost {
       'type': type,
       'interests':
           interests
-              .map((interest) => (interest as InterestModel).toJson())
+              .map((interest) => InterestModel.fromEntity(interest).toJson())
               .toList(),
       'items':
-          items.map((item) => (item as InterestItemModel).toJson()).toList(),
+          items
+              .map((item) => InterestItemModel.fromEntity(item).toJson())
+              .toList(),
     };
+  }
+
+  InterestPost toEntity() {
+    return InterestPost(
+      id: id,
+      slug: slug,
+      title: title,
+      description: description,
+      updatedAt: updatedAt,
+      authorID: authorID,
+      authorName: authorName,
+      authorAvatar: authorAvatar,
+      type: type,
+      interests: interests.map((interest) => interest).toList(),
+      items: items.map((item) => item).toList(),
+    );
+  }
+
+  factory InterestPostModel.fromEntity(InterestPost entity) {
+    return InterestPostModel(
+      id: entity.id,
+      slug: entity.slug,
+      title: entity.title,
+      description: entity.description,
+      updatedAt: entity.updatedAt,
+      authorID: entity.authorID,
+      authorName: entity.authorName,
+      authorAvatar: entity.authorAvatar,
+      type: entity.type,
+      interests: entity.interests,
+      items: entity.items,
+    );
   }
 }
 
@@ -141,5 +199,29 @@ class InterestItemModel extends InterestItem {
       'quantity': quantity,
       'currentQuantity': currentQuantity,
     };
+  }
+
+  InterestItem toEntity() {
+    return InterestItem(
+      id: id,
+      itemID: itemID,
+      name: name,
+      categoryName: categoryName,
+      image: image,
+      quantity: quantity,
+      currentQuantity: currentQuantity,
+    );
+  }
+
+  factory InterestItemModel.fromEntity(InterestItem entity) {
+    return InterestItemModel(
+      id: entity.id,
+      itemID: entity.itemID,
+      name: entity.name,
+      categoryName: entity.categoryName,
+      image: entity.image,
+      quantity: entity.quantity,
+      currentQuantity: entity.currentQuantity,
+    );
   }
 }

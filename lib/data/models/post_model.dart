@@ -227,7 +227,7 @@ class PostDetailModel extends PostDetail {
           json['interests'] != null
               ? (json['interests'] as List)
                   .map(
-                    (interest) => InterestModel.fromJson(
+                    (interest) => PostInterestModel.fromJson(
                       interest as Map<String, dynamic>,
                     ),
                   )
@@ -292,7 +292,7 @@ class PostDetailModel extends PostDetail {
       'tags': tags,
       'interests':
           interests
-              .map((interest) => (interest as InterestModel).toJson())
+              .map((interest) => (interest as PostInterestModel).toJson())
               .toList(),
       'items': items.map((item) => (item as ItemDetailModel).toJson()).toList(),
     };
@@ -300,11 +300,11 @@ class PostDetailModel extends PostDetail {
   }
 }
 
-class InterestModel extends Interest {
+class PostInterestModel extends PostInterest {
   final int? postID;
   final String? message;
 
-  const InterestModel({
+  const PostInterestModel({
     required super.id,
     required super.userID,
     required super.userName,
@@ -314,8 +314,8 @@ class InterestModel extends Interest {
     this.message,
   });
 
-  factory InterestModel.fromJson(Map<String, dynamic> json) {
-    return InterestModel(
+  factory PostInterestModel.fromJson(Map<String, dynamic> json) {
+    return PostInterestModel(
       id: json['id'],
       userID: json['userID'],
       userName: json['userName'] ?? '',

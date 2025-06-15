@@ -20,7 +20,7 @@ class Interest extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, postID, userID, userName, userAvatar, status];
+  List<Object?> get props => [id, postID, userID, userName, userAvatar, status, createdAt];
 }
 
 class InterestPost extends Equatable {
@@ -86,9 +86,16 @@ class InterestItem extends Equatable {
   });
 
   @override
-  List<Object?> get props => [id, itemID, name, categoryName, image, quantity, currentQuantity];
+  List<Object?> get props => [
+    id, 
+    itemID, 
+    name, 
+    categoryName, 
+    image, 
+    quantity, 
+    currentQuantity
+  ];
 }
-
 class InterestsResult {
   final List<InterestPost> interests;
   final int totalPage;

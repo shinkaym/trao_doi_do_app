@@ -5,15 +5,9 @@ import 'package:trao_doi_do_app/data/models/response/interest_response_model.dar
 import 'package:trao_doi_do_app/domain/usecases/params/interests_query.dart';
 
 abstract class InterestRemoteDataSource {
-  Future<ApiResponseModel<InterestActionResponseModel>> createInterest(
-    int postID,
-  );
-  Future<ApiResponseModel<InterestActionResponseModel>> cancelInterest(
-    int postID,
-  );
-  Future<ApiResponseModel<InterestsResponseModel>> getInterests(
-    InterestsQuery query,
-  );
+  Future<InterestActionResponseModel> createInterest(int postID);
+  Future<InterestActionResponseModel> cancelInterest(int postID);
+  Future<InterestsResponseModel> getInterests(InterestsQuery query);
 }
 
 class InterestRemoteDataSourceImpl implements InterestRemoteDataSource {
@@ -22,48 +16,47 @@ class InterestRemoteDataSourceImpl implements InterestRemoteDataSource {
   InterestRemoteDataSourceImpl(this._dioClient);
 
   @override
-  Future<ApiResponseModel<InterestActionResponseModel>> createInterest(
-    int postID,
-  ) async {
+  Future<InterestActionResponseModel> createInterest(int postID) async {
     final response = await _dioClient.post(
       ApiConstants.interests,
       data: {'postID': postID},
     );
 
-    return ApiResponseModel.fromJson(
+    final result = ApiResponseModel.fromJson(
       response.data,
       (json) =>
           InterestActionResponseModel.fromJson(json as Map<String, dynamic>),
     );
+
+    return result.data!;
   }
 
   @override
-  Future<ApiResponseModel<InterestActionResponseModel>> cancelInterest(
-    int postID,
-  ) async {
+  Future<InterestActionResponseModel> cancelInterest(int postID) async {
     final response = await _dioClient.delete(
       '${ApiConstants.interests}/$postID',
     );
 
-    return ApiResponseModel.fromJson(
+    final result = ApiResponseModel.fromJson(
       response.data,
       (json) =>
           InterestActionResponseModel.fromJson(json as Map<String, dynamic>),
     );
+    return result.data!;
   }
 
   @override
-  Future<ApiResponseModel<InterestsResponseModel>> getInterests(
-    InterestsQuery query,
-  ) async {
+  Future<InterestsResponseModel> getInterests(InterestsQuery query) async {
     final response = await _dioClient.get(
       ApiConstants.interests,
       queryParameters: query.toQueryParams(),
     );
 
-    return ApiResponseModel.fromJson(
+    final result = ApiResponseModel.fromJson(
       response.data,
       (json) => InterestsResponseModel.fromJson(json as Map<String, dynamic>),
     );
+
+    return result.data!;
   }
 }

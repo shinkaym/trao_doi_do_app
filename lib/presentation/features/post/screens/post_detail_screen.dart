@@ -65,7 +65,7 @@ class PostDetailScreen extends HookConsumerWidget {
     }, [postDetailState.post, postDetailState.isLoading]);
 
     // Helper functions to check interest status
-    bool isUserInterested(List<Interest> interests, int? userID) {
+    bool isUserInterested(List<PostInterest> interests, int? userID) {
       if (userID == null) return false;
       return interests.any((interest) => interest.userID == userID);
     }
@@ -907,7 +907,7 @@ class PostDetailScreen extends HookConsumerWidget {
 
   // UPDATED: New interests section design
   Widget _buildInterestsSection(
-    List<Interest> interests,
+    List<PostInterest> interests,
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -928,7 +928,7 @@ class PostDetailScreen extends HookConsumerWidget {
   }
 
   Widget _buildSectionHeader(
-    List<Interest> interests,
+    List<PostInterest> interests,
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -1076,7 +1076,7 @@ class PostDetailScreen extends HookConsumerWidget {
   }
 
   Widget _buildInterestsList(
-    List<Interest> interests,
+    List<PostInterest> interests,
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -1138,7 +1138,7 @@ class PostDetailScreen extends HookConsumerWidget {
   }
 
   Widget _buildUserCard(
-    Interest interest,
+    PostInterest interest,
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -1242,7 +1242,7 @@ class PostDetailScreen extends HookConsumerWidget {
   }
 
   Widget _buildUserAvatar(
-    Interest interest,
+    PostInterest interest,
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -1286,10 +1286,10 @@ class PostDetailScreen extends HookConsumerWidget {
     return '${name.substring(0, maxLength)}...';
   }
 
-  void _onUserTap(Interest interest) {}
+  void _onUserTap(PostInterest interest) {}
 
   void _showAllInterestedUsers(
-    List<Interest> interests,
+    List<PostInterest> interests,
     ThemeData theme,
     ColorScheme colorScheme,
   ) {}
