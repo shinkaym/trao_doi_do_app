@@ -192,10 +192,6 @@ class PostNotifier extends StateNotifier<PostState> {
     state = state.copyWith(oldItems: updatedOldItems);
   }
 
-  Future<void> loadCategories() async {
-    await _ref.read(categoryProvider.notifier).getCategories();
-  }
-
   Future<void> createPost() async {
     state = state.copyWith(isLoading: true, failure: null);
 

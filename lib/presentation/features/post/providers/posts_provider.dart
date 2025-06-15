@@ -43,7 +43,6 @@ class PostsListState {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       posts: posts ?? this.posts,
       currentPage: currentPage ?? this.currentPage,
-      // ✅ FIX: Xử lý đúng trường hợp totalPage = 0
       totalPage: totalPage != null ? totalPage : this.totalPage,
       query: query ?? this.query,
       failure: failure,
@@ -111,7 +110,6 @@ class PostsListNotifier extends StateNotifier<PostsListState> {
           newPosts = state.posts;
         }
 
-        // ✅ FIX: Xử lý đúng trường hợp totalPage = 0
         final actualTotalPage = postsResult.totalPage;
         final actualCurrentPage = actualTotalPage > 0 ? state.query.page : 1;
         final actualHasMoreData =
@@ -123,7 +121,7 @@ class PostsListNotifier extends StateNotifier<PostsListState> {
           isLoadingPage: false,
           posts: newPosts,
           currentPage: actualCurrentPage,
-          totalPage: actualTotalPage, // ✅ Cho phép totalPage = 0
+          totalPage: actualTotalPage,
           hasMoreData: actualHasMoreData,
         );
       },

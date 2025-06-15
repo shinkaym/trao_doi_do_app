@@ -67,6 +67,88 @@ class Post extends Equatable {
   ];
 }
 
+class PostDetail extends Post {
+  final List<Interest> interests;
+  final List<ItemDetail> items;
+
+  const PostDetail({
+    super.id,
+    super.authorID,
+    super.authorName,
+    super.authorAvatar,
+    required super.title,
+    required super.description,
+    required super.info,
+    required super.type,
+    super.categoryID,
+    super.slug,
+    super.status,
+    super.images = const [],
+    super.newItems = const [],
+    super.oldItems = const [],
+    super.tags = const [],
+    super.interestCount,
+    super.itemCount,
+    super.currentItemCount,
+    super.createdAt,
+    this.interests = const [],
+    this.items = const [],
+  });
+
+  @override
+  List<Object?> get props => [...super.props, interests, items];
+}
+
+class Interest extends Equatable {
+  final int id;
+  final int userID;
+  final String userName;
+  final String userAvatar;
+  final DateTime? createdAt;
+
+  const Interest({
+    required this.id,
+    required this.userID,
+    required this.userName,
+    required this.userAvatar,
+    this.createdAt,
+  });
+
+  @override
+  List<Object?> get props => [id, userID, userName, userAvatar, createdAt];
+}
+
+class ItemDetail extends Equatable {
+  final int itemID;
+  final int categoryID;
+  final String categoryName;
+  final String name;
+  final int quantity;
+  final int currentQuantity;
+  final String image;
+
+  const ItemDetail({
+    required this.itemID,
+    required this.categoryID,
+    required this.categoryName,
+    required this.name,
+    required this.quantity,
+    required this.currentQuantity,
+    required this.image,
+  });
+
+  @override
+  List<Object?> get props => [
+    itemID,
+    categoryID,
+    categoryName,
+    name,
+    quantity,
+    currentQuantity,
+    image,
+  ];
+}
+
 class NewItem extends Equatable {
   final int categoryID;
   final String name;

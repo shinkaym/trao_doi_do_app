@@ -1,18 +1,18 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
-import 'package:trao_doi_do_app/data/models/response/post_response_model.dart';
+import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_post_detail_usecase.dart';
 
 class PostDetailState {
   final bool isLoading;
-  final PostDetailModel? post;
+  final PostDetail? post;
   final Failure? failure;
 
   PostDetailState({this.isLoading = false, this.post, this.failure});
 
   PostDetailState copyWith({
     bool? isLoading,
-    PostDetailModel? post,
+    PostDetail? post,
     Failure? failure,
   }) {
     return PostDetailState(
@@ -37,7 +37,10 @@ class PostDetailNotifier extends StateNotifier<PostDetailState> {
 
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, failure: failure),
-      (post) => state = state.copyWith(isLoading: false, post: post),
+      (postDetailResponse) {
+        final postDetail = postDetailResponse.post;
+        state = state.copyWith(isLoading: false, post: postDetail);
+      },
     );
   }
 

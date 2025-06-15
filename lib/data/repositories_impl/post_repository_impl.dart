@@ -1,12 +1,12 @@
 import 'package:dartz/dartz.dart';
-import 'package:trao_doi_do_app/core/error/app_exception.dart';
+import 'package:trao_doi_do_app/core/extensions/repository_extensions.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/post_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/models/post_model.dart';
-import 'package:trao_doi_do_app/data/models/response/post_response_model.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
-import 'package:trao_doi_do_app/domain/usecases/params/posts_query.dart';
+import 'package:trao_doi_do_app/domain/entities/response/post_response.dart';
 import 'package:trao_doi_do_app/domain/repositories/post_repository.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/posts_query.dart';
 
 class PostRepositoryImpl implements PostRepository {
   final PostRemoteDataSource _remoteDataSource;
@@ -14,87 +14,29 @@ class PostRepositoryImpl implements PostRepository {
   PostRepositoryImpl(this._remoteDataSource);
 
   @override
-  Future<Either<Failure, void>> createPost(Post post) async {
-    try {
+  Future<Either<Failure, String>> createPost(Post post) async {
+    return handleRepositoryCall<String>(() async {
       final postModel = PostModel.fromEntity(post);
-      await _remoteDataSource.createPost(postModel);
-      return const Right(null);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message, e.statusCode));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } on ValidationException catch (e) {
-      return Left(ValidationFailure(e.message));
-    } catch (e) {
-      return Left(ServerFailure('Lỗi không xác định'));
-    }
+      final result = await _remoteDataSource.createPost(postModel);
+      return result;
+    }, 'Lỗi tạo bài đăng');
   }
 
   @override
-  Future<Either<Failure, PostsResult>> getPosts(PostsQuery query) async {
-    try {
-      final apiResponse = await _remoteDataSource.getPosts(query);
-
-      if (apiResponse.code >= 200 &&
-          apiResponse.code < 300 &&
-          apiResponse.data != null) {
-        final postsData = apiResponse.data!;
-
-        final result = PostsResult(
-          posts: postsData.posts,
-          totalPage: postsData.totalPage,
-        );
-
-        return Right(result);
-      } else {
-        return Left(
-          ServerFailure(
-            apiResponse.message.isNotEmpty
-                ? apiResponse.message
-                : 'Lỗi không xác định khi tải danh sách bài đăng',
-            apiResponse.code,
-          ),
-        );
-      }
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message, e.statusCode));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } catch (e) {
-      return Left(
-        ServerFailure('Lỗi không xác định khi tải danh sách bài đăng'),
-      );
-    }
+  Future<Either<Failure, PostsResponse>> getPosts(PostsQuery query) async {
+    return handleRepositoryCall<PostsResponse>(() async {
+      final remoteResponse = await _remoteDataSource.getPosts(query);
+      final postsEntity = remoteResponse.toEntity();
+      return postsEntity;
+    }, 'Lỗi tải danh sách bài đăng');
   }
 
   @override
-  Future<Either<Failure, PostDetailModel>> getPostBySlug(String slug) async {
-    try {
-      final apiResponse = await _remoteDataSource.getPostBySlug(slug);
-
-      if (apiResponse.code >= 200 &&
-          apiResponse.code < 300 &&
-          apiResponse.data != null) {
-        final postDetail = apiResponse.data!.post;
-        return Right(postDetail);
-      } else {
-        return Left(
-          ServerFailure(
-            apiResponse.message.isNotEmpty
-                ? apiResponse.message
-                : 'Lỗi không xác định khi tải chi tiết bài đăng',
-            apiResponse.code,
-          ),
-        );
-      }
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message, e.statusCode));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } catch (e) {
-      return Left(
-        ServerFailure('Lỗi không xác định khi tải chi tiết bài đăng'),
-      );
-    }
+  Future<Either<Failure, PostDetailResponse>> getPostBySlug(String slug) async {
+    return handleRepositoryCall<PostDetailResponse>(() async {
+      final remoteResponse = await _remoteDataSource.getPostBySlug(slug);
+      final postDetailEntity = remoteResponse.toEntity();
+      return postDetailEntity;
+    }, 'Lỗi tải chi tiết bài đăng');
   }
 }

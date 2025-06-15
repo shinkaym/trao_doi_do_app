@@ -1,3 +1,5 @@
+// File: /lib/data/models/post_model.dart
+
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 
 class PostModel extends Post {
@@ -98,6 +100,30 @@ class PostModel extends Post {
     );
   }
 
+  Post toEntity() {
+    return Post(
+      id: id,
+      authorID: authorID,
+      authorName: authorName,
+      authorAvatar: authorAvatar,
+      title: title,
+      description: description,
+      info: info,
+      type: type,
+      categoryID: categoryID,
+      slug: slug,
+      status: status,
+      images: images,
+      newItems: newItems,
+      oldItems: oldItems,
+      tags: tags,
+      interestCount: interestCount,
+      itemCount: itemCount,
+      currentItemCount: currentItemCount,
+      createdAt: createdAt,
+    );
+  }
+
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> json = {
       'title': title,
@@ -139,11 +165,218 @@ class PostModel extends Post {
         json['images'] = images;
         break;
       case 3: // findLost - has images
-      case 4: // freePost - has images (changed from 5 to 4)
+      case 4: // freePost - has images
         json['images'] = images;
         break;
     }
 
     return json;
+  }
+}
+
+class PostDetailModel extends PostDetail {
+  const PostDetailModel({
+    super.id,
+    super.authorID,
+    super.authorName,
+    super.authorAvatar,
+    required super.title,
+    required super.description,
+    required super.info,
+    required super.type,
+    super.categoryID,
+    super.slug,
+    super.status,
+    super.images = const [],
+    super.newItems = const [],
+    super.oldItems = const [],
+    super.tags = const [],
+    super.interestCount,
+    super.itemCount,
+    super.currentItemCount,
+    super.createdAt,
+    super.interests = const [],
+    super.items = const [],
+  });
+
+  factory PostDetailModel.fromJson(Map<String, dynamic> json) {
+    return PostDetailModel(
+      id: json['id'],
+      authorID: json['authorID'],
+      authorName: json['authorName'] ?? '',
+      authorAvatar: json['authorAvatar'] ?? '',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      info: json['info'] ?? '{}',
+      type: json['type'] ?? 1,
+      categoryID: json['categoryID'],
+      slug: json['slug'] ?? '',
+      status: json['status'],
+      images: json['images'] != null ? List<String>.from(json['images']) : [],
+      newItems: [], // For detail, we use items array instead
+      oldItems: [], // For detail, we use items array instead
+      interestCount: json['interestCount'],
+      itemCount: json['itemCount'],
+      currentItemCount: json['currentItemCount'],
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'])
+              : null,
+      tags: json['tags'] != null ? List<String>.from(json['tags']) : [],
+      interests:
+          json['interests'] != null
+              ? (json['interests'] as List)
+                  .map(
+                    (interest) => InterestModel.fromJson(
+                      interest as Map<String, dynamic>,
+                    ),
+                  )
+                  .toList()
+              : [],
+      items:
+          json['items'] != null
+              ? (json['items'] as List)
+                  .map(
+                    (item) =>
+                        ItemDetailModel.fromJson(item as Map<String, dynamic>),
+                  )
+                  .toList()
+              : [],
+    );
+  }
+
+  PostDetail toEntity() {
+    return PostDetail(
+      id: id,
+      authorID: authorID,
+      authorName: authorName,
+      authorAvatar: authorAvatar,
+      title: title,
+      description: description,
+      info: info,
+      type: type,
+      categoryID: categoryID,
+      slug: slug,
+      status: status,
+      images: images,
+      newItems: newItems,
+      oldItems: oldItems,
+      tags: tags,
+      interestCount: interestCount,
+      itemCount: itemCount,
+      currentItemCount: currentItemCount,
+      createdAt: createdAt,
+      interests: interests,
+      items: items,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{
+      'id': id,
+      'authorID': authorID,
+      'authorName': authorName,
+      'authorAvatar': authorAvatar,
+      'title': title,
+      'description': description,
+      'info': info,
+      'type': type,
+      'categoryID': categoryID,
+      'slug': slug,
+      'status': status,
+      'images': images,
+      'interestCount': interestCount,
+      'itemCount': itemCount,
+      'currentItemCount': currentItemCount,
+      'createdAt': createdAt?.toIso8601String(),
+      'tags': tags,
+      'interests':
+          interests
+              .map((interest) => (interest as InterestModel).toJson())
+              .toList(),
+      'items': items.map((item) => (item as ItemDetailModel).toJson()).toList(),
+    };
+    return json;
+  }
+}
+
+class InterestModel extends Interest {
+  final int? postID;
+  final String? message;
+
+  const InterestModel({
+    required super.id,
+    required super.userID,
+    required super.userName,
+    required super.userAvatar,
+    super.createdAt,
+    this.postID,
+    this.message,
+  });
+
+  factory InterestModel.fromJson(Map<String, dynamic> json) {
+    return InterestModel(
+      id: json['id'],
+      userID: json['userID'],
+      userName: json['userName'] ?? '',
+      userAvatar: json['userAvatar'] ?? '',
+      createdAt:
+          json['createdAt'] != null
+              ? DateTime.tryParse(json['createdAt'])
+              : null,
+      postID: json['postID'],
+      message: json['message'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userID': userID,
+      'userName': userName,
+      'userAvatar': userAvatar,
+      'createdAt': createdAt?.toIso8601String(),
+      'postID': postID,
+      'message': message,
+    };
+  }
+
+  @override
+  List<Object?> get props => [...super.props, postID, message];
+}
+
+class ItemDetailModel extends ItemDetail {
+  const ItemDetailModel({
+    required super.itemID,
+    required super.categoryID,
+    required super.categoryName,
+    required super.name,
+    required super.quantity,
+    required super.currentQuantity,
+    required super.image,
+  });
+
+  factory ItemDetailModel.fromJson(Map<String, dynamic> json) {
+    return ItemDetailModel(
+      itemID: json['itemID'] as int,
+      categoryID: json['categoryID'] as int,
+      categoryName: json['categoryName'] as String,
+      name: json['name'] as String,
+      quantity: json['quantity'] as int,
+      currentQuantity: json['currentQuantity'] as int,
+      image: json['image'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'itemID': itemID,
+      'categoryID': categoryID,
+      'categoryName': categoryName,
+      'name': name,
+      'quantity': quantity,
+      'currentQuantity': currentQuantity,
+      'image': image,
+    };
   }
 }

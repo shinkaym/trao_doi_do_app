@@ -7,9 +7,8 @@ import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
-import 'package:trao_doi_do_app/data/models/others_model.dart';
+import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
-import 'package:trao_doi_do_app/data/models/response/post_response_model.dart';
 
 class PostDetailScreen extends HookConsumerWidget {
   final String postSlug;
@@ -43,29 +42,37 @@ class PostDetailScreen extends HookConsumerWidget {
     // Load post detail on first build
     useEffect(() {
       Future.microtask(() {
-        ref.read(postDetailProvider.notifier).getPostDetail(postSlug);
+        if (context.mounted) {
+          ref.read(postDetailProvider.notifier).getPostDetail(postSlug);
+        }
       });
       return () {
-        ref.read(postDetailProvider.notifier).clearPost();
+        // Add mounted check before cleanup
+        if (context.mounted) {
+          ref.read(postDetailProvider.notifier).clearPost();
+        }
       };
     }, [postSlug]);
 
     // Animation trigger when post is loaded
     useEffect(() {
       if (postDetailState.post != null && !postDetailState.isLoading) {
-        animationController.forward();
+        if (context.mounted && animationController.isAnimating == false) {
+          animationController.forward();
+        }
       }
       return null;
     }, [postDetailState.post, postDetailState.isLoading]);
 
     // Helper functions to check interest status
-    bool isUserInterested(List<InterestModel> interests, int? userID) {
+    bool isUserInterested(List<Interest> interests, int? userID) {
       if (userID == null) return false;
       return interests.any((interest) => interest.userID == userID);
     }
 
-    // Event handlers
     void handleBookmark() {
+      if (!context.mounted) return;
+
       isBookmarked.value = !isBookmarked.value;
       if (isBookmarked.value) {
         context.showSuccessSnackBar('Đã lưu bài đăng');
@@ -74,47 +81,51 @@ class PostDetailScreen extends HookConsumerWidget {
       }
     }
 
+    void handleShare() {
+      if (!context.mounted) return;
+      context.showInfoSnackBar('Đã sao chép link bài đăng');
+    }
+
     void handleInterest() async {
+      if (!context.mounted) return;
+
       final post = postDetailState.post;
       final currentUser = authState.user;
 
       if (post == null || currentUser == null) {
-        context.showErrorSnackBar('Vui lòng đăng nhập để quan tâm bài đăng');
+        if (context.mounted) {
+          context.showErrorSnackBar('Vui lòng đăng nhập để quan tâm bài đăng');
+        }
         return;
       }
 
       if (!interestState.isLoading) {
-        // Kiểm tra trạng thái hiện tại của user trong danh sách interests
         final userInterested = isUserInterested(post.interests, currentUser.id);
-
-        // Xác định action dựa trên trạng thái hiện tại
         final action =
             userInterested ? InterestAction.cancel : InterestAction.create;
 
-        // Gọi API toggle interest với action đã xác định
         await ref
             .read(interestProvider.notifier)
             .toggleInterest(post.id!, action);
+
+        if (!context.mounted) return;
 
         final updatedState = ref.read(interestProvider);
 
         if (updatedState.result?.message != null) {
           HapticFeedback.lightImpact();
 
-          // Reload post detail để cập nhật danh sách interests
-          ref.read(postDetailProvider.notifier).getPostDetail(postSlug);
-
-          // Xóa message để lần sau không hiển thị lại
-          ref.read(interestProvider.notifier).clearMessages();
+          if (context.mounted) {
+            ref.read(postDetailProvider.notifier).getPostDetail(postSlug);
+            ref.read(interestProvider.notifier).clearMessages();
+          }
         } else if (updatedState.failure != null) {
-          context.showErrorSnackBar(updatedState.failure!.message);
-          ref.read(interestProvider.notifier).clearMessages();
+          if (context.mounted) {
+            context.showErrorSnackBar(updatedState.failure!.message);
+            ref.read(interestProvider.notifier).clearMessages();
+          }
         }
       }
-    }
-
-    void handleShare() {
-      context.showInfoSnackBar('Đã sao chép link bài đăng');
     }
 
     // UI
@@ -172,7 +183,11 @@ class PostDetailScreen extends HookConsumerWidget {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  ref.read(postDetailProvider.notifier).getPostDetail(postSlug);
+                  if (context.mounted) {
+                    ref
+                        .read(postDetailProvider.notifier)
+                        .getPostDetail(postSlug);
+                  }
                 },
                 child: const Text('Thử lại'),
               ),
@@ -226,7 +241,11 @@ class PostDetailScreen extends HookConsumerWidget {
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
-                  onPressed: () => context.pop(),
+                  onPressed:
+                      () => {
+                        if (context.mounted) {context.pop()},
+                      },
+
                   icon: const Icon(Icons.arrow_back, color: Colors.white),
                 ),
               ),
@@ -411,7 +430,7 @@ class PostDetailScreen extends HookConsumerWidget {
 
   // Post Content Widget
   Widget _buildPostContent(
-    PostDetailModel post,
+    PostDetail post,
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -463,7 +482,7 @@ class PostDetailScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildAvatar(PostDetailModel post, bool isTablet, ThemeData theme) {
+  Widget _buildAvatar(PostDetail post, bool isTablet, ThemeData theme) {
     final radius = isTablet ? 24.0 : 20.0;
 
     if (post.authorAvatar != null && post.authorAvatar!.isNotEmpty) {
@@ -486,7 +505,7 @@ class PostDetailScreen extends HookConsumerWidget {
   }
 
   Widget _buildPostHeader(
-    PostDetailModel post,
+    PostDetail post,
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -533,7 +552,7 @@ class PostDetailScreen extends HookConsumerWidget {
   }
 
   Widget _buildPostContentText(
-    PostDetailModel post,
+    PostDetail post,
     bool isTablet,
     ThemeData theme,
     ValueNotifier<bool> showFullContent,
@@ -570,7 +589,7 @@ class PostDetailScreen extends HookConsumerWidget {
   }
 
   Widget _buildPostDetailsByType(
-    PostDetailModel post,
+    PostDetail post,
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -771,7 +790,7 @@ class PostDetailScreen extends HookConsumerWidget {
   }
 
   Widget _buildItemCard(
-    ItemDetailModel item,
+    ItemDetail item,
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -888,7 +907,7 @@ class PostDetailScreen extends HookConsumerWidget {
 
   // UPDATED: New interests section design
   Widget _buildInterestsSection(
-    List<InterestModel> interests,
+    List<Interest> interests,
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -909,7 +928,7 @@ class PostDetailScreen extends HookConsumerWidget {
   }
 
   Widget _buildSectionHeader(
-    List<InterestModel> interests,
+    List<Interest> interests,
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -1057,7 +1076,7 @@ class PostDetailScreen extends HookConsumerWidget {
   }
 
   Widget _buildInterestsList(
-    List<InterestModel> interests,
+    List<Interest> interests,
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -1119,7 +1138,7 @@ class PostDetailScreen extends HookConsumerWidget {
   }
 
   Widget _buildUserCard(
-    InterestModel interest,
+    Interest interest,
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -1223,7 +1242,7 @@ class PostDetailScreen extends HookConsumerWidget {
   }
 
   Widget _buildUserAvatar(
-    InterestModel interest,
+    Interest interest,
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
@@ -1267,10 +1286,10 @@ class PostDetailScreen extends HookConsumerWidget {
     return '${name.substring(0, maxLength)}...';
   }
 
-  void _onUserTap(InterestModel interest) {}
+  void _onUserTap(Interest interest) {}
 
   void _showAllInterestedUsers(
-    List<InterestModel> interests,
+    List<Interest> interests,
     ThemeData theme,
     ColorScheme colorScheme,
   ) {}

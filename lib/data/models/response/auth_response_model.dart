@@ -40,3 +40,29 @@ class LoginResponseModel {
     );
   }
 }
+
+class GetMeResponseModel {
+  final UserModel user;
+
+  const GetMeResponseModel({required this.user});
+
+  factory GetMeResponseModel.fromJson(Map<String, dynamic> json) {
+    return GetMeResponseModel(
+      user: UserModel.fromJson(json['user'] as Map<String, dynamic>),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'user': user.toJson()};
+  }
+}
+
+class RefreshTokenResponse {
+  final String jwt;
+
+  RefreshTokenResponse({required this.jwt});
+
+  factory RefreshTokenResponse.fromJson(Map<String, dynamic> json) {
+    return RefreshTokenResponse(jwt: json['jwt'] as String);
+  }
+}
