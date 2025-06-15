@@ -1,4 +1,4 @@
-import 'package:trao_doi_do_app/domain/entities/request/login_request.dart';
+import 'package:trao_doi_do_app/domain/entities/request/auth_request.dart';
 
 class LoginRequestModel {
   final String device;

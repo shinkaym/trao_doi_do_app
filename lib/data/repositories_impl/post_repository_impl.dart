@@ -6,7 +6,7 @@ import 'package:trao_doi_do_app/data/models/post_model.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/domain/entities/response/post_response.dart';
 import 'package:trao_doi_do_app/domain/repositories/post_repository.dart';
-import 'package:trao_doi_do_app/domain/usecases/params/posts_query.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/post_query.dart';
 
 class PostRepositoryImpl implements PostRepository {
   final PostRemoteDataSource _remoteDataSource;

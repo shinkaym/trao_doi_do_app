@@ -2,7 +2,7 @@ import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/network/dio_client.dart';
 import 'package:trao_doi_do_app/data/models/response/api_response_model.dart';
 import 'package:trao_doi_do_app/data/models/response/interest_response_model.dart';
-import 'package:trao_doi_do_app/domain/usecases/params/interests_query.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/interest_query.dart';
 
 abstract class InterestRemoteDataSource {
   Future<InterestActionResponseModel> createInterest(int postID);

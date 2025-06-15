@@ -1,7 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
-import 'package:trao_doi_do_app/domain/usecases/params/transactions_query.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/transaction_query.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_transactions_usecase.dart';
 
 class TransactionsListState {

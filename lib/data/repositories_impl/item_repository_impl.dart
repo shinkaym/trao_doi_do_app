@@ -4,7 +4,7 @@ import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/item_remote_datasource.dart';
 import 'package:trao_doi_do_app/domain/entities/response/item_response.dart';
 import 'package:trao_doi_do_app/domain/repositories/item_repository.dart';
-import 'package:trao_doi_do_app/domain/usecases/params/items_query.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/item_query.dart';
 
 class ItemRepositoryImpl implements ItemRepository {
   final ItemRemoteDataSource _remoteDataSource;

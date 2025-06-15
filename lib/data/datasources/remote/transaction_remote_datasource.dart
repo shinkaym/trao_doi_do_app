@@ -3,7 +3,7 @@ import 'package:trao_doi_do_app/core/network/dio_client.dart';
 import 'package:trao_doi_do_app/data/models/response/api_response_model.dart';
 import 'package:trao_doi_do_app/data/models/response/transaction_response_model.dart';
 import 'package:trao_doi_do_app/data/models/transaction_model.dart';
-import 'package:trao_doi_do_app/domain/usecases/params/transactions_query.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/transaction_query.dart';
 
 abstract class TransactionRemoteDataSource {
   Future<ApiResponseModel<TransactionsResponseModel>> getTransactions(

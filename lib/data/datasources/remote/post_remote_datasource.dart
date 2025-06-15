@@ -4,7 +4,7 @@ import 'package:trao_doi_do_app/core/network/dio_client.dart';
 import 'package:trao_doi_do_app/data/models/post_model.dart';
 import 'package:trao_doi_do_app/data/models/response/api_response_model.dart';
 import 'package:trao_doi_do_app/data/models/response/post_response_model.dart';
-import 'package:trao_doi_do_app/domain/usecases/params/posts_query.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/post_query.dart';
 
 abstract class PostRemoteDataSource {
   Future<String> createPost(PostModel post);

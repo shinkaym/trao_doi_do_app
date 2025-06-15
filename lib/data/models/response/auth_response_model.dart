@@ -1,5 +1,5 @@
 import 'package:trao_doi_do_app/data/models/user_model.dart';
-import 'package:trao_doi_do_app/domain/entities/response/login_response.dart';
+import 'package:trao_doi_do_app/domain/entities/response/auth_response.dart';
 
 class LoginResponseModel {
   final String jwt;

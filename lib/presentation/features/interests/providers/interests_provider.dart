@@ -1,7 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
-import 'package:trao_doi_do_app/domain/usecases/params/interests_query.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/interest_query.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_interests_usecase.dart';
 
 class InterestsListState {

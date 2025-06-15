@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/network/dio_client.dart';
-import 'package:trao_doi_do_app/data/models/request/login_request_model.dart';
+import 'package:trao_doi_do_app/data/models/request/auth_request_model.dart';
 import 'package:trao_doi_do_app/data/models/response/api_response_model.dart';
 import 'package:trao_doi_do_app/data/models/response/auth_response_model.dart';
 
