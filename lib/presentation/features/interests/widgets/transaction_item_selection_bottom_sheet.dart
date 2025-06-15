@@ -4,8 +4,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
-import 'package:trao_doi_do_app/data/models/transaction_model.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
+import 'package:trao_doi_do_app/domain/entities/request/transaction_request.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/transaction_provider.dart';
 
 class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
@@ -85,7 +85,7 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
       final transactionItems =
           selectedItems.value.entries
               .map(
-                (entry) => CreateTransactionItemModel(
+                (entry) => CreateTransactionItemRequest(
                   postItemID: entry.key,
                   quantity: entry.value,
                 ),
@@ -93,15 +93,13 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
               .toList();
 
       // Create transaction model
-      final createTransactionModel = CreateTransactionModel(
+      final create = CreateTransactionRequest(
         interestID: interestId,
         items: transactionItems,
       );
 
       // Call the provider to create transaction
-      ref
-          .read(transactionProvider.notifier)
-          .createTransaction(createTransactionModel);
+      ref.read(transactionProvider.notifier).createTransaction(create);
     }
 
     final hasSelectedItems = selectedItems.value.isNotEmpty;

@@ -1,5 +1,3 @@
-// File: /lib/data/models/response/post_response_model.dart
-
 import 'package:trao_doi_do_app/data/models/post_model.dart';
 import 'package:trao_doi_do_app/domain/entities/response/post_response.dart';
 

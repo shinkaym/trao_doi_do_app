@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
-import 'package:trao_doi_do_app/data/models/transaction_model.dart';
+import 'package:trao_doi_do_app/domain/entities/request/transaction_request.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
 import 'package:trao_doi_do_app/domain/repositories/transaction_repository.dart';
 
@@ -10,21 +10,21 @@ class CreateTransactionUseCase {
   CreateTransactionUseCase(this._repository);
 
   Future<Either<Failure, Transaction>> call(
-    CreateTransactionModel transaction,
+    CreateTransactionRequest request,
   ) async {
     // Validation
-    if (transaction.interestID <= 0) {
+    if (request.interestID <= 0) {
       return const Left(ValidationFailure('Interest ID không hợp lệ'));
     }
 
-    if (transaction.items.isEmpty) {
+    if (request.items.isEmpty) {
       return const Left(
         ValidationFailure('Danh sách món đồ không được để trống'),
       );
     }
 
     // Validate items
-    for (final item in transaction.items) {
+    for (final item in request.items) {
       if (item.postItemID <= 0) {
         return const Left(ValidationFailure('Post Item ID không hợp lệ'));
       }
@@ -33,6 +33,6 @@ class CreateTransactionUseCase {
       }
     }
 
-    return await _repository.createTransaction(transaction);
+    return await _repository.createTransaction(request);
   }
 }

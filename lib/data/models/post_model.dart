@@ -1,28 +1,46 @@
-// File: /lib/data/models/post_model.dart
-
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 
-class PostModel extends Post {
+class PostModel {
+  final int? id;
+  final int? authorID;
+  final String? authorName;
+  final String? authorAvatar;
+  final String title;
+  final String description;
+  final String info;
+  final int type;
+  final int? categoryID;
+  final String? slug;
+  final int? status;
+  final List<String> images;
+  final List<NewItemModel> newItems;
+  final List<OldItemModel> oldItems;
+  final List<String> tags;
+  final int? interestCount;
+  final int? itemCount;
+  final int? currentItemCount;
+  final DateTime? createdAt;
+
   const PostModel({
-    super.id,
-    super.authorID,
-    super.authorName,
-    super.authorAvatar,
-    required super.title,
-    required super.description,
-    required super.info,
-    required super.type,
-    super.categoryID,
-    super.slug,
-    super.status,
-    super.images,
-    super.newItems,
-    super.oldItems,
-    super.tags,
-    super.interestCount,
-    super.currentItemCount,
-    super.itemCount,
-    super.createdAt,
+    this.id,
+    this.authorID,
+    this.authorName,
+    this.authorAvatar,
+    required this.title,
+    required this.description,
+    required this.info,
+    required this.type,
+    this.categoryID,
+    this.slug,
+    this.status,
+    this.images = const [],
+    this.newItems = const [],
+    this.oldItems = const [],
+    this.tags = const [],
+    this.interestCount,
+    this.itemCount,
+    this.currentItemCount,
+    this.createdAt,
   });
 
   factory PostModel.fromEntity(Post post) {
@@ -39,8 +57,10 @@ class PostModel extends Post {
       slug: post.slug,
       status: post.status,
       images: post.images,
-      newItems: post.newItems,
-      oldItems: post.oldItems,
+      newItems:
+          post.newItems.map((item) => NewItemModel.fromEntity(item)).toList(),
+      oldItems:
+          post.oldItems.map((item) => OldItemModel.fromEntity(item)).toList(),
       tags: post.tags,
       interestCount: post.interestCount,
       itemCount: post.itemCount,
@@ -49,7 +69,6 @@ class PostModel extends Post {
     );
   }
 
-  // Factory constructor từ JSON response
   factory PostModel.fromJson(Map<String, dynamic> json) {
     return PostModel(
       id: json['id'],
@@ -68,12 +87,8 @@ class PostModel extends Post {
           json['newItems'] != null
               ? (json['newItems'] as List)
                   .map(
-                    (item) => NewItem(
-                      categoryID: item['categoryID'] ?? 0,
-                      name: item['name'] ?? '',
-                      quantity: item['quantity'] ?? 1,
-                      image: item['image'] ?? '',
-                    ),
+                    (item) =>
+                        NewItemModel.fromJson(item as Map<String, dynamic>),
                   )
                   .toList()
               : [],
@@ -81,11 +96,8 @@ class PostModel extends Post {
           json['oldItems'] != null
               ? (json['oldItems'] as List)
                   .map(
-                    (item) => OldItem(
-                      itemID: item['itemID'] ?? 0,
-                      quantity: item['quantity'] ?? 1,
-                      image: item['image'] ?? '',
-                    ),
+                    (item) =>
+                        OldItemModel.fromJson(item as Map<String, dynamic>),
                   )
                   .toList()
               : [],
@@ -114,8 +126,8 @@ class PostModel extends Post {
       slug: slug,
       status: status,
       images: images,
-      newItems: newItems,
-      oldItems: oldItems,
+      newItems: newItems.map((item) => item.toEntity()).toList(),
+      oldItems: oldItems.map((item) => item.toEntity()).toList(),
       tags: tags,
       interestCount: interestCount,
       itemCount: itemCount,
@@ -129,43 +141,22 @@ class PostModel extends Post {
       'title': title,
       'description': description,
       'type': type,
-      'info': info, // Already JSON string
+      'info': info,
     };
 
     if (type == 3 && categoryID != null) {
       json['categoryID'] = categoryID;
     }
 
-    // Add type-specific fields
     switch (type) {
-      case 1: // giveAway - has newItems and oldItems
-      case 2: // foundItem - has newItems and oldItems
-        json['newItems'] =
-            newItems
-                .map(
-                  (item) => {
-                    'categoryID': item.categoryID,
-                    'name': item.name,
-                    'quantity': item.quantity,
-                    'image': item.image,
-                  },
-                )
-                .toList();
-
-        json['oldItems'] =
-            oldItems
-                .map(
-                  (item) => {
-                    'itemID': item.itemID,
-                    'quantity': item.quantity,
-                    'image': item.image,
-                  },
-                )
-                .toList();
+      case 1:
+      case 2:
+        json['newItems'] = newItems.map((item) => item.toJson()).toList();
+        json['oldItems'] = oldItems.map((item) => item.toJson()).toList();
         json['images'] = images;
         break;
-      case 3: // findLost - has images
-      case 4: // freePost - has images
+      case 3:
+      case 4:
         json['images'] = images;
         break;
     }
@@ -174,29 +165,51 @@ class PostModel extends Post {
   }
 }
 
-class PostDetailModel extends PostDetail {
+class PostDetailModel {
+  final int? id;
+  final int? authorID;
+  final String? authorName;
+  final String? authorAvatar;
+  final String title;
+  final String description;
+  final String info;
+  final int type;
+  final int? categoryID;
+  final String? slug;
+  final int? status;
+  final List<String> images;
+  final List<NewItemModel> newItems;
+  final List<OldItemModel> oldItems;
+  final List<String> tags;
+  final int? interestCount;
+  final int? itemCount;
+  final int? currentItemCount;
+  final DateTime? createdAt;
+  final List<PostInterestModel> interests;
+  final List<ItemDetailModel> items;
+
   const PostDetailModel({
-    super.id,
-    super.authorID,
-    super.authorName,
-    super.authorAvatar,
-    required super.title,
-    required super.description,
-    required super.info,
-    required super.type,
-    super.categoryID,
-    super.slug,
-    super.status,
-    super.images = const [],
-    super.newItems = const [],
-    super.oldItems = const [],
-    super.tags = const [],
-    super.interestCount,
-    super.itemCount,
-    super.currentItemCount,
-    super.createdAt,
-    super.interests = const [],
-    super.items = const [],
+    this.id,
+    this.authorID,
+    this.authorName,
+    this.authorAvatar,
+    required this.title,
+    required this.description,
+    required this.info,
+    required this.type,
+    this.categoryID,
+    this.slug,
+    this.status,
+    this.images = const [],
+    this.newItems = const [],
+    this.oldItems = const [],
+    this.tags = const [],
+    this.interestCount,
+    this.itemCount,
+    this.currentItemCount,
+    this.createdAt,
+    this.interests = const [],
+    this.items = const [],
   });
 
   factory PostDetailModel.fromJson(Map<String, dynamic> json) {
@@ -213,8 +226,8 @@ class PostDetailModel extends PostDetail {
       slug: json['slug'] ?? '',
       status: json['status'],
       images: json['images'] != null ? List<String>.from(json['images']) : [],
-      newItems: [], // For detail, we use items array instead
-      oldItems: [], // For detail, we use items array instead
+      newItems: [],
+      oldItems: [],
       interestCount: json['interestCount'],
       itemCount: json['itemCount'],
       currentItemCount: json['currentItemCount'],
@@ -259,20 +272,20 @@ class PostDetailModel extends PostDetail {
       slug: slug,
       status: status,
       images: images,
-      newItems: newItems,
-      oldItems: oldItems,
+      newItems: newItems.map((item) => item.toEntity()).toList(),
+      oldItems: oldItems.map((item) => item.toEntity()).toList(),
       tags: tags,
       interestCount: interestCount,
       itemCount: itemCount,
       currentItemCount: currentItemCount,
       createdAt: createdAt,
-      interests: interests,
-      items: items,
+      interests: interests.map((interest) => interest.toEntity()).toList(),
+      items: items.map((item) => item.toEntity()).toList(),
     );
   }
 
   Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{
+    return {
       'id': id,
       'authorID': authorID,
       'authorName': authorName,
@@ -290,26 +303,27 @@ class PostDetailModel extends PostDetail {
       'currentItemCount': currentItemCount,
       'createdAt': createdAt?.toIso8601String(),
       'tags': tags,
-      'interests':
-          interests
-              .map((interest) => (interest as PostInterestModel).toJson())
-              .toList(),
-      'items': items.map((item) => (item as ItemDetailModel).toJson()).toList(),
+      'interests': interests.map((interest) => interest.toJson()).toList(),
+      'items': items.map((item) => item.toJson()).toList(),
     };
-    return json;
   }
 }
 
-class PostInterestModel extends PostInterest {
+class PostInterestModel {
+  final int id;
+  final int userID;
+  final String userName;
+  final String userAvatar;
+  final DateTime? createdAt;
   final int? postID;
   final String? message;
 
   const PostInterestModel({
-    required super.id,
-    required super.userID,
-    required super.userName,
-    required super.userAvatar,
-    super.createdAt,
+    required this.id,
+    required this.userID,
+    required this.userName,
+    required this.userAvatar,
+    this.createdAt,
     this.postID,
     this.message,
   });
@@ -341,19 +355,44 @@ class PostInterestModel extends PostInterest {
     };
   }
 
-  @override
-  List<Object?> get props => [...super.props, postID, message];
+  PostInterest toEntity() {
+    return PostInterest(
+      id: id,
+      userID: userID,
+      userName: userName,
+      userAvatar: userAvatar,
+      createdAt: createdAt,
+    );
+  }
+
+  factory PostInterestModel.fromEntity(PostInterest entity) {
+    return PostInterestModel(
+      id: entity.id,
+      userID: entity.userID,
+      userName: entity.userName,
+      userAvatar: entity.userAvatar,
+      createdAt: entity.createdAt,
+    );
+  }
 }
 
-class ItemDetailModel extends ItemDetail {
+class ItemDetailModel {
+  final int itemID;
+  final int categoryID;
+  final String categoryName;
+  final String name;
+  final int quantity;
+  final int currentQuantity;
+  final String image;
+
   const ItemDetailModel({
-    required super.itemID,
-    required super.categoryID,
-    required super.categoryName,
-    required super.name,
-    required super.quantity,
-    required super.currentQuantity,
-    required super.image,
+    required this.itemID,
+    required this.categoryID,
+    required this.categoryName,
+    required this.name,
+    required this.quantity,
+    required this.currentQuantity,
+    required this.image,
   });
 
   factory ItemDetailModel.fromJson(Map<String, dynamic> json) {
@@ -378,5 +417,115 @@ class ItemDetailModel extends ItemDetail {
       'currentQuantity': currentQuantity,
       'image': image,
     };
+  }
+
+  ItemDetail toEntity() {
+    return ItemDetail(
+      itemID: itemID,
+      categoryID: categoryID,
+      categoryName: categoryName,
+      name: name,
+      quantity: quantity,
+      currentQuantity: currentQuantity,
+      image: image,
+    );
+  }
+
+  factory ItemDetailModel.fromEntity(ItemDetail entity) {
+    return ItemDetailModel(
+      itemID: entity.itemID,
+      categoryID: entity.categoryID,
+      categoryName: entity.categoryName,
+      name: entity.name,
+      quantity: entity.quantity,
+      currentQuantity: entity.currentQuantity,
+      image: entity.image,
+    );
+  }
+}
+
+class NewItemModel {
+  final int categoryID;
+  final String name;
+  final int quantity;
+  final String image;
+
+  const NewItemModel({
+    required this.categoryID,
+    required this.name,
+    this.quantity = 1,
+    required this.image,
+  });
+
+  factory NewItemModel.fromJson(Map<String, dynamic> json) {
+    return NewItemModel(
+      categoryID: json['categoryID'] ?? 0,
+      name: json['name'] ?? '',
+      quantity: json['quantity'] ?? 1,
+      image: json['image'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'categoryID': categoryID,
+      'name': name,
+      'quantity': quantity,
+      'image': image,
+    };
+  }
+
+  NewItem toEntity() {
+    return NewItem(
+      categoryID: categoryID,
+      name: name,
+      quantity: quantity,
+      image: image,
+    );
+  }
+
+  factory NewItemModel.fromEntity(NewItem entity) {
+    return NewItemModel(
+      categoryID: entity.categoryID,
+      name: entity.name,
+      quantity: entity.quantity,
+      image: entity.image,
+    );
+  }
+}
+
+class OldItemModel {
+  final int itemID;
+  final int quantity;
+  final String image;
+
+  const OldItemModel({
+    required this.itemID,
+    this.quantity = 1,
+    required this.image,
+  });
+
+  factory OldItemModel.fromJson(Map<String, dynamic> json) {
+    return OldItemModel(
+      itemID: json['itemID'] ?? 0,
+      quantity: json['quantity'] ?? 1,
+      image: json['image'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'itemID': itemID, 'quantity': quantity, 'image': image};
+  }
+
+  OldItem toEntity() {
+    return OldItem(itemID: itemID, quantity: quantity, image: image);
+  }
+
+  factory OldItemModel.fromEntity(OldItem entity) {
+    return OldItemModel(
+      itemID: entity.itemID,
+      quantity: entity.quantity,
+      image: entity.image,
+    );
   }
 }

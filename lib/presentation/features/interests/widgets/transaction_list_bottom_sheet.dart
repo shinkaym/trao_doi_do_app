@@ -5,8 +5,8 @@ import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
-import 'package:trao_doi_do_app/data/models/transaction_model.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
+import 'package:trao_doi_do_app/domain/entities/request/transaction_request.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
@@ -227,22 +227,22 @@ class _TransactionTile extends HookConsumerWidget {
             transaction.items.map((item) {
               final newQuantity =
                   editedItems.value[item.postItemID] ?? item.quantity;
-              return UpdateTransactionItemModel(
+              return UpdateTransactionItemRequest(
                 postItemID: item.postItemID,
                 quantity: newQuantity,
                 transactionID: transaction.id,
               );
             }).toList();
 
-        final updateModel = UpdateTransactionModel(
+        final update = UpdateTransactionRequest(
           items: updatedItems,
-          status: transaction.status, // Giữ nguyên status
+          status: transaction.status,
         );
 
         // Gọi update transaction
         await ref
             .read(transactionProvider.notifier)
-            .updateTransaction(transaction.id, updateModel);
+            .updateTransaction(transaction.id, update);
 
         if (transactionState.failure == null &&
             transactionState.updatedTransaction != null) {

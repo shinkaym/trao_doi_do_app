@@ -1,6 +1,6 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
-import 'package:trao_doi_do_app/data/models/transaction_model.dart';
+import 'package:trao_doi_do_app/domain/entities/request/transaction_request.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_transaction_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_transaction_usecase.dart';
@@ -46,10 +46,10 @@ class TransactionNotifier extends StateNotifier<TransactionState> {
     this._updateTransactionUseCase,
   ) : super(const TransactionState());
 
-  Future<void> createTransaction(CreateTransactionModel transaction) async {
+  Future<void> createTransaction(CreateTransactionRequest request) async {
     state = state.copyWith(isLoading: true, failure: null);
 
-    final result = await _createTransactionUseCase(transaction);
+    final result = await _createTransactionUseCase(request);
 
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, failure: failure),
@@ -64,11 +64,11 @@ class TransactionNotifier extends StateNotifier<TransactionState> {
 
   Future<void> updateTransaction(
     int transactionID,
-    UpdateTransactionModel transaction,
+    UpdateTransactionRequest request,
   ) async {
     state = state.copyWith(isLoading: true, failure: null);
 
-    final result = await _updateTransactionUseCase(transactionID, transaction);
+    final result = await _updateTransactionUseCase(transactionID, request);
 
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, failure: failure),

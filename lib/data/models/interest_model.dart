@@ -1,16 +1,25 @@
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
 
-class InterestModel extends Interest {
+class InterestModel {
+  final int id;
+  final int postID;
+  final int userID;
+  final String userName;
+  final String userAvatar;
+  final int status;
+  final String createdAt;
+
   const InterestModel({
-    required super.id,
-    required super.postID,
-    required super.userID,
-    required super.userName,
-    required super.userAvatar,
-    required super.status,
-    required super.createdAt,
+    required this.id,
+    required this.postID,
+    required this.userID,
+    required this.userName,
+    required this.userAvatar,
+    required this.status,
+    required this.createdAt,
   });
 
+  // Từ JSON API response
   factory InterestModel.fromJson(Map<String, dynamic> json) {
     return InterestModel(
       id: json['id'] ?? 0,
@@ -23,6 +32,7 @@ class InterestModel extends Interest {
     );
   }
 
+  // Chuyển sang JSON để gửi API
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -35,6 +45,7 @@ class InterestModel extends Interest {
     };
   }
 
+  // Chuyển đổi sang Domain Entity
   Interest toEntity() {
     return Interest(
       id: id,
@@ -47,6 +58,7 @@ class InterestModel extends Interest {
     );
   }
 
+  // Tạo Model từ Domain Entity
   factory InterestModel.fromEntity(Interest entity) {
     return InterestModel(
       id: entity.id,
@@ -60,21 +72,34 @@ class InterestModel extends Interest {
   }
 }
 
-class InterestPostModel extends InterestPost {
+class InterestPostModel {
+  final int id;
+  final String slug;
+  final String title;
+  final String description;
+  final String updatedAt;
+  final int authorID;
+  final String authorName;
+  final String authorAvatar;
+  final int type;
+  final List<InterestModel> interests;
+  final List<InterestItemModel> items;
+
   const InterestPostModel({
-    required super.id,
-    required super.slug,
-    required super.title,
-    required super.description,
-    required super.updatedAt,
-    required super.authorID,
-    required super.authorName,
-    required super.authorAvatar,
-    required super.type,
-    required super.interests,
-    required super.items,
+    required this.id,
+    required this.slug,
+    required this.title,
+    required this.description,
+    required this.updatedAt,
+    required this.authorID,
+    required this.authorName,
+    required this.authorAvatar,
+    required this.type,
+    required this.interests,
+    required this.items,
   });
 
+  // Từ JSON API response
   factory InterestPostModel.fromJson(Map<String, dynamic> json) {
     return InterestPostModel(
       id: json['id'] ?? 0,
@@ -94,7 +119,6 @@ class InterestPostModel extends InterestPost {
                       interest as Map<String, dynamic>,
                     ),
                   )
-                  .cast<Interest>()
                   .toList()
               : [],
       items:
@@ -105,12 +129,12 @@ class InterestPostModel extends InterestPost {
                       item as Map<String, dynamic>,
                     ),
                   )
-                  .cast<InterestItem>()
                   .toList()
               : [],
     );
   }
 
+  // Chuyển sang JSON để gửi API
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -122,17 +146,12 @@ class InterestPostModel extends InterestPost {
       'description': description,
       'updatedAt': updatedAt,
       'type': type,
-      'interests':
-          interests
-              .map((interest) => InterestModel.fromEntity(interest).toJson())
-              .toList(),
-      'items':
-          items
-              .map((item) => InterestItemModel.fromEntity(item).toJson())
-              .toList(),
+      'interests': interests.map((interest) => interest.toJson()).toList(),
+      'items': items.map((item) => item.toJson()).toList(),
     };
   }
 
+  // Chuyển đổi sang Domain Entity
   InterestPost toEntity() {
     return InterestPost(
       id: id,
@@ -144,11 +163,12 @@ class InterestPostModel extends InterestPost {
       authorName: authorName,
       authorAvatar: authorAvatar,
       type: type,
-      interests: interests.map((interest) => interest).toList(),
-      items: items.map((item) => item).toList(),
+      interests: interests.map((interest) => interest.toEntity()).toList(),
+      items: items.map((item) => item.toEntity()).toList(),
     );
   }
 
+  // Tạo Model từ Domain Entity
   factory InterestPostModel.fromEntity(InterestPost entity) {
     return InterestPostModel(
       id: entity.id,
@@ -160,23 +180,38 @@ class InterestPostModel extends InterestPost {
       authorName: entity.authorName,
       authorAvatar: entity.authorAvatar,
       type: entity.type,
-      interests: entity.interests,
-      items: entity.items,
+      interests:
+          entity.interests
+              .map((interest) => InterestModel.fromEntity(interest))
+              .toList(),
+      items:
+          entity.items
+              .map((item) => InterestItemModel.fromEntity(item))
+              .toList(),
     );
   }
 }
 
-class InterestItemModel extends InterestItem {
+class InterestItemModel {
+  final int id;
+  final int itemID;
+  final String name;
+  final String categoryName;
+  final String image;
+  final int quantity;
+  final int currentQuantity;
+
   const InterestItemModel({
-    required super.id,
-    required super.itemID,
-    required super.name,
-    required super.categoryName,
-    required super.image,
-    required super.quantity,
-    required super.currentQuantity,
+    required this.id,
+    required this.itemID,
+    required this.name,
+    required this.categoryName,
+    required this.image,
+    required this.quantity,
+    required this.currentQuantity,
   });
 
+  // Từ JSON API response
   factory InterestItemModel.fromJson(Map<String, dynamic> json) {
     return InterestItemModel(
       id: json['id'] ?? 0,
@@ -189,6 +224,7 @@ class InterestItemModel extends InterestItem {
     );
   }
 
+  // Chuyển sang JSON để gửi API
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -201,6 +237,7 @@ class InterestItemModel extends InterestItem {
     };
   }
 
+  // Chuyển đổi sang Domain Entity
   InterestItem toEntity() {
     return InterestItem(
       id: id,
@@ -213,6 +250,7 @@ class InterestItemModel extends InterestItem {
     );
   }
 
+  // Tạo Model từ Domain Entity
   factory InterestItemModel.fromEntity(InterestItem entity) {
     return InterestItemModel(
       id: entity.id,

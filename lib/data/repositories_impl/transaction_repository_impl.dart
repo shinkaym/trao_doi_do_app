@@ -1,11 +1,13 @@
 import 'package:dartz/dartz.dart';
-import 'package:trao_doi_do_app/core/error/app_exception.dart';
+import 'package:trao_doi_do_app/core/extensions/repository_extensions.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/transaction_remote_datasource.dart';
-import 'package:trao_doi_do_app/data/models/transaction_model.dart';
-import 'package:trao_doi_do_app/domain/usecases/params/transaction_query.dart';
+import 'package:trao_doi_do_app/data/models/response/transaction_response_model.dart';
+import 'package:trao_doi_do_app/domain/entities/request/transaction_request.dart';
+import 'package:trao_doi_do_app/domain/entities/response/transaction_response.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
 import 'package:trao_doi_do_app/domain/repositories/transaction_repository.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/transaction_query.dart';
 
 class TransactionRepositoryImpl implements TransactionRepository {
   final TransactionRemoteDataSource _remoteDataSource;
@@ -13,149 +15,97 @@ class TransactionRepositoryImpl implements TransactionRepository {
   TransactionRepositoryImpl(this._remoteDataSource);
 
   @override
-  Future<Either<Failure, TransactionsResult>> getTransactions(
+  Future<Either<Failure, TransactionsResponse>> getTransactions(
     TransactionsQuery query,
   ) async {
-    try {
-      final apiResponse = await _remoteDataSource.getTransactions(query);
-
-      if (apiResponse.code >= 200 &&
-          apiResponse.code < 300 &&
-          apiResponse.data != null) {
-        final transactionsData = apiResponse.data!;
-
-        final result = TransactionsResult(
-          transactions: transactionsData.transactions,
-          totalPage: transactionsData.totalPage,
-        );
-
-        return Right(result);
-      } else {
-        return Left(
-          ServerFailure(
-            apiResponse.message.isNotEmpty
-                ? apiResponse.message
-                : 'Lỗi không xác định khi tải danh sách giao dịch',
-            apiResponse.code,
-          ),
-        );
-      }
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message, e.statusCode));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } catch (e) {
-      return Left(
-        ServerFailure('Lỗi không xác định khi tải danh sách giao dịch'),
-      );
-    }
+    return handleRepositoryCall<TransactionsResponse>(() async {
+      final remoteResponse = await _remoteDataSource.getTransactions(query);
+      final transactionEntity = remoteResponse.toEntity();
+      return transactionEntity;
+    }, 'Lỗi khi tải danh sách giao dịch');
   }
 
   @override
   Future<Either<Failure, Transaction>> createTransaction(
-    CreateTransactionModel transaction,
+    CreateTransactionRequest request, // ✅ Domain entity
   ) async {
-    try {
-      final apiResponse = await _remoteDataSource.createTransaction(
-        transaction,
+    return handleRepositoryCall<Transaction>(() async {
+      final dataModel = _mapToCreateTransactionModel(request);
+      final remoteResponse = await _remoteDataSource.createTransaction(
+        dataModel,
       );
-
-      if (apiResponse.code >= 200 &&
-          apiResponse.code < 300 &&
-          apiResponse.data != null) {
-        return Right(apiResponse.data!);
-      } else {
-        return Left(
-          ServerFailure(
-            apiResponse.message.isNotEmpty
-                ? apiResponse.message
-                : 'Lỗi không xác định khi tạo giao dịch',
-            apiResponse.code,
-          ),
-        );
-      }
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message, e.statusCode));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } on ValidationException catch (e) {
-      return Left(ValidationFailure(e.message));
-    } catch (e) {
-      return Left(ServerFailure('Lỗi không xác định khi tạo giao dịch'));
-    }
+      return remoteResponse.toEntity();
+    }, 'Lỗi khi tạo giao dịch');
   }
 
   @override
   Future<Either<Failure, Transaction>> updateTransaction(
     int transactionID,
-    UpdateTransactionModel transaction,
+    UpdateTransactionRequest request,
   ) async {
-    try {
-      final apiResponse = await _remoteDataSource.updateTransaction(
+    return handleRepositoryCall<Transaction>(() async {
+      final dataModel = _mapToUpdateTransactionModel(request);
+      final remoteResponse = await _remoteDataSource.updateTransaction(
         transactionID,
-        transaction,
+        dataModel,
       );
-
-      if (apiResponse.code >= 200 &&
-          apiResponse.code < 300 &&
-          apiResponse.data != null) {
-        return Right(apiResponse.data!);
-      } else {
-        return Left(
-          ServerFailure(
-            apiResponse.message.isNotEmpty
-                ? apiResponse.message
-                : 'Lỗi không xác định khi cập nhật giao dịch',
-            apiResponse.code,
-          ),
-        );
-      }
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message, e.statusCode));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } on ValidationException catch (e) {
-      return Left(ValidationFailure(e.message));
-    } catch (e) {
-      return Left(ServerFailure('Lỗi không xác định khi cập nhật giao dịch'));
-    }
+      return remoteResponse.toEntity();
+    }, 'Lỗi khi cập nhật giao dịch');
   }
 
   @override
   Future<Either<Failure, Transaction>> updateTransactionStatus(
     int transactionID,
-    UpdateTransactionStatusModel transaction,
+    UpdateTransactionStatusRequest request,
   ) async {
-    try {
-      final apiResponse = await _remoteDataSource.updateTransactionStatus(
+    return handleRepositoryCall<Transaction>(() async {
+      final dataModel = _mapToUpdateTransactionStatusModel(request);
+      final remoteResponse = await _remoteDataSource.updateTransactionStatus(
         transactionID,
-        transaction,
+        dataModel,
       );
+      return remoteResponse.toEntity();
+    }, 'Lỗi khi cập nhật trạng thái giao dịch');
+  }
 
-      if (apiResponse.code >= 200 &&
-          apiResponse.code < 300 &&
-          apiResponse.data != null) {
-        return Right(apiResponse.data!);
-      } else {
-        return Left(
-          ServerFailure(
-            apiResponse.message.isNotEmpty
-                ? apiResponse.message
-                : 'Lỗi không xác định khi cập nhật trạng thái giao dịch',
-            apiResponse.code,
-          ),
-        );
-      }
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message, e.statusCode));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } on ValidationException catch (e) {
-      return Left(ValidationFailure(e.message));
-    } catch (e) {
-      return Left(
-        ServerFailure('Lỗi không xác định khi cập nhật trạng thái giao dịch'),
-      );
-    }
+  CreateTransactionRequestModel _mapToCreateTransactionModel(
+    CreateTransactionRequest request,
+  ) {
+    return CreateTransactionRequestModel(
+      interestID: request.interestID,
+      items:
+          request.items
+              .map(
+                (item) => CreateTransactionItemRequestModel(
+                  postItemID: item.postItemID,
+                  quantity: item.quantity,
+                ),
+              )
+              .toList(),
+    );
+  }
+
+  UpdateTransactionRequestModel _mapToUpdateTransactionModel(
+    UpdateTransactionRequest request,
+  ) {
+    return UpdateTransactionRequestModel(
+      items:
+          request.items
+              .map(
+                (item) => UpdateTransactionItemRequestModel(
+                  postItemID: item.postItemID,
+                  quantity: item.quantity,
+                  transactionID: item.transactionID,
+                ),
+              )
+              .toList(),
+      status: request.status,
+    );
+  }
+
+  UpdateTransactionStatusRequestModel _mapToUpdateTransactionStatusModel(
+    UpdateTransactionStatusRequest request,
+  ) {
+    return UpdateTransactionStatusRequestModel(status: request.status);
   }
 }

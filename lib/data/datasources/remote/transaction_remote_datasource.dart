@@ -6,19 +6,17 @@ import 'package:trao_doi_do_app/data/models/transaction_model.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/transaction_query.dart';
 
 abstract class TransactionRemoteDataSource {
-  Future<ApiResponseModel<TransactionsResponseModel>> getTransactions(
-    TransactionsQuery query,
+  Future<TransactionsResponseModel> getTransactions(TransactionsQuery query);
+  Future<TransactionModel> createTransaction(
+    CreateTransactionRequestModel transaction,
   );
-  Future<ApiResponseModel<TransactionModel>> createTransaction(
-    CreateTransactionModel transaction,
-  );
-  Future<ApiResponseModel<TransactionModel>> updateTransaction(
+  Future<TransactionModel> updateTransaction(
     int transactionID,
-    UpdateTransactionModel transaction,
+    UpdateTransactionRequestModel transaction,
   );
-  Future<ApiResponseModel<TransactionModel>> updateTransactionStatus(
+  Future<TransactionModel> updateTransactionStatus(
     int transactionID,
-    UpdateTransactionStatusModel transaction,
+    UpdateTransactionStatusRequestModel transaction,
   );
 }
 
@@ -28,7 +26,7 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
   TransactionRemoteDataSourceImpl(this._dioClient);
 
   @override
-  Future<ApiResponseModel<TransactionsResponseModel>> getTransactions(
+  Future<TransactionsResponseModel> getTransactions(
     TransactionsQuery query,
   ) async {
     final response = await _dioClient.get(
@@ -36,57 +34,65 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
       queryParameters: query.toQueryParams(),
     );
 
-    return ApiResponseModel.fromJson(
+    final result = ApiResponseModel.fromJson(
       response.data,
       (json) =>
           TransactionsResponseModel.fromJson(json as Map<String, dynamic>),
     );
+
+    return result.data!;
   }
 
   @override
-  Future<ApiResponseModel<TransactionModel>> createTransaction(
-    CreateTransactionModel transaction,
+  Future<TransactionModel> createTransaction(
+    CreateTransactionRequestModel transaction,
   ) async {
     final response = await _dioClient.post(
       ApiConstants.transactions,
       data: transaction.toJson(),
     );
 
-    return ApiResponseModel.fromJson(response.data, (json) {
+    final result = ApiResponseModel.fromJson(response.data, (json) {
       final map = json as Map<String, dynamic>;
       return TransactionModel.fromJson(map['transaction'] ?? map);
     });
+
+    return result.data!;
   }
 
   @override
-  Future<ApiResponseModel<TransactionModel>> updateTransaction(
+  Future<TransactionModel> updateTransaction(
     int transactionID,
-    UpdateTransactionModel transaction,
+    UpdateTransactionRequestModel transaction,
   ) async {
     final response = await _dioClient.patch(
       '${ApiConstants.transactions}/$transactionID',
       data: transaction.toJson(),
     );
 
-    return ApiResponseModel.fromJson(response.data, (json) {
+    final result = ApiResponseModel.fromJson(response.data, (json) {
       final map = json as Map<String, dynamic>;
       return TransactionModel.fromJson(map['transaction'] ?? map);
     });
+
+    return result.data!;
   }
 
   @override
-  Future<ApiResponseModel<TransactionModel>> updateTransactionStatus(
+  Future<TransactionModel> updateTransactionStatus(
     int transactionID,
-    UpdateTransactionStatusModel transaction,
+    UpdateTransactionStatusRequestModel transaction,
   ) async {
     final response = await _dioClient.patch(
       '${ApiConstants.transactions}/$transactionID',
       data: transaction.toJson(),
     );
 
-    return ApiResponseModel.fromJson(response.data, (json) {
+    final result = ApiResponseModel.fromJson(response.data, (json) {
       final map = json as Map<String, dynamic>;
       return TransactionModel.fromJson(map['transaction'] ?? map);
     });
+
+    return result.data!;
   }
 }

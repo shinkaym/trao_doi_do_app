@@ -22,7 +22,7 @@ class Transaction extends Equatable {
     required this.senderName,
     required this.status,
     required this.createdAt,
-    required this.updatedAt,
+    this.updatedAt,
   });
 
   @override
@@ -56,5 +56,11 @@ class TransactionItem extends Equatable {
   });
 
   @override
-  List<Object?> get props => [itemID, itemName, postItemID, quantity];
+  List<Object?> get props => [
+    itemID,
+    itemName,
+    itemImage,
+    postItemID,
+    quantity,
+  ];
 }

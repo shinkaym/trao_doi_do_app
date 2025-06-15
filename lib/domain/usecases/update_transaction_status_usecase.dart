@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
-import 'package:trao_doi_do_app/data/models/transaction_model.dart';
+import 'package:trao_doi_do_app/domain/entities/request/transaction_request.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
 import 'package:trao_doi_do_app/domain/repositories/transaction_repository.dart';
 
@@ -27,10 +27,7 @@ class UpdateTransactionStatusUseCase {
       );
     }
 
-    final updateModel = UpdateTransactionStatusModel(status: status);
-    return await _repository.updateTransactionStatus(
-      transactionID,
-      updateModel,
-    );
+    final request = UpdateTransactionStatusRequest(status: status);
+    return await _repository.updateTransactionStatus(transactionID, request);
   }
 }

@@ -1,12 +1,18 @@
 import 'package:trao_doi_do_app/domain/entities/item.dart';
 
-class ItemModel extends Item {
+class ItemModel {
+  final int id;
+  final int categoryID;
+  final String name;
+  final String description;
+  final String? image;
+
   const ItemModel({
-    required super.id,
-    required super.categoryID,
-    required super.name,
-    required super.description,
-    super.image,
+    required this.id,
+    required this.categoryID,
+    required this.name,
+    required this.description,
+    this.image,
   });
 
   factory ItemModel.fromJson(Map<String, dynamic> json) {
