@@ -8,7 +8,7 @@ import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
-import 'package:trao_doi_do_app/domain/entities/params/transactions_query.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/transactions_query.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/test/test.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/transaction_item_selection_bottom_sheet.dart';

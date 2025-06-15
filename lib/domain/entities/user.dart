@@ -42,37 +42,3 @@ class User extends Equatable {
     goodPoint,
   ];
 }
-
-class LoginRequest extends Equatable {
-  final String device;
-  final String email;
-  final String password;
-
-  const LoginRequest({
-    required this.device,
-    required this.email,
-    required this.password,
-  });
-
-  @override
-  List<Object?> get props => [device, email, password];
-
-  Map<String, dynamic> toJson() {
-    return {'device': device, 'email': email, 'password': password};
-  }
-}
-
-class LoginResponse extends Equatable {
-  final String jwt;
-  final String refreshToken;
-  final User user;
-
-  const LoginResponse({
-    required this.jwt,
-    required this.refreshToken,
-    required this.user,
-  });
-
-  @override
-  List<Object?> get props => [jwt, refreshToken, user];
-}

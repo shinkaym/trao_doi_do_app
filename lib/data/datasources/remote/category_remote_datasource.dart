@@ -5,7 +5,7 @@ import 'package:trao_doi_do_app/data/models/response/api_response_model.dart';
 import 'package:trao_doi_do_app/data/models/response/category_response_model.dart';
 
 abstract class CategoryRemoteDataSource {
-  Future<ApiResponseModel<CategoriesResponseModel>> getCategories();
+  Future<CategoriesResponseModel> getCategories();
 }
 
 class CategoryRemoteDataSourceImpl implements CategoryRemoteDataSource {
@@ -14,15 +14,17 @@ class CategoryRemoteDataSourceImpl implements CategoryRemoteDataSource {
   CategoryRemoteDataSourceImpl(this._dioClient);
 
   @override
-  Future<ApiResponseModel<CategoriesResponseModel>> getCategories() async {
+  Future<CategoriesResponseModel> getCategories() async {
     final response = await _dioClient.get(
       ApiConstants.categories,
       options: Options(extra: {'requiresAuth': false}),
     );
 
-    return ApiResponseModel<CategoriesResponseModel>.fromJson(
+    final result = ApiResponseModel.fromJson(
       response.data,
       (json) => CategoriesResponseModel.fromJson(json as Map<String, dynamic>),
     );
+
+    return result.data!;
   }
 }

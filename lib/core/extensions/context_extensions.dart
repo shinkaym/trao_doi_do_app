@@ -6,3 +6,4 @@ export 'dialog_extensions.dart';
 export 'bottom_sheet_extensions.dart';
 export 'focus_extensions.dart';
 export 'image_extension.dart';
+export 'repository_extensions.dart';

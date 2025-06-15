@@ -3,7 +3,7 @@ import 'package:trao_doi_do_app/core/error/app_exception.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/interest_remote_datasource.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
-import 'package:trao_doi_do_app/domain/entities/params/interests_query.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/interests_query.dart';
 import 'package:trao_doi_do_app/domain/repositories/interest_repository.dart';
 
 class InterestRepositoryImpl implements InterestRepository {

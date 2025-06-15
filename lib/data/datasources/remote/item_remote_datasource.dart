@@ -3,10 +3,10 @@ import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/network/dio_client.dart';
 import 'package:trao_doi_do_app/data/models/response/api_response_model.dart';
 import 'package:trao_doi_do_app/data/models/response/item_response_model.dart';
-import 'package:trao_doi_do_app/domain/entities/params/items_query.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/items_query.dart';
 
 abstract class ItemRemoteDataSource {
-  Future<ApiResponseModel<ItemsResponseModel>> getItems(ItemsQuery query);
+  Future<ItemsResponseModel> getItems(ItemsQuery query);
 }
 
 class ItemRemoteDataSourceImpl implements ItemRemoteDataSource {
@@ -15,18 +15,18 @@ class ItemRemoteDataSourceImpl implements ItemRemoteDataSource {
   ItemRemoteDataSourceImpl(this._dioClient);
 
   @override
-  Future<ApiResponseModel<ItemsResponseModel>> getItems(
-    ItemsQuery query,
-  ) async {
+  Future<ItemsResponseModel> getItems(ItemsQuery query) async {
     final response = await _dioClient.get(
       ApiConstants.items,
       queryParameters: query.toQueryParams(),
       options: Options(extra: {'requiresAuth': false}),
     );
 
-    return ApiResponseModel<ItemsResponseModel>.fromJson(
+    final result = ApiResponseModel.fromJson(
       response.data,
       (json) => ItemsResponseModel.fromJson(json as Map<String, dynamic>),
     );
+
+    return result.data!;
   }
 }

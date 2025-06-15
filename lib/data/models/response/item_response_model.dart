@@ -1,4 +1,5 @@
 import 'package:trao_doi_do_app/data/models/item_model.dart';
+import 'package:trao_doi_do_app/domain/entities/response/item_response.dart';
 
 class ItemsResponseModel {
   final List<ItemModel> items;
@@ -21,5 +22,19 @@ class ItemsResponseModel {
       'items': items.map((item) => item.toJson()).toList(),
       'totalPage': totalPage,
     };
+  }
+
+  ItemsResponse toEntity() {
+    return ItemsResponse(
+      items: items.map((e) => e.toEntity()).toList(),
+      totalPage: totalPage,
+    );
+  }
+
+  factory ItemsResponseModel.fromEntity(ItemsResponse entity) {
+    return ItemsResponseModel(
+      items: entity.items.map((e) => ItemModel.fromEntity(e)).toList(),
+      totalPage: entity.totalPage,
+    );
   }
 }

@@ -11,6 +11,7 @@ class ApiConstants {
   static const String clientGetMe = '/client/get-me';
   static const String interests = '/interests';
   static const String transactions = '/transactions';
+  static const String refreshToken  = '/refresh-token';
 
   // Headers
   static const String contentType = 'Content-Type';

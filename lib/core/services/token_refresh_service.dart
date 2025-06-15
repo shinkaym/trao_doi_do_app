@@ -68,7 +68,7 @@ class TokenRefreshService {
 
     try {
       final response = await dio.post(
-        '/refresh-token',
+        ApiConstants.refreshToken,
         data: {'refreshToken': refreshToken},
         options: Options(
           headers: {

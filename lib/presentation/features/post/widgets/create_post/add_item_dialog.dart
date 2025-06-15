@@ -8,7 +8,6 @@ import 'package:image_picker/image_picker.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
-import 'package:trao_doi_do_app/data/models/category_model.dart';
 import 'package:trao_doi_do_app/domain/entities/category.dart';
 import 'package:trao_doi_do_app/domain/entities/item.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
@@ -528,7 +527,7 @@ class AddItemDialog extends HookConsumerWidget {
                   final item = filteredItems[index];
                   final category = categories.firstWhere(
                     (c) => c.id == item.categoryID,
-                    orElse: () => const CategoryModel(id: 0, name: 'Khác'),
+                    orElse: () => const Category(id: 0, name: 'Khác'),
                   );
 
                   final decodedImage = Base64Utils.decodeImageFromBase64(
@@ -771,10 +770,7 @@ class AddItemDialog extends HookConsumerWidget {
                               .firstWhere(
                                 (c) => c.id == selectedCategoryID.value,
                                 orElse:
-                                    () => const CategoryModel(
-                                      id: 0,
-                                      name: 'Khác',
-                                    ),
+                                    () => const Category(id: 0, name: 'Khác'),
                               )
                               .name,
                           style: theme.textTheme.bodyLarge?.copyWith(

@@ -4,9 +4,13 @@ import 'package:trao_doi_do_app/core/error/app_exception.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/data/datasources/local/auth_local_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/auth_remote_datasource.dart';
+import 'package:trao_doi_do_app/data/models/request/login_request_model.dart';
 import 'package:trao_doi_do_app/data/models/user_model.dart';
+import 'package:trao_doi_do_app/domain/entities/request/login_request.dart';
+import 'package:trao_doi_do_app/domain/entities/response/login_response.dart';
 import 'package:trao_doi_do_app/domain/entities/user.dart';
 import 'package:trao_doi_do_app/domain/repositories/auth_repository.dart';
+import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource _remoteDataSource;
@@ -15,151 +19,114 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl(this._remoteDataSource, this._localDataSource);
 
   @override
-  Future<Either<Failure, LoginResponse>> login(LoginRequest request) async {
-    try {
+  Future<Either<Failure, LoginResponse>> login(LoginRequest request) {
+    return handleRepositoryCall(() async {
       final requestModel = LoginRequestModel.fromEntity(request);
-      final response = await _remoteDataSource.login(requestModel);
+      final responseModel = await _remoteDataSource.login(requestModel);
+      final loginResponse = responseModel.toEntity();
 
-      // Lưu tokens và user info vào local storage
-      await _localDataSource.saveAccessToken(response.jwt);
-      await _localDataSource.saveRefreshToken(response.refreshToken);
-      await _saveUserInfo(response.user);
+      await Future.wait([
+        _localDataSource.saveAccessToken(loginResponse.jwt),
+        _localDataSource.saveRefreshToken(loginResponse.refreshToken),
+        _saveUserInfo(
+          loginResponse.user,
+        ).catchError((_) => null), // Silent fail
+      ]);
 
-      return Right(response);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message, e.statusCode));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } on ValidationException catch (e) {
-      return Left(ValidationFailure(e.message));
-    } catch (e) {
-      return Left(ServerFailure('Lỗi không xác định: $e'));
-    }
+      return loginResponse;
+    });
   }
 
   @override
-  Future<Either<Failure, void>> logout() async {
-    try {
-      // Gọi API logout trước (với error handling)
-      try {
-        await _remoteDataSource.logout();
-      } on ServerException {
-      } catch (e) {}
+  Future<Either<Failure, void>> logout() {
+    return handleRepositoryCall(() async {
+      // Try logout API, ignore errors
+      _remoteDataSource.logout().catchError((_) => '');
 
-      // Clear local storage (luôn thực hiện dù API fail)
-      await _localDataSource.clearTokens();
-      await _localDataSource.clearUserInfo();
-
-      return const Right(null);
-    } catch (e) {
-      // Nếu clear local storage fail, vẫn cố gắng clear
-      try {
-        await _localDataSource.clearTokens();
-        await _localDataSource.clearUserInfo();
-      } catch (clearError) {}
-      return Left(ServerFailure('Lỗi khi đăng xuất: $e'));
-    }
+      // Always clear local data
+      await Future.wait([
+        _localDataSource.clearTokens(),
+        _localDataSource.clearUserInfo(),
+      ]);
+    }, "Lỗi khi đăng xuất");
   }
 
   @override
   Future<Either<Failure, User?>> refreshToken() async {
-    try {
+    final result = await handleRepositoryCall(() async {
       final refreshToken = await _localDataSource.getRefreshToken();
       if (refreshToken == null) {
-        return const Left(ValidationFailure('Không tìm thấy refresh token'));
+        throw const ValidationException('Không tìm thấy refresh token');
       }
 
       final response = await _remoteDataSource.refreshToken(refreshToken);
-
-      // Cập nhật access token mới (chỉ có jwt)
       await _localDataSource.saveAccessToken(response.jwt);
-      // Refresh token không đổi, giữ nguyên
 
-      // Lấy user hiện tại từ local storage
-      final currentUser = await getCurrentUser();
-      return currentUser.fold(
-        (failure) => Left(failure),
-        (user) => Right(user),
-      );
-    } on ServerException catch (e) {
-      // Nếu refresh token fail, clear tokens
-      await _localDataSource.clearTokens();
-      await _localDataSource.clearUserInfo();
-      return Left(ServerFailure(e.message, e.statusCode));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } catch (e) {
-      // Clear tokens nếu có lỗi không xác định
-      await _localDataSource.clearTokens();
-      await _localDataSource.clearUserInfo();
-      return Left(ServerFailure('Lỗi không xác định khi refresh token: $e'));
-    }
-  }
-
-  @override
-  Future<Either<Failure, User?>> getCurrentUser() async {
-    try {
+      // Get current user from local
       final userJson = await _localDataSource.getUserInfo();
-      if (userJson == null || userJson.isEmpty) {
-        return const Right(null);
-      }
+      if (userJson == null || userJson.isEmpty) return null;
 
       final userMap = jsonDecode(userJson) as Map<String, dynamic>;
-      final user = UserModel.fromJson(userMap);
-      return Right(user);
-    } on FormatException catch (e) {
-      // JSON parse error, clear corrupted data
-      await _localDataSource.clearUserInfo();
-      return Left(ServerFailure('Dữ liệu người dùng bị lỗi: $e'));
-    } catch (e) {
-      return Left(ServerFailure('Lỗi khi lấy thông tin người dùng: $e'));
+      return UserModel.fromJson(userMap).toEntity();
+    }, "Lỗi khi refresh token");
+
+    // Clear auth data on failure
+    if (result.isLeft()) {
+      _clearAuthData().catchError((_) => null);
     }
+
+    return result;
   }
 
   @override
-  Future<Either<Failure, bool>> isLoggedIn() async {
-    try {
-      final accessToken = await _localDataSource.getAccessToken();
-      final refreshToken = await _localDataSource.getRefreshToken();
-      return Right(
-        accessToken != null &&
-            refreshToken != null &&
-            accessToken.isNotEmpty &&
-            refreshToken.isNotEmpty,
-      );
-    } catch (e) {
-      return Left(ServerFailure('Lỗi khi kiểm tra trạng thái đăng nhập: $e'));
-    }
+  Future<Either<Failure, User?>> getCurrentUser() {
+    return handleRepositoryCall(() async {
+      final userJson = await _localDataSource.getUserInfo();
+      if (userJson == null || userJson.isEmpty) return null;
+
+      try {
+        final userMap = jsonDecode(userJson) as Map<String, dynamic>;
+        return UserModel.fromJson(userMap).toEntity();
+      } on FormatException catch (e) {
+        _localDataSource.clearUserInfo().catchError((_) => null);
+        throw ValidationException('Dữ liệu người dùng bị lỗi: $e');
+      }
+    }, "Lỗi khi lấy thông tin người dùng");
   }
 
   @override
-  Future<Either<Failure, User>> getMe() async {
-    try {
-      final response = await _remoteDataSource.getMe();
+  Future<Either<Failure, bool>> isLoggedIn() {
+    return handleRepositoryCall(() async {
+      final tokens = await Future.wait([
+        _localDataSource.getAccessToken(),
+        _localDataSource.getRefreshToken(),
+      ]);
 
-      // Cập nhật user info trong local storage
-      await _saveUserInfo(response.user);
-
-      return Right(response.user);
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message, e.statusCode));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } catch (e) {
-      return Left(
-        ServerFailure('Lỗi không xác định khi lấy thông tin người dùng: $e'),
-      );
-    }
+      return tokens.every((token) => token?.isNotEmpty == true);
+    }, "Lỗi khi kiểm tra trạng thái đăng nhập");
   }
 
-  // Helper methods for user info storage
+  @override
+  Future<Either<Failure, User>> getMe() {
+    return handleRepositoryCall(() async {
+      final responseModel = await _remoteDataSource.getMe();
+      final userEntity = responseModel.user.toEntity();
+
+      _saveUserInfo(userEntity).catchError((_) => null); // Silent fail
+      return userEntity;
+    }, "Lỗi khi lấy thông tin người dùng");
+  }
+
   Future<void> _saveUserInfo(User user) async {
-    try {
-      final userModel = UserModel.fromEntity(user);
-      final userJson = jsonEncode(userModel.toJson());
-      await _localDataSource.saveUserInfo(userJson);
-    } catch (e) {
-      // Don't throw error, just log it
-    }
+    final userModel = UserModel.fromEntity(user);
+    final userJson = jsonEncode(userModel.toJson());
+    await _localDataSource.saveUserInfo(userJson);
+  }
+
+  Future<void> _clearAuthData() async {
+    await Future.wait([
+      _localDataSource.clearTokens(),
+      _localDataSource.clearUserInfo(),
+    ]);
   }
 }

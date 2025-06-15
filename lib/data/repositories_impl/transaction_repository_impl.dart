@@ -3,7 +3,7 @@ import 'package:trao_doi_do_app/core/error/app_exception.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/transaction_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/models/transaction_model.dart';
-import 'package:trao_doi_do_app/domain/entities/params/transactions_query.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/transactions_query.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
 import 'package:trao_doi_do_app/domain/repositories/transaction_repository.dart';
 

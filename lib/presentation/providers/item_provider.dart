@@ -1,7 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/item.dart';
-import 'package:trao_doi_do_app/domain/entities/params/items_query.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/items_query.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_items_usecase.dart';
 
 class ItemsListState {

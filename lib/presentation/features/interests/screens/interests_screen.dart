@@ -6,7 +6,7 @@ import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
-import 'package:trao_doi_do_app/domain/entities/params/interests_query.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/interests_query.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/interests_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/pagination.dart';

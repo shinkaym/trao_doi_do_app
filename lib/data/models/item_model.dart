@@ -1,4 +1,3 @@
-
 import 'package:trao_doi_do_app/domain/entities/item.dart';
 
 class ItemModel extends Item {
@@ -30,23 +29,23 @@ class ItemModel extends Item {
     };
   }
 
-  static List<ItemModel> fromJsonList(List<dynamic> jsonList) {
-    return jsonList
-        .map((json) => ItemModel.fromJson(json as Map<String, dynamic>))
-        .toList();
+  Item toEntity() {
+    return Item(
+      id: id,
+      categoryID: categoryID,
+      name: name,
+      description: description,
+      image: image,
+    );
   }
-}
 
-class ItemsResponseModel {
-  final List<ItemModel> items;
-  final int totalPage;
-
-  ItemsResponseModel({required this.items, required this.totalPage});
-
-  factory ItemsResponseModel.fromJson(Map<String, dynamic> json) {
-    return ItemsResponseModel(
-      items: ItemModel.fromJsonList(json['items'] as List<dynamic>),
-      totalPage: json['totalPage'] as int,
+  factory ItemModel.fromEntity(Item item) {
+    return ItemModel(
+      id: item.id,
+      categoryID: item.categoryID,
+      name: item.name,
+      description: item.description,
+      image: item.image,
     );
   }
 }

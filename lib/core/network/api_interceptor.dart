@@ -12,7 +12,7 @@ class ApiInterceptor extends Interceptor {
   // Retry configuration
   static const int _maxRetryAttempts = 3;
   static const Duration _retryDelay = Duration(milliseconds: 500);
-  
+
   // Logging configuration
   static const int _maxLogValueLength = 100;
   static const int _maxLogBodyLength = 500;
@@ -128,7 +128,7 @@ class ApiInterceptor extends Interceptor {
     return handler.next(err);
   }
 
-/// Logs outgoing request details with truncated long values
+  /// Logs outgoing request details with truncated long values
   void _logOutgoingRequest(RequestOptions options, logger) {
     // Prepare headers for logging (exclude sensitive data)
     final headersForLog = Map<String, dynamic>.from(options.headers);
@@ -154,12 +154,21 @@ class ApiInterceptor extends Interceptor {
             'type': 'FormData',
             'fieldsCount': formData.fields.length,
             'filesCount': formData.files.length,
-            'fields': formData.fields.map((field) => {
-              'name': field.key,
-              'value': _isSensitiveField(field.key.toLowerCase()) 
-                ? '***' 
-                : _truncateString(field.value, _maxLogValueLength)
-            }).toList(),
+            'fields':
+                formData.fields
+                    .map(
+                      (field) => {
+                        'name': field.key,
+                        'value':
+                            _isSensitiveField(field.key.toLowerCase())
+                                ? '***'
+                                : _truncateString(
+                                  field.value,
+                                  _maxLogValueLength,
+                                ),
+                      },
+                    )
+                    .toList(),
           };
         } else if (options.data is String) {
           // Try to parse as JSON for better formatting
@@ -167,7 +176,10 @@ class ApiInterceptor extends Interceptor {
             final jsonData = jsonDecode(options.data);
             bodyForLog = _sanitizeAndTruncateLogData(jsonData);
           } catch (_) {
-            bodyForLog = _truncateString(options.data.toString(), _maxLogBodyLength);
+            bodyForLog = _truncateString(
+              options.data.toString(),
+              _maxLogBodyLength,
+            );
           }
         } else {
           bodyForLog = _sanitizeAndTruncateLogData(options.data);
@@ -201,7 +213,9 @@ class ApiInterceptor extends Interceptor {
     // Prepare query parameters for response logging
     Map<String, dynamic>? queryParamsForLog;
     if (response.requestOptions.queryParameters.isNotEmpty) {
-      queryParamsForLog = Map<String, dynamic>.from(response.requestOptions.queryParameters);
+      queryParamsForLog = Map<String, dynamic>.from(
+        response.requestOptions.queryParameters,
+      );
       queryParamsForLog = _sanitizeAndTruncateLogData(queryParamsForLog);
     }
 
@@ -231,7 +245,9 @@ class ApiInterceptor extends Interceptor {
     // Prepare query parameters for error logging
     Map<String, dynamic>? queryParamsForLog;
     if (err.requestOptions.queryParameters.isNotEmpty) {
-      queryParamsForLog = Map<String, dynamic>.from(err.requestOptions.queryParameters);
+      queryParamsForLog = Map<String, dynamic>.from(
+        err.requestOptions.queryParameters,
+      );
       queryParamsForLog = _sanitizeAndTruncateLogData(queryParamsForLog);
     }
 
@@ -243,6 +259,7 @@ class ApiInterceptor extends Interceptor {
       response: 'ERROR: $errorResponseForLog',
     );
   }
+
   /// Sanitizes and truncates data for logging by removing sensitive information and limiting length
   dynamic _sanitizeAndTruncateLogData(dynamic data) {
     if (data == null) return null;
@@ -277,19 +294,19 @@ class ApiInterceptor extends Interceptor {
   /// Truncates a string to specified length with appropriate indicators
   String _truncateString(String str, int maxLength) {
     if (str.length <= maxLength) return str;
-    
+
     // Special handling for different types of long strings
     if (_isBase64Image(str)) {
-      return '${str.substring(0, 30)}...[base64 image ${str.length} chars]...${str.substring(str.length - 10)}';
+      return '${str.substring(0, 5)}...[base64 image ${str.length} chars]...${str.substring(str.length - 10)}';
     } else if (_isJwtToken(str)) {
-      return '${str.substring(0, 20)}...[JWT token ${str.length} chars]...${str.substring(str.length - 10)}';
+      return '${str.substring(0, 5)}...[JWT token ${str.length} chars]...${str.substring(str.length - 10)}';
     } else if (str.length > maxLength * 2) {
       // For very long strings, show beginning and end
       final beginLength = (maxLength * 0.4).floor();
       final endLength = (maxLength * 0.2).floor();
       return '${str.substring(0, beginLength)}...[${str.length - maxLength} chars]...${str.substring(str.length - endLength)}';
     }
-    
+
     return '${str.substring(0, maxLength)}... (${str.length - maxLength} chars)';
   }
 
@@ -300,7 +317,8 @@ class ApiInterceptor extends Interceptor {
 
   /// Checks if string is a JWT token
   bool _isJwtToken(String str) {
-    return str.startsWith('eyJ') || (str.contains('.') && str.split('.').length == 3);
+    return str.startsWith('eyJ') ||
+        (str.contains('.') && str.split('.').length == 3);
   }
 
   /// Checks if a field contains sensitive information
