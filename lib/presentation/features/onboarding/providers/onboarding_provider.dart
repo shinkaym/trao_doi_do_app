@@ -1,5 +1,4 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/utils/logger_utils.dart';
 import 'package:trao_doi_do_app/domain/usecases/onboarding_usecase.dart';
 
@@ -78,29 +77,3 @@ class OnboardingNotifier extends StateNotifier<OnboardingState> {
     state = const OnboardingState();
   }
 }
-
-/// Main Onboarding Provider
-final onboardingProvider =
-    StateNotifierProvider<OnboardingNotifier, OnboardingState>((ref) {
-      final useCase = ref.watch(onboardingUseCaseProvider);
-      final logger = ref.watch(loggerProvider);
-      return OnboardingNotifier(useCase, logger);
-    });
-
-final isOnboardingCompletedProvider = Provider<bool>((ref) {
-  return ref.watch(onboardingProvider.select((state) => state.isCompleted));
-});
-
-final isOnboardingLoadingProvider = Provider<bool>((ref) {
-  return ref.watch(onboardingProvider.select((state) => state.isLoading));
-});
-
-final onboardingErrorProvider = Provider<String?>((ref) {
-  return ref.watch(onboardingProvider.select((state) => state.error));
-});
-
-final completeOnboardingProvider = Provider<Future<void> Function()>((ref) {
-  return () async {
-    await ref.read(onboardingProvider.notifier).completeOnboarding();
-  };
-});

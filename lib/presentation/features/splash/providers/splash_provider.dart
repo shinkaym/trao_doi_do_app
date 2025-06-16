@@ -1,5 +1,4 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/utils/logger_utils.dart';
 
 /// Enhanced Splash State với progress tracking
@@ -134,33 +133,3 @@ class SplashNotifier extends StateNotifier<SplashState> {
     }
   }
 }
-
-/// Enhanced Splash Providers
-final splashProvider = StateNotifierProvider<SplashNotifier, SplashState>((
-  ref,
-) {
-  final logger = ref.watch(loggerProvider);
-  return SplashNotifier(logger);
-});
-
-final isSplashCompletedProvider = Provider<bool>((ref) {
-  return ref.watch(splashProvider.select((state) => state.isCompleted));
-});
-
-final isSplashLoadingProvider = Provider<bool>((ref) {
-  return ref.watch(splashProvider.select((state) => state.isLoading));
-});
-
-final splashErrorProvider = Provider<String?>((ref) {
-  return ref.watch(splashProvider.select((state) => state.error));
-});
-
-final splashProgressProvider = Provider<double>((ref) {
-  return ref.watch(splashProvider.select((state) => state.progress));
-});
-
-// Provider để check cả progress và completion
-final isSplashReadyProvider = Provider<bool>((ref) {
-  final state = ref.watch(splashProvider);
-  return state.progress >= 1.0 && state.isCompleted;
-});

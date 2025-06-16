@@ -8,8 +8,6 @@ import 'package:trao_doi_do_app/core/constants/storage_keys.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/utils/logger_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
-import 'package:trao_doi_do_app/presentation/features/onboarding/providers/onboarding_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/splash/providers/splash_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

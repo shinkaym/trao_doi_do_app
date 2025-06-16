@@ -12,10 +12,14 @@ import 'package:trao_doi_do_app/core/utils/logger_utils.dart';
 // ========== AUTH IMPORTS ==========
 import 'package:trao_doi_do_app/data/datasources/local/auth_local_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/auth_remote_datasource.dart';
+import 'package:trao_doi_do_app/data/datasources/remote/message_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/auth_repository_impl.dart';
+import 'package:trao_doi_do_app/data/repositories_impl/message_repository_impl.dart';
 import 'package:trao_doi_do_app/domain/repositories/auth_repository.dart';
+import 'package:trao_doi_do_app/domain/repositories/message_repository.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_current_user_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_me_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/get_messages_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/is_logged_in_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/login_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/logout_usecase.dart';
@@ -63,6 +67,11 @@ import 'package:trao_doi_do_app/presentation/features/post/providers/post_detail
 import 'package:trao_doi_do_app/presentation/providers/category_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/item_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/interest_provider.dart';
+import 'package:trao_doi_do_app/presentation/providers/messages_provider.dart';
+
+// ========== SPLASH & ONBOARDING IMPORTS ==========
+import 'package:trao_doi_do_app/presentation/features/splash/providers/splash_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/onboarding/providers/onboarding_provider.dart';
 
 // =============================================================================
 // CORE DEPENDENCIES - Singleton pattern
@@ -194,6 +203,65 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
 });
 
 // =============================================================================
+// SPLASH & ONBOARDING PRESENTATION LAYER PROVIDERS
+// =============================================================================
+
+/// Splash Providers - Enhanced with progress tracking
+final splashProvider = StateNotifierProvider<SplashNotifier, SplashState>((
+  ref,
+) {
+  final logger = ref.watch(loggerProvider);
+  return SplashNotifier(logger);
+});
+
+final isSplashCompletedProvider = Provider<bool>((ref) {
+  return ref.watch(splashProvider.select((state) => state.isCompleted));
+});
+
+final isSplashLoadingProvider = Provider<bool>((ref) {
+  return ref.watch(splashProvider.select((state) => state.isLoading));
+});
+
+final splashErrorProvider = Provider<String?>((ref) {
+  return ref.watch(splashProvider.select((state) => state.error));
+});
+
+final splashProgressProvider = Provider<double>((ref) {
+  return ref.watch(splashProvider.select((state) => state.progress));
+});
+
+final isSplashReadyProvider = Provider<bool>((ref) {
+  final state = ref.watch(splashProvider);
+  return state.progress >= 1.0 && state.isCompleted;
+});
+
+/// Onboarding Providers - Enhanced with error handling
+final onboardingProvider =
+    StateNotifierProvider<OnboardingNotifier, OnboardingState>((ref) {
+      final useCase = ref.watch(onboardingUseCaseProvider);
+      final logger = ref.watch(loggerProvider);
+      return OnboardingNotifier(useCase, logger);
+    });
+
+final isOnboardingCompletedProvider = Provider<bool>((ref) {
+  return ref.watch(onboardingProvider.select((state) => state.isCompleted));
+});
+
+final isOnboardingLoadingProvider = Provider<bool>((ref) {
+  return ref.watch(onboardingProvider.select((state) => state.isLoading));
+});
+
+final onboardingErrorProvider = Provider<String?>((ref) {
+  return ref.watch(onboardingProvider.select((state) => state.error));
+});
+
+final completeOnboardingProvider = Provider<Future<void> Function()>((ref) {
+  return () async {
+    await ref.read(onboardingProvider.notifier).completeOnboarding();
+  };
+});
+
+// =============================================================================
 // OTHER DATA LAYER PROVIDERS
 // =============================================================================
 
@@ -244,6 +312,13 @@ final postRemoteDataSourceProvider = Provider<PostRemoteDataSource>((ref) {
   return PostRemoteDataSourceImpl(dioClient);
 });
 
+final messageRemoteDataSourceProvider = Provider<MessageRemoteDataSource>((
+  ref,
+) {
+  final dioClient = ref.watch(dioClientProvider);
+  return MessageRemoteDataSourceImpl(dioClient);
+});
+
 // =============================================================================
 // OTHER DOMAIN LAYER PROVIDERS
 // =============================================================================
@@ -280,6 +355,11 @@ final interestRepositoryProvider = Provider<InterestRepository>((ref) {
 final postRepositoryProvider = Provider<PostRepository>((ref) {
   final remoteDataSource = ref.watch(postRemoteDataSourceProvider);
   return PostRepositoryImpl(remoteDataSource);
+});
+
+final messageRepositoryProvider = Provider<MessageRepository>((ref) {
+  final remoteDataSource = ref.watch(messageRemoteDataSourceProvider);
+  return MessageRepositoryImpl(remoteDataSource);
 });
 
 // UseCase Providers
@@ -353,6 +433,11 @@ final getPostsUseCaseProvider = Provider<GetPostsUseCase>((ref) {
 final getPostDetailUseCaseProvider = Provider<GetPostDetailUseCase>((ref) {
   final repository = ref.watch(postRepositoryProvider);
   return GetPostDetailUseCase(repository);
+});
+
+final getMessagesUseCaseProvider = Provider<GetMessagesUseCase>((ref) {
+  final repository = ref.watch(messageRepositoryProvider);
+  return GetMessagesUseCase(repository);
 });
 
 // =============================================================================
@@ -430,6 +515,15 @@ final postDetailProvider =
     StateNotifierProvider<PostDetailNotifier, PostDetailState>((ref) {
       final getPostDetailUseCase = ref.watch(getPostDetailUseCaseProvider);
       return PostDetailNotifier(getPostDetailUseCase);
+    });
+
+final messagesListProvider =
+    StateNotifierProvider.family<MessagesListNotifier, MessagesListState, int>((
+      ref,
+      interestID,
+    ) {
+      final getMessagesUseCase = ref.watch(getMessagesUseCaseProvider);
+      return MessagesListNotifier(getMessagesUseCase, interestID);
     });
 
 // =============================================================================

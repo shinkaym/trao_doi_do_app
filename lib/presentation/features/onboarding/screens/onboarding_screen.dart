@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/mock_data/mock_onboarding.dart';
-import 'package:trao_doi_do_app/presentation/features/onboarding/providers/onboarding_provider.dart';
 
 class OnboardingScreen extends HookConsumerWidget {
   const OnboardingScreen({super.key});
@@ -143,17 +143,18 @@ class OnboardingScreen extends HookConsumerWidget {
                   child: Image.asset(
                     'assets/images/logo.png',
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        Icons.apps,
-                        color: Colors.white,
-                        size: isTablet ? 28 : 24,
-                      ),
-                    ),
+                    errorBuilder:
+                        (_, __, ___) => Container(
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            Icons.apps,
+                            color: Colors.white,
+                            size: isTablet ? 28 : 24,
+                          ),
+                        ),
                   ),
                 ),
               ),
@@ -274,14 +275,16 @@ class OnboardingScreen extends HookConsumerWidget {
               (index) => AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 margin: EdgeInsets.symmetric(horizontal: isTablet ? 6 : 4),
-                width: currentPage == index
-                    ? (isTablet ? 40 : 32)
-                    : (isTablet ? 12 : 8),
+                width:
+                    currentPage == index
+                        ? (isTablet ? 40 : 32)
+                        : (isTablet ? 12 : 8),
                 height: isTablet ? 12 : 8,
                 decoration: BoxDecoration(
-                  color: currentPage == index
-                      ? pages[currentPage].color
-                      : theme.hintColor.withOpacity(0.3),
+                  color:
+                      currentPage == index
+                          ? pages[currentPage].color
+                          : theme.hintColor.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(6),
                 ),
               ),
@@ -318,92 +321,95 @@ class OnboardingScreen extends HookConsumerWidget {
               SizedBox(width: isTablet ? 16 : 12),
               Expanded(
                 flex: 2,
-                child: isLastPage
-                    ? Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () => onCompleteAndNavigate('register'),
-                              style: OutlinedButton.styleFrom(
-                                side: BorderSide(
-                                  color: pages[currentPage].color,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: EdgeInsets.symmetric(
-                                  vertical: isTablet ? 16 : 14,
-                                ),
-                              ),
-                              child: Text(
-                                'Đăng ký',
-                                style: TextStyle(
-                                  fontSize: isTablet ? 14 : 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: pages[currentPage].color,
-                                ),
-                              ),
-                            ),
-                          ),
-                          SizedBox(width: isTablet ? 12 : 8),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () => onCompleteAndNavigate('login'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: pages[currentPage].color,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                padding: EdgeInsets.symmetric(
-                                  vertical: isTablet ? 16 : 14,
-                                ),
-                                elevation: 4,
-                                shadowColor: pages[currentPage]
-                                    .color
-                                    .withOpacity(0.3),
-                              ),
-                              child: Text(
-                                'Đăng nhập',
-                                style: TextStyle(
-                                  fontSize: isTablet ? 14 : 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
-                    : ElevatedButton(
-                        onPressed: onNext,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: pages[currentPage].color,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: EdgeInsets.symmetric(
-                            vertical: isTablet ? 16 : 14,
-                          ),
-                          elevation: 4,
-                          shadowColor: pages[currentPage].color.withOpacity(0.3),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                child:
+                    isLastPage
+                        ? Row(
                           children: [
-                            Text(
-                              'Tiếp theo',
-                              style: TextStyle(
-                                fontSize: isTablet ? 16 : 14,
-                                fontWeight: FontWeight.w600,
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed:
+                                    () => onCompleteAndNavigate('register'),
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(
+                                    color: pages[currentPage].color,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: isTablet ? 16 : 14,
+                                  ),
+                                ),
+                                child: Text(
+                                  'Đăng ký',
+                                  style: TextStyle(
+                                    fontSize: isTablet ? 14 : 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: pages[currentPage].color,
+                                  ),
+                                ),
                               ),
                             ),
                             SizedBox(width: isTablet ? 12 : 8),
-                            Icon(
-                              Icons.arrow_forward,
-                              size: isTablet ? 20 : 18,
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () => onCompleteAndNavigate('login'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: pages[currentPage].color,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                    vertical: isTablet ? 16 : 14,
+                                  ),
+                                  elevation: 4,
+                                  shadowColor: pages[currentPage].color
+                                      .withOpacity(0.3),
+                                ),
+                                child: Text(
+                                  'Đăng nhập',
+                                  style: TextStyle(
+                                    fontSize: isTablet ? 14 : 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
+                        )
+                        : ElevatedButton(
+                          onPressed: onNext,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: pages[currentPage].color,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: EdgeInsets.symmetric(
+                              vertical: isTablet ? 16 : 14,
+                            ),
+                            elevation: 4,
+                            shadowColor: pages[currentPage].color.withOpacity(
+                              0.3,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Tiếp theo',
+                                style: TextStyle(
+                                  fontSize: isTablet ? 16 : 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              SizedBox(width: isTablet ? 12 : 8),
+                              Icon(
+                                Icons.arrow_forward,
+                                size: isTablet ? 20 : 18,
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
               ),
             ],
           ),
