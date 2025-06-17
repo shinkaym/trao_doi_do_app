@@ -1,5 +1,7 @@
+import 'package:trao_doi_do_app/core/config/flavor.dart';
+
 class ApiConstants {
-  static const String baseUrl = 'http://34.142.168.171:8000/api/v1';
+  static String get baseUrl => AppConfig.apiUrl;
 
   // Endpoints
   static const String categories = '/categories';
