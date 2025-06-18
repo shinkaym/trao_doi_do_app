@@ -15,6 +15,7 @@ import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/transaction_list_bottom_sheet.dart';
 import 'package:trao_doi_do_app/presentation/models/interest_chat_transaction_data.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_app_bar.dart';
+import 'package:flutter_debouncer/flutter_debouncer.dart';
 
 class InterestChatScreen extends HookConsumerWidget {
   final String interestId;
@@ -236,21 +237,49 @@ class InterestChatScreen extends HookConsumerWidget {
 
     // Handle pull to refresh (load more messages)
     useEffect(() {
+      // Khởi tạo Debouncer mà không truyền tham số
+      final debouncer = Debouncer();
+
+      // Hàm xử lý sự kiện cuộn
       void handleScroll() {
-        // Kiểm tra khi user scroll lên đầu để load tin nhắn cũ hơn
-        if (scrollController.position.pixels <= 100) {
-          // Thêm threshold để dễ trigger
-          // User scrolled to top, load more messages
-          if (!messagesState.isLoadingMore && messagesState.hasMoreData) {
-            messagesNotifier.loadMore();
-          }
+        // Kiểm tra nếu người dùng cuộn gần đến đầu danh sách (pixels <= 50)
+        // và không đang trong quá trình tải thêm tin nhắn, đồng thời còn dữ liệu để tải
+        if (scrollController.position.pixels <= 50 &&
+            !messagesState.isLoadingMore &&
+            messagesState.hasMoreData) {
+          // Sử dụng debouncer với thời gian chờ 500ms
+          debouncer.debounce(
+            duration: const Duration(milliseconds: 1000),
+            onDebounce: () async {
+              // Lưu vị trí cuộn hiện tại và chiều cao tối đa của danh sách
+              final currentScrollPosition = scrollController.position.pixels;
+              final currentExtent = scrollController.position.maxScrollExtent;
+
+              // Gọi hàm loadMore để tải thêm tin nhắn cũ
+              await messagesNotifier.loadMore();
+
+              // Đợi frame tiếp theo để đảm bảo giao diện đã được cập nhật
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (scrollController.hasClients) {
+                  // Tính toán chiều cao mới của danh sách sau khi thêm tin nhắn
+                  final newExtent = scrollController.position.maxScrollExtent;
+                  final extentDelta = newExtent - currentExtent;
+
+                  // Điều chỉnh vị trí cuộn để giữ nguyên vị trí tương đối của người dùng
+                  scrollController.jumpTo(currentScrollPosition + extentDelta);
+                }
+              });
+            },
+          );
         }
       }
 
+      // Gắn listener cho scrollController
       scrollController.addListener(handleScroll);
+
+      // Cleanup: Xóa listener khi widget bị hủy
       return () => scrollController.removeListener(handleScroll);
     }, [messagesState.isLoadingMore, messagesState.hasMoreData]);
-
     // Handle transaction state changes
     useEffect(() {
       if (transactionsState.failure != null) {
@@ -501,63 +530,61 @@ class InterestChatScreen extends HookConsumerWidget {
                       ? const Center(child: CircularProgressIndicator())
                       : RefreshIndicator(
                         onRefresh: () => messagesNotifier.refresh(),
-                        child: ListView.builder(
+                        child: CustomScrollView(
                           controller: scrollController,
-                          // Bỏ reverse: true để hiển thị như Messenger
-                          padding: EdgeInsets.symmetric(
-                            horizontal: isTablet ? 24 : 16,
-                            vertical: isTablet ? 16 : 12,
-                          ),
-                          itemCount:
-                              messagesState.messages.length +
-                              (messagesState.isLoadingMore ? 1 : 0),
-                          itemBuilder: (context, index) {
-                            // Show loading indicator at top when loading more
-                            if (index == 0 && messagesState.isLoadingMore) {
-                              return const Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
-                            }
+                          slivers: [
+                            SliverList(
+                              delegate: SliverChildBuilderDelegate(
+                                (context, index) {
+                                  if (index == 0 &&
+                                      messagesState.isLoadingMore) {
+                                    return const Padding(
+                                      padding: EdgeInsets.all(16.0),
+                                      child: Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    );
+                                  }
 
-                            final messageIndex =
-                                messagesState.isLoadingMore ? index - 1 : index;
-                            final message =
-                                messagesState.messages[messageIndex];
+                                  final messageIndex =
+                                      messagesState.isLoadingMore
+                                          ? index - 1
+                                          : index;
+                                  final message =
+                                      messagesState.messages[messageIndex];
 
-                            // Check if message is from current user
-                            final isCurrentUser =
-                                message.senderID == authState.user!.id;
+                                  final isCurrentUser =
+                                      message.senderID == authState.user!.id;
+                                  final showAvatar =
+                                      messageIndex ==
+                                          messagesState.messages.length - 1 ||
+                                      messagesState
+                                              .messages[messageIndex + 1]
+                                              .senderID !=
+                                          message.senderID;
 
-                            // Show avatar for first message or different sender
-                            // Cập nhật logic để hiển thị avatar đúng cách
-                            final showAvatar =
-                                messageIndex ==
-                                    messagesState.messages.length - 1 ||
-                                messagesState
-                                        .messages[messageIndex + 1]
-                                        .senderID !=
-                                    message.senderID;
-
-                            return _buildMessageBubble(
-                              message,
-                              isCurrentUser,
-                              showAvatar,
-                              isTablet,
-                              theme,
-                              colorScheme,
-                              displayName.value,
-                              displayAvatar.value,
-                              authState.user!.fullName,
-                              authState.user!.avatar,
-                              handlePostTap,
-                              messagesState
-                                  .messages, // Truyền danh sách tin nhắn
-                              messageIndex, // Truyền index
-                            );
-                          },
+                                  return _buildMessageBubble(
+                                    message,
+                                    isCurrentUser,
+                                    showAvatar,
+                                    isTablet,
+                                    theme,
+                                    colorScheme,
+                                    displayName.value,
+                                    displayAvatar.value,
+                                    authState.user!.fullName,
+                                    authState.user!.avatar,
+                                    handlePostTap,
+                                    messagesState.messages,
+                                    messageIndex,
+                                  );
+                                },
+                                childCount:
+                                    messagesState.messages.length +
+                                    (messagesState.isLoadingMore ? 1 : 0),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
             ),
@@ -605,36 +632,28 @@ Widget _buildMessageBubble(
   String currentUserName,
   String currentUserAvatar,
   VoidCallback onPostTap,
-  List<Message> messages, // Thêm danh sách tin nhắn
-  int messageIndex, // Thêm index của tin nhắn hiện tại
+  List<Message> messages,
+  int messageIndex,
 ) {
   final senderAvatar = isCurrentUser ? currentUserAvatar : otherUserAvatar;
 
-  // Logic để quyết định có hiển thị thời gian hay không (giống Messenger)
   bool shouldShowTime = false;
 
   if (messageIndex == messages.length - 1) {
-    // Tin nhắn cuối cùng (mới nhất) luôn hiển thị thời gian
     shouldShowTime = true;
   } else {
     final nextMessage = messages[messageIndex + 1];
     final currentTime = message.createdAt;
     final nextTime = nextMessage.createdAt;
 
-    // Hiển thị thời gian nếu:
-    // 1. Người gửi khác nhau
-    // 2. Khoảng cách thời gian > 15 phút (tăng lên để giống Messenger hơn)
-    // 3. Khác ngày
     if (message.senderID != nextMessage.senderID) {
       shouldShowTime = true;
     } else if (currentTime != null && nextTime != null) {
       final timeDifference = nextTime.difference(currentTime).inMinutes;
       if (timeDifference > 15) {
-        // Tăng từ 5 lên 15 phút
         shouldShowTime = true;
       }
 
-      // Kiểm tra khác ngày
       if (currentTime.day != nextTime.day ||
           currentTime.month != nextTime.month ||
           currentTime.year != nextTime.year) {
@@ -643,31 +662,26 @@ Widget _buildMessageBubble(
     }
   }
 
-  // Tùy chọn: Chỉ hiển thị thời gian cho tin nhắn cuối cùng của mỗi "nhóm"
-  // Bỏ comment dòng dưới nếu muốn ít thời gian hơn nữa
-  // shouldShowTime = shouldShowTime && showAvatar;
-
   return Container(
     margin: EdgeInsets.only(
-      bottom: isTablet ? 8 : 6,
-      left: isCurrentUser ? (isTablet ? 60 : 40) : 0,
-      right: isCurrentUser ? 0 : (isTablet ? 60 : 40),
+      bottom: isTablet ? 12 : 8, // Tăng margin bottom
+      left: isCurrentUser ? (isTablet ? 24 : 16) : 16, // Tăng padding trái
+      right: isCurrentUser ? 16 : (isTablet ? 24 : 16), // Tăng padding phải
+      top: 4, // Thêm margin top
     ),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisAlignment:
           isCurrentUser ? MainAxisAlignment.end : MainAxisAlignment.start,
       children: [
-        // Avatar for received messages
         if (!isCurrentUser) ...[
           if (showAvatar)
             _buildSenderAvatar(senderAvatar, isTablet, colorScheme)
           else
-            SizedBox(width: isTablet ? 28 : 24),
-          SizedBox(width: isTablet ? 8 : 6),
+            SizedBox(width: isTablet ? 28 : 24), // Tăng width khi không có avatar
+          SizedBox(width: isTablet ? 8 : 6), // Tăng khoảng cách sau avatar
         ],
 
-        // Message content
         Flexible(
           child: Column(
             crossAxisAlignment:
@@ -675,11 +689,10 @@ Widget _buildMessageBubble(
                     ? CrossAxisAlignment.end
                     : CrossAxisAlignment.start,
             children: [
-              // Message bubble
               Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 16 : 12,
-                  vertical: isTablet ? 12 : 8,
+                  horizontal: isTablet ? 16 : 12, // Tăng padding ngang
+                  vertical: isTablet ? 12 : 8, // Tăng padding dọc
                 ),
                 decoration: BoxDecoration(
                   color:
@@ -706,9 +719,8 @@ Widget _buildMessageBubble(
                 ),
               ),
 
-              // Chỉ hiển thị thời gian và trạng thái đọc khi cần thiết
               if (shouldShowTime) ...[
-                SizedBox(height: isTablet ? 4 : 2),
+                SizedBox(height: isTablet ? 4 : 2), // Tăng khoảng cách
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -740,7 +752,6 @@ Widget _buildMessageBubble(
     ),
   );
 }
-
 Widget _buildSenderAvatar(
   String senderAvatar,
   bool isTablet,
