@@ -229,12 +229,30 @@ List<GoRoute> _buildStandaloneRoutes() {
   ];
 }
 
+// Danh sách các route muốn ẩn navigation
+final List<String> routesWithoutNavBar = [
+  '/posts/post-detail',
+  '/posts/create-post',
+  '/warehouse/item-detail',
+  '/interests/chat',
+  '/profile/edit',
+  '/profile/change-password',
+  // Thêm các route khác muốn ẩn navigation
+];
+
+bool shouldShowNavBar(String location) {
+  return !routesWithoutNavBar.any((route) => location.startsWith(route));
+}
+
 ShellRoute _buildShellRoute() {
   return ShellRoute(
     builder: (context, state, child) {
-      final currentIndex = calculateCurrentIndex(state.uri.toString());
+      final location = state.uri.toString();
+       final currentIndex = calculateCurrentIndex(location);
+       final showNavBar = shouldShowNavBar(location);
       return ScaffoldWithNavBar(
         currentIndex: currentIndex >= 0 ? currentIndex : 0,
+        showNavBar: showNavBar,
         child: child,
       );
     },
