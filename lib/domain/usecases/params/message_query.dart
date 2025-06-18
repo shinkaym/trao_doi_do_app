@@ -9,7 +9,7 @@ class MessagesQuery extends Equatable {
   const MessagesQuery({
     required this.interestID,
     this.page = 1,
-    this.limit = 20,
+    this.limit = 30,
     this.search,
   });
 

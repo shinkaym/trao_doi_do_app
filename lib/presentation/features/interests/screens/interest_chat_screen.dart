@@ -236,8 +236,10 @@ class InterestChatScreen extends HookConsumerWidget {
     }, [webSocketState.error]);
 
     // Handle pull to refresh (load more messages)
+    // Trong InterestChatScreen, thay thế useEffect liên quan đến handleScroll bằng đoạn sau:
+
     useEffect(() {
-      // Khởi tạo Debouncer mà không truyền tham số
+      // Khởi tạo Debouncer với thời gian ngắn hơn
       final debouncer = Debouncer();
 
       // Hàm xử lý sự kiện cuộn
@@ -246,10 +248,11 @@ class InterestChatScreen extends HookConsumerWidget {
         // và không đang trong quá trình tải thêm tin nhắn, đồng thời còn dữ liệu để tải
         if (scrollController.position.pixels <= 50 &&
             !messagesState.isLoadingMore &&
-            messagesState.hasMoreData) {
+            messagesState.hasMoreData &&
+            scrollController.hasClients) {
           // Sử dụng debouncer với thời gian chờ 500ms
           debouncer.debounce(
-            duration: const Duration(milliseconds: 1000),
+            duration: const Duration(milliseconds: 500),
             onDebounce: () async {
               // Lưu vị trí cuộn hiện tại và chiều cao tối đa của danh sách
               final currentScrollPosition = scrollController.position.pixels;
@@ -265,8 +268,12 @@ class InterestChatScreen extends HookConsumerWidget {
                   final newExtent = scrollController.position.maxScrollExtent;
                   final extentDelta = newExtent - currentExtent;
 
-                  // Điều chỉnh vị trí cuộn để giữ nguyên vị trí tương đối của người dùng
-                  scrollController.jumpTo(currentScrollPosition + extentDelta);
+                  // Di chuyển mượt mà đến vị trí mới
+                  scrollController.animateTo(
+                    currentScrollPosition + extentDelta,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                  );
                 }
               });
             },
@@ -588,6 +595,7 @@ class InterestChatScreen extends HookConsumerWidget {
                         ),
                       ),
             ),
+
             // Message input
             _buildMessageInput(
               isTablet,
@@ -678,7 +686,9 @@ Widget _buildMessageBubble(
           if (showAvatar)
             _buildSenderAvatar(senderAvatar, isTablet, colorScheme)
           else
-            SizedBox(width: isTablet ? 28 : 24), // Tăng width khi không có avatar
+            SizedBox(
+              width: isTablet ? 28 : 24,
+            ), // Tăng width khi không có avatar
           SizedBox(width: isTablet ? 8 : 6), // Tăng khoảng cách sau avatar
         ],
 
@@ -752,6 +762,7 @@ Widget _buildMessageBubble(
     ),
   );
 }
+
 Widget _buildSenderAvatar(
   String senderAvatar,
   bool isTablet,
