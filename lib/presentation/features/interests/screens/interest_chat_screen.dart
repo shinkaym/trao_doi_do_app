@@ -7,14 +7,14 @@ import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
-import 'package:trao_doi_do_app/domain/entities/transaction.dart';
+import 'package:trao_doi_do_app/domain/entities/message.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/transaction_query.dart';
-import 'package:trao_doi_do_app/presentation/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/test/test.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/widgets/transaction_item_selection_bottom_sheet.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/widgets/transaction_list_bottom_sheet.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/chat_app_bar.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/post_info_header.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/transaction_item_selection_bottom_sheet.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/transaction_list_bottom_sheet.dart';
 import 'package:trao_doi_do_app/presentation/models/interest_chat_transaction_data.dart';
-import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
+import 'package:trao_doi_do_app/presentation/widgets/custom_app_bar.dart';
 
 class InterestChatScreen extends HookConsumerWidget {
   final String interestId;
@@ -28,78 +28,232 @@ class InterestChatScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(webSocketConnectionProvider);
+
     final messageController = useTextEditingController();
     final scrollController = useScrollController();
     final messageFocusNode = useFocusNode();
 
     final isLoading = useState(true);
     final isSending = useState(false);
-    final chatInfo = useState<ChatInfo?>(null);
-    final messages = useState<List<ChatMessage>>([]);
 
     final post = useState<InterestPost?>(null);
     final isPostOwner = useState<bool>(false);
-
     final displayName = useState<String>('');
     final displayAvatar = useState<String>('');
+    final displayUserId = useState<int?>(null);
 
-    // Watch transactions state
+    // Watch providers
+    final authState = ref.watch(authProvider);
+    final messagesState = ref.watch(
+      messagesListProvider(int.parse(interestId)),
+    );
+    final messagesNotifier = ref.read(
+      messagesListProvider(int.parse(interestId)).notifier,
+    );
     final transactionsState = ref.watch(transactionsListProvider);
     final transactionsNotifier = ref.read(transactionsListProvider.notifier);
 
-    // Initialize chat data and load transactions
+    // WebSocket providers
+    final webSocketState = ref.watch(webSocketProvider);
+    final webSocketNotifier = ref.read(webSocketProvider.notifier);
+
+    // Initialize chat data and load messages/transactions
     useEffect(() {
       Future.microtask(() async {
-        // Initialize chat mock data
-        chatInfo.value = mockChatInfo;
-        messages.value = [...mockMessages];
+        if (transactionData != null && authState.user != null) {
+          // Set post data from route params
+          post.value = transactionData!.post;
+          isPostOwner.value = transactionData!.isPostOwner;
 
-        // Set post data from route params or use mock
-        post.value = transactionData!.post;
-        isPostOwner.value = transactionData!.isPostOwner;
+          // Set display information based on user role
+          if (isPostOwner.value) {
+            // Post owner sees the interested user's info
+            final interestedUser = post.value!.interests.firstWhere(
+              (i) => i.id.toString() == interestId,
+            );
+            displayName.value = interestedUser.userName;
+            displayAvatar.value = interestedUser.userAvatar;
+            displayUserId.value = interestedUser.userID;
+          } else {
+            // Interested user sees the post author's info
+            displayName.value = post.value!.authorName;
+            displayAvatar.value = post.value!.authorAvatar;
+            displayUserId.value = post.value!.authorID;
+          }
 
-        // Set display information
-        displayName.value =
-            isPostOwner.value
-                ? post.value!.interests
-                    .firstWhere((i) => i.id.toString() == interestId)
-                    .userName
-                : post.value!.authorName;
-        displayAvatar.value =
-            isPostOwner.value
-                ? post.value!.interests
-                    .firstWhere((i) => i.id.toString() == interestId)
-                    .userAvatar
-                : post.value!.authorAvatar;
+          // Connect to WebSocket if not already connected
+          // if (!webSocketState.isConnected && !webSocketState.isConnecting) {
+          //   await webSocketNotifier.connectToChat(authState.user?.token);
+          // }
 
-        // Load transactions with default query
-        final query = TransactionsQuery(
-          sort: 'createdAt',
-          order: 'DESC',
-          postID: post.value?.id,
-          searchBy: 'interestID',
-          searchValue: interestId,
-        );
+          // Join the chat room
+          if (webSocketState.isConnected) {
+            webSocketNotifier.joinRoom(interestID: int.parse(interestId));
+          }
 
-        await transactionsNotifier.loadTransactions(
-          newQuery: query,
-          refresh: true,
-        );
+          // Load messages
+          await messagesNotifier.loadMessages(refresh: true);
 
-        isLoading.value = false;
+          // Load transactions with default query
+          final query = TransactionsQuery(
+            sort: 'createdAt',
+            order: 'DESC',
+            postID: post.value?.id,
+            searchBy: 'interestID',
+            searchValue: interestId,
+          );
 
-        // Scroll to bottom after loading
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToBottom(scrollController);
-        });
+          await transactionsNotifier.loadTransactions(
+            newQuery: query,
+            refresh: true,
+          );
+
+          isLoading.value = false;
+
+          // Scroll to bottom after loading
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _scrollToBottom(scrollController);
+          });
+        }
       });
       return null;
     }, []);
 
+    // Handle WebSocket connection state changes
+    useEffect(() {
+      if (webSocketState.isConnected && authState.user != null) {
+        // Join room when connected
+        webSocketNotifier.joinRoom(interestID: int.parse(interestId));
+      }
+      return null;
+    }, [webSocketState.isConnected]);
+
+    // Handle WebSocket connection when auth state changes
+    useEffect(() {
+      // if (authState.user != null && !webSocketState.isConnected && !webSocketState.isConnecting) {
+      //   webSocketNotifier.connectToChat(authState.user?.token);
+      // }
+      return null;
+    }, [authState.user]);
+
+    // Simplified version using the factory constructor
+
+    void _handleNewWebSocketMessage() {
+      final response = webSocketState.lastResponse;
+      if (response == null) return;
+
+      print('🔄 Processing WebSocket response: ${response.event}');
+
+      if (response.event == 'send_message_response' &&
+          response.isSuccess &&
+          response.data != null) {
+        final messageData = response.data!;
+        final interestID = messageData['interestID'] as int?;
+
+        if (interestID == int.parse(interestId)) {
+          try {
+            // Validate required fields
+            if (messageData['senderID'] == null || authState.user?.id == null) {
+              print('⚠️ Missing required fields for message processing');
+              return;
+            }
+
+            print('📝 Creating message from WebSocket data: $messageData');
+
+            // Use the factory constructor
+            final message = Message.fromWebSocket(
+              messageData,
+              interestID: int.parse(interestId),
+              currentUserId: authState.user!.id,
+              otherUserId: displayUserId.value,
+            );
+
+            // Check if message already exists
+            final existingMessage =
+                messagesState.messages.where((m) {
+                  if (messageData['id'] != null && m.id == messageData['id']) {
+                    return true;
+                  }
+                  return m.message == message.message &&
+                      m.senderID == message.senderID &&
+                      m.createdAt != null &&
+                      message.createdAt != null &&
+                      m.createdAt!
+                              .difference(message.createdAt!)
+                              .abs()
+                              .inSeconds <
+                          3;
+                }).firstOrNull;
+
+            if (existingMessage == null) {
+              print('✅ Adding new message to list');
+
+              // ✅ Safely update provider outside build cycle
+              messagesNotifier.addNewMessage(message);
+
+              // Scroll to bottom after adding message
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (scrollController.hasClients) {
+                  _scrollToBottom(scrollController);
+                }
+              });
+            } else {
+              print('⚠️ Duplicate message detected, skipping');
+            }
+          } catch (e) {
+            print('❌ Error processing message: $e');
+            print('❌ Message data: $messageData');
+          }
+        }
+      }
+    }
+
+    useEffect(() {
+      if (webSocketState.lastResponse != null) {
+        print('📨 New WebSocket response detected, processing...');
+        // ✅ Delay việc xử lý để tránh modify provider trong build cycle
+        Future.microtask(_handleNewWebSocketMessage);
+      }
+      return null;
+    }, [webSocketState.lastResponse]);
+
+    // Handle WebSocket errors
+    useEffect(() {
+      if (webSocketState.error != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('WebSocket Error: ${webSocketState.error}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+          webSocketNotifier.clearError();
+        });
+      }
+      return null;
+    }, [webSocketState.error]);
+
+    // Handle pull to refresh (load more messages)
+    useEffect(() {
+      void handleScroll() {
+        // Kiểm tra khi user scroll lên đầu để load tin nhắn cũ hơn
+        if (scrollController.position.pixels <= 100) {
+          // Thêm threshold để dễ trigger
+          // User scrolled to top, load more messages
+          if (!messagesState.isLoadingMore && messagesState.hasMoreData) {
+            messagesNotifier.loadMore();
+          }
+        }
+      }
+
+      scrollController.addListener(handleScroll);
+      return () => scrollController.removeListener(handleScroll);
+    }, [messagesState.isLoadingMore, messagesState.hasMoreData]);
+
     // Handle transaction state changes
     useEffect(() {
       if (transactionsState.failure != null) {
-        // Show error message
         WidgetsBinding.instance.addPostFrameCallback((_) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -114,55 +268,71 @@ class InterestChatScreen extends HookConsumerWidget {
       return null;
     }, [transactionsState.failure]);
 
+    // Handle messages state changes
+    useEffect(() {
+      if (messagesState.failure != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Lỗi tải tin nhắn: ${messagesState.failure!.message}',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        });
+      }
+      return null;
+    }, [messagesState.failure]);
+
+    // Cleanup when leaving the screen
+    useEffect(() {
+      return () {
+        if (webSocketState.isConnected) {
+          webSocketNotifier.leftRoom(interestID: int.parse(interestId));
+        }
+      };
+    }, []);
+
     void sendMessage() async {
       final messageText = messageController.text.trim();
-      if (messageText.isEmpty || isSending.value) return;
+      if (messageText.isEmpty || isSending.value || authState.user == null)
+        return;
+
+      if (!webSocketState.isConnected) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Không thể gửi tin nhắn. Đang kết nối lại...'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
 
       isSending.value = true;
       messageController.clear();
 
-      // Add message to list
-      final newMessage = ChatMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        senderId: 'current_user',
-        senderName: 'Bạn',
-        senderAvatar: '',
-        content: messageText,
-        type: 'text',
-        createdAt: DateTime.now(),
-        isRead: false,
-      );
+      try {
+        print('📤 Sending message via WebSocket: $messageText');
 
-      messages.value = [...messages.value, newMessage];
-
-      // Scroll to bottom
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToBottom(scrollController);
-      });
-
-      // Simulate sending delay
-      await Future.delayed(const Duration(milliseconds: 500));
-      isSending.value = false;
-
-      // Simulate auto reply after 2 seconds
-      Future.delayed(const Duration(seconds: 2), () {
-        final autoReply = ChatMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          senderId: chatInfo.value!.otherUserId,
-          senderName: chatInfo.value!.otherUserName,
-          senderAvatar: chatInfo.value!.otherUserAvatar,
-          content: 'Cảm ơn bạn đã nhắn tin! Tôi sẽ phản hồi sớm nhất có thể.',
-          type: 'text',
-          createdAt: DateTime.now(),
-          isRead: false,
+        // Send message via WebSocket
+        webSocketNotifier.sendMessage(
+          interestID: int.parse(interestId),
+          isOwner: isPostOwner.value,
+          userID: displayUserId.value!,
+          message: messageText,
         );
-
-        messages.value = [...messages.value, autoReply];
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToBottom(scrollController);
-        });
-      });
+      } catch (e) {
+        print('❌ Error sending message: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi gửi tin nhắn: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        isSending.value = false;
+      }
     }
 
     void handlePostTap() {
@@ -181,13 +351,11 @@ class InterestChatScreen extends HookConsumerWidget {
         backgroundColor: Colors.transparent,
         builder:
             (_) => TransactionListBottomSheet(
-              transactions:
-                  transactionsState.transactions, // Sử dụng từ provider
+              transactions: transactionsState.transactions,
               isPostOwner: isPostOwner.value,
               items: post.value?.items ?? [],
               onTransactionUpdated: (updatedTransaction) {
-                // Không cần gọi refresh ở đây nữa vì đã được handle trong bottom sheet
-                // transactionsNotifier.refresh(); // Bỏ dòng này
+                // Transaction will be updated via provider
               },
             ),
       );
@@ -220,7 +388,6 @@ class InterestChatScreen extends HookConsumerWidget {
               postItems: post.value?.items ?? [],
               interestId: int.parse(interestId),
               onTransactionSent: () {
-                // Refresh transactions after creating new transaction
                 transactionsNotifier.refresh();
               },
             ),
@@ -235,7 +402,7 @@ class InterestChatScreen extends HookConsumerWidget {
     final theme = context.theme;
     final colorScheme = context.colorScheme;
 
-    if (isLoading.value) {
+    if (isLoading.value || !authState.isInitialized) {
       return Scaffold(
         backgroundColor: colorScheme.background,
         appBar: CustomAppBar(
@@ -247,64 +414,153 @@ class InterestChatScreen extends HookConsumerWidget {
       );
     }
 
+    if (authState.user == null) {
+      return Scaffold(
+        backgroundColor: colorScheme.background,
+        appBar: CustomAppBar(
+          title: 'Trò chuyện',
+          showBackButton: true,
+          onBackPressed: () => context.pop(),
+        ),
+        body: const Center(
+          child: Text('Bạn cần đăng nhập để sử dụng chức năng này'),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: colorScheme.background,
-      appBar: _buildAppBar(
-        isTablet,
-        theme,
-        colorScheme,
-        displayName.value,
-        displayAvatar.value,
-        isPostOwner.value,
-        context,
+      appBar: ChatAppBar(
+        displayName: displayName.value,
+        displayAvatar: displayAvatar.value,
+        isPostOwner: isPostOwner.value,
+        isTablet: isTablet,
+        onBackPressed: () => context.pop(),
       ),
       body: SafeArea(
         child: Column(
           children: [
+            // WebSocket connection status indicator
+            if (webSocketState.isConnecting)
+              Container(
+                padding: const EdgeInsets.all(8),
+                color: Colors.orange.withOpacity(0.1),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Đang kết nối...',
+                      style: TextStyle(color: Colors.orange, fontSize: 12),
+                    ),
+                  ],
+                ),
+              )
+            else if (!webSocketState.isConnected)
+              Container(
+                padding: const EdgeInsets.all(8),
+                color: Colors.red.withOpacity(0.1),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.signal_wifi_off, color: Colors.red, size: 16),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Mất kết nối',
+                      style: TextStyle(color: Colors.red, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+
             // Post info header
-            if (chatInfo.value != null && post.value != null)
-              _buildPostInfoHeader(
-                isTablet,
-                theme,
-                colorScheme,
-                transactionsState.transactions,
-                post.value!,
-                isPostOwner.value,
-                transactionsState.isLoading,
-                handlePostTap,
-                handleTransactionTap,
-                handleRefreshTransactions,
+            if (post.value != null)
+              PostInfoHeader(
+                transactions: transactionsState.transactions,
+                post: post.value!,
+                isPostOwner: isPostOwner.value,
+                isLoadingTransactions: transactionsState.isLoading,
+                isTablet: isTablet,
+                onPostTap: handlePostTap,
+                onTransactionTap: handleTransactionTap,
+                onRefreshTransactions: handleRefreshTransactions,
               ),
 
             // Messages list
             Expanded(
-              child: ListView.builder(
-                controller: scrollController,
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 24 : 16,
-                  vertical: isTablet ? 16 : 12,
-                ),
-                itemCount: messages.value.length,
-                itemBuilder: (context, index) {
-                  final message = messages.value[index];
-                  final isCurrentUser = message.senderId == 'current_user';
-                  final showAvatar =
-                      index == 0 ||
-                      messages.value[index - 1].senderId != message.senderId;
+              child:
+                  messagesState.isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : RefreshIndicator(
+                        onRefresh: () => messagesNotifier.refresh(),
+                        child: ListView.builder(
+                          controller: scrollController,
+                          // Bỏ reverse: true để hiển thị như Messenger
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isTablet ? 24 : 16,
+                            vertical: isTablet ? 16 : 12,
+                          ),
+                          itemCount:
+                              messagesState.messages.length +
+                              (messagesState.isLoadingMore ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            // Show loading indicator at top when loading more
+                            if (index == 0 && messagesState.isLoadingMore) {
+                              return const Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
 
-                  return _buildMessageBubble(
-                    message,
-                    isCurrentUser,
-                    showAvatar,
-                    isTablet,
-                    theme,
-                    colorScheme,
-                    handlePostTap,
-                  );
-                },
-              ),
+                            final messageIndex =
+                                messagesState.isLoadingMore ? index - 1 : index;
+                            final message =
+                                messagesState.messages[messageIndex];
+
+                            // Check if message is from current user
+                            final isCurrentUser =
+                                message.senderID == authState.user!.id;
+
+                            // Show avatar for first message or different sender
+                            // Cập nhật logic để hiển thị avatar đúng cách
+                            final showAvatar =
+                                messageIndex ==
+                                    messagesState.messages.length - 1 ||
+                                messagesState
+                                        .messages[messageIndex + 1]
+                                        .senderID !=
+                                    message.senderID;
+
+                            return _buildMessageBubble(
+                              message,
+                              isCurrentUser,
+                              showAvatar,
+                              isTablet,
+                              theme,
+                              colorScheme,
+                              displayName.value,
+                              displayAvatar.value,
+                              authState.user!.fullName,
+                              authState.user!.avatar,
+                              handlePostTap,
+                              messagesState
+                                  .messages, // Truyền danh sách tin nhắn
+                              messageIndex, // Truyền index
+                            );
+                          },
+                        ),
+                      ),
             ),
-
             // Message input
             _buildMessageInput(
               isTablet,
@@ -312,11 +568,12 @@ class InterestChatScreen extends HookConsumerWidget {
               colorScheme,
               messageController,
               messageFocusNode,
-              isSending.value,
+              isSending.value || !webSocketState.isConnected,
               isPostOwner.value,
               sendMessage,
               handleItemTransactionTap,
               context,
+              webSocketState.isConnected,
             ),
           ],
         ),
@@ -327,6 +584,7 @@ class InterestChatScreen extends HookConsumerWidget {
 
 void _scrollToBottom(ScrollController scrollController) {
   if (scrollController.hasClients) {
+    // Scroll xuống cuối cùng (bottom) thay vì lên đầu (top)
     scrollController.animateTo(
       scrollController.position.maxScrollExtent,
       duration: const Duration(milliseconds: 300),
@@ -335,311 +593,60 @@ void _scrollToBottom(ScrollController scrollController) {
   }
 }
 
-PreferredSizeWidget _buildAppBar(
-  bool isTablet,
-  ThemeData theme,
-  ColorScheme colorScheme,
-  String displayName,
-  String displayAvatar,
-  bool isPostOwner,
-  BuildContext context,
-) {
-  return AppBar(
-    backgroundColor: colorScheme.surface,
-    elevation: 0,
-    leading: IconButton(
-      onPressed: () => context.pop(),
-      icon: const Icon(Icons.arrow_back),
-    ),
-    title: InkWell(
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: isTablet ? 8 : 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Avatar
-            _buildDisplayAvatar(displayAvatar, isTablet, colorScheme),
-
-            SizedBox(width: isTablet ? 12 : 8),
-
-            // User info
-            Flexible(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    displayName,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      fontSize: isTablet ? 16 : 15,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-    bottom: PreferredSize(
-      preferredSize: const Size.fromHeight(1),
-      child: Container(height: 1, color: colorScheme.outline.withOpacity(0.2)),
-    ),
-  );
-}
-
-Widget _buildDisplayAvatar(
-  String displayAvatar,
-  bool isTablet,
-  ColorScheme colorScheme,
-) {
-  final radius = isTablet ? 12.0 : 10.0;
-
-  if (displayAvatar.isNotEmpty) {
-    final imageBytes = Base64Utils.decodeImageFromBase64(displayAvatar);
-
-    if (imageBytes != null) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundImage: MemoryImage(imageBytes),
-        child: null,
-      );
-    }
-  }
-
-  return CircleAvatar(
-    radius: radius,
-    backgroundColor: colorScheme.primaryContainer,
-    child: Icon(
-      Icons.person,
-      size: isTablet ? 14 : 12,
-      color: colorScheme.onPrimaryContainer,
-    ),
-  );
-}
-
-Widget _buildPostInfoHeader(
-  bool isTablet,
-  ThemeData theme,
-  ColorScheme colorScheme,
-  List<Transaction> transactions,
-  InterestPost post,
-  bool isPostOwner,
-  bool isLoadingTransactions,
-  VoidCallback onPostTap,
-  VoidCallback onTransactionTap,
-  VoidCallback onRefreshTransactions,
-) {
-  // Get post type information
-  final postTypeEnum = CreatePostType.fromValue(post.type);
-  final latestTransaction = transactions.isNotEmpty ? transactions.first : null;
-
-  return Container(
-    margin: EdgeInsets.all(isTablet ? 16 : 12),
-    child: Column(
-      children: [
-        // Post info
-        Container(
-          padding: EdgeInsets.all(isTablet ? 16 : 12),
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: colorScheme.primary.withOpacity(0.2)),
-          ),
-          child: InkWell(
-            onTap: onPostTap,
-            borderRadius: BorderRadius.circular(8),
-            child: Row(
-              children: [
-                Icon(
-                  postTypeEnum.icon(),
-                  size: isTablet ? 24 : 20,
-                  color: postTypeEnum.color(),
-                ),
-                SizedBox(width: isTablet ? 12 : 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Về bài đăng: ${postTypeEnum.label()}',
-                        style: TextStyle(
-                          fontSize: isTablet ? 12 : 11,
-                          color: theme.hintColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: isTablet ? 4 : 2),
-                      Text(
-                        post.title,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: isTablet ? 14 : 13,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: isTablet ? 16 : 14,
-                  color: theme.hintColor,
-                ),
-              ],
-            ),
-          ),
-        ),
-
-        // Latest transaction info
-        SizedBox(height: isTablet ? 8 : 6),
-        Container(
-          padding: EdgeInsets.all(isTablet ? 16 : 12),
-          decoration: BoxDecoration(
-            color: colorScheme.secondaryContainer.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: colorScheme.secondary.withOpacity(0.2)),
-          ),
-          child: InkWell(
-            onTap: isLoadingTransactions ? null : onTransactionTap,
-            borderRadius: BorderRadius.circular(8),
-            child: Row(
-              children: [
-                if (isLoadingTransactions)
-                  SizedBox(
-                    width: isTablet ? 20 : 18,
-                    height: isTablet ? 20 : 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: colorScheme.secondary,
-                    ),
-                  )
-                else if (latestTransaction != null)
-                  Icon(
-                    TransactionStatus.fromValue(
-                      latestTransaction.status,
-                    ).icon(),
-                    size: isTablet ? 20 : 18,
-                    color:
-                        TransactionStatus.fromValue(
-                          latestTransaction.status,
-                        ).color(),
-                  )
-                else
-                  Icon(
-                    Icons.history,
-                    size: isTablet ? 20 : 18,
-                    color: theme.hintColor,
-                  ),
-
-                SizedBox(width: isTablet ? 12 : 8),
-
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isLoadingTransactions
-                            ? 'Đang tải giao dịch...'
-                            : latestTransaction != null
-                            ? 'Yêu cầu mới nhất'
-                            : 'Chưa có giao dịch',
-                        style: TextStyle(
-                          fontSize: isTablet ? 12 : 11,
-                          color: theme.hintColor,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-
-                      if (latestTransaction != null) ...[
-                        SizedBox(height: isTablet ? 4 : 2),
-                        Row(
-                          children: [
-                            Text(
-                              TimeUtils.formatTimeAgo(
-                                DateTime.parse(latestTransaction.createdAt),
-                              ),
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                fontSize: isTablet ? 13 : 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            SizedBox(width: isTablet ? 8 : 6),
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: isTablet ? 8 : 6,
-                                vertical: isTablet ? 4 : 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: TransactionStatus.fromValue(
-                                  latestTransaction.status,
-                                ).color().withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Text(
-                                TransactionStatus.fromValue(
-                                  latestTransaction.status,
-                                ).label(isPostOwner: isPostOwner),
-                                style: TextStyle(
-                                  fontSize: isTablet ? 11 : 10,
-                                  color:
-                                      TransactionStatus.fromValue(
-                                        latestTransaction.status,
-                                      ).color(),
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-                // Refresh button
-                if (!isLoadingTransactions)
-                  IconButton(
-                    onPressed: onRefreshTransactions,
-                    icon: Icon(
-                      Icons.refresh,
-                      size: isTablet ? 18 : 16,
-                      color: theme.hintColor,
-                    ),
-                    padding: EdgeInsets.all(isTablet ? 8 : 4),
-                    constraints: BoxConstraints(
-                      minWidth: isTablet ? 32 : 24,
-                      minHeight: isTablet ? 32 : 24,
-                    ),
-                  ),
-
-                Icon(
-                  Icons.arrow_forward_ios,
-                  size: isTablet ? 16 : 14,
-                  color: theme.hintColor,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
 Widget _buildMessageBubble(
-  ChatMessage message,
+  Message message,
   bool isCurrentUser,
   bool showAvatar,
   bool isTablet,
   ThemeData theme,
   ColorScheme colorScheme,
+  String otherUserName,
+  String otherUserAvatar,
+  String currentUserName,
+  String currentUserAvatar,
   VoidCallback onPostTap,
+  List<Message> messages, // Thêm danh sách tin nhắn
+  int messageIndex, // Thêm index của tin nhắn hiện tại
 ) {
+  final senderAvatar = isCurrentUser ? currentUserAvatar : otherUserAvatar;
+
+  // Logic để quyết định có hiển thị thời gian hay không (giống Messenger)
+  bool shouldShowTime = false;
+
+  if (messageIndex == messages.length - 1) {
+    // Tin nhắn cuối cùng (mới nhất) luôn hiển thị thời gian
+    shouldShowTime = true;
+  } else {
+    final nextMessage = messages[messageIndex + 1];
+    final currentTime = message.createdAt;
+    final nextTime = nextMessage.createdAt;
+
+    // Hiển thị thời gian nếu:
+    // 1. Người gửi khác nhau
+    // 2. Khoảng cách thời gian > 15 phút (tăng lên để giống Messenger hơn)
+    // 3. Khác ngày
+    if (message.senderID != nextMessage.senderID) {
+      shouldShowTime = true;
+    } else if (currentTime != null && nextTime != null) {
+      final timeDifference = nextTime.difference(currentTime).inMinutes;
+      if (timeDifference > 15) {
+        // Tăng từ 5 lên 15 phút
+        shouldShowTime = true;
+      }
+
+      // Kiểm tra khác ngày
+      if (currentTime.day != nextTime.day ||
+          currentTime.month != nextTime.month ||
+          currentTime.year != nextTime.year) {
+        shouldShowTime = true;
+      }
+    }
+  }
+
+  // Tùy chọn: Chỉ hiển thị thời gian cho tin nhắn cuối cùng của mỗi "nhóm"
+  // Bỏ comment dòng dưới nếu muốn ít thời gian hơn nữa
+  // shouldShowTime = shouldShowTime && showAvatar;
+
   return Container(
     margin: EdgeInsets.only(
       bottom: isTablet ? 8 : 6,
@@ -654,10 +661,9 @@ Widget _buildMessageBubble(
         // Avatar for received messages
         if (!isCurrentUser) ...[
           if (showAvatar)
-            _buildSenderAvatar(message.senderAvatar, isTablet, colorScheme)
+            _buildSenderAvatar(senderAvatar, isTablet, colorScheme)
           else
             SizedBox(width: isTablet ? 28 : 24),
-
           SizedBox(width: isTablet ? 8 : 6),
         ],
 
@@ -687,38 +693,46 @@ Widget _buildMessageBubble(
                     bottomRight: Radius.circular(isCurrentUser ? 4 : 16),
                   ),
                 ),
-                child: _buildTextMessage(
-                  message,
-                  isTablet,
-                  theme,
-                  colorScheme,
-                  isCurrentUser,
+                child: Text(
+                  message.message,
+                  style: TextStyle(
+                    fontSize: isTablet ? 15 : 14,
+                    color:
+                        isCurrentUser
+                            ? colorScheme.onPrimary
+                            : colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
                 ),
               ),
 
-              SizedBox(height: isTablet ? 4 : 2),
-
-              // Time and read status
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    TimeUtils.formatTimeAgo(message.createdAt),
-                    style: TextStyle(
-                      fontSize: isTablet ? 11 : 10,
-                      color: theme.hintColor,
+              // Chỉ hiển thị thời gian và trạng thái đọc khi cần thiết
+              if (shouldShowTime) ...[
+                SizedBox(height: isTablet ? 4 : 2),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      message.createdAt != null
+                          ? TimeUtils.formatTimeAgo(message.createdAt!)
+                          : 'Vừa xong',
+                      style: TextStyle(
+                        fontSize: isTablet ? 11 : 10,
+                        color: theme.hintColor,
+                      ),
                     ),
-                  ),
-                  if (isCurrentUser) ...[
-                    SizedBox(width: isTablet ? 4 : 2),
-                    Icon(
-                      message.isRead ? Icons.done_all : Icons.done,
-                      size: isTablet ? 14 : 12,
-                      color: message.isRead ? Colors.blue : theme.hintColor,
-                    ),
+                    if (isCurrentUser) ...[
+                      SizedBox(width: isTablet ? 4 : 2),
+                      Icon(
+                        message.isRead == 1 ? Icons.done_all : Icons.done,
+                        size: isTablet ? 14 : 12,
+                        color:
+                            message.isRead == 1 ? Colors.blue : theme.hintColor,
+                      ),
+                    ],
                   ],
-                ],
-              ),
+                ),
+              ],
             ],
           ),
         ),
@@ -757,24 +771,6 @@ Widget _buildSenderAvatar(
   );
 }
 
-Widget _buildTextMessage(
-  ChatMessage message,
-  bool isTablet,
-  ThemeData theme,
-  ColorScheme colorScheme,
-  bool isCurrentUser,
-) {
-  return Text(
-    message.content,
-    style: TextStyle(
-      fontSize: isTablet ? 15 : 14,
-      color:
-          isCurrentUser ? colorScheme.onPrimary : colorScheme.onSurfaceVariant,
-      height: 1.4,
-    ),
-  );
-}
-
 Widget _buildMessageInput(
   bool isTablet,
   ThemeData theme,
@@ -786,6 +782,7 @@ Widget _buildMessageInput(
   VoidCallback onSend,
   VoidCallback onItemTransaction,
   BuildContext context,
+  bool isWebSocketConnected,
 ) {
   return Container(
     padding: EdgeInsets.all(isTablet ? 16 : 12),
@@ -820,7 +817,10 @@ Widget _buildMessageInput(
                 controller: messageController,
                 focusNode: messageFocusNode,
                 decoration: InputDecoration(
-                  hintText: 'Nhập tin nhắn...',
+                  hintText:
+                      isWebSocketConnected
+                          ? 'Nhập tin nhắn...'
+                          : 'Đang kết nối...',
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(
                     horizontal: isTablet ? 20 : 16,
@@ -832,7 +832,7 @@ Widget _buildMessageInput(
                 minLines: 1,
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => onSend(),
-                enabled: !isSending,
+                enabled: !isSending && isWebSocketConnected,
               ),
             ),
           ),
@@ -842,11 +842,14 @@ Widget _buildMessageInput(
           // Send button
           Container(
             decoration: BoxDecoration(
-              color: colorScheme.primary,
+              color:
+                  isSending || !isWebSocketConnected
+                      ? colorScheme.primary.withOpacity(0.5)
+                      : colorScheme.primary,
               shape: BoxShape.circle,
             ),
             child: IconButton(
-              onPressed: isSending ? null : onSend,
+              onPressed: isSending || !isWebSocketConnected ? null : onSend,
               icon:
                   isSending
                       ? SizedBox(

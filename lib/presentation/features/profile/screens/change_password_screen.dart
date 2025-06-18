@@ -6,7 +6,7 @@ import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/change_password/password_header_widget.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/change_password/security_info_widget.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/change_password/security_tips_widget.dart';
-import 'package:trao_doi_do_app/presentation/widgets/custom_appbar.dart';
+import 'package:trao_doi_do_app/presentation/widgets/custom_app_bar.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
 import 'package:trao_doi_do_app/presentation/widgets/password_strength_widget.dart';
 import 'package:trao_doi_do_app/presentation/models/password_strength.dart';

@@ -66,6 +66,7 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
         isLoading: true,
         failure: null,
         query: query.copyWith(page: 1),
+        currentPage: 1,
       );
     } else if (isLoadMore) {
       if (!state.hasMoreData) return;
@@ -77,7 +78,7 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
       );
     }
 
-    final result = await _getMessagesUseCase(query);
+    final result = await _getMessagesUseCase(state.query);
 
     result.fold(
       (failure) =>
@@ -88,50 +89,56 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
           ),
       (messagesResult) {
         List<Message> newMessages;
+        int newCurrentPage;
 
         if (isFirstLoad) {
-          newMessages = messagesResult.messages;
+          // Đảo ngược thứ tự để tin nhắn cũ nhất ở đầu, mới nhất ở cuối
+          newMessages = messagesResult.messages.reversed.toList();
+          newCurrentPage = 1;
         } else if (isLoadMore) {
-          newMessages = [...state.messages, ...messagesResult.messages];
+          // Khi load more, thêm tin nhắn cũ hơn vào đầu danh sách
+          final oldMessages = messagesResult.messages.reversed.toList();
+          newMessages = [...oldMessages, ...state.messages];
+          newCurrentPage = state.currentPage + 1;
         } else {
           newMessages = state.messages;
+          newCurrentPage = state.currentPage;
         }
 
-        final actualCurrentPage = state.query.page;
-        final actualHasMoreData =
-            messagesResult.messages.length >= state.query.limit;
+        final hasMoreData = messagesResult.messages.length >= state.query.limit;
 
         state = state.copyWith(
           isLoading: false,
           isLoadingMore: false,
           messages: newMessages,
-          currentPage: actualCurrentPage,
-          hasMoreData: actualHasMoreData,
+          currentPage: newCurrentPage,
+          hasMoreData: hasMoreData,
+          failure: null,
         );
       },
     );
   }
 
   // Tìm kiếm tin nhắn
-  void searchMessages(String? search) {
+  Future<void> searchMessages(String? search) async {
     final newQuery = state.query.copyWith(search: search, page: 1);
-    loadMessages(newQuery: newQuery, refresh: true);
+    await loadMessages(newQuery: newQuery, refresh: true);
   }
 
   // Load more messages (cho infinite scroll)
-  void loadMore() {
-    loadMessages(isLoadMore: true);
+  Future<void> loadMore() async {
+    await loadMessages(isLoadMore: true);
   }
 
   // Refresh messages
-  void refresh() {
-    loadMessages(refresh: true);
+  Future<void> refresh() async {
+    await loadMessages(refresh: true);
   }
 
   // Thêm tin nhắn mới vào đầu danh sách (khi có tin nhắn real-time)
   void addNewMessage(Message message) {
     if (message.interestID == state.query.interestID) {
-      final updatedMessages = [message, ...state.messages];
+      final updatedMessages = [...state.messages, message];
       state = state.copyWith(messages: updatedMessages);
     }
   }

@@ -22,8 +22,13 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
       _remoteDataSource.currentConnectionState;
 
   @override
-  Future<void> connect(String? token) async {
-    await _remoteDataSource.connect(token);
+  Future<void> connectToChat(String? token) async {
+    await _remoteDataSource.connectToChat(token);
+  }
+
+  @override
+  Future<void> connectToNotification(String? token) async {
+    await _remoteDataSource.connectToNotification(token);
   }
 
   @override
@@ -37,24 +42,26 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
   }
 
   @override
-  void joinRoom({required bool isOwner, required int userID}) {
-    final event = WebSocketEvent.joinRoom(isOwner: isOwner, userID: userID);
+  void joinRoom({required int interestID}) {
+    final event = WebSocketEvent.joinRoom(interestID: interestID);
     sendEvent(event);
   }
 
   @override
-  void leftRoom({required bool isOwner, required int userID}) {
-    final event = WebSocketEvent.leftRoom(isOwner: isOwner, userID: userID);
+  void leftRoom({required int interestID}) {
+    final event = WebSocketEvent.leftRoom(interestID: interestID);
     sendEvent(event);
   }
 
   @override
   void sendMessage({
+    required int interestID,
     required bool isOwner,
     required int userID,
     required String message,
   }) {
     final event = WebSocketEvent.sendMessage(
+      interestID: interestID,
       isOwner: isOwner,
       userID: userID,
       message: message,

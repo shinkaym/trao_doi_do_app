@@ -18,7 +18,6 @@ import 'package:trao_doi_do_app/data/datasources/remote/websocket_remote_datasou
 import 'package:trao_doi_do_app/data/repositories_impl/auth_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/message_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/websocket_repository_impl.dart';
-import 'package:trao_doi_do_app/domain/entities/message_socket.dart';
 import 'package:trao_doi_do_app/domain/repositories/auth_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/message_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/websocket_repository.dart';
@@ -550,45 +549,48 @@ void disposeDependencies(ProviderContainer container) {
   container.dispose();
 }
 
-// =============================================================================
-// WEBSOCKET CORE PROVIDERS
-// =============================================================================
-
-/// WebSocket Client Provider - Singleton
-final webSocketClientProvider = Provider<WebSocketClient>((ref) {
+// Create separate WebSocket clients for chat and notifications
+final chatWebSocketClientProvider = Provider<WebSocketClient>((ref) {
   return WebSocketClient();
 });
 
-// =============================================================================
-// WEBSOCKET DATA LAYER PROVIDERS
-// =============================================================================
+final notificationWebSocketClientProvider = Provider<WebSocketClient>((ref) {
+  return WebSocketClient();
+});
 
+// WebSocket Remote Data Source Provider
 final webSocketRemoteDataSourceProvider = Provider<WebSocketRemoteDataSource>((
   ref,
 ) {
-  final client = ref.watch(webSocketClientProvider);
-  return WebSocketRemoteDataSourceImpl(client);
+  final chatClient = ref.watch(chatWebSocketClientProvider);
+  final notificationClient = ref.watch(notificationWebSocketClientProvider);
+  return WebSocketRemoteDataSourceImpl(chatClient, notificationClient);
 });
 
 // =============================================================================
 // WEBSOCKET DOMAIN LAYER PROVIDERS
 // =============================================================================
 
+// WebSocket Repository Provider
 final webSocketRepositoryProvider = Provider<WebSocketRepository>((ref) {
   final remoteDataSource = ref.watch(webSocketRemoteDataSourceProvider);
   return WebSocketRepositoryImpl(remoteDataSource);
 });
 
 // =============================================================================
-// WEBSOCKET USE CASES PROVIDERS
+// WEBSOCKET USE CASES PROVIDERS (Updated)
 // =============================================================================
 
-final connectWebSocketUseCaseProvider = Provider<ConnectWebSocketUseCase>((
-  ref,
-) {
+final connectToChatUseCaseProvider = Provider<ConnectToChatUseCase>((ref) {
   final repository = ref.watch(webSocketRepositoryProvider);
-  return ConnectWebSocketUseCase(repository);
+  return ConnectToChatUseCase(repository);
 });
+
+final connectToNotificationUseCaseProvider =
+    Provider<ConnectToNotificationUseCase>((ref) {
+      final repository = ref.watch(webSocketRepositoryProvider);
+      return ConnectToNotificationUseCase(repository);
+    });
 
 final disconnectWebSocketUseCaseProvider = Provider<DisconnectWebSocketUseCase>(
   (ref) {
@@ -625,75 +627,89 @@ final getWebSocketConnectionStreamUseCaseProvider =
     });
 
 // =============================================================================
-// WEBSOCKET PRESENTATION LAYER PROVIDERS
+// WEBSOCKET PRESENTATION LAYER PROVIDER (Updated)
 // =============================================================================
 
-final webSocketNotifierProvider =
-    StateNotifierProvider<WebSocketNotifier, WebSocketState>((ref) {
-      final connectUseCase = ref.watch(connectWebSocketUseCaseProvider);
-      final disconnectUseCase = ref.watch(disconnectWebSocketUseCaseProvider);
-      final joinRoomUseCase = ref.watch(joinRoomUseCaseProvider);
-      final leftRoomUseCase = ref.watch(leftRoomUseCaseProvider);
-      final sendMessageUseCase = ref.watch(sendMessageUseCaseProvider);
-      final responseStreamUseCase = ref.watch(
-        getWebSocketResponseStreamUseCaseProvider,
-      );
-      final connectionStreamUseCase = ref.watch(
-        getWebSocketConnectionStreamUseCaseProvider,
+final webSocketProvider =
+    StateNotifierProvider.autoDispose<WebSocketNotifier, WebSocketState>((ref) {
+      final notifier = WebSocketNotifier(
+        ref.watch(connectToChatUseCaseProvider),
+        ref.watch(connectToNotificationUseCaseProvider),
+        ref.watch(disconnectWebSocketUseCaseProvider),
+        ref.watch(joinRoomUseCaseProvider),
+        ref.watch(leftRoomUseCaseProvider),
+        ref.watch(sendMessageUseCaseProvider),
+        ref.watch(getWebSocketResponseStreamUseCaseProvider),
+        ref.watch(getWebSocketConnectionStreamUseCaseProvider),
       );
 
-      return WebSocketNotifier(
-        connectUseCase,
-        disconnectUseCase,
-        joinRoomUseCase,
-        leftRoomUseCase,
-        sendMessageUseCase,
-        responseStreamUseCase,
-        connectionStreamUseCase,
-      );
+      ref.onDispose(() {
+        notifier.disconnect();
+      });
+
+      return notifier;
     });
 
-// Additional helper providers for easier access
-final webSocketConnectionStateProvider = Provider<WebSocketConnectionState>((
-  ref,
-) {
-  return ref.watch(
-    webSocketNotifierProvider.select((state) => state.connectionState),
-  );
-});
+// Auto-connection provider (Updated)
+final webSocketConnectionProvider = Provider((ref) {
+  final authState = ref.watch(authProvider);
+  final webSocketNotifier = ref.watch(webSocketProvider.notifier);
+  final webSocketState = ref.watch(webSocketProvider);
 
-final webSocketMessagesProvider = Provider<List<MessageSocket>>((ref) {
-  return ref.watch(webSocketNotifierProvider.select((state) => state.messages));
-});
+  print('🔄 WebSocket connection provider triggered');
+  print('Auth state: ${authState.isLoggedIn}');
+  print('WebSocket state: ${webSocketState.connectionState}');
 
-final webSocketErrorProvider = Provider<String?>((ref) {
-  return ref.watch(webSocketNotifierProvider.select((state) => state.error));
-});
+  // Auto connect when user login
+  if (authState.isLoggedIn &&
+      authState.user != null &&
+      !webSocketState.isConnected &&
+      !webSocketState.isConnecting) {
+    print('🚀 Attempting auto-connection...');
 
-final isWebSocketConnectedProvider = Provider<bool>((ref) {
-  return ref.watch(
-    webSocketNotifierProvider.select((state) => state.isConnected),
-  );
-});
+    // Get token from AuthLocalDataSource
+    ref
+        .read(authLocalDataSourceProvider)
+        .getAccessToken()
+        .then((token) {
+          if (token != null) {
+            print('✅ Token found, connecting to chat...');
+            webSocketNotifier.connectToChat(token);
+            // Optionally connect to notifications
+            // webSocketNotifier.connectToNotification(token);
+          } else {
+            print('❌ No token found for auto-connection');
+          }
+        })
+        .catchError((error) {
+          print('❌ Error getting token for auto-connection: $error');
+        });
+  }
 
-final isWebSocketConnectingProvider = Provider<bool>((ref) {
-  return ref.watch(
-    webSocketNotifierProvider.select((state) => state.isConnecting),
-  );
-});
+  // Auto disconnect when user logout
+  if (!authState.isLoggedIn && webSocketState.isConnected) {
+    print('🔌 Auto-disconnecting due to logout...');
+    webSocketNotifier.disconnect();
+  }
 
-final isWebSocketDisconnectedProvider = Provider<bool>((ref) {
-  return ref.watch(
-    webSocketNotifierProvider.select((state) => state.isDisconnected),
-  );
+  return webSocketNotifier;
 });
 
 // =============================================================================
 // WEBSOCKET CLEANUP
 // =============================================================================
 
-/// WebSocket cleanup function - call this when disposing the app
+/// Enhanced dispose function to properly clean up WebSocket connections
 void disposeWebSocketDependencies(ProviderContainer container) {
-  final webSocketClient = container.read(webSocketClientProvider);
-  webSocketClient.dispose();
+  // Dispose WebSocket clients
+  final chatClient = container.read(chatWebSocketClientProvider);
+  final notificationClient = container.read(
+    notificationWebSocketClientProvider,
+  );
+
+  chatClient.dispose();
+  notificationClient.dispose();
+
+  // Dispose container
+  container.dispose();
 }

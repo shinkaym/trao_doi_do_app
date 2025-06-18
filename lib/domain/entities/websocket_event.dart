@@ -22,34 +22,34 @@ class WebSocketEvent {
 
   const WebSocketEvent({required this.event, required this.data});
 
-  factory WebSocketEvent.joinRoom({
-    required bool isOwner,
-    required int userID,
-  }) {
+  factory WebSocketEvent.joinRoom({required int interestID}) {
     return WebSocketEvent(
       event: WebSocketEventType.joinRoom,
-      data: {'isOwner': isOwner, 'userID': userID},
+      data: {'interestID': interestID},
     );
   }
 
-  factory WebSocketEvent.leftRoom({
-    required bool isOwner,
-    required int userID,
-  }) {
+  factory WebSocketEvent.leftRoom({required int interestID}) {
     return WebSocketEvent(
       event: WebSocketEventType.leftRoom,
-      data: {'isOwner': isOwner, 'userID': userID},
+      data: {'interestID': interestID},
     );
   }
 
   factory WebSocketEvent.sendMessage({
+    required int interestID,
     required bool isOwner,
     required int userID,
     required String message,
   }) {
     return WebSocketEvent(
       event: WebSocketEventType.sendMessage,
-      data: {'isOwner': isOwner, 'userID': userID, 'message': message},
+      data: {
+        'interestID': interestID,
+        'isOwner': isOwner,
+        'userID': userID,
+        'message': message,
+      },
     );
   }
 

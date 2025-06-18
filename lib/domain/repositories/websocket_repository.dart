@@ -7,12 +7,14 @@ abstract class WebSocketRepository {
   Stream<WebSocketConnectionState> get connectionStream;
   WebSocketConnectionState get currentConnectionState;
 
-  Future<void> connect(String? token);
+  Future<void> connectToChat(String? token);
+  Future<void> connectToNotification(String? token);
   void disconnect();
   void sendEvent(WebSocketEvent event);
-  void joinRoom({required bool isOwner, required int userID});
-  void leftRoom({required bool isOwner, required int userID});
+  void joinRoom({required int interestID});
+  void leftRoom({required int interestID});
   void sendMessage({
+    required int interestID,
     required bool isOwner,
     required int userID,
     required String message,

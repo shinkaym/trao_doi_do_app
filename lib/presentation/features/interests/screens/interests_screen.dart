@@ -9,7 +9,7 @@ import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/interest_query.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/interests_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/widgets/pagination.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/pagination.dart';
 import 'package:trao_doi_do_app/presentation/models/interest_chat_transaction_data.dart';
 import 'package:trao_doi_do_app/presentation/widgets/login_prompt.dart';
 import 'package:trao_doi_do_app/presentation/providers/interest_provider.dart';

@@ -2,13 +2,23 @@ import 'package:trao_doi_do_app/domain/entities/response/websocket_response.dart
 import 'package:trao_doi_do_app/domain/repositories/websocket_repository.dart';
 import 'package:trao_doi_do_app/core/network/websocket_client.dart';
 
-class ConnectWebSocketUseCase {
+class ConnectToChatUseCase {
   final WebSocketRepository _repository;
 
-  ConnectWebSocketUseCase(this._repository);
+  ConnectToChatUseCase(this._repository);
 
   Future<void> call(String? token) async {
-    await _repository.connect(token);
+    await _repository.connectToChat(token);
+  }
+}
+
+class ConnectToNotificationUseCase {
+  final WebSocketRepository _repository;
+
+  ConnectToNotificationUseCase(this._repository);
+
+  Future<void> call(String? token) async {
+    await _repository.connectToNotification(token);
   }
 }
 
@@ -27,8 +37,8 @@ class JoinRoomUseCase {
 
   JoinRoomUseCase(this._repository);
 
-  void call({required bool isOwner, required int userID}) {
-    _repository.joinRoom(isOwner: isOwner, userID: userID);
+  void call({required int interestID}) {
+    _repository.joinRoom(interestID: interestID);
   }
 }
 
@@ -37,8 +47,8 @@ class LeftRoomUseCase {
 
   LeftRoomUseCase(this._repository);
 
-  void call({required bool isOwner, required int userID}) {
-    _repository.leftRoom(isOwner: isOwner, userID: userID);
+  void call({required int interestID}) {
+    _repository.leftRoom(interestID: interestID);
   }
 }
 
@@ -48,11 +58,17 @@ class SendMessageUseCase {
   SendMessageUseCase(this._repository);
 
   void call({
+    required int interestID,
     required bool isOwner,
     required int userID,
     required String message,
   }) {
-    _repository.sendMessage(isOwner: isOwner, userID: userID, message: message);
+    _repository.sendMessage(
+      interestID: interestID,
+      isOwner: isOwner,
+      userID: userID,
+      message: message,
+    );
   }
 }
 
