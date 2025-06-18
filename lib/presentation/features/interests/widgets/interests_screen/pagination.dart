@@ -25,23 +25,10 @@ class Pagination extends HookConsumerWidget {
       width: double.infinity,
       padding: EdgeInsets.symmetric(
         horizontal: isTablet ? 32 : 16,
-        vertical: isTablet ? 16 : 12,
+        vertical: isTablet ? 12 : 8,
       ),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-        border: Border(
-          top: BorderSide(
-            color: colorScheme.outline.withOpacity(0.2),
-            width: 1,
-          ),
-        ),
+        color: Colors.transparent,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,

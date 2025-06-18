@@ -49,62 +49,79 @@ class PostsListContent extends HookConsumerWidget {
       );
     }
 
-    return Column(
+    return Stack(
       children: [
-        // Posts List
-        Expanded(
-          child: RefreshIndicator(
-            onRefresh: () async => onRefresh(),
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 12)),
-                SliverPadding(
-                  padding: EdgeInsets.symmetric(horizontal: isTablet ? 32 : 16),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      if (index < postsState.posts.length) {
-                        return PostCard(
-                          post: postsState.posts[index],
-                          isTablet: isTablet,
-                          theme: theme,
-                          colorScheme: colorScheme,
-                          onTap: onPostTap,
-                          getTypeColor: _getTypeColor,
-                          hasImages: _hasImages,
-                          getRewardFromPost: _getRewardFromPost,
-                          getLocationFromPost: _getLocationFromPost,
-                        );
-                      }
-                      return null;
-                    }, childCount: postsState.posts.length),
-                  ),
+        // Posts List - chiếm toàn bộ màn hình
+        RefreshIndicator(
+          onRefresh: () async => onRefresh(),
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
+              SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
+                sliver: SliverList.separated(
+                  itemCount: postsState.posts.length,
+                  itemBuilder: (context, index) {
+                    return PostCard(
+                      post: postsState.posts[index],
+                      isTablet: isTablet,
+                      theme: theme,
+                      colorScheme: colorScheme,
+                      onTap: onPostTap,
+                      getTypeColor: _getTypeColor,
+                      hasImages: _hasImages,
+                      getRewardFromPost: _getRewardFromPost,
+                      getLocationFromPost: _getLocationFromPost,
+                    );
+                  },
+                  separatorBuilder: (context, index) {
+                    // Khoảng cách giữa các card
+                    return SizedBox(height: isTablet ? 8 : 6);
+                  },
                 ),
+              ),
 
-                // Loading indicator
-                if (postsState.isLoading || postsState.isLoadingPage)
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.all(isTablet ? 32 : 16),
-                      child: const Center(child: CircularProgressIndicator()),
-                    ),
-                  ),
-
-                // Bottom padding for pagination
+              // Loading indicator
+              if (postsState.isLoading || postsState.isLoadingPage)
                 SliverToBoxAdapter(
-                  child: SizedBox(height: isTablet ? 100 : 80),
+                  child: Padding(
+                    padding: EdgeInsets.all(isTablet ? 32 : 16),
+                    child: const Center(child: CircularProgressIndicator()),
+                  ),
                 ),
-              ],
-            ),
+
+              // Bottom padding để tránh pagination che phủ nội dung
+              SliverToBoxAdapter(child: SizedBox(height: isTablet ? 120 : 100)),
+            ],
           ),
         ),
 
-        // Fixed Pagination at bottom
+        // Floating Pagination - positioned ở bottom
         if (postsState.totalPage > 1 && postsState.posts.isNotEmpty)
-          Pagination(
-            state: postsState,
-            isTablet: isTablet,
-            theme: theme,
-            colorScheme: colorScheme,
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              // Tạo gradient fade effect để làm mờ nội dung phía dưới
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    // Colors.transparent,
+                    colorScheme.background.withOpacity(0.3),
+                    colorScheme.background.withOpacity(0.7),
+                  ],
+                ),
+              ),
+              child: Pagination(
+                state: postsState,
+                isTablet: isTablet,
+                theme: theme,
+                colorScheme: colorScheme,
+              ),
+            ),
           ),
       ],
     );

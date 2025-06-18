@@ -38,9 +38,7 @@ class PostCard extends StatelessWidget {
     final reward = getRewardFromPost(post);
     final location = getLocationFromPost(post);
 
-    return Container(
-      margin: EdgeInsets.only(bottom: isTablet ? 20 : 16),
-      child: Card(
+    return Card(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
@@ -68,8 +66,7 @@ class PostCard extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildHeaderRow(PostType postType) {

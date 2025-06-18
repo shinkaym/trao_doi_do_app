@@ -319,70 +319,92 @@ class InterestsScreen extends HookConsumerWidget {
     return SmartScaffold(
       title: 'Quan tâm',
       appBarType: AppBarType.standard,
-      body: Column(
+      body: Stack(
         children: [
-          // Search and Filter Section
-          _buildSearchFilterSection(
-            isTablet,
-            theme,
-            colorScheme,
-            state,
-            searchController,
-            onSearch,
-            onSortFilter,
-          ),
-
-          // Tab Bar
-          _buildTabBar(isTablet, theme, colorScheme, tabController),
-
-          // Tab Content
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                final currentTab = tabController.index;
-                if (currentTab == 0) {
-                  ref.read(interestedPostsProvider.notifier).refresh();
-                } else {
-                  ref.read(postsWithInterestsProvider.notifier).refresh();
-                }
-              },
-              child: TabBarView(
-                controller: tabController,
-                children: [
-                  _buildInterestedPostsTab(
-                    isTablet,
-                    theme,
-                    colorScheme,
-                    ref,
-                    handlePostTap,
-                    handleChatTap,
-                    handleLikeTap,
-                    searchController,
-                    resetFilters,
-                  ),
-                  _buildPostsWithInterestsTab(
-                    isTablet,
-                    theme,
-                    colorScheme,
-                    ref,
-                    handlePostTap,
-                    handleChatTap,
-                    searchController,
-                    resetFilters,
-                  ),
-                ],
+          Column(
+            children: [
+              // Search and Filter Section
+              _buildSearchFilterSection(
+                isTablet,
+                theme,
+                colorScheme,
+                state,
+                searchController,
+                onSearch,
+                onSortFilter,
               ),
-            ),
-          ),
 
+              // Tab Bar
+              _buildTabBar(isTablet, theme, colorScheme, tabController),
+
+              // Tab Content
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: () async {
+                    final currentTab = tabController.index;
+                    if (currentTab == 0) {
+                      ref.read(interestedPostsProvider.notifier).refresh();
+                    } else {
+                      ref.read(postsWithInterestsProvider.notifier).refresh();
+                    }
+                  },
+                  child: TabBarView(
+                    controller: tabController,
+                    children: [
+                      _buildInterestedPostsTab(
+                        isTablet,
+                        theme,
+                        colorScheme,
+                        ref,
+                        handlePostTap,
+                        handleChatTap,
+                        handleLikeTap,
+                        searchController,
+                        resetFilters,
+                      ),
+                      _buildPostsWithInterestsTab(
+                        isTablet,
+                        theme,
+                        colorScheme,
+                        ref,
+                        handlePostTap,
+                        handleChatTap,
+                        searchController,
+                        resetFilters,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
           // Pagination
           if (state.totalPage > 1)
-            Pagination(
-              state: state,
-              isTablet: isTablet,
-              theme: theme,
-              colorScheme: colorScheme,
-              currentTabIndex: tabController.index,
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                // Tạo gradient fade effect để làm mờ nội dung phía dưới
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      // Colors.transparent,
+                      colorScheme.background.withOpacity(0.3),
+                      colorScheme.background.withOpacity(0.7),
+                    ],
+                  ),
+                ),
+                child: Pagination(
+                  state: state,
+                  isTablet: isTablet,
+                  theme: theme,
+                  colorScheme: colorScheme,
+                  currentTabIndex: tabController.index,
+                ),
+              ),
             ),
         ],
       ),
@@ -647,27 +669,34 @@ Widget _buildInterestedPostsTab(
         );
       }
 
-      return ListView.builder(
-        padding: EdgeInsets.symmetric(
-          horizontal: isTablet ? 32 : 16,
-          vertical: isTablet ? 24 : 16,
-        ),
-        itemCount: state.interests.length,
-        itemBuilder: (context, index) {
-          final post = state.interests[index];
-          final postType = CreatePostType.fromValue(post.type);
-          return _buildInterestedPostCard(
-            post,
-            postType,
-            isTablet,
-            theme,
-            colorScheme,
-            interestState.isLoading,
-            handlePostTap,
-            handleChatTap,
-            handleLikeTap,
-          );
-        },
+      return CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
+          SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
+
+            sliver: SliverList.separated(
+              separatorBuilder:
+                  (context, index) => SizedBox(height: isTablet ? 8 : 6),
+              itemCount: state.interests.length,
+              itemBuilder: (context, index) {
+                final post = state.interests[index];
+                final postType = CreatePostType.fromValue(post.type);
+                return _buildInterestedPostCard(
+                  post,
+                  postType,
+                  isTablet,
+                  theme,
+                  colorScheme,
+                  interestState.isLoading,
+                  handlePostTap,
+                  handleChatTap,
+                  handleLikeTap,
+                );
+              },
+            ),
+          ),
+        ],
       );
     },
   );
@@ -738,25 +767,31 @@ Widget _buildPostsWithInterestsTab(
         );
       }
 
-      return ListView.builder(
-        padding: EdgeInsets.symmetric(
-          horizontal: isTablet ? 32 : 16,
-          vertical: isTablet ? 24 : 16,
-        ),
-        itemCount: state.interests.length,
-        itemBuilder: (context, index) {
-          final post = state.interests[index];
-          final postType = CreatePostType.fromValue(post.type);
-          return _buildPostWithInterestsCard(
-            post,
-            postType,
-            isTablet,
-            theme,
-            colorScheme,
-            handlePostTap,
-            handleChatTap,
-          );
-        },
+      return CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
+          SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
+            sliver: SliverList.separated(
+              separatorBuilder:
+                  (context, index) => SizedBox(height: isTablet ? 8 : 6),
+              itemCount: state.interests.length,
+              itemBuilder: (context, index) {
+                final post = state.interests[index];
+                final postType = CreatePostType.fromValue(post.type);
+                return _buildPostWithInterestsCard(
+                  post,
+                  postType,
+                  isTablet,
+                  theme,
+                  colorScheme,
+                  handlePostTap,
+                  handleChatTap,
+                );
+              },
+            ),
+          ),
+        ],
       );
     },
   );
@@ -773,166 +808,163 @@ Widget _buildInterestedPostCard(
   Function(int, bool, List<InterestItem>, InterestPost) handleChatTap,
   Function(int) handleLikeTap,
 ) {
-  return Container(
-    margin: EdgeInsets.only(bottom: isTablet ? 20 : 16),
-    child: Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
-        side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
-        onTap: () => handlePostTap(post.slug),
-        child: Padding(
-          padding: EdgeInsets.all(isTablet ? 20 : 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with type and time
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isTablet ? 12 : 8,
-                      vertical: isTablet ? 6 : 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: postType.color().withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          postType.icon(),
-                          size: isTablet ? 16 : 14,
+  return Card(
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+      side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+    ),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+      onTap: () => handlePostTap(post.slug),
+      child: Padding(
+        padding: EdgeInsets.all(isTablet ? 20 : 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header with type and time
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTablet ? 12 : 8,
+                    vertical: isTablet ? 6 : 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: postType.color().withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        postType.icon(),
+                        size: isTablet ? 16 : 14,
+                        color: postType.color(),
+                      ),
+                      SizedBox(width: isTablet ? 6 : 4),
+                      Text(
+                        postType.label(),
+                        style: TextStyle(
+                          fontSize: isTablet ? 13 : 11,
+                          fontWeight: FontWeight.w600,
                           color: postType.color(),
                         ),
-                        SizedBox(width: isTablet ? 6 : 4),
-                        Text(
-                          postType.label(),
-                          style: TextStyle(
-                            fontSize: isTablet ? 13 : 11,
-                            fontWeight: FontWeight.w600,
-                            color: postType.color(),
-                          ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  TimeUtils.formatTimeAgo(DateTime.parse(post.updatedAt)),
+                  style: TextStyle(
+                    fontSize: isTablet ? 13 : 11,
+                    color: theme.hintColor,
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: isTablet ? 16 : 12),
+
+            // Post content
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        post.title,
+                        style: TextStyle(
+                          fontSize: isTablet ? 18 : 16,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                          height: 1.3,
                         ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    TimeUtils.formatTimeAgo(DateTime.parse(post.updatedAt)),
-                    style: TextStyle(
-                      fontSize: isTablet ? 13 : 11,
-                      color: theme.hintColor,
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: isTablet ? 16 : 12),
-
-              // Post content
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: isTablet ? 8 : 6),
+                      if (post.description.isNotEmpty)
                         Text(
-                          post.title,
+                          post.description,
                           style: TextStyle(
-                            fontSize: isTablet ? 18 : 16,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onSurface,
-                            height: 1.3,
+                            fontSize: isTablet ? 15 : 13,
+                            color: colorScheme.onSurface.withOpacity(0.8),
+                            height: 1.4,
                           ),
-                          maxLines: 2,
+                          maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        SizedBox(height: isTablet ? 8 : 6),
-                        if (post.description.isNotEmpty)
-                          Text(
-                            post.description,
-                            style: TextStyle(
-                              fontSize: isTablet ? 15 : 13,
-                              color: colorScheme.onSurface.withOpacity(0.8),
-                              height: 1.4,
-                            ),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: isTablet ? 16 : 12),
+
+            // Action buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                InkWell(
+                  onTap:
+                      () => handleChatTap(
+                        post.interests[0].id,
+                        false,
+                        post.items,
+                        post,
+                      ),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: EdgeInsets.all(isTablet ? 12 : 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: colorScheme.outline.withOpacity(0.3),
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.chat_outlined,
+                      size: isTablet ? 20 : 18,
+                      color: colorScheme.primary,
                     ),
                   ),
-                ],
-              ),
-
-              SizedBox(height: isTablet ? 16 : 12),
-
-              // Action buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  InkWell(
-                    onTap:
-                        () => handleChatTap(
-                          post.interests[0].id,
-                          false,
-                          post.items,
-                          post,
-                        ),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: EdgeInsets.all(isTablet ? 12 : 10),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: colorScheme.outline.withOpacity(0.3),
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        Icons.chat_outlined,
-                        size: isTablet ? 20 : 18,
-                        color: colorScheme.primary,
-                      ),
+                ),
+                SizedBox(width: isTablet ? 8 : 6),
+                InkWell(
+                  onTap:
+                      isInterestLoading ? null : () => handleLikeTap(post.id),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: EdgeInsets.all(isTablet ? 12 : 10),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      borderRadius: BorderRadius.circular(8),
                     ),
-                  ),
-                  SizedBox(width: isTablet ? 8 : 6),
-                  InkWell(
-                    onTap:
-                        isInterestLoading ? null : () => handleLikeTap(post.id),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: EdgeInsets.all(isTablet ? 12 : 10),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.red.withOpacity(0.3)),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child:
-                          isInterestLoading
-                              ? SizedBox(
-                                width: isTablet ? 20 : 18,
-                                height: isTablet ? 20 : 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.red,
-                                ),
-                              )
-                              : Icon(
-                                Icons.favorite,
-                                size: isTablet ? 20 : 18,
+                    child:
+                        isInterestLoading
+                            ? SizedBox(
+                              width: isTablet ? 20 : 18,
+                              height: isTablet ? 20 : 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
                                 color: Colors.red,
                               ),
-                    ),
+                            )
+                            : Icon(
+                              Icons.favorite,
+                              size: isTablet ? 20 : 18,
+                              color: Colors.red,
+                            ),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     ),
@@ -948,117 +980,114 @@ Widget _buildPostWithInterestsCard(
   Function(String) handlePostTap,
   Function(int, bool, List<InterestItem>, InterestPost) handleChatTap,
 ) {
-  return Container(
-    margin: EdgeInsets.only(bottom: isTablet ? 20 : 16),
-    child: Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
-        side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
-      ),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
-        onTap: () => handlePostTap(post.slug),
-        child: Padding(
-          padding: EdgeInsets.all(isTablet ? 20 : 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: isTablet ? 12 : 8,
-                      vertical: isTablet ? 6 : 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: postType.color().withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          postType.icon(),
-                          size: isTablet ? 16 : 14,
+  return Card(
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+      side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+    ),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+      onTap: () => handlePostTap(post.slug),
+      child: Padding(
+        padding: EdgeInsets.all(isTablet ? 20 : 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTablet ? 12 : 8,
+                    vertical: isTablet ? 6 : 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: postType.color().withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        postType.icon(),
+                        size: isTablet ? 16 : 14,
+                        color: postType.color(),
+                      ),
+                      SizedBox(width: isTablet ? 6 : 4),
+                      Text(
+                        postType.label(),
+                        style: TextStyle(
+                          fontSize: isTablet ? 13 : 11,
+                          fontWeight: FontWeight.w600,
                           color: postType.color(),
                         ),
-                        SizedBox(width: isTablet ? 6 : 4),
-                        Text(
-                          postType.label(),
-                          style: TextStyle(
-                            fontSize: isTablet ? 13 : 11,
-                            fontWeight: FontWeight.w600,
-                            color: postType.color(),
-                          ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  TimeUtils.formatTimeAgo(DateTime.parse(post.updatedAt)),
+                  style: TextStyle(
+                    fontSize: isTablet ? 13 : 11,
+                    color: theme.hintColor,
+                  ),
+                ),
+              ],
+            ),
+
+            SizedBox(height: isTablet ? 16 : 12),
+
+            // Post content
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        post.title,
+                        style: TextStyle(
+                          fontSize: isTablet ? 18 : 16,
+                          fontWeight: FontWeight.bold,
+                          color: colorScheme.onSurface,
+                          height: 1.3,
                         ),
-                      ],
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    TimeUtils.formatTimeAgo(DateTime.parse(post.updatedAt)),
-                    style: TextStyle(
-                      fontSize: isTablet ? 13 : 11,
-                      color: theme.hintColor,
-                    ),
-                  ),
-                ],
-              ),
-
-              SizedBox(height: isTablet ? 16 : 12),
-
-              // Post content
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: isTablet ? 8 : 6),
+                      if (post.description.isNotEmpty)
                         Text(
-                          post.title,
+                          post.description,
                           style: TextStyle(
-                            fontSize: isTablet ? 18 : 16,
-                            fontWeight: FontWeight.bold,
-                            color: colorScheme.onSurface,
-                            height: 1.3,
+                            fontSize: isTablet ? 15 : 13,
+                            color: colorScheme.onSurface.withOpacity(0.8),
+                            height: 1.4,
                           ),
-                          maxLines: 2,
+                          maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        SizedBox(height: isTablet ? 8 : 6),
-                        if (post.description.isNotEmpty)
-                          Text(
-                            post.description,
-                            style: TextStyle(
-                              fontSize: isTablet ? 15 : 13,
-                              color: colorScheme.onSurface.withOpacity(0.8),
-                              height: 1.4,
-                            ),
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                      ],
-                    ),
+                    ],
                   ),
-                ],
-              ),
-
-              SizedBox(height: isTablet ? 16 : 12),
-
-              // Interested users section with collapse
-              if (post.interests.isNotEmpty)
-                _buildInterestedUsersSection(
-                  post,
-                  isTablet,
-                  theme,
-                  colorScheme,
-                  handleChatTap,
                 ),
-            ],
-          ),
+              ],
+            ),
+
+            SizedBox(height: isTablet ? 16 : 12),
+
+            // Interested users section with collapse
+            if (post.interests.isNotEmpty)
+              _buildInterestedUsersSection(
+                post,
+                isTablet,
+                theme,
+                colorScheme,
+                handleChatTap,
+              ),
+          ],
         ),
       ),
     ),

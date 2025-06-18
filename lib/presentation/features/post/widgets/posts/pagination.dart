@@ -23,23 +23,12 @@ class Pagination extends HookConsumerWidget {
       width: double.infinity,
       padding: EdgeInsets.symmetric(
         horizontal: isTablet ? 32 : 16,
-        vertical: isTablet ? 16 : 12,
+        vertical: isTablet ? 12 : 8,
       ),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, -2),
-          ),
-        ],
-        border: Border(
-          top: BorderSide(
-            color: colorScheme.outline.withOpacity(0.2),
-            width: 1,
-          ),
-        ),
+      // Loại bỏ background color và box shadow để tạo hiệu ứng trong suốt
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
+        // Không có boxShadow và border
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -100,7 +89,20 @@ class Pagination extends HookConsumerWidget {
         pages.add(
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text('...', style: TextStyle(color: colorScheme.onSurface)),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: colorScheme.surface.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '...',
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
           ),
         );
       }
@@ -117,7 +119,20 @@ class Pagination extends HookConsumerWidget {
         pages.add(
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text('...', style: TextStyle(color: colorScheme.onSurface)),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: colorScheme.surface.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '...',
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
           ),
         );
       }
@@ -165,18 +180,23 @@ class PaginationButton extends StatelessWidget {
       width: isTablet ? 44 : 40,
       height: isTablet ? 44 : 40,
       decoration: BoxDecoration(
-        color: enabled ? colorScheme.surface : colorScheme.surfaceVariant,
+        // Sử dụng nền trong suốt với độ mờ
+        color:
+            enabled
+                ? colorScheme.surface.withOpacity(0.9)
+                : colorScheme.surfaceVariant.withOpacity(0.7),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
+          color: colorScheme.outline.withOpacity(0.3),
           width: 1,
         ),
+        // Giữ shadow nhẹ để tạo độ sâu
         boxShadow:
             enabled
                 ? [
                   BoxShadow(
-                    color: colorScheme.shadow.withOpacity(0.1),
-                    blurRadius: 4,
+                    color: colorScheme.shadow.withOpacity(0.15),
+                    blurRadius: 6,
                     offset: const Offset(0, 2),
                   ),
                 ]
@@ -225,18 +245,23 @@ class PageButton extends StatelessWidget {
         width: isTablet ? 44 : 40,
         height: isTablet ? 44 : 40,
         decoration: BoxDecoration(
-          color: isActive ? colorScheme.primary : colorScheme.surface,
+          // Trang hiện tại có nền màu primary với độ trong suốt
+          // Các trang khác có nền trong suốt
+          color:
+              isActive
+                  ? colorScheme.primary.withOpacity(0.9)
+                  : colorScheme.surface.withOpacity(0.8),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color:
                 isActive
-                    ? colorScheme.primary
-                    : colorScheme.outline.withOpacity(0.2),
+                    ? colorScheme.primary.withOpacity(0.7)
+                    : colorScheme.outline.withOpacity(0.3),
           ),
           boxShadow: [
             BoxShadow(
-              color: colorScheme.shadow.withOpacity(0.1),
-              blurRadius: 4,
+              color: colorScheme.shadow.withOpacity(0.15),
+              blurRadius: 6,
               offset: const Offset(0, 2),
             ),
           ],
