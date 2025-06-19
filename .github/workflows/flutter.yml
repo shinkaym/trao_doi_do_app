@@ -17,7 +17,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.1'  # Flutter 3.27.x includes Dart 3.7.2+
+          flutter-version: '3.32.0'  # Flutter 3.32 includes Dart 3.8
           channel: 'stable'
 
       - name: Generate .env file
@@ -53,7 +53,7 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.1'  # Flutter 3.27.x includes Dart 3.7.2+
+          flutter-version: '3.32.0'  # Flutter 3.32 includes Dart 3.8
           channel: 'stable'
 
       - name: Generate .env file
