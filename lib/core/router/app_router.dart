@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
+import 'package:trao_doi_do_app/core/utils/route_utils.dart';
 import 'package:trao_doi_do_app/presentation/common/screens/not_found_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/screens/forgot_password_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/screens/login_screen.dart';
@@ -72,7 +74,7 @@ class RouterState {
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/splash',
+    initialLocation: RouteConstants.splash,
     errorBuilder: (context, state) => const NotFoundScreen(),
     refreshListenable: RouterNotifier(ref),
     redirect: (context, state) {
@@ -83,46 +85,30 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (routerState.isLoading) return null;
 
       // Handle splash completion
-      if (currentPath == '/splash' && routerState.isSplashCompleted) {
+      if (currentPath == RouteConstants.splash &&
+          routerState.isSplashCompleted) {
         if (!routerState.isOnboardingCompleted) {
-          return '/onboarding';
+          return RouteConstants.onboarding;
         }
-        return '/posts';
+        return RouteConstants.posts;
       }
 
       // Stay on splash while it's active
-      if (currentPath == '/splash') {
+      if (currentPath == RouteConstants.splash) {
         return null;
       }
 
-      // Protected routes
-      final protectedRoutes = [
-        '/profile/edit',
-        '/profile/change-password',
-        '/profile/my-posts',
-        '/interests/chat',
-      ];
-
-      for (final route in protectedRoutes) {
-        if (currentPath.startsWith(route)) {
-          if (!routerState.isLoggedIn) {
-            return '/login';
-          }
+      // Protected routes - use utility function
+      if (RouteUtils.isProtectedRoute(currentPath)) {
+        if (!routerState.isLoggedIn) {
+          return RouteConstants.login;
         }
       }
 
       // Auth routes - redirect if already logged in
-      final authRoutes = [
-        '/login',
-        '/register',
-        '/forgot-password',
-        '/reset-password',
-        '/onboarding',
-      ];
-
-      if (authRoutes.any((route) => currentPath.startsWith(route))) {
+      if (RouteUtils.isAuthRoute(currentPath)) {
         if (routerState.isLoggedIn) {
-          return '/posts';
+          return RouteConstants.posts;
         }
       }
 
@@ -147,48 +133,6 @@ class RouterNotifier extends ChangeNotifier {
   }
 }
 
-// Improved index calculation
-int calculateCurrentIndex(String location) {
-  final routePatterns = <String, int>{
-    '/posts': 0,
-    '/warehouse': 1,
-    '/interests': 2,
-    '/ranking': 3,
-    '/profile': 4,
-  };
-
-  final subRouteMapping = <String, int>{
-    '/posts/post-detail': 0,
-    '/posts/create-post': 0,
-    '/warehouse/item-detail': 1,
-    '/interests/chat': 2,
-    '/profile/edit': 4,
-    '/profile/change-password': 4,
-    '/profile/my-posts': 4,
-  };
-
-  // Check sub-routes first
-  for (final entry in subRouteMapping.entries) {
-    if (location.startsWith(entry.key)) {
-      return entry.value;
-    }
-  }
-
-  // Check main routes
-  for (final entry in routePatterns.entries) {
-    if (location.startsWith(entry.key)) {
-      return entry.value;
-    }
-  }
-
-  // Special case for notifications
-  if (location.startsWith('/notifications')) {
-    return -1;
-  }
-
-  return 0;
-}
-
 List<RouteBase> _buildRoutes() {
   return [..._buildStandaloneRoutes(), _buildShellRoute()];
 }
@@ -196,33 +140,33 @@ List<RouteBase> _buildRoutes() {
 List<GoRoute> _buildStandaloneRoutes() {
   return [
     GoRoute(
-      path: '/splash',
-      name: 'splash',
+      path: RouteConstants.splash,
+      name: RouteNames.splash,
       builder: (context, state) => const SplashScreen(),
     ),
     GoRoute(
-      path: '/onboarding',
-      name: 'onboarding',
+      path: RouteConstants.onboarding,
+      name: RouteNames.onboarding,
       builder: (context, state) => const OnboardingScreen(),
     ),
     GoRoute(
-      path: '/login',
-      name: 'login',
+      path: RouteConstants.login,
+      name: RouteNames.login,
       builder: (context, state) => const LoginScreen(),
     ),
     GoRoute(
-      path: '/register',
-      name: 'register',
+      path: RouteConstants.register,
+      name: RouteNames.register,
       builder: (context, state) => const RegisterScreen(),
     ),
     GoRoute(
-      path: '/forgot-password',
-      name: 'forgot-password',
+      path: RouteConstants.forgotPassword,
+      name: RouteNames.forgotPassword,
       builder: (context, state) => const ForgotPasswordScreen(),
     ),
     GoRoute(
-      path: '/reset-password',
-      name: 'reset-password',
+      path: RouteConstants.resetPassword,
+      name: RouteNames.resetPassword,
       builder:
           (context, state) =>
               ResetPasswordScreen(email: state.extra as String? ?? ''),
@@ -230,28 +174,13 @@ List<GoRoute> _buildStandaloneRoutes() {
   ];
 }
 
-// Danh sách các route muốn ẩn navigation
-final List<String> routesWithoutNavBar = [
-  '/posts/post-detail',
-  '/posts/create-post',
-  '/warehouse/item-detail',
-  '/interests/chat',
-  '/profile/edit',
-  '/profile/change-password',
-  '/profile/my-posts',
-  // Thêm các route khác muốn ẩn navigation
-];
-
-bool shouldShowNavBar(String location) {
-  return !routesWithoutNavBar.any((route) => location.startsWith(route));
-}
-
 ShellRoute _buildShellRoute() {
   return ShellRoute(
     builder: (context, state, child) {
       final location = state.uri.toString();
-      final currentIndex = calculateCurrentIndex(location);
-      final showNavBar = shouldShowNavBar(location);
+      final currentIndex = RouteUtils.calculateNavigationIndex(location);
+      final showNavBar = RouteUtils.shouldShowNavBar(location);
+
       return ScaffoldWithNavBar(
         currentIndex: currentIndex >= 0 ? currentIndex : 0,
         showNavBar: showNavBar,
@@ -271,21 +200,23 @@ ShellRoute _buildShellRoute() {
 
 GoRoute _buildPostsRoute() {
   return GoRoute(
-    path: '/posts',
-    name: 'posts',
+    path: RouteConstants.posts,
+    name: RouteNames.posts,
     builder: (context, state) => const PostsScreen(),
     routes: [
       GoRoute(
-        path: 'post-detail/:slug',
-        name: 'post-detail',
+        path: '${RouteConstants.postDetail}/:${RouteConstants.slugParam}',
+        name: RouteNames.postDetail,
         builder: (context, state) {
-          final postSlug = state.pathParameters['slug']!;
+          final postSlug = state.pathParameters[RouteConstants.slugParam]!;
           return PostDetailScreen(postSlug: postSlug);
         },
       ),
       GoRoute(
-        path: 'create-post',
-        name: 'create-post',
+        path:
+            RouteConstants
+                .createPost, // Sử dụng 'create-post' thay vì '/posts/create-post'
+        name: RouteNames.createPost,
         builder: (context, state) => const CreatePostScreen(),
       ),
     ],
@@ -294,15 +225,15 @@ GoRoute _buildPostsRoute() {
 
 GoRoute _buildWarehouseRoute() {
   return GoRoute(
-    path: '/warehouse',
-    name: 'warehouse',
+    path: RouteConstants.warehouse,
+    name: RouteNames.warehouse,
     builder: (context, state) => const WarehouseScreen(),
     routes: [
       GoRoute(
-        path: 'item-detail/:id',
-        name: 'item-detail',
+        path: '${RouteConstants.itemDetail}/:${RouteConstants.idParam}',
+        name: RouteNames.itemDetail,
         builder: (context, state) {
-          final itemId = state.pathParameters['id']!;
+          final itemId = state.pathParameters[RouteConstants.idParam]!;
           return ItemDetailScreen(itemId: itemId);
         },
       ),
@@ -312,15 +243,17 @@ GoRoute _buildWarehouseRoute() {
 
 GoRoute _buildInterestsRoute() {
   return GoRoute(
-    path: '/interests',
-    name: 'interests',
+    path: RouteConstants.interests,
+    name: RouteNames.interests,
     builder: (context, state) => const InterestsScreen(),
     routes: [
       GoRoute(
-        path: 'chat/:interestId',
-        name: 'interest-chat',
+        path:
+            '${RouteConstants.interestChat}/:${RouteConstants.interestIdParam}',
+        name: RouteNames.interestChat,
         builder: (context, state) {
-          final interestId = state.pathParameters['interestId']!;
+          final interestId =
+              state.pathParameters[RouteConstants.interestIdParam]!;
           final extraData = state.extra as InterestChatTransactionData?;
 
           return InterestChatScreen(
@@ -335,31 +268,31 @@ GoRoute _buildInterestsRoute() {
 
 GoRoute _buildRankingRoute() {
   return GoRoute(
-    path: '/ranking',
-    name: 'ranking',
+    path: RouteConstants.ranking,
+    name: RouteNames.ranking,
     builder: (context, state) => const RankingScreen(),
   );
 }
 
 GoRoute _buildProfileRoute() {
   return GoRoute(
-    path: '/profile',
-    name: 'profile',
+    path: RouteConstants.profile,
+    name: RouteNames.profile,
     builder: (context, state) => const ProfileScreen(),
     routes: [
       GoRoute(
-        path: 'edit',
-        name: 'edit-profile',
+        path: RouteConstants.editProfile,
+        name: RouteNames.editProfile,
         builder: (context, state) => EditProfileScreen(),
       ),
       GoRoute(
-        path: 'change-password',
-        name: 'change-password',
+        path: RouteConstants.changePassword,
+        name: RouteNames.changePassword,
         builder: (context, state) => const ChangePasswordScreen(),
       ),
       GoRoute(
-        path: 'my-posts',
-        name: 'my-posts',
+        path: RouteConstants.myPosts,
+        name: RouteNames.myPosts,
         builder: (context, state) => const MyPostsScreen(),
       ),
     ],
@@ -368,8 +301,8 @@ GoRoute _buildProfileRoute() {
 
 GoRoute _buildNotificationRoute() {
   return GoRoute(
-    path: '/notifications',
-    name: 'notifications',
+    path: RouteConstants.notifications,
+    name: RouteNames.notifications,
     builder: (context, state) => const NotificationScreen(),
   );
 }

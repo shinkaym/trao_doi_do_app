@@ -29,8 +29,6 @@ class InterestChatScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(webSocketConnectionProvider);
-
     final messageController = useTextEditingController();
     final scrollController = useScrollController();
     final messageFocusNode = useFocusNode();
@@ -56,8 +54,10 @@ class InterestChatScreen extends HookConsumerWidget {
     final transactionsNotifier = ref.read(transactionsListProvider.notifier);
 
     // WebSocket providers
-    final webSocketState = ref.watch(webSocketProvider);
-    final webSocketNotifier = ref.read(webSocketProvider.notifier);
+    final webSocketState = ref.watch(chatWebSocketProvider);
+    final webSocketNotifier = ref.read(chatWebSocketProvider.notifier);
+
+    final getAccessTokenUseCase = ref.read(getAccessTokenUseCaseProvider);
 
     // Initialize chat data and load messages/transactions
     useEffect(() {
@@ -84,13 +84,17 @@ class InterestChatScreen extends HookConsumerWidget {
           }
 
           // Connect to WebSocket if not already connected
-          // if (!webSocketState.isConnected && !webSocketState.isConnecting) {
-          //   await webSocketNotifier.connectToChat(authState.user?.token);
-          // }
+          if (!webSocketState.isConnected && !webSocketState.isConnecting) {
+            final result = await getAccessTokenUseCase.execute();
+            result.fold(
+              (failure) => {},
+              (token) => webSocketNotifier.connectToChat(token),
+            );
+          }
 
           // Join the chat room
           if (webSocketState.isConnected) {
-            webSocketNotifier.joinRoom(interestID: int.parse(interestId));
+            webSocketNotifier.joinRoom(int.parse(interestId));
           }
 
           // Load messages
@@ -125,16 +129,24 @@ class InterestChatScreen extends HookConsumerWidget {
     useEffect(() {
       if (webSocketState.isConnected && authState.user != null) {
         // Join room when connected
-        webSocketNotifier.joinRoom(interestID: int.parse(interestId));
+        webSocketNotifier.joinRoom(int.parse(interestId));
       }
       return null;
     }, [webSocketState.isConnected]);
 
     // Handle WebSocket connection when auth state changes
     useEffect(() {
-      // if (authState.user != null && !webSocketState.isConnected && !webSocketState.isConnecting) {
-      //   webSocketNotifier.connectToChat(authState.user?.token);
-      // }
+      () async {
+        if (authState.user != null &&
+            !webSocketState.isConnected &&
+            !webSocketState.isConnecting) {
+          final result = await getAccessTokenUseCase.execute();
+          result.fold(
+            (failure) => {},
+            (token) => webSocketNotifier.connectToChat(token),
+          );
+        }
+      }();
       return null;
     }, [authState.user]);
 
@@ -325,7 +337,7 @@ class InterestChatScreen extends HookConsumerWidget {
     useEffect(() {
       return () {
         if (webSocketState.isConnected) {
-          webSocketNotifier.leftRoom(interestID: int.parse(interestId));
+          webSocketNotifier.leftRoom(int.parse(interestId));
         }
       };
     }, []);

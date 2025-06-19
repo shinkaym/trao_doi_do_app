@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_post_usecase.dart';
@@ -112,9 +111,8 @@ class PostState {
 
 class PostNotifier extends StateNotifier<PostState> {
   final CreatePostUseCase _createPostUseCase;
-  final Ref _ref;
 
-  PostNotifier(this._createPostUseCase, this._ref) : super(PostState());
+  PostNotifier(this._createPostUseCase) : super(PostState());
 
   void updateTitle(String title) {
     state = state.copyWith(title: title);
@@ -215,7 +213,6 @@ class PostNotifier extends StateNotifier<PostState> {
           isLoading: false,
           successMessage: 'Đăng tin thành công!',
         );
-        _ref.read(itemsListProvider.notifier).loadItems(refresh: true);
       },
     );
   }

@@ -129,4 +129,12 @@ class AuthRepositoryImpl implements AuthRepository {
       _localDataSource.clearUserInfo(),
     ]);
   }
+
+  @override
+  Future<Either<Failure, String?>> getAccessToken() {
+    return handleRepositoryCall(() async {
+      final token = await _localDataSource.getAccessToken();
+      return token;
+    }, "Lỗi khi lấy access token");
+  }
 }

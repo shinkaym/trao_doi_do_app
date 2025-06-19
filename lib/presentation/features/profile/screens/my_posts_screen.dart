@@ -7,7 +7,7 @@ import 'package:trao_doi_do_app/domain/usecases/params/post_query.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/create_post_fab.dart';
-import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/search_filter_section.dart';
+import 'package:trao_doi_do_app/presentation/widgets/search_filter_section.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/my-posts/my_posts_list_content.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
