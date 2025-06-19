@@ -15,6 +15,7 @@ class ApiConstants {
   static const String transactions = '/transactions';
   static const String refreshToken = '/refresh-token';
   static const String messages = '/messages';
+  static const String myPosts= '$posts/my-post';
 
   // Headers
   static const String contentType = 'Content-Type';

@@ -32,6 +32,15 @@ class PostRepositoryImpl implements PostRepository {
   }
 
   @override
+  Future<Either<Failure, PostsResponse>> myPosts(PostsQuery query) async {
+    return handleRepositoryCall<PostsResponse>(() async {
+      final remoteResponse = await _remoteDataSource.myPosts(query);
+      final postsEntity = remoteResponse.toEntity();
+      return postsEntity;
+    }, 'Lỗi tải danh sách bài đăng');
+  }
+
+  @override
   Future<Either<Failure, PostDetailResponse>> getPostBySlug(String slug) async {
     return handleRepositoryCall<PostDetailResponse>(() async {
       final remoteResponse = await _remoteDataSource.getPostBySlug(slug);

@@ -56,13 +56,19 @@ class AppBarConfig {
     ),
     '/profile/edit': AppBarConfig(
       type: AppBarType.standard,
-      title: 'Chỉnh sửa hồ sơ',
+      title: 'Chỉnh sửa thông tin',
       showNotification: true,
       showBackButton: true,
     ),
     '/profile/change-password': AppBarConfig(
       type: AppBarType.standard,
       title: 'Đổi mật khẩu',
+      showNotification: true,
+      showBackButton: true,
+    ),
+    '/profile/my-posts': AppBarConfig(
+      type: AppBarType.standard,
+      title: 'Bài đăng của tôi',
       showNotification: true,
       showBackButton: true,
     ),

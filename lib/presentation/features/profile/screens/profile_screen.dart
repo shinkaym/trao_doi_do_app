@@ -362,7 +362,7 @@ class ProfileScreen extends HookConsumerWidget {
           icon: Icons.history,
           title: 'Lịch sử bài đăng',
           subtitle: 'Xem các bài đăng trước đây',
-          onTap: () => context.pushNamed('post-history'),
+          onTap: () => context.pushNamed('my-posts'),
         ),
         SizedBox(height: isTablet ? 16 : 12),
 

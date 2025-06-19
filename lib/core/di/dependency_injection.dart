@@ -24,11 +24,13 @@ import 'package:trao_doi_do_app/domain/repositories/websocket_repository.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_current_user_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_me_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_messages_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/get_my_posts_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/is_logged_in_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/login_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/logout_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/refresh_token_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/websocket_usecases.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/providers/my_posts_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 
 // ========== OTHER IMPORTS ==========
@@ -436,6 +438,11 @@ final getPostsUseCaseProvider = Provider<GetPostsUseCase>((ref) {
   return GetPostsUseCase(repository);
 });
 
+final getMyPostsUseCaseProvider = Provider<GetMyPostsUseCase>((ref) {
+  final repository = ref.watch(postRepositoryProvider);
+  return GetMyPostsUseCase(repository);
+});
+
 final getPostDetailUseCaseProvider = Provider<GetPostDetailUseCase>((ref) {
   final repository = ref.watch(postRepositoryProvider);
   return GetPostDetailUseCase(repository);
@@ -515,6 +522,12 @@ final postsListProvider =
     StateNotifierProvider<PostsListNotifier, PostsListState>((ref) {
       final getPostsUseCase = ref.watch(getPostsUseCaseProvider);
       return PostsListNotifier(getPostsUseCase);
+    });
+
+final myPostsListProvider =
+    StateNotifierProvider<MyPostsListNotifier, MyPostsListState>((ref) {
+      final getMyPostsUseCase = ref.watch(getMyPostsUseCaseProvider);
+      return MyPostsListNotifier(getMyPostsUseCase);
     });
 
 final postDetailProvider =
