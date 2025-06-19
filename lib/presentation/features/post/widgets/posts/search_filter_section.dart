@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
-class SearchFilterSection extends StatelessWidget {
+class SearchFilterSection extends StatefulWidget {
   final TextEditingController searchController;
   final PostType selectedType;
   final SortOrder selectedSort;
@@ -13,6 +14,7 @@ class SearchFilterSection extends StatelessWidget {
   final bool isTablet;
   final ThemeData theme;
   final ColorScheme colorScheme;
+  final Duration debounceDuration; // Thời gian delay cho debounce
 
   const SearchFilterSection({
     super.key,
@@ -27,17 +29,42 @@ class SearchFilterSection extends StatelessWidget {
     required this.isTablet,
     required this.theme,
     required this.colorScheme,
+    this.debounceDuration = const Duration(milliseconds: 500), // Default 500ms
   });
+
+  @override
+  State<SearchFilterSection> createState() => _SearchFilterSectionState();
+}
+
+class _SearchFilterSectionState extends State<SearchFilterSection> {
+  late final Debouncer _debouncer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Khởi tạo debouncer
+    _debouncer = Debouncer();
+  }
+
+  void _handleSearchChange(String query) {
+    // Sử dụng debouncer để delay việc gọi onSearch
+    _debouncer.debounce(
+      duration: widget.debounceDuration,
+      onDebounce: () {
+        widget.onSearch(query);
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(isTablet ? 24 : 16),
+      padding: EdgeInsets.all(widget.isTablet ? 24 : 16),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: widget.colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
+            color: widget.colorScheme.shadow.withOpacity(0.1),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -47,7 +74,7 @@ class SearchFilterSection extends StatelessWidget {
         children: [
           // Search Bar
           _buildSearchBar(),
-          SizedBox(height: isTablet ? 16 : 12),
+          SizedBox(height: widget.isTablet ? 16 : 12),
           // Filter Chips
           _buildFilterChips(),
         ],
@@ -57,17 +84,19 @@ class SearchFilterSection extends StatelessWidget {
 
   Widget _buildSearchBar() {
     return TextField(
-      controller: searchController,
-      onChanged: onSearch,
+      controller: widget.searchController,
+      onChanged: _handleSearchChange, // Sử dụng hàm debounced
       decoration: InputDecoration(
         hintText: 'Tìm kiếm bài đăng...',
         prefixIcon: const Icon(Icons.search),
         suffixIcon:
-            searchQuery.isNotEmpty
+            widget.searchQuery.isNotEmpty
                 ? IconButton(
                   onPressed: () {
-                    searchController.clear();
-                    onSearch('');
+                    widget.searchController.clear();
+                    // Cancel debouncer và gọi onSearch ngay lập tức khi clear
+                    _debouncer.cancel();
+                    widget.onSearch('');
                   },
                   icon: const Icon(Icons.clear),
                 )
@@ -77,10 +106,10 @@ class SearchFilterSection extends StatelessWidget {
           borderSide: BorderSide.none,
         ),
         filled: true,
-        fillColor: colorScheme.surfaceVariant.withOpacity(0.5),
+        fillColor: widget.colorScheme.surfaceVariant.withOpacity(0.5),
         contentPadding: EdgeInsets.symmetric(
-          horizontal: isTablet ? 20 : 16,
-          vertical: isTablet ? 6 : 4,
+          horizontal: widget.isTablet ? 20 : 16,
+          vertical: widget.isTablet ? 6 : 4,
         ),
       ),
     );
@@ -96,74 +125,74 @@ class SearchFilterSection extends StatelessWidget {
             (type) => Padding(
               padding: const EdgeInsets.only(right: 8),
               child: ChoiceChip(
-                selected: selectedType == type,
-                onSelected: (_) => onTypeFilter(type),
+                selected: widget.selectedType == type,
+                onSelected: (_) => widget.onTypeFilter(type),
                 label: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       type.icon,
-                      size: isTablet ? 18 : 16,
+                      size: widget.isTablet ? 18 : 16,
                       color:
-                          selectedType == type
-                              ? colorScheme.onPrimaryContainer
-                              : colorScheme.onSurface,
+                          widget.selectedType == type
+                              ? widget.colorScheme.onPrimaryContainer
+                              : widget.colorScheme.onSurface,
                     ),
-                    SizedBox(width: isTablet ? 6 : 4),
+                    SizedBox(width: widget.isTablet ? 6 : 4),
                     Text(
                       type.label,
                       style: TextStyle(
                         color:
-                            selectedType == type
-                                ? colorScheme.onPrimaryContainer
-                                : colorScheme.onSurface,
+                            widget.selectedType == type
+                                ? widget.colorScheme.onPrimaryContainer
+                                : widget.colorScheme.onSurface,
                       ),
                     ),
                   ],
                 ),
-                backgroundColor: colorScheme.surface,
-                selectedColor: colorScheme.primaryContainer,
-                checkmarkColor: colorScheme.secondary,
+                backgroundColor: widget.colorScheme.surface,
+                selectedColor: widget.colorScheme.primaryContainer,
+                checkmarkColor: widget.colorScheme.secondary,
                 labelStyle: TextStyle(
                   color:
-                      selectedType == type
-                          ? colorScheme.onPrimaryContainer
-                          : colorScheme.onSurface,
+                      widget.selectedType == type
+                          ? widget.colorScheme.onPrimaryContainer
+                          : widget.colorScheme.onSurface,
                 ),
               ),
             ),
           ),
-          SizedBox(width: isTablet ? 16 : 12),
+          SizedBox(width: widget.isTablet ? 16 : 12),
           // Sort Filter
           ...SortOrder.values.map(
             (sort) => Padding(
               padding: const EdgeInsets.only(right: 8),
               child: ChoiceChip(
-                selected: selectedSort == sort,
-                onSelected: (_) => onSortFilter(sort),
+                selected: widget.selectedSort == sort,
+                onSelected: (_) => widget.onSortFilter(sort),
                 label: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       sort.icon,
-                      size: isTablet ? 18 : 16,
+                      size: widget.isTablet ? 18 : 16,
                       color:
-                          selectedSort == sort
-                              ? colorScheme.onPrimaryContainer
-                              : colorScheme.onSurface,
+                          widget.selectedSort == sort
+                              ? widget.colorScheme.onPrimaryContainer
+                              : widget.colorScheme.onSurface,
                     ),
-                    SizedBox(width: isTablet ? 6 : 4),
+                    SizedBox(width: widget.isTablet ? 6 : 4),
                     Text(sort.label),
                   ],
                 ),
-                backgroundColor: colorScheme.surface,
-                selectedColor: colorScheme.primaryContainer,
-                checkmarkColor: colorScheme.secondary,
+                backgroundColor: widget.colorScheme.surface,
+                selectedColor: widget.colorScheme.primaryContainer,
+                checkmarkColor: widget.colorScheme.secondary,
                 labelStyle: TextStyle(
                   color:
-                      selectedSort == sort
-                          ? colorScheme.onPrimaryContainer
-                          : colorScheme.onSurface,
+                      widget.selectedSort == sort
+                          ? widget.colorScheme.onPrimaryContainer
+                          : widget.colorScheme.onSurface,
                 ),
               ),
             ),
