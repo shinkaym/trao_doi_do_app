@@ -52,7 +52,14 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.0'
+          flutter-version: 'stable'
+
+      - name: Generate .env file
+        run: |
+          echo "APP_NAME=${{ secrets.APP_NAME }}" >> .env
+          echo "API_DOMAIN=${{ secrets.API_DOMAIN }}" >> .env
+          echo "API_VERSION=${{ secrets.API_VERSION }}" >> .env
+          echo "WS_DOMAIN=${{ secrets.WS_DOMAIN }}" >> .env
 
       - name: Install dependencies
         run: flutter pub get
