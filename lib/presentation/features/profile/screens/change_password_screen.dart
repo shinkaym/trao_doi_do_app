@@ -3,18 +3,20 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/change_password/password_header_widget.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/change_password/security_info_widget.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/change_password/security_tips_widget.dart';
-import 'package:trao_doi_do_app/presentation/widgets/custom_app_bar.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
 import 'package:trao_doi_do_app/presentation/widgets/password_strength_widget.dart';
 import 'package:trao_doi_do_app/presentation/models/password_strength.dart';
+import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
 // Provider cho password strength state trong change password
-final changePasswordStrengthProvider = StateProvider.autoDispose<PasswordStrength>((ref) {
-  return PasswordStrength();
-});
+final changePasswordStrengthProvider =
+    StateProvider.autoDispose<PasswordStrength>((ref) {
+      return PasswordStrength();
+    });
 
 // Provider cho loading state
 final changePasswordLoadingProvider = StateProvider.autoDispose<bool>((ref) {
@@ -30,7 +32,7 @@ class ChangePasswordScreen extends HookConsumerWidget {
     final currentPasswordController = useTextEditingController();
     final newPasswordController = useTextEditingController();
     final confirmPasswordController = useTextEditingController();
-    
+
     // Focus nodes using hooks
     final currentPasswordFocusNode = useFocusNode();
     final newPasswordFocusNode = useFocusNode();
@@ -78,7 +80,8 @@ class ChangePasswordScreen extends HookConsumerWidget {
             confirmPasswordController.clear();
 
             // Reset password strength indicators
-            ref.read(changePasswordStrengthProvider.notifier).state = PasswordStrength();
+            ref.read(changePasswordStrengthProvider.notifier).state =
+                PasswordStrength();
 
             // Quay lại màn hình trước đó
             context.pop();
@@ -107,19 +110,9 @@ class ChangePasswordScreen extends HookConsumerWidget {
     final theme = context.theme;
     final colorScheme = context.colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.background,
-      // Sử dụng CustomAppBar giống như EditProfileScreen
-      appBar: CustomAppBar(
-        title: 'Đổi mật khẩu',
-        showBackButton: true,
-        onBackPressed: () => context.pop(),
-        notificationCount: 3, // Có thể truyền số thông báo từ state management
-        onNotificationTap: () {
-          // Xử lý khi tap vào notification
-          context.pushNamed('notifications');
-        },
-      ),
+    return SmartScaffold(
+      appBarType: AppBarType.standard,
+      showBackButton: true,
       body: SafeArea(
         top: false,
         child: SingleChildScrollView(
@@ -164,7 +157,7 @@ class ChangePasswordScreen extends HookConsumerWidget {
                                 color: theme.hintColor,
                               ),
                               onPressed: () {
-                                isCurrentPasswordVisible.value = 
+                                isCurrentPasswordVisible.value =
                                     !isCurrentPasswordVisible.value;
                               },
                             ),
@@ -178,7 +171,8 @@ class ChangePasswordScreen extends HookConsumerWidget {
                             }
                             return null;
                           },
-                          onFieldSubmitted: (_) => newPasswordFocusNode.requestFocus(),
+                          onFieldSubmitted:
+                              (_) => newPasswordFocusNode.requestFocus(),
                         ),
                         SizedBox(height: isTablet ? 24 : 20),
 
@@ -201,7 +195,7 @@ class ChangePasswordScreen extends HookConsumerWidget {
                                 color: theme.hintColor,
                               ),
                               onPressed: () {
-                                isNewPasswordVisible.value = 
+                                isNewPasswordVisible.value =
                                     !isNewPasswordVisible.value;
                               },
                             ),
@@ -218,7 +212,8 @@ class ChangePasswordScreen extends HookConsumerWidget {
                             }
                             return null;
                           },
-                          onFieldSubmitted: (_) => confirmPasswordFocusNode.requestFocus(),
+                          onFieldSubmitted:
+                              (_) => confirmPasswordFocusNode.requestFocus(),
                         ),
                         SizedBox(height: isTablet ? 16 : 12),
 
@@ -254,7 +249,7 @@ class ChangePasswordScreen extends HookConsumerWidget {
                                 color: theme.hintColor,
                               ),
                               onPressed: () {
-                                isConfirmPasswordVisible.value = 
+                                isConfirmPasswordVisible.value =
                                     !isConfirmPasswordVisible.value;
                               },
                             ),
@@ -280,9 +275,10 @@ class ChangePasswordScreen extends HookConsumerWidget {
                         SizedBox(
                           height: isTablet ? 56 : 50,
                           child: ElevatedButton.icon(
-                            onPressed: (isLoading || !passwordStrength.isStrong)
-                                ? null
-                                : handleChangePassword,
+                            onPressed:
+                                (isLoading || !passwordStrength.isStrong)
+                                    ? null
+                                    : handleChangePassword,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: colorScheme.primary,
                               foregroundColor: colorScheme.onPrimary,
@@ -290,18 +286,20 @@ class ChangePasswordScreen extends HookConsumerWidget {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            icon: isLoading
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.white,
+                            icon:
+                                isLoading
+                                    ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
                                       ),
-                                    ),
-                                  )
-                                : const Icon(Icons.security),
+                                    )
+                                    : const Icon(Icons.security),
                             label: Text(
                               isLoading ? 'Đang cập nhật...' : 'Đổi mật khẩu',
                               style: TextStyle(

@@ -267,7 +267,6 @@ class NotificationScreen extends HookConsumerWidget {
     }
 
     return SmartScaffold(
-      title: 'Thông báo',
       appBarType: AppBarType.standard,
       showBackButton: true,
       showNotification: false,

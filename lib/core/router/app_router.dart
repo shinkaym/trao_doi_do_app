@@ -9,9 +9,8 @@ import 'package:trao_doi_do_app/presentation/features/auth/screens/register_scre
 import 'package:trao_doi_do_app/presentation/features/auth/screens/reset_password_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/screens/interest_chat_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/screens/interests_screen.dart';
-import 'package:trao_doi_do_app/presentation/features/onboarding/providers/onboarding_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/post/screens/create_post_screen.dart';
-import 'package:trao_doi_do_app/presentation/features/splash/providers/splash_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/screens/my_posts_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/warehouse/screens/item_detail_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/notification/screens/notification_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/onboarding/screens/onboarding_screen.dart';
@@ -100,6 +99,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       final protectedRoutes = [
         '/profile/edit',
         '/profile/change-password',
+        '/profile/my-posts',
         '/interests/chat',
       ];
 
@@ -164,6 +164,7 @@ int calculateCurrentIndex(String location) {
     '/interests/chat': 2,
     '/profile/edit': 4,
     '/profile/change-password': 4,
+    '/profile/my-posts': 4,
   };
 
   // Check sub-routes first
@@ -237,6 +238,7 @@ final List<String> routesWithoutNavBar = [
   '/interests/chat',
   '/profile/edit',
   '/profile/change-password',
+  '/profile/my-posts',
   // Thêm các route khác muốn ẩn navigation
 ];
 
@@ -248,8 +250,8 @@ ShellRoute _buildShellRoute() {
   return ShellRoute(
     builder: (context, state, child) {
       final location = state.uri.toString();
-       final currentIndex = calculateCurrentIndex(location);
-       final showNavBar = shouldShowNavBar(location);
+      final currentIndex = calculateCurrentIndex(location);
+      final showNavBar = shouldShowNavBar(location);
       return ScaffoldWithNavBar(
         currentIndex: currentIndex >= 0 ? currentIndex : 0,
         showNavBar: showNavBar,
@@ -354,6 +356,11 @@ GoRoute _buildProfileRoute() {
         path: 'change-password',
         name: 'change-password',
         builder: (context, state) => const ChangePasswordScreen(),
+      ),
+      GoRoute(
+        path: 'my-posts',
+        name: 'my-posts',
+        builder: (context, state) => const MyPostsScreen(),
       ),
     ],
   );

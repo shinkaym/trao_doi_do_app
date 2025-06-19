@@ -9,6 +9,7 @@ import 'package:trao_doi_do_app/domain/usecases/params/post_query.dart';
 abstract class PostRemoteDataSource {
   Future<String> createPost(PostModel post);
   Future<PostsResponseModel> getPosts(PostsQuery query);
+  Future<PostsResponseModel> myPosts(PostsQuery query);
   Future<PostDetailResponseModel> getPostBySlug(String slug);
 }
 
@@ -38,6 +39,21 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
       ApiConstants.clientPosts,
       queryParameters: query.toQueryParams(),
       options: Options(extra: {'requiresAuth': false}),
+    );
+
+    final result = ApiResponseModel.fromJson(
+      response.data,
+      (json) => PostsResponseModel.fromJson(json as Map<String, dynamic>),
+    );
+
+    return result.data!;
+  }
+
+  @override
+  Future<PostsResponseModel> myPosts(PostsQuery query) async {
+    final response = await _dioClient.get(
+      ApiConstants.myPosts,
+      queryParameters: query.toQueryParams(),
     );
 
     final result = ApiResponseModel.fromJson(

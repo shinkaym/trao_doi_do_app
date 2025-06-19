@@ -7,12 +7,12 @@ import 'package:trao_doi_do_app/domain/usecases/params/post_query.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/create_post_fab.dart';
-import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/posts_list_content.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/search_filter_section.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/widgets/my-posts/my_posts_list_content.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
-class PostsScreen extends HookConsumerWidget {
-  const PostsScreen({super.key});
+class MyPostsScreen extends HookConsumerWidget {
+  const MyPostsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,7 +24,7 @@ class PostsScreen extends HookConsumerWidget {
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
-    final postsState = ref.watch(postsListProvider);
+    final postsState = ref.watch(myPostsListProvider);
 
     void loadPosts({bool refresh = false}) {
       final query = PostsQuery(
@@ -36,7 +36,7 @@ class PostsScreen extends HookConsumerWidget {
       );
 
       ref
-          .read(postsListProvider.notifier)
+          .read(myPostsListProvider.notifier)
           .loadPosts(newQuery: query, refresh: refresh);
     }
 
@@ -90,6 +90,7 @@ class PostsScreen extends HookConsumerWidget {
 
     return SmartScaffold(
       appBarType: AppBarType.standard,
+      showBackButton: true,
       body: SafeArea(
         child: Column(
           children: [
@@ -110,7 +111,7 @@ class PostsScreen extends HookConsumerWidget {
 
             // Content
             Expanded(
-              child: PostsListContent(
+              child: MyPostsListContent(
                 postsState: postsState,
                 isTablet: isTablet,
                 theme: theme,

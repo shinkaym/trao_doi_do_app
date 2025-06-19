@@ -7,5 +7,6 @@ import 'package:trao_doi_do_app/domain/usecases/params/post_query.dart';
 abstract class PostRepository {
   Future<Either<Failure, String>> createPost(Post post);
   Future<Either<Failure, PostsResponse>> getPosts(PostsQuery query);
+  Future<Either<Failure, PostsResponse>> myPosts(PostsQuery query);
   Future<Either<Failure, PostDetailResponse>> getPostBySlug(String slug);
 }

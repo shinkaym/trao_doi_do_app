@@ -100,7 +100,6 @@ class EditProfileScreen extends HookConsumerWidget {
     final isTablet = context.isTablet;
 
     return SmartScaffold(
-      title: 'Chỉnh sửa thông tin',
       appBarType: AppBarType.standard,
       showBackButton: true,
       body: SafeArea(

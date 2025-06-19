@@ -302,7 +302,6 @@ class InterestsScreen extends HookConsumerWidget {
 
     if (!authState.isLoggedIn) {
       return SmartScaffold(
-        title: 'Quan tâm',
         appBarType: AppBarType.standard,
         body: LoginPrompt(
           isTablet: isTablet,
