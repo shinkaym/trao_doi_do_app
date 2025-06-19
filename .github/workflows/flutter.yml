@@ -1,0 +1,75 @@
+name: Flutter CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build-release-main:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    name: Build Main APK (release) and Send
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+
+      - name: Generate .env file
+        run: |
+          echo "APP_NAME=${{ secrets.APP_NAME }}" >> .env
+          echo "API_DOMAIN=${{ secrets.API_DOMAIN }}" >> .env
+          echo "API_VERSION=${{ secrets.API_VERSION }}" >> .env
+          echo "WS_DOMAIN=${{ secrets.WS_DOMAIN }}" >> .env
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload to Telegram (main)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -F document=@build/app/outputs/flutter-apk/app-release.apk \
+               -F chat_id=${TELEGRAM_CHAT_ID} \
+               -F caption="🚀 Main build (release) - $(date +'%Y-%m-%d %H:%M')" \
+               https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument
+
+  build-release-dev:
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    name: Build Dev APK (release with DEV tag) and Send
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Rename APK with dev suffix
+        run: |
+          mv build/app/outputs/flutter-apk/app-release.apk build/app/outputs/flutter-apk/app-dev-release.apk
+
+      - name: Upload to Telegram (develop)
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          curl -F document=@build/app/outputs/flutter-apk/app-dev-release.apk \
+               -F chat_id=${TELEGRAM_CHAT_ID} \
+               -F caption="🚧 Dev build (release) - $(date +'%Y-%m-%d %H:%M')" \
+               https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument
