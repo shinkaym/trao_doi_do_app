@@ -30,12 +30,17 @@ class CreateTransactionItemRequest extends Equatable {
 
 class UpdateTransactionRequest extends Equatable {
   final List<UpdateTransactionItemRequest> items;
+  final String method;
   final int status;
 
-  const UpdateTransactionRequest({required this.items, required this.status});
+  const UpdateTransactionRequest({
+    required this.items,
+    required this.method,
+    required this.status,
+  });
 
   @override
-  List<Object?> get props => [items, status];
+  List<Object?> get props => [items, method, status];
 }
 
 class UpdateTransactionItemRequest extends Equatable {

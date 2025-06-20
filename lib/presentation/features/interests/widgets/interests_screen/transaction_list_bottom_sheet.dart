@@ -33,6 +33,7 @@ class TransactionListBottomSheet extends HookConsumerWidget {
     // Watch transactions state để có thể refresh
     final transactionsState = ref.watch(transactionsListProvider);
     final transactionsNotifier = ref.read(transactionsListProvider.notifier);
+    
 
     // Sử dụng transactions từ provider thay vì prop
     final currentTransactions =
@@ -192,6 +193,11 @@ class _TransactionTile extends HookConsumerWidget {
     // State để track việc editing
     final isEditing = useState(false);
     final editedItems = useState<Map<int, int>>({});
+    final selectedDeliveryMethod = useState<DeliveryMethod>(
+      transaction.method == 'delivery'
+          ? DeliveryMethod.delivery
+          : DeliveryMethod.meetInPerson,
+    );
     final transactionState = ref.watch(transactionProvider);
     final transactionsNotifier = ref.read(transactionsListProvider.notifier);
 
@@ -218,6 +224,10 @@ class _TransactionTile extends HookConsumerWidget {
       editedItems.value = {
         for (final item in transaction.items) item.postItemID: item.quantity,
       };
+      selectedDeliveryMethod.value =
+          transaction.method == 'delivery'
+              ? DeliveryMethod.delivery
+              : DeliveryMethod.meetInPerson;
     }
 
     Future<void> saveChanges() async {
@@ -236,6 +246,10 @@ class _TransactionTile extends HookConsumerWidget {
 
         final update = UpdateTransactionRequest(
           items: updatedItems,
+          method:
+              selectedDeliveryMethod.value == DeliveryMethod.delivery
+                  ? 'delivery'
+                  : 'meet_in_person',
           status: transaction.status,
         );
 
@@ -389,6 +403,229 @@ class _TransactionTile extends HookConsumerWidget {
                 ),
               );
             }).toList(),
+
+            // Delivery Method Selection (only for pending transactions and when editing)
+            if (isPostOwner && transaction.status == 1) ...[
+              SizedBox(height: isTablet ? 16 : 12),
+
+              // Delivery Method Section
+              Container(
+                padding: EdgeInsets.all(isTablet ? 16 : 12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceVariant.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: colorScheme.outline.withOpacity(0.2),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.local_shipping,
+                          color: colorScheme.primary,
+                          size: isTablet ? 20 : 18,
+                        ),
+                        SizedBox(width: isTablet ? 8 : 6),
+                        Text(
+                          'Phương thức giao dịch',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: isTablet ? 16 : 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: isTablet ? 12 : 8),
+
+                    // Current method display (when not editing)
+                    if (!isEditing.value) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(isTablet ? 12 : 10),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: colorScheme.primary,
+                            width: 2,
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              selectedDeliveryMethod.value ==
+                                      DeliveryMethod.meetInPerson
+                                  ? Icons.handshake
+                                  : Icons.delivery_dining,
+                              color: colorScheme.primary,
+                              size: isTablet ? 18 : 16,
+                            ),
+                            SizedBox(width: isTablet ? 8 : 6),
+                            Text(
+                              selectedDeliveryMethod.value ==
+                                      DeliveryMethod.delivery
+                                  ? 'Giao hàng'
+                                  : 'Gặp trực tiếp',
+                              style: TextStyle(
+                                color: colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: isTablet ? 14 : 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ] else ...[
+                      // Method selection (when editing)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              onTap:
+                                  transactionState.isLoading
+                                      ? null
+                                      : () =>
+                                          selectedDeliveryMethod.value =
+                                              DeliveryMethod.meetInPerson,
+                              child: Container(
+                                padding: EdgeInsets.all(isTablet ? 12 : 10),
+                                decoration: BoxDecoration(
+                                  color:
+                                      selectedDeliveryMethod.value ==
+                                              DeliveryMethod.meetInPerson
+                                          ? colorScheme.primary.withOpacity(0.1)
+                                          : colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color:
+                                        selectedDeliveryMethod.value ==
+                                                DeliveryMethod.meetInPerson
+                                            ? colorScheme.primary
+                                            : colorScheme.outline.withOpacity(
+                                              0.3,
+                                            ),
+                                    width:
+                                        selectedDeliveryMethod.value ==
+                                                DeliveryMethod.meetInPerson
+                                            ? 2
+                                            : 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.handshake,
+                                      color:
+                                          selectedDeliveryMethod.value ==
+                                                  DeliveryMethod.meetInPerson
+                                              ? colorScheme.primary
+                                              : colorScheme.outline,
+                                      size: isTablet ? 18 : 16,
+                                    ),
+                                    SizedBox(width: isTablet ? 8 : 6),
+                                    Expanded(
+                                      child: Text(
+                                        'Gặp trực tiếp',
+                                        style: TextStyle(
+                                          color:
+                                              selectedDeliveryMethod.value ==
+                                                      DeliveryMethod
+                                                          .meetInPerson
+                                                  ? colorScheme.primary
+                                                  : colorScheme.onSurface,
+                                          fontWeight:
+                                              selectedDeliveryMethod.value ==
+                                                      DeliveryMethod
+                                                          .meetInPerson
+                                                  ? FontWeight.w600
+                                                  : FontWeight.normal,
+                                          fontSize: isTablet ? 14 : 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: isTablet ? 12 : 8),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap:
+                                  transactionState.isLoading
+                                      ? null
+                                      : () =>
+                                          selectedDeliveryMethod.value =
+                                              DeliveryMethod.delivery,
+                              child: Container(
+                                padding: EdgeInsets.all(isTablet ? 12 : 10),
+                                decoration: BoxDecoration(
+                                  color:
+                                      selectedDeliveryMethod.value ==
+                                              DeliveryMethod.delivery
+                                          ? colorScheme.primary.withOpacity(0.1)
+                                          : colorScheme.surface,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color:
+                                        selectedDeliveryMethod.value ==
+                                                DeliveryMethod.delivery
+                                            ? colorScheme.primary
+                                            : colorScheme.outline.withOpacity(
+                                              0.3,
+                                            ),
+                                    width:
+                                        selectedDeliveryMethod.value ==
+                                                DeliveryMethod.delivery
+                                            ? 2
+                                            : 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.delivery_dining,
+                                      color:
+                                          selectedDeliveryMethod.value ==
+                                                  DeliveryMethod.delivery
+                                              ? colorScheme.primary
+                                              : colorScheme.outline,
+                                      size: isTablet ? 18 : 16,
+                                    ),
+                                    SizedBox(width: isTablet ? 8 : 6),
+                                    Expanded(
+                                      child: Text(
+                                        'Giao hàng',
+                                        style: TextStyle(
+                                          color:
+                                              selectedDeliveryMethod.value ==
+                                                      DeliveryMethod.delivery
+                                                  ? colorScheme.primary
+                                                  : colorScheme.onSurface,
+                                          fontWeight:
+                                              selectedDeliveryMethod.value ==
+                                                      DeliveryMethod.delivery
+                                                  ? FontWeight.w600
+                                                  : FontWeight.normal,
+                                          fontSize: isTablet ? 14 : 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
 
             // Transaction actions
             if (isPostOwner && transaction.status == 1) ...[

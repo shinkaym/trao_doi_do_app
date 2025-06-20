@@ -100,6 +100,7 @@ class TransactionRepositoryImpl implements TransactionRepository {
                 ),
               )
               .toList(),
+      method: request.method,
       status: request.status,
     );
   }

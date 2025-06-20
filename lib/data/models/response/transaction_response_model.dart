@@ -115,10 +115,12 @@ class CreateTransactionItemRequestModel {
 
 class UpdateTransactionRequestModel {
   final List<UpdateTransactionItemRequestModel> items;
+  final String method;
   final int status;
 
   const UpdateTransactionRequestModel({
     required this.items,
+    required this.method,
     required this.status,
   });
 
@@ -139,6 +141,7 @@ class UpdateTransactionRequestModel {
                 ),
               )
               .toList(),
+      method: json['method'] ?? '',
       status: json['status'] ?? 1,
     );
   }

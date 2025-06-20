@@ -8,6 +8,7 @@ class Transaction extends Equatable {
   final String receiverName;
   final int senderID;
   final String senderName;
+  final String method;
   final int status; // 1: Pending, 2: Success, 3: Cancelled
   final String createdAt;
   final String? updatedAt;
@@ -20,6 +21,7 @@ class Transaction extends Equatable {
     required this.receiverName,
     required this.senderID,
     required this.senderName,
+    required this.method,
     required this.status,
     required this.createdAt,
     this.updatedAt,
@@ -34,6 +36,7 @@ class Transaction extends Equatable {
     receiverName,
     senderID,
     senderName,
+    method,
     status,
     createdAt,
     updatedAt,

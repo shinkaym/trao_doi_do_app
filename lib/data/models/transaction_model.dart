@@ -8,6 +8,7 @@ class TransactionModel {
   final String receiverName;
   final int senderID;
   final String senderName;
+  final String method;
   final int status;
   final String createdAt;
   final String? updatedAt;
@@ -20,6 +21,7 @@ class TransactionModel {
     required this.receiverName,
     required this.senderID,
     required this.senderName,
+    required this.method,
     required this.status,
     required this.createdAt,
     this.updatedAt,
@@ -37,6 +39,7 @@ class TransactionModel {
       receiverName: transaction.receiverName,
       senderID: transaction.senderID,
       senderName: transaction.senderName,
+      method: transaction.method,
       status: transaction.status,
       createdAt: transaction.createdAt,
       updatedAt: transaction.updatedAt,
@@ -69,6 +72,7 @@ class TransactionModel {
       receiverName: transactionData['receiverName'] ?? '',
       senderID: transactionData['senderID'] ?? 0,
       senderName: transactionData['senderName'] ?? '',
+      method: transactionData['method'] ?? '',
       status: transactionData['status'] ?? 1,
       createdAt:
           transactionData['createdAt'] ?? DateTime.now().toIso8601String(),
@@ -85,6 +89,7 @@ class TransactionModel {
       'receiverName': receiverName,
       'senderID': senderID,
       'senderName': senderName,
+      'method': method,
       'status': status,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
@@ -100,6 +105,7 @@ class TransactionModel {
       receiverName: receiverName,
       senderID: senderID,
       senderName: senderName,
+      method: method,
       status: status,
       createdAt: createdAt,
       updatedAt: updatedAt,

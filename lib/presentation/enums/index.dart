@@ -116,10 +116,10 @@ enum TransactionStatus {
   pending(1),
   accepted(2),
   rejected(3),
+  failed(4),
   unknown(0);
 
   final int value;
-
   const TransactionStatus(this.value);
 
   static TransactionStatus fromValue(int value) {
@@ -137,6 +137,8 @@ enum TransactionStatus {
         return Icons.check_circle;
       case TransactionStatus.rejected:
         return Icons.cancel;
+      case TransactionStatus.failed:
+        return Icons.error;
       case TransactionStatus.unknown:
         return Icons.help;
     }
@@ -150,6 +152,8 @@ enum TransactionStatus {
         return Colors.green;
       case TransactionStatus.rejected:
         return Colors.red;
+      case TransactionStatus.failed:
+        return Colors.red.shade700;
       case TransactionStatus.unknown:
         return Colors.grey;
     }
@@ -163,6 +167,8 @@ enum TransactionStatus {
         return 'Hoàn tất';
       case TransactionStatus.rejected:
         return isPostOwner ? 'Đã từ chối' : 'Đã bị từ chối';
+      case TransactionStatus.failed:
+        return 'Giao dịch thất bại';
       case TransactionStatus.unknown:
         return 'Không xác định';
     }
@@ -177,7 +183,7 @@ enum DeliveryMethod {
 
   const DeliveryMethod(this.displayName);
   final String displayName;
-  
+
   String get value {
     switch (this) {
       case DeliveryMethod.meetInPerson:
