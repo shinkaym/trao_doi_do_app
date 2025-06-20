@@ -30,7 +30,9 @@ class CategoryState {
 class CategoryNotifier extends StateNotifier<CategoryState> {
   final GetCategoriesUseCase _getCategoriesUseCase;
 
-  CategoryNotifier(this._getCategoriesUseCase) : super(CategoryState());
+  CategoryNotifier(this._getCategoriesUseCase) : super(CategoryState()) {
+    getCategories();
+  }
 
   Future<void> getCategories() async {
     if (state.isLoading) return;
