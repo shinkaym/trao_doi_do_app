@@ -123,7 +123,7 @@ class InterestsScreen extends HookConsumerWidget {
 
     // Handle tab changes
     void onTabChanged() {
-      if (!tabController.indexIsChanging) return;
+      if (tabController.indexIsChanging) return;
 
       final currentIndex = tabController.index;
 
