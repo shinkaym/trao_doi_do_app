@@ -170,3 +170,20 @@ enum TransactionStatus {
 }
 
 enum InterestAction { create, cancel }
+
+enum DeliveryMethod {
+  meetInPerson('Gặp trực tiếp'),
+  delivery('Giao hàng');
+
+  const DeliveryMethod(this.displayName);
+  final String displayName;
+  
+  String get value {
+    switch (this) {
+      case DeliveryMethod.meetInPerson:
+        return 'meet_in_person';
+      case DeliveryMethod.delivery:
+        return 'delivery';
+    }
+  }
+}

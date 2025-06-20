@@ -3,14 +3,16 @@ import 'package:equatable/equatable.dart';
 class CreateTransactionRequest extends Equatable {
   final int interestID;
   final List<CreateTransactionItemRequest> items;
+  final String method;
 
   const CreateTransactionRequest({
     required this.interestID,
     required this.items,
+    required this.method,
   });
 
   @override
-  List<Object?> get props => [interestID, items];
+  List<Object?> get props => [interestID, items, method];
 }
 
 class CreateTransactionItemRequest extends Equatable {

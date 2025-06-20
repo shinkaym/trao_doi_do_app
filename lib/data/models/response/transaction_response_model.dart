@@ -55,16 +55,19 @@ class TransactionsResponseModel {
 class CreateTransactionRequestModel {
   final int interestID;
   final List<CreateTransactionItemRequestModel> items;
+  final String method;
 
   const CreateTransactionRequestModel({
     required this.interestID,
     required this.items,
+    required this.method,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'interestID': interestID,
       'items': items.map((item) => item.toJson()).toList(),
+      'method': method,
     };
   }
 
@@ -79,6 +82,8 @@ class CreateTransactionRequestModel {
                 ),
               )
               .toList(),
+      method: json['method'] ?? '',
+
     );
   }
 }
