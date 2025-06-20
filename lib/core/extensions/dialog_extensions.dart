@@ -13,7 +13,7 @@ extension DialogExtensions on BuildContext {
       builder:
           (context) => Theme(
             data: theme.copyWith(
-              dialogTheme: DialogTheme(
+              dialogTheme: DialogThemeData(
                 backgroundColor: appColors.card,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),

@@ -74,7 +74,7 @@ class AppTheme {
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: lightExtension.card,
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -124,7 +124,7 @@ class AppTheme {
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: darkExtension.card,
       elevation: 2,
       shape: RoundedRectangleBorder(
