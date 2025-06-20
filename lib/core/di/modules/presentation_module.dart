@@ -153,7 +153,7 @@ final interestDetailProvider = StateNotifierProvider.autoDispose.family<
   return notifier;
 });
 
-final postProvider = StateNotifierProvider.autoDispose<PostNotifier, PostState>(
+final postProvider = StateNotifierProvider<PostNotifier, PostState>(
   (ref) {
     final createPostUseCase = ref.watch(createPostUseCaseProvider);
     return PostNotifier(createPostUseCase);
