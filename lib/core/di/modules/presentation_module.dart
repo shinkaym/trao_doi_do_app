@@ -1,4 +1,5 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/providers/interest_detail_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/transaction_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/transactions_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/interests_provider.dart';
@@ -136,6 +137,20 @@ final postsWithInterestsProvider = StateNotifierProvider.autoDispose<
 >((ref) {
   final getInterestsUseCase = ref.watch(getInterestsUseCaseProvider);
   return InterestsListNotifier(getInterestsUseCase);
+});
+
+final interestDetailProvider = StateNotifierProvider.autoDispose.family<
+  InterestDetailNotifier,
+  InterestDetailState,
+  int
+>((ref, interestID) {
+  final getInterestDetailUseCase = ref.watch(getInterestDetailUseCaseProvider);
+  final notifier = InterestDetailNotifier(getInterestDetailUseCase);
+
+  // Auto load khi provider được tạo
+  Future.microtask(() => notifier.loadInterestDetail(interestID));
+
+  return notifier;
 });
 
 final postProvider = StateNotifierProvider.autoDispose<PostNotifier, PostState>(

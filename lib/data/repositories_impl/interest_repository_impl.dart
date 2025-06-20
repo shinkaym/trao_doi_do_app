@@ -49,4 +49,14 @@ class InterestRepositoryImpl implements InterestRepository {
       );
     }, 'Lỗi khi tải danh sách quan tâm');
   }
+
+  @override
+  Future<Either<Failure, InterestPost>> getInterestDetail(
+    int interestID,
+  ) async {
+    return handleRepositoryCall(() async {
+      final response = await _remoteDataSource.getInterestDetail(interestID);
+      return response.toEntity();
+    }, 'Lỗi khi tải chi tiết quan tâm');
+  }
 }

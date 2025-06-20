@@ -14,6 +14,7 @@ import 'package:trao_doi_do_app/domain/repositories/post_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/message_repository.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_transaction_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_categories_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/get_interest_detail_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_items_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_transactions_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/onboarding_usecase.dart';
@@ -153,6 +154,12 @@ final createPostUseCaseProvider = Provider.autoDispose<CreatePostUseCase>((
   final repository = ref.watch(postRepositoryProvider);
   return CreatePostUseCase(repository);
 });
+
+final getInterestDetailUseCaseProvider =
+    Provider.autoDispose<GetInterestDetailUseCase>((ref) {
+      final repository = ref.watch(interestRepositoryProvider);
+      return GetInterestDetailUseCase(repository);
+    });
 
 final getPostsUseCaseProvider = Provider.autoDispose<GetPostsUseCase>((ref) {
   final repository = ref.watch(postRepositoryProvider);

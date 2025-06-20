@@ -6,29 +6,27 @@ import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
-import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/entities/message.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/transaction_query.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/chat_app_bar.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/post_info_header.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/transaction_item_selection_bottom_sheet.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/transaction_list_bottom_sheet.dart';
-import 'package:trao_doi_do_app/presentation/models/interest_chat_transaction_data.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter_debouncer/flutter_debouncer.dart';
 
 class InterestChatScreen extends HookConsumerWidget {
   final String interestId;
-  final InterestChatTransactionData? transactionData;
 
-  const InterestChatScreen({
-    super.key,
-    required this.interestId,
-    this.transactionData,
-  });
+  const InterestChatScreen({super.key, required this.interestId});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final interestDetailState = ref.watch(
+      interestDetailProvider(int.parse(interestId)),
+    );
+    final interestDetail = interestDetailState.interestDetail;
+
     final messageController = useTextEditingController();
     final scrollController = useScrollController();
     final messageFocusNode = useFocusNode();
@@ -36,7 +34,6 @@ class InterestChatScreen extends HookConsumerWidget {
     final isLoading = useState(true);
     final isSending = useState(false);
 
-    final post = useState<InterestPost?>(null);
     final isPostOwner = useState<bool>(false);
     final displayName = useState<String>('');
     final displayAvatar = useState<String>('');
@@ -59,71 +56,90 @@ class InterestChatScreen extends HookConsumerWidget {
 
     final getAccessTokenUseCase = ref.read(getAccessTokenUseCaseProvider);
 
-    // Initialize chat data and load messages/transactions
     useEffect(() {
       Future.microtask(() async {
-        if (transactionData != null && authState.user != null) {
-          // Set post data from route params
-          post.value = transactionData!.post;
-          isPostOwner.value = transactionData!.isPostOwner;
-
-          // Set display information based on user role
-          if (isPostOwner.value) {
-            // Post owner sees the interested user's info
-            final interestedUser = post.value!.interests.firstWhere(
-              (i) => i.id.toString() == interestId,
-            );
-            displayName.value = interestedUser.userName;
-            displayAvatar.value = interestedUser.userAvatar;
-            displayUserId.value = interestedUser.userID;
-          } else {
-            // Interested user sees the post author's info
-            displayName.value = post.value!.authorName;
-            displayAvatar.value = post.value!.authorAvatar;
-            displayUserId.value = post.value!.authorID;
-          }
-
-          // Connect to WebSocket if not already connected
-          if (!webSocketState.isConnected && !webSocketState.isConnecting) {
-            final result = await getAccessTokenUseCase.execute();
-            result.fold(
-              (failure) => {},
-              (token) => webSocketNotifier.connectToChat(token),
-            );
-          }
-
-          // Join the chat room
-          if (webSocketState.isConnected) {
-            webSocketNotifier.joinRoom(int.parse(interestId));
-          }
-
-          // Load messages
-          await messagesNotifier.loadMessages(refresh: true);
-
-          // Load transactions with default query
-          final query = TransactionsQuery(
-            sort: 'createdAt',
-            order: 'DESC',
-            postID: post.value?.id,
-            searchBy: 'interestID',
-            searchValue: interestId,
-          );
-
-          await transactionsNotifier.loadTransactions(
-            newQuery: query,
-            refresh: true,
-          );
-
-          isLoading.value = false;
-
-          // Scroll to bottom after loading
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _scrollToBottom(scrollController);
-          });
+        if (interestDetailState.interestDetail == null &&
+            !interestDetailState.isLoading) {
+          await ref
+              .read(interestDetailProvider(int.parse(interestId)).notifier)
+              .loadInterestDetail(int.parse(interestId));
         }
       });
       return null;
     }, []);
+
+    // Initialize chat data and load messages/transactions
+    useEffect(() {
+      Future.microtask(() async {
+        if (interestDetail != null && authState.user != null) {
+          try {
+            // Set post data from route params
+            isPostOwner.value = interestDetail.authorID == authState.user!.id;
+
+            // Set display information based on user role
+            if (isPostOwner.value) {
+              // Post owner sees the interested user's info
+              final interestedUser = interestDetail.interests.firstWhere(
+                (i) => i.id.toString() == interestId,
+                orElse: () => throw Exception('Interested user not found'),
+              );
+              displayName.value = interestedUser.userName;
+              displayAvatar.value = interestedUser.userAvatar;
+              displayUserId.value = interestedUser.userID;
+            } else {
+              // Interested user sees the post author's info
+              displayName.value = interestDetail.authorName;
+              displayAvatar.value = interestDetail.authorAvatar;
+              displayUserId.value = interestDetail.authorID;
+            }
+
+            // Connect to WebSocket if not already connected
+            if (!webSocketState.isConnected && !webSocketState.isConnecting) {
+              final result = await getAccessTokenUseCase.execute();
+              result.fold(
+                (failure) => {
+                  print('Failed to get access token: ${failure.message}'),
+                },
+                (token) => webSocketNotifier.connectToChat(token),
+              );
+            }
+
+            // Join the chat room
+            if (webSocketState.isConnected) {
+              webSocketNotifier.joinRoom(int.parse(interestId));
+            }
+
+            // Load messages
+            await messagesNotifier.loadMessages(refresh: true);
+
+            // Load transactions with default query
+            final query = TransactionsQuery(
+              sort: 'createdAt',
+              order: 'DESC',
+              postID: interestDetail.id,
+              searchBy: 'interestID',
+              searchValue: interestId,
+            );
+
+            await transactionsNotifier.loadTransactions(
+              newQuery: query,
+              refresh: true,
+            );
+
+            isLoading.value = false;
+
+            // Scroll to bottom after loading
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _scrollToBottom(scrollController);
+            });
+          } catch (e) {
+            print('Error initializing chat: $e');
+            isLoading.value = false;
+          }
+        }
+      });
+      return null;
+    }, [interestDetail, authState.user]);
 
     // Handle WebSocket connection state changes
     useEffect(() {
@@ -156,8 +172,6 @@ class InterestChatScreen extends HookConsumerWidget {
       final response = webSocketState.lastResponse;
       if (response == null) return;
 
-      print('🔄 Processing WebSocket response: ${response.event}');
-
       if (response.event == 'send_message_response' &&
           response.isSuccess &&
           response.data != null) {
@@ -168,11 +182,8 @@ class InterestChatScreen extends HookConsumerWidget {
           try {
             // Validate required fields
             if (messageData['senderID'] == null || authState.user?.id == null) {
-              print('⚠️ Missing required fields for message processing');
               return;
             }
-
-            print('📝 Creating message from WebSocket data: $messageData');
 
             // Use the factory constructor
             final message = Message.fromWebSocket(
@@ -200,9 +211,6 @@ class InterestChatScreen extends HookConsumerWidget {
                 }).firstOrNull;
 
             if (existingMessage == null) {
-              print('✅ Adding new message to list');
-
-              // ✅ Safely update provider outside build cycle
               messagesNotifier.addNewMessage(message);
 
               // Scroll to bottom after adding message
@@ -211,8 +219,6 @@ class InterestChatScreen extends HookConsumerWidget {
                   _scrollToBottom(scrollController);
                 }
               });
-            } else {
-              print('⚠️ Duplicate message detected, skipping');
             }
           } catch (e) {
             print('❌ Error processing message: $e');
@@ -224,8 +230,6 @@ class InterestChatScreen extends HookConsumerWidget {
 
     useEffect(() {
       if (webSocketState.lastResponse != null) {
-        print('📨 New WebSocket response detected, processing...');
-        // ✅ Delay việc xử lý để tránh modify provider trong build cycle
         Future.microtask(_handleNewWebSocketMessage);
       }
       return null;
@@ -361,8 +365,6 @@ class InterestChatScreen extends HookConsumerWidget {
       messageController.clear();
 
       try {
-        print('📤 Sending message via WebSocket: $messageText');
-
         // Send message via WebSocket
         webSocketNotifier.sendMessage(
           interestID: int.parse(interestId),
@@ -371,7 +373,6 @@ class InterestChatScreen extends HookConsumerWidget {
           message: messageText,
         );
       } catch (e) {
-        print('❌ Error sending message: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Lỗi gửi tin nhắn: $e'),
@@ -384,10 +385,10 @@ class InterestChatScreen extends HookConsumerWidget {
     }
 
     void handlePostTap() {
-      if (post.value != null) {
+      if (interestDetail != null) {
         context.pushNamed(
           'post-detail',
-          pathParameters: {'slug': post.value!.slug},
+          pathParameters: {'slug': interestDetail.slug},
         );
       }
     }
@@ -401,7 +402,7 @@ class InterestChatScreen extends HookConsumerWidget {
             (_) => TransactionListBottomSheet(
               transactions: transactionsState.transactions,
               isPostOwner: isPostOwner.value,
-              items: post.value?.items ?? [],
+              items: interestDetail?.items ?? [],
               onTransactionUpdated: (updatedTransaction) {
                 // Transaction will be updated via provider
               },
@@ -433,7 +434,7 @@ class InterestChatScreen extends HookConsumerWidget {
         backgroundColor: Colors.transparent,
         builder:
             (_) => TransactionItemSelectionBottomSheet(
-              postItems: post.value?.items ?? [],
+              postItems: interestDetail?.items ?? [],
               interestId: int.parse(interestId),
               onTransactionSent: () {
                 transactionsNotifier.refresh();
@@ -530,10 +531,10 @@ class InterestChatScreen extends HookConsumerWidget {
               ),
 
             // Post info header
-            if (post.value != null)
+            if (interestDetail != null)
               PostInfoHeader(
                 transactions: transactionsState.transactions,
-                post: post.value!,
+                post: interestDetail,
                 isPostOwner: isPostOwner.value,
                 isLoadingTransactions: transactionsState.isLoading,
                 isTablet: isTablet,
