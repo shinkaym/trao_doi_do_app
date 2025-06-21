@@ -104,12 +104,7 @@ class InterestsScreen extends HookConsumerWidget {
     }
 
     // Handle chat tap
-    void handleChatTap(
-      int interestId,
-      bool isPostOwner,
-      List<InterestItem> items,
-      InterestPost post,
-    ) {
+    void handleChatTap(int interestId) {
       context.pushNamed(
         'interest-chat',
         pathParameters: {'interestId': interestId.toString()},
@@ -466,7 +461,7 @@ Widget _buildInterestedPostsTab(
   ColorScheme colorScheme,
   WidgetRef ref,
   Function(String) handlePostTap,
-  Function(int, bool, List<InterestItem>, InterestPost) handleChatTap,
+  Function(int) handleChatTap,
   Function(int) handleLikeTap,
   TextEditingController sharedSearchController, // Thêm tham số
   VoidCallback resetFilters,
@@ -565,7 +560,7 @@ Widget _buildPostsWithInterestsTab(
   ColorScheme colorScheme,
   WidgetRef ref,
   Function(String) handlePostTap,
-  Function(int, bool, List<InterestItem>, InterestPost) handleChatTap,
+  Function(int) handleChatTap,
   TextEditingController sharedSearchController, // Thêm tham số
   VoidCallback resetFilters,
 ) {
@@ -661,7 +656,7 @@ Widget _buildInterestedPostCard(
   ColorScheme colorScheme,
   bool isInterestLoading,
   Function(String) handlePostTap,
-  Function(int, bool, List<InterestItem>, InterestPost) handleChatTap,
+  Function(int) handleChatTap,
   Function(int) handleLikeTap,
 ) {
   return Card(
@@ -767,13 +762,7 @@ Widget _buildInterestedPostCard(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 InkWell(
-                  onTap:
-                      () => handleChatTap(
-                        post.interests[0].id,
-                        false,
-                        post.items,
-                        post,
-                      ),
+                  onTap: () => handleChatTap(post.interests[0].id),
                   borderRadius: BorderRadius.circular(8),
                   child: Container(
                     padding: EdgeInsets.all(isTablet ? 12 : 10),
@@ -834,7 +823,7 @@ Widget _buildPostWithInterestsCard(
   ThemeData theme,
   ColorScheme colorScheme,
   Function(String) handlePostTap,
-  Function(int, bool, List<InterestItem>, InterestPost) handleChatTap,
+  Function(int) handleChatTap,
 ) {
   return Card(
     elevation: 0,
@@ -958,7 +947,7 @@ Widget _buildInterestedUsersSection(
   bool isTablet,
   ThemeData theme,
   ColorScheme colorScheme,
-  Function(int, bool, List<InterestItem>, InterestPost) handleChatTap,
+  Function(int) handleChatTap,
 ) {
   return InterestedUsersSection(
     post: post,

@@ -8,6 +8,7 @@ import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
+import 'package:trao_doi_do_app/domain/entities/user.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
 class PostDetailScreen extends HookConsumerWidget {
@@ -15,8 +16,14 @@ class PostDetailScreen extends HookConsumerWidget {
 
   const PostDetailScreen({super.key, required this.postSlug});
 
+  bool isPostAuthor(PostDetail post, User? currentUser) {
+    if (currentUser == null) return false;
+    return post.authorID == currentUser.id;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final userInterestId = useState<int?>(null);
     // Hooks
     final pageController = usePageController();
     final animationController = useAnimationController(
@@ -70,6 +77,18 @@ class PostDetailScreen extends HookConsumerWidget {
       return interests.any((interest) => interest.userID == userID);
     }
 
+    int? getUserInterestId(List<PostInterest> interests, int? userID) {
+      if (userID == null) return null;
+      try {
+        final userInterest = interests.firstWhere(
+          (interest) => interest.userID == userID,
+        );
+        return userInterest.id;
+      } catch (e) {
+        return null;
+      }
+    }
+
     void handleBookmark() {
       if (!context.mounted) return;
 
@@ -84,6 +103,13 @@ class PostDetailScreen extends HookConsumerWidget {
     void handleShare() {
       if (!context.mounted) return;
       context.showInfoSnackBar('Đã sao chép link bài đăng');
+    }
+
+    void handleChatTap(int interestId) {
+      context.pushNamed(
+        'interest-chat',
+        pathParameters: {'interestId': interestId.toString()},
+      );
     }
 
     void handleInterest() async {
@@ -219,9 +245,23 @@ class PostDetailScreen extends HookConsumerWidget {
 
     final post = postDetailState.post!;
     final userInterested = isUserInterested(post.interests, authState.user?.id);
+    final currentUserInterestId = getUserInterestId(
+      post.interests,
+      authState.user?.id,
+    );
     final interestCount = post.interests.length;
 
     final images = post.images.isNotEmpty ? post.images : [''];
+
+    useEffect(() {
+      if (authState.user != null) {
+        userInterestId.value = getUserInterestId(
+          post.interests,
+          authState.user!.id,
+        );
+      }
+      return null;
+    }, [post.interests, authState.user?.id]);
 
     return Scaffold(
       backgroundColor: colorScheme.background,
@@ -231,7 +271,7 @@ class PostDetailScreen extends HookConsumerWidget {
           slivers: [
             // SliverAppBar with images
             SliverAppBar(
-              expandedHeight: isTablet ? 450 : 350, // Tăng chiều cao
+              expandedHeight: isTablet ? 450 : 350,
               pinned: true,
               backgroundColor: colorScheme.primary,
               leading: Container(
@@ -337,6 +377,8 @@ class PostDetailScreen extends HookConsumerWidget {
         handleInterest,
         handleShare,
         ref,
+        currentUserInterestId ?? userInterestId.value,
+        handleChatTap,
       ),
     );
   }
@@ -529,6 +571,49 @@ class PostDetailScreen extends HookConsumerWidget {
               ),
             ],
           ),
+        ),
+
+        // Post Status Badge (hiển thị khi là chủ sở hữu)
+        Consumer(
+          builder: (context, ref, child) {
+            final authState = ref.watch(authProvider);
+            final isOwner = isPostAuthor(post, authState.user);
+
+            if (isOwner) {
+              final postStatus = PostStatus.fromValue(post.status ?? 0);
+              return Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: postStatus.color().withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: postStatus.color().withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      postStatus.icon(),
+                      size: 12,
+                      color: postStatus.color(),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      postStatus.label(),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                        color: postStatus.color(),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          },
         ),
 
         // Post Type Badge
@@ -725,7 +810,7 @@ class PostDetailScreen extends HookConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Tags',
+          'Danh sách thẻ',
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w600,
           ),
@@ -1303,8 +1388,20 @@ class PostDetailScreen extends HookConsumerWidget {
     VoidCallback onInterest,
     VoidCallback onShare,
     WidgetRef ref,
+    int? interestId,
+    Function(int) onChatTap,
   ) {
     final interestState = ref.watch(interestProvider);
+    final authState = ref.watch(authProvider);
+
+    // Lấy thông tin post từ provider
+    final postDetailState = ref.watch(postDetailProvider);
+    final post = postDetailState.post;
+
+    // Ẩn bottom action bar nếu là chủ sở hữu bài đăng
+    if (post != null && isPostAuthor(post, authState.user)) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       padding: EdgeInsets.all(isTablet ? 24 : 20),
@@ -1321,25 +1418,6 @@ class PostDetailScreen extends HookConsumerWidget {
       child: SafeArea(
         child: Row(
           children: [
-            // Share Button
-            OutlinedButton.icon(
-              onPressed: onShare,
-              icon: Icon(Icons.share_outlined, size: isTablet ? 18 : 16),
-              label: Text(
-                'Chia sẻ',
-                style: TextStyle(fontSize: isTablet ? 14 : 12),
-              ),
-              style: OutlinedButton.styleFrom(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTablet ? 16 : 12,
-                  vertical: isTablet ? 12 : 10,
-                ),
-              ),
-            ),
-
-            SizedBox(width: isTablet ? 12 : 8),
-
-            // Interest Button (Expanded) with loading state
             Expanded(
               child: ElevatedButton(
                 onPressed: interestState.isLoading ? null : onInterest,
@@ -1386,6 +1464,40 @@ class PostDetailScreen extends HookConsumerWidget {
                 ),
               ),
             ),
+
+            // Thêm nút nhắn tin khi đã quan tâm
+            if (userInterested && interestId != null) ...[
+              SizedBox(width: isTablet ? 16 : 12),
+              ElevatedButton(
+                onPressed: () => onChatTap(interestId),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTablet ? 20 : 16,
+                    vertical: isTablet ? 14 : 12,
+                  ),
+                  backgroundColor: colorScheme.primaryContainer,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.chat_bubble_outline,
+                      size: isTablet ? 18 : 16,
+                      color: Colors.white,
+                    ),
+                    SizedBox(width: isTablet ? 8 : 6),
+                    Text(
+                      'Nhắn tin',
+                      style: TextStyle(
+                        fontSize: isTablet ? 14 : 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -1416,7 +1528,6 @@ class PostDetailScreen extends HookConsumerWidget {
       }
     }
 
-    // Fallback về broken image nếu không có ảnh hoặc có lỗi decode
     return Container(
       color: Colors.grey.shade300,
       child: const Icon(Icons.broken_image, size: 50, color: Colors.grey),

@@ -9,7 +9,7 @@ class InterestedUsersSection extends StatefulWidget {
   final bool isTablet;
   final ThemeData theme;
   final ColorScheme colorScheme;
-  final Function(int, bool, List<InterestItem>, InterestPost) handleChatTap;
+  final Function(int) handleChatTap;
 
   const InterestedUsersSection({
     super.key,
@@ -171,13 +171,7 @@ class InterestedUsersSectionState extends State<InterestedUsersSection>
                         ),
                       ),
                       InkWell(
-                        onTap:
-                            () => widget.handleChatTap(
-                              interest.id,
-                              true,
-                              widget.post.items,
-                              widget.post,
-                            ),
+                        onTap: () => widget.handleChatTap(interest.id),
                         borderRadius: BorderRadius.circular(6),
                         child: Container(
                           padding: EdgeInsets.all(widget.isTablet ? 8 : 6),

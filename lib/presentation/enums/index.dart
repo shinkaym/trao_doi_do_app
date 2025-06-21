@@ -100,6 +100,63 @@ enum PostType {
   }
 }
 
+// Enum cho trạng thái bài post
+enum PostStatus {
+  pending(1),
+  rejected(2),
+  approved(3),
+  unknown(0);
+
+  final int value;
+  const PostStatus(this.value);
+
+  static PostStatus fromValue(int value) {
+    return PostStatus.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => PostStatus.unknown,
+    );
+  }
+
+  String label() {
+    switch (this) {
+      case PostStatus.pending:
+        return 'Đang chờ duyệt';
+      case PostStatus.rejected:
+        return 'Đã từ chối';
+      case PostStatus.approved:
+        return 'Đã duyệt';
+      case PostStatus.unknown:
+        return 'Không xác định';
+    }
+  }
+
+  IconData icon() {
+    switch (this) {
+      case PostStatus.pending:
+        return Icons.hourglass_empty;
+      case PostStatus.rejected:
+        return Icons.block;
+      case PostStatus.approved:
+        return Icons.check_circle;
+      case PostStatus.unknown:
+        return Icons.help;
+    }
+  }
+
+  Color color() {
+    switch (this) {
+      case PostStatus.pending:
+        return Colors.orange;
+      case PostStatus.rejected:
+        return Colors.red;
+      case PostStatus.approved:
+        return Colors.green;
+      case PostStatus.unknown:
+        return Colors.grey;
+    }
+  }
+}
+
 // Enum cho sắp xếp thời gian
 enum SortOrder {
   newest('Mới nhất', Icons.arrow_downward, 'createdAt', 'DESC'),
