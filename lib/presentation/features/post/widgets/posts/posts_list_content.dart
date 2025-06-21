@@ -8,7 +8,7 @@ import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/post_sk
 import 'dart:convert';
 
 import 'package:trao_doi_do_app/presentation/widgets/list_empty_state.dart';
-import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/pagination.dart';
+import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/posts_pagination.dart';
 
 class PostsListContent extends HookConsumerWidget {
   final PostsListState postsState;
@@ -109,7 +109,7 @@ class PostsListContent extends HookConsumerWidget {
           // Pagination - integrated in the scroll view
           if (postsState.totalPage > 1 && postsState.posts.isNotEmpty)
             SliverToBoxAdapter(
-              child: Pagination(
+              child: PostsPagination(
                 state: postsState,
                 isTablet: isTablet,
                 theme: theme,

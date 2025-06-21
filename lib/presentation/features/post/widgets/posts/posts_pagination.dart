@@ -3,13 +3,13 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/presentation/features/post/providers/posts_provider.dart';
 
-class Pagination extends HookConsumerWidget {
+class PostsPagination extends HookConsumerWidget {
   final PostsListState state;
   final bool isTablet;
   final ThemeData theme;
   final ColorScheme colorScheme;
 
-  const Pagination({
+  const PostsPagination({
     super.key,
     required this.state,
     required this.isTablet,
@@ -34,7 +34,7 @@ class Pagination extends HookConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Previous button
-          PaginationButton(
+          PostsPaginationButton(
             icon: Icons.chevron_left,
             enabled: state.currentPage > 1 && !state.isLoadingPage,
             onPressed:
@@ -59,7 +59,7 @@ class Pagination extends HookConsumerWidget {
           SizedBox(width: isTablet ? 16 : 12),
 
           // Next button
-          PaginationButton(
+          PostsPaginationButton(
             icon: Icons.chevron_right,
             enabled:
                 state.currentPage < state.totalPage && !state.isLoadingPage,
@@ -158,14 +158,14 @@ class Pagination extends HookConsumerWidget {
   }
 }
 
-class PaginationButton extends StatelessWidget {
+class PostsPaginationButton extends StatelessWidget {
   final IconData icon;
   final bool enabled;
   final VoidCallback onPressed;
   final bool isTablet;
   final ColorScheme colorScheme;
 
-  const PaginationButton({
+  const PostsPaginationButton({
     super.key,
     required this.icon,
     required this.enabled,

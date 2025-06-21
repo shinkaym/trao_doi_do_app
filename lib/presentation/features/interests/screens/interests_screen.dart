@@ -7,9 +7,9 @@ import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/interest_query.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/providers/interests_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/interested_user_section.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/pagination.dart';
+import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/scroll_to_top_button.dart';
 import 'package:trao_doi_do_app/presentation/widgets/login_prompt.dart';
 import 'package:trao_doi_do_app/presentation/providers/interest_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
@@ -26,20 +26,11 @@ class InterestsScreen extends HookConsumerWidget {
     // Hooks for state management
     final tabController = useTabController(initialLength: 2);
     final isInitialized = useRef(false);
+    final scrollController = useScrollController();
 
     final sharedSearchController = useTextEditingController();
     final sharedSortField = useState('createdAt');
     final sharedSortOrder = useState('DESC');
-
-    // Get current state based on active tab
-    InterestsListState getCurrentState() {
-      final currentTab = tabController.index;
-      if (currentTab == 0) {
-        return ref.watch(interestedPostsProvider);
-      } else {
-        return ref.watch(postsWithInterestsProvider);
-      }
-    }
 
     void applySharedFiltersToCurrentTab() {
       final currentTab = tabController.index;
@@ -153,7 +144,6 @@ class InterestsScreen extends HookConsumerWidget {
     });
 
     final authState = ref.watch(authProvider);
-    final state = getCurrentState();
 
     if (!authState.isLoggedIn) {
       return SmartScaffold(
@@ -171,12 +161,14 @@ class InterestsScreen extends HookConsumerWidget {
     }
 
     return SmartScaffold(
-      title: 'Quan tâm',
       appBarType: AppBarType.standard,
       body: Stack(
         children: [
           Column(
             children: [
+              // Tab Bar
+              _buildTabBar(isTablet, theme, colorScheme, tabController),
+
               // Search and Filter Section
               _buildSearchFilterSection(
                 isTablet,
@@ -187,9 +179,6 @@ class InterestsScreen extends HookConsumerWidget {
                 onSearch,
                 onSortFilter,
               ),
-
-              // Tab Bar
-              _buildTabBar(isTablet, theme, colorScheme, tabController),
 
               // Tab Content
               Expanded(
@@ -215,6 +204,7 @@ class InterestsScreen extends HookConsumerWidget {
                         handleLikeTap,
                         sharedSearchController,
                         resetFilters,
+                        scrollController,
                       ),
                       _buildPostsWithInterestsTab(
                         isTablet,
@@ -225,6 +215,7 @@ class InterestsScreen extends HookConsumerWidget {
                         handleChatTap,
                         sharedSearchController,
                         resetFilters,
+                        scrollController,
                       ),
                     ],
                   ),
@@ -232,34 +223,12 @@ class InterestsScreen extends HookConsumerWidget {
               ),
             ],
           ),
+          ScrollToTopButton(
+            scrollController: scrollController,
+            isTablet: isTablet,
+            colorScheme: colorScheme,
+          ),
           // Pagination
-          if (state.totalPage > 1)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: Container(
-                // Tạo gradient fade effect để làm mờ nội dung phía dưới
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      // Colors.transparent,
-                      colorScheme.background.withOpacity(0.3),
-                      colorScheme.background.withOpacity(0.7),
-                    ],
-                  ),
-                ),
-                child: Pagination(
-                  state: state,
-                  isTablet: isTablet,
-                  theme: theme,
-                  colorScheme: colorScheme,
-                  currentTabIndex: tabController.index,
-                ),
-              ),
-            ),
         ],
       ),
     );
@@ -403,15 +372,7 @@ Widget _buildTabBar(
   TabController tabController,
 ) {
   return Container(
-    decoration: BoxDecoration(
-      color: colorScheme.surface,
-      border: Border(
-        bottom: BorderSide(
-          color: colorScheme.outline.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-    ),
+    decoration: BoxDecoration(color: colorScheme.surface),
     child: TabBar(
       controller: tabController,
       tabs: [
@@ -438,7 +399,7 @@ Widget _buildTabBar(
               Icon(Icons.people, size: isTablet ? 20 : 18),
               SizedBox(width: isTablet ? 8 : 6),
               Text(
-                'Quan tâm',
+                'Được quan tâm',
                 style: TextStyle(
                   fontSize: isTablet ? 15 : 14,
                   fontWeight: FontWeight.w600,
@@ -448,7 +409,7 @@ Widget _buildTabBar(
           ),
         ),
       ],
-      indicatorColor: colorScheme.primary,
+      indicatorColor: Colors.transparent,
       unselectedLabelColor: colorScheme.onSurface.withOpacity(0.6),
       padding: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
     ),
@@ -463,8 +424,9 @@ Widget _buildInterestedPostsTab(
   Function(String) handlePostTap,
   Function(int) handleChatTap,
   Function(int) handleLikeTap,
-  TextEditingController sharedSearchController, // Thêm tham số
+  TextEditingController sharedSearchController,
   VoidCallback resetFilters,
+  ScrollController scrollController,
 ) {
   return Consumer(
     builder: (context, ref, child) {
@@ -472,7 +434,7 @@ Widget _buildInterestedPostsTab(
       final interestState = ref.watch(interestProvider);
 
       if (state.isLoading) {
-        return const Center(child: CircularProgressIndicator());
+        return _buildSkeletonLoading(isTablet, theme, colorScheme);
       }
 
       if (state.failure != null) {
@@ -516,17 +478,17 @@ Widget _buildInterestedPostsTab(
           'Chưa có bài đăng quan tâm',
           'Khám phá và quan tâm các bài đăng thú vị',
           Icons.favorite_border,
-          sharedSearchController, // Sử dụng sharedSearchController từ widget chính
-          resetFilters, // Sử dụng hàm resetFilters từ widget chính
+          sharedSearchController,
+          resetFilters,
         );
       }
 
       return CustomScrollView(
+        controller: scrollController,
         slivers: [
           SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
           SliverPadding(
             padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
-
             sliver: SliverList.separated(
               separatorBuilder:
                   (context, index) => SizedBox(height: isTablet ? 8 : 6),
@@ -548,6 +510,20 @@ Widget _buildInterestedPostsTab(
               },
             ),
           ),
+          // Pagination được thêm vào cuối danh sách
+          if (state.totalPage > 1)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(isTablet ? 24 : 16),
+                child: Pagination(
+                  state: state,
+                  isTablet: isTablet,
+                  theme: theme,
+                  colorScheme: colorScheme,
+                  currentTabIndex: 0,
+                ),
+              ),
+            ),
         ],
       );
     },
@@ -561,15 +537,16 @@ Widget _buildPostsWithInterestsTab(
   WidgetRef ref,
   Function(String) handlePostTap,
   Function(int) handleChatTap,
-  TextEditingController sharedSearchController, // Thêm tham số
+  TextEditingController sharedSearchController,
   VoidCallback resetFilters,
+  ScrollController scrollController,
 ) {
   return Consumer(
     builder: (context, ref, child) {
       final state = ref.watch(postsWithInterestsProvider);
 
       if (state.isLoading) {
-        return const Center(child: CircularProgressIndicator());
+        return _buildSkeletonLoading(isTablet, theme, colorScheme);
       }
 
       if (state.failure != null) {
@@ -613,12 +590,13 @@ Widget _buildPostsWithInterestsTab(
           'Chưa có bài đăng được quan tâm',
           'Tạo bài đăng để nhận được sự quan tâm từ cộng đồng',
           Icons.post_add,
-          sharedSearchController, // Sử dụng sharedSearchController từ widget chính
-          resetFilters, // Sử dụng hàm resetFilters từ widget chính
+          sharedSearchController,
+          resetFilters,
         );
       }
 
       return CustomScrollView(
+        controller: scrollController,
         slivers: [
           SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
           SliverPadding(
@@ -642,6 +620,20 @@ Widget _buildPostsWithInterestsTab(
               },
             ),
           ),
+          // Pagination được thêm vào cuối danh sách
+          if (state.totalPage > 1)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(isTablet ? 24 : 16),
+                child: Pagination(
+                  state: state,
+                  isTablet: isTablet,
+                  theme: theme,
+                  colorScheme: colorScheme,
+                  currentTabIndex: 1,
+                ),
+              ),
+            ),
         ],
       );
     },
@@ -939,8 +931,6 @@ Widget _buildPostWithInterestsCard(
   );
 }
 
-// Separate widget for interested users section with collapse functionality
-
 // Helper function to build the interested users section
 Widget _buildInterestedUsersSection(
   InterestPost post,
@@ -1023,6 +1013,134 @@ Widget _buildEmptyState(
           ),
         ],
       ],
+    ),
+  );
+}
+
+Widget _buildSkeletonLoading(
+  bool isTablet,
+  ThemeData theme,
+  ColorScheme colorScheme,
+) {
+  return CustomScrollView(
+    slivers: [
+      SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
+      SliverPadding(
+        padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
+        sliver: SliverList.separated(
+          separatorBuilder:
+              (context, index) => SizedBox(height: isTablet ? 8 : 6),
+          itemCount: 5,
+          itemBuilder: (context, index) {
+            return _buildSkeletonCard(isTablet, theme, colorScheme);
+          },
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _buildSkeletonCard(
+  bool isTablet,
+  ThemeData theme,
+  ColorScheme colorScheme,
+) {
+  return Card(
+    elevation: 0,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+      side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+    ),
+    child: Padding(
+      padding: EdgeInsets.all(isTablet ? 20 : 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header skeleton
+          Row(
+            children: [
+              Container(
+                width: isTablet ? 100 : 80,
+                height: isTablet ? 28 : 24,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceVariant.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              const Spacer(),
+              Container(
+                width: isTablet ? 80 : 60,
+                height: isTablet ? 14 : 12,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceVariant.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: isTablet ? 16 : 12),
+
+          // Title skeleton
+          Container(
+            width: double.infinity,
+            height: isTablet ? 22 : 20,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+
+          SizedBox(height: isTablet ? 8 : 6),
+
+          // Description skeleton
+          Container(
+            width: double.infinity * 0.8,
+            height: isTablet ? 16 : 14,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+
+          SizedBox(height: isTablet ? 6 : 4),
+
+          Container(
+            width: double.infinity * 0.6,
+            height: isTablet ? 16 : 14,
+            decoration: BoxDecoration(
+              color: colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+
+          SizedBox(height: isTablet ? 16 : 12),
+
+          // Action buttons skeleton
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Container(
+                width: isTablet ? 44 : 38,
+                height: isTablet ? 44 : 38,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceVariant.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              SizedBox(width: isTablet ? 8 : 6),
+              Container(
+                width: isTablet ? 44 : 38,
+                height: isTablet ? 44 : 38,
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceVariant.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     ),
   );
 }
