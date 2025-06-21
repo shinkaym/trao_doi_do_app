@@ -7,8 +7,9 @@ import 'package:trao_doi_do_app/domain/usecases/params/post_query.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/create_post_fab.dart';
-import 'package:trao_doi_do_app/presentation/widgets/search_filter_section.dart';
+import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/scroll_to_top_button.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/my-posts/my_posts_list_content.dart';
+import 'package:trao_doi_do_app/presentation/widgets/search_filter_section.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
 class MyPostsScreen extends HookConsumerWidget {
@@ -20,13 +21,14 @@ class MyPostsScreen extends HookConsumerWidget {
     final selectedType = useState<PostType>(PostType.all);
     final selectedSort = useState<SortOrder>(SortOrder.newest);
     final searchQuery = useState<String>('');
+    final scrollController = useScrollController();
 
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
-    final postsState = ref.watch(myPostsListProvider);
+    final myPostsState = ref.watch(myPostsListProvider);
 
-    void loadPosts({bool refresh = false}) {
+    void loadMyPosts({bool refresh = false}) {
       final query = PostsQuery(
         search: searchQuery.value.isEmpty ? null : searchQuery.value,
         type: selectedType.value.value,
@@ -42,21 +44,21 @@ class MyPostsScreen extends HookConsumerWidget {
 
     void handleSearch(String query) {
       searchQuery.value = query;
-      loadPosts(refresh: true);
+      loadMyPosts(refresh: true);
     }
 
     void handleTypeFilter(PostType type) {
       selectedType.value = type;
-      loadPosts(refresh: true);
+      loadMyPosts(refresh: true);
     }
 
     void handleSortFilter(SortOrder sort) {
       selectedSort.value = sort;
-      loadPosts(refresh: true);
+      loadMyPosts(refresh: true);
     }
 
     void handleRefresh() {
-      loadPosts(refresh: true);
+      loadMyPosts(refresh: true);
     }
 
     void handlePostTap(Post post) {
@@ -77,13 +79,13 @@ class MyPostsScreen extends HookConsumerWidget {
       selectedType.value = PostType.all;
       selectedSort.value = SortOrder.newest;
       searchController.clear();
-      loadPosts(refresh: true);
+      loadMyPosts(refresh: true);
     }
 
     // Load posts lần đầu
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        loadPosts();
+        loadMyPosts();
       });
       return null;
     }, []);
@@ -92,37 +94,49 @@ class MyPostsScreen extends HookConsumerWidget {
       appBarType: AppBarType.standard,
       showBackButton: true,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // Search and Filter Section
-            SearchFilterSection(
-              searchController: searchController,
-              selectedType: selectedType.value,
-              selectedSort: selectedSort.value,
-              searchQuery: searchQuery.value,
-              onSearch: handleSearch,
-              onTypeFilter: handleTypeFilter,
-              onSortFilter: handleSortFilter,
-              postsCount: postsState.posts.length,
-              isTablet: isTablet,
-              theme: theme,
-              colorScheme: colorScheme,
+            Column(
+              children: [
+                // Search and Filter Section
+                SearchFilterSection(
+                  searchController: searchController,
+                  selectedType: selectedType.value,
+                  selectedSort: selectedSort.value,
+                  searchQuery: searchQuery.value,
+                  onSearch: handleSearch,
+                  onTypeFilter: handleTypeFilter,
+                  onSortFilter: handleSortFilter,
+                  postsCount: myPostsState.posts.length,
+                  isTablet: isTablet,
+                  theme: theme,
+                  colorScheme: colorScheme,
+                ),
+
+                // Content
+                Expanded(
+                  child: MyPostsListContent(
+                    postsState: myPostsState,
+                    isTablet: isTablet,
+                    theme: theme,
+                    colorScheme: colorScheme,
+                    searchQuery: searchQuery.value,
+                    selectedType: selectedType.value,
+                    selectedSort: selectedSort.value,
+                    onPostTap: handlePostTap,
+                    onRefresh: handleRefresh,
+                    onResetFilters: resetFilters,
+                    scrollController: scrollController,
+                  ),
+                ),
+              ],
             ),
 
-            // Content
-            Expanded(
-              child: MyPostsListContent(
-                postsState: postsState,
-                isTablet: isTablet,
-                theme: theme,
-                colorScheme: colorScheme,
-                searchQuery: searchQuery.value,
-                selectedType: selectedType.value,
-                selectedSort: selectedSort.value,
-                onPostTap: handlePostTap,
-                onRefresh: handleRefresh,
-                onResetFilters: resetFilters,
-              ),
+            // Scroll to top button
+            ScrollToTopButton(
+              scrollController: scrollController,
+              isTablet: isTablet,
+              colorScheme: colorScheme,
             ),
           ],
         ),

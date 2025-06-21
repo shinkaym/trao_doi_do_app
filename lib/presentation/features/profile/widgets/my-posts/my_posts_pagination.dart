@@ -3,13 +3,13 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/providers/my_posts_provider.dart';
 
-class Pagination extends HookConsumerWidget {
+class MyPostsPagination extends HookConsumerWidget {
   final MyPostsListState state;
   final bool isTablet;
   final ThemeData theme;
   final ColorScheme colorScheme;
 
-  const Pagination({
+  const MyPostsPagination({
     super.key,
     required this.state,
     required this.isTablet,
@@ -34,7 +34,7 @@ class Pagination extends HookConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Previous button
-          PaginationButton(
+          MyPostsPaginationButton(
             icon: Icons.chevron_left,
             enabled: state.currentPage > 1 && !state.isLoadingPage,
             onPressed:
@@ -59,7 +59,7 @@ class Pagination extends HookConsumerWidget {
           SizedBox(width: isTablet ? 16 : 12),
 
           // Next button
-          PaginationButton(
+          MyPostsPaginationButton(
             icon: Icons.chevron_right,
             enabled:
                 state.currentPage < state.totalPage && !state.isLoadingPage,
@@ -145,7 +145,7 @@ class Pagination extends HookConsumerWidget {
   Widget _buildPageButton(int page, WidgetRef ref) {
     final isActive = page == state.currentPage;
 
-    return PageButton(
+    return MyPostsPageButton(
       page: page,
       isActive: isActive,
       isTablet: isTablet,
@@ -158,14 +158,14 @@ class Pagination extends HookConsumerWidget {
   }
 }
 
-class PaginationButton extends StatelessWidget {
+class MyPostsPaginationButton extends StatelessWidget {
   final IconData icon;
   final bool enabled;
   final VoidCallback onPressed;
   final bool isTablet;
   final ColorScheme colorScheme;
 
-  const PaginationButton({
+  const MyPostsPaginationButton({
     super.key,
     required this.icon,
     required this.enabled,
@@ -221,14 +221,14 @@ class PaginationButton extends StatelessWidget {
   }
 }
 
-class PageButton extends StatelessWidget {
+class MyPostsPageButton extends StatelessWidget {
   final int page;
   final bool isActive;
   final bool isTablet;
   final ColorScheme colorScheme;
   final VoidCallback? onTap;
 
-  const PageButton({
+  const MyPostsPageButton({
     super.key,
     required this.page,
     required this.isActive,
