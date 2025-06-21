@@ -25,8 +25,11 @@ class InterestsScreen extends HookConsumerWidget {
 
     // Hooks for state management
     final tabController = useTabController(initialLength: 2);
-    final searchController = useTextEditingController();
     final isInitialized = useRef(false);
+
+    final sharedSearchController = useTextEditingController();
+    final sharedSortField = useState('createdAt');
+    final sharedSortOrder = useState('DESC');
 
     // Get current state based on active tab
     InterestsListState getCurrentState() {
@@ -38,198 +41,61 @@ class InterestsScreen extends HookConsumerWidget {
       }
     }
 
+    void applySharedFiltersToCurrentTab() {
+      final currentTab = tabController.index;
+      final searchValue =
+          sharedSearchController.text.isEmpty
+              ? null
+              : sharedSearchController.text;
+
+      final query = InterestsQuery(
+        type: currentTab == 0 ? 1 : 2,
+        sort: sharedSortField.value,
+        order: sharedSortOrder.value,
+        search: searchValue,
+      );
+
+      if (currentTab == 0) {
+        ref
+            .read(interestedPostsProvider.notifier)
+            .loadInterests(newQuery: query, refresh: true);
+      } else {
+        ref
+            .read(postsWithInterestsProvider.notifier)
+            .loadInterests(newQuery: query, refresh: true);
+      }
+    }
+
     // Load initial data
     void loadInitialData() {
-      if (tabController.index == 0) {
-        ref
-            .read(interestedPostsProvider.notifier)
-            .loadInterests(
-              newQuery: const InterestsQuery(
-                type: 1,
-                sort: 'createdAt',
-                order: 'DESC',
-              ),
-              refresh: true,
-            );
-      } else {
-        ref
-            .read(postsWithInterestsProvider.notifier)
-            .loadInterests(
-              newQuery: const InterestsQuery(
-                type: 2,
-                sort: 'createdAt',
-                order: 'DESC',
-              ),
-              refresh: true,
-            );
-      }
-    }
-
-    // Load data for specific tab
-    void loadDataForTab(int tabIndex) {
-      final searchValue =
-          searchController.text.isEmpty ? null : searchController.text;
-      final currentState = getCurrentState();
-
-      if (tabIndex == 0) {
-        ref
-            .read(interestedPostsProvider.notifier)
-            .loadInterests(
-              newQuery: InterestsQuery(
-                type: 1,
-                sort: currentState.query.sort,
-                order: currentState.query.order,
-                search: searchValue,
-              ),
-              refresh: true,
-            );
-      } else {
-        ref
-            .read(postsWithInterestsProvider.notifier)
-            .loadInterests(
-              newQuery: InterestsQuery(
-                type: 2,
-                sort: currentState.query.sort,
-                order: currentState.query.order,
-                search: searchValue,
-              ),
-              refresh: true,
-            );
-      }
-    }
-
-    // Apply current filters to tab
-    void applyCurrentFiltersToTab(int tabIndex) {
-      final searchValue =
-          searchController.text.isEmpty ? null : searchController.text;
-      final currentState = getCurrentState();
-
-      if (tabIndex == 0) {
-        if (searchValue != null) {
-          ref.read(interestedPostsProvider.notifier).search(searchValue);
-        }
-        ref
-            .read(interestedPostsProvider.notifier)
-            .sortInterests(currentState.query.sort, currentState.query.order);
-      } else {
-        if (searchValue != null) {
-          ref.read(postsWithInterestsProvider.notifier).search(searchValue);
-        }
-        ref
-            .read(postsWithInterestsProvider.notifier)
-            .sortInterests(currentState.query.sort, currentState.query.order);
-      }
+      applySharedFiltersToCurrentTab();
     }
 
     // Handle tab changes
     void onTabChanged() {
       if (tabController.indexIsChanging) return;
-
-      final currentIndex = tabController.index;
-
-      if (currentIndex == 0) {
-        final state = ref.read(interestedPostsProvider);
-        if (state.interests.isEmpty && !state.isLoading) {
-          loadDataForTab(0);
-        } else {
-          applyCurrentFiltersToTab(0);
-        }
-      } else {
-        final state = ref.read(postsWithInterestsProvider);
-        if (state.interests.isEmpty && !state.isLoading) {
-          loadDataForTab(1);
-        } else {
-          applyCurrentFiltersToTab(1);
-        }
-      }
+      applySharedFiltersToCurrentTab();
     }
 
     // Handle search
     void onSearch(String value) {
-      final currentTab = tabController.index;
-      final searchValue = value.trim().isEmpty ? null : value.trim();
-
-      if (currentTab == 0) {
-        if (searchValue == null) {
-          ref
-              .read(interestedPostsProvider.notifier)
-              .loadInterests(
-                newQuery: InterestsQuery(
-                  type: 1,
-                  sort: ref.read(interestedPostsProvider).query.sort,
-                  order: ref.read(interestedPostsProvider).query.order,
-                  search: null,
-                ),
-                refresh: true,
-              );
-        } else {
-          ref.read(interestedPostsProvider.notifier).search(searchValue);
-        }
-      } else {
-        if (searchValue == null) {
-          ref
-              .read(postsWithInterestsProvider.notifier)
-              .loadInterests(
-                newQuery: InterestsQuery(
-                  type: 2,
-                  sort: ref.read(postsWithInterestsProvider).query.sort,
-                  order: ref.read(postsWithInterestsProvider).query.order,
-                  search: null,
-                ),
-                refresh: true,
-              );
-        } else {
-          ref.read(postsWithInterestsProvider.notifier).search(searchValue);
-        }
-      }
+      applySharedFiltersToCurrentTab();
     }
 
     // Handle sort/filter
     void onSortFilter(String field, String order) {
-      final currentTab = tabController.index;
-
-      if (currentTab == 0) {
-        ref.read(interestedPostsProvider.notifier).sortInterests(field, order);
-      } else {
-        ref
-            .read(postsWithInterestsProvider.notifier)
-            .sortInterests(field, order);
-      }
+      sharedSortField.value = field;
+      sharedSortOrder.value = order;
+      applySharedFiltersToCurrentTab();
     }
 
     // Reset filters
     // Reset filters - FIXED VERSION
     void resetFilters() {
-      searchController.clear();
-      final currentTab = tabController.index;
-
-      if (currentTab == 0) {
-        // Reset về trạng thái mặc định với query mới
-        ref
-            .read(interestedPostsProvider.notifier)
-            .loadInterests(
-              newQuery: const InterestsQuery(
-                type: 1,
-                sort: 'createdAt',
-                order: 'DESC',
-                search: null,
-              ),
-              refresh: true,
-            );
-      } else {
-        // Reset về trạng thái mặc định với query mới
-        ref
-            .read(postsWithInterestsProvider.notifier)
-            .loadInterests(
-              newQuery: const InterestsQuery(
-                type: 2,
-                sort: 'createdAt',
-                order: 'DESC',
-                search: null,
-              ),
-              refresh: true,
-            );
-      }
+      sharedSearchController.clear();
+      sharedSortField.value = 'createdAt';
+      sharedSortOrder.value = 'DESC';
+      applySharedFiltersToCurrentTab();
     }
 
     // Handle post tap
@@ -321,8 +187,8 @@ class InterestsScreen extends HookConsumerWidget {
                 isTablet,
                 theme,
                 colorScheme,
-                state,
-                searchController,
+                sharedSortOrder.value,
+                sharedSearchController,
                 onSearch,
                 onSortFilter,
               ),
@@ -352,7 +218,7 @@ class InterestsScreen extends HookConsumerWidget {
                         handlePostTap,
                         handleChatTap,
                         handleLikeTap,
-                        searchController,
+                        sharedSearchController,
                         resetFilters,
                       ),
                       _buildPostsWithInterestsTab(
@@ -362,7 +228,7 @@ class InterestsScreen extends HookConsumerWidget {
                         ref,
                         handlePostTap,
                         handleChatTap,
-                        searchController,
+                        sharedSearchController,
                         resetFilters,
                       ),
                     ],
@@ -409,8 +275,8 @@ Widget _buildSearchFilterSection(
   bool isTablet,
   ThemeData theme,
   ColorScheme colorScheme,
-  InterestsListState state,
-  TextEditingController searchController,
+  String currentSortOrder,
+  TextEditingController sharedSearchController,
   Function(String) onSearch,
   Function(String, String) onSortFilter,
 ) {
@@ -430,16 +296,16 @@ Widget _buildSearchFilterSection(
       children: [
         // Search Bar
         TextField(
-          controller: searchController,
+          controller: sharedSearchController,
           onChanged: onSearch,
           decoration: InputDecoration(
             hintText: 'Tìm kiếm bài đăng quan tâm...',
             prefixIcon: const Icon(Icons.search),
             suffixIcon:
-                searchController.text.isNotEmpty
+                sharedSearchController.text.isNotEmpty
                     ? IconButton(
                       onPressed: () {
-                        searchController.clear();
+                        sharedSearchController.clear();
                         onSearch('');
                       },
                       icon: const Icon(Icons.clear),
@@ -464,7 +330,7 @@ Widget _buildSearchFilterSection(
         Row(
           children: [
             ChoiceChip(
-              selected: state.query.order == 'DESC',
+              selected: currentSortOrder == 'DESC',
               onSelected: (selected) {
                 if (selected) onSortFilter('createdAt', 'DESC');
               },
@@ -475,7 +341,7 @@ Widget _buildSearchFilterSection(
                     Icons.schedule,
                     size: isTablet ? 18 : 16,
                     color:
-                        state.query.order == 'DESC'
+                        currentSortOrder == 'DESC'
                             ? colorScheme.onPrimaryContainer
                             : colorScheme.onSurface,
                   ),
@@ -484,7 +350,7 @@ Widget _buildSearchFilterSection(
                     'Mới nhất',
                     style: TextStyle(
                       color:
-                          state.query.order == 'DESC'
+                          currentSortOrder == 'DESC'
                               ? colorScheme.onPrimaryContainer
                               : colorScheme.onSurface,
                     ),
@@ -497,7 +363,7 @@ Widget _buildSearchFilterSection(
             ),
             SizedBox(width: isTablet ? 12 : 8),
             ChoiceChip(
-              selected: state.query.order == 'ASC',
+              selected: currentSortOrder == 'ASC',
               onSelected: (selected) {
                 if (selected) onSortFilter('createdAt', 'ASC');
               },
@@ -508,17 +374,16 @@ Widget _buildSearchFilterSection(
                     Icons.history,
                     size: isTablet ? 18 : 16,
                     color:
-                        state.query.order == 'ASC'
+                        currentSortOrder == 'ASC'
                             ? colorScheme.onPrimaryContainer
                             : colorScheme.onSurface,
                   ),
-
                   SizedBox(width: isTablet ? 6 : 4),
                   Text(
                     'Cũ nhất',
                     style: TextStyle(
                       color:
-                          state.query.order == 'ASC'
+                          currentSortOrder == 'ASC'
                               ? colorScheme.onPrimaryContainer
                               : colorScheme.onSurface,
                     ),
@@ -603,7 +468,7 @@ Widget _buildInterestedPostsTab(
   Function(String) handlePostTap,
   Function(int, bool, List<InterestItem>, InterestPost) handleChatTap,
   Function(int) handleLikeTap,
-  TextEditingController searchController, // Thêm tham số
+  TextEditingController sharedSearchController, // Thêm tham số
   VoidCallback resetFilters,
 ) {
   return Consumer(
@@ -656,8 +521,7 @@ Widget _buildInterestedPostsTab(
           'Chưa có bài đăng quan tâm',
           'Khám phá và quan tâm các bài đăng thú vị',
           Icons.favorite_border,
-          searchController, // Sử dụng searchController từ widget chính
-          state,
+          sharedSearchController, // Sử dụng sharedSearchController từ widget chính
           resetFilters, // Sử dụng hàm resetFilters từ widget chính
         );
       }
@@ -702,7 +566,7 @@ Widget _buildPostsWithInterestsTab(
   WidgetRef ref,
   Function(String) handlePostTap,
   Function(int, bool, List<InterestItem>, InterestPost) handleChatTap,
-  TextEditingController searchController, // Thêm tham số
+  TextEditingController sharedSearchController, // Thêm tham số
   VoidCallback resetFilters,
 ) {
   return Consumer(
@@ -754,8 +618,7 @@ Widget _buildPostsWithInterestsTab(
           'Chưa có bài đăng được quan tâm',
           'Tạo bài đăng để nhận được sự quan tâm từ cộng đồng',
           Icons.post_add,
-          searchController, // Sử dụng searchController từ widget chính
-          state,
+          sharedSearchController, // Sử dụng sharedSearchController từ widget chính
           resetFilters, // Sử dụng hàm resetFilters từ widget chính
         );
       }
@@ -849,7 +712,7 @@ Widget _buildInterestedPostCard(
                 ),
                 const Spacer(),
                 Text(
-                  TimeUtils.formatTimeAgo(DateTime.parse(post.updatedAt)),
+                  TimeUtils.formatTimeAgo(DateTime.parse(post.createdAt)),
                   style: TextStyle(
                     fontSize: isTablet ? 13 : 11,
                     color: theme.hintColor,
@@ -1021,7 +884,7 @@ Widget _buildPostWithInterestsCard(
                 ),
                 const Spacer(),
                 Text(
-                  TimeUtils.formatTimeAgo(DateTime.parse(post.updatedAt)),
+                  TimeUtils.formatTimeAgo(DateTime.parse(post.createdAt)),
                   style: TextStyle(
                     fontSize: isTablet ? 13 : 11,
                     color: theme.hintColor,
@@ -1113,13 +976,10 @@ Widget _buildEmptyState(
   String title,
   String subtitle,
   IconData icon,
-  TextEditingController searchController,
-  InterestsListState state,
+  TextEditingController sharedSearchController,
   VoidCallback resetFilters,
 ) {
-  // Kiểm tra xem có đang áp dụng bộ lọc không
-  final hasActiveFilters =
-      searchController.text.isNotEmpty || state.query.order != 'DESC';
+  final hasActiveFilters = sharedSearchController.text.isNotEmpty;
 
   return Center(
     child: Column(

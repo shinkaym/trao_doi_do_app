@@ -29,6 +29,7 @@ class InterestPost extends Equatable {
   final String title;
   final int type;
   final String description;
+  final String createdAt;
   final String updatedAt;
   final int authorID;
   final String authorName;
@@ -42,6 +43,7 @@ class InterestPost extends Equatable {
     required this.title,
     required this.type,
     required this.description,
+    required this.createdAt,
     required this.updatedAt,
     required this.authorID,
     required this.authorName,
@@ -57,6 +59,7 @@ class InterestPost extends Equatable {
     title,
     type,
     description,
+    createdAt,
     updatedAt,
     authorID,
     authorName,

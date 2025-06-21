@@ -77,6 +77,7 @@ class InterestPostModel {
   final String slug;
   final String title;
   final String description;
+  final String createdAt;
   final String updatedAt;
   final int authorID;
   final String authorName;
@@ -90,6 +91,7 @@ class InterestPostModel {
     required this.slug,
     required this.title,
     required this.description,
+    required this.createdAt,
     required this.updatedAt,
     required this.authorID,
     required this.authorName,
@@ -106,6 +108,7 @@ class InterestPostModel {
       slug: json['slug'] ?? '',
       title: json['title'] ?? '',
       description: json['description'] ?? '',
+      createdAt: json['createdAt'] ?? '',
       updatedAt: json['updatedAt'] ?? '',
       authorID: json['authorID'] ?? 0,
       authorName: json['authorName'] ?? '',
@@ -144,6 +147,7 @@ class InterestPostModel {
       'authorName': authorName,
       'authorAvatar': authorAvatar,
       'description': description,
+      'createdAt': createdAt,
       'updatedAt': updatedAt,
       'type': type,
       'interests': interests.map((interest) => interest.toJson()).toList(),
@@ -158,6 +162,7 @@ class InterestPostModel {
       slug: slug,
       title: title,
       description: description,
+      createdAt: createdAt,
       updatedAt: updatedAt,
       authorID: authorID,
       authorName: authorName,
@@ -175,6 +180,7 @@ class InterestPostModel {
       slug: entity.slug,
       title: entity.title,
       description: entity.description,
+      createdAt: entity.createdAt,
       updatedAt: entity.updatedAt,
       authorID: entity.authorID,
       authorName: entity.authorName,

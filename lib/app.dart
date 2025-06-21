@@ -13,9 +13,6 @@ class MyApp extends HookConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
     final router = ref.watch(routerProvider);
 
-    // Ví dụ sử dụng hook nếu cần
-    // final animationController = useAnimationController(duration: const Duration(seconds: 1));
-
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Trao Đổi Đồ Cũ Và Đồ Thất Lạc',
