@@ -39,77 +39,101 @@ class PostCard extends StatelessWidget {
     final location = getLocationFromPost(post);
 
     return Card(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
-          side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
-        ),
-        child: InkWell(
-          onTap: () => onTap(post),
-          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
-          child: Padding(
-            padding: EdgeInsets.all(isTablet ? 20 : 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeaderRow(postType),
-                SizedBox(height: isTablet ? 16 : 12),
-                _buildTitleAndDescription(),
-                if (hasImages(post)) _buildImagesSection(),
-                SizedBox(height: isTablet ? 16 : 12),
-                if (location.isNotEmpty)
-                  _buildLocationAndReward(location, reward),
-                _buildStatsSection(),
-                if (post.authorName != null && post.authorName!.isNotEmpty)
-                  _buildAuthorSection(),
-              ],
-            ),
-          ),
-        ),
-      );
-  }
-
-  Widget _buildHeaderRow(PostType postType) {
-    return Row(
-      children: [
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isTablet ? 12 : 8,
-            vertical: isTablet ? 6 : 4,
-          ),
-          decoration: BoxDecoration(
-            color: getTypeColor(postType).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+        side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
+      ),
+      child: InkWell(
+        onTap: () => onTap(post),
+        borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+        child: Padding(
+          padding: EdgeInsets.all(isTablet ? 20 : 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(
-                postType.icon,
-                size: isTablet ? 16 : 14,
-                color: getTypeColor(postType),
-              ),
-              SizedBox(width: isTablet ? 6 : 4),
-              Text(
-                postType.label,
-                style: TextStyle(
-                  fontSize: isTablet ? 13 : 11,
-                  fontWeight: FontWeight.w600,
-                  color: getTypeColor(postType),
-                ),
-              ),
+              _buildHeaderRow(postType),
+              SizedBox(height: isTablet ? 12 : 8),
+              if (post.authorName != null && post.authorName!.isNotEmpty)
+                _buildAuthorSection(),
+              SizedBox(height: isTablet ? 16 : 12),
+              _buildTitleAndDescription(),
+              if (hasImages(post)) _buildImagesSection(),
+              SizedBox(height: isTablet ? 16 : 12),
+              if (location.isNotEmpty)
+                _buildLocationAndReward(location, reward),
+              _buildStatsSection(),
             ],
           ),
         ),
-        const Spacer(),
-        if (post.createdAt != null)
+      ),
+    );
+  }
+
+  Widget _buildHeaderRow(PostType postType) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 12 : 8,
+        vertical: isTablet ? 6 : 4,
+      ),
+      decoration: BoxDecoration(
+        color: getTypeColor(postType).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            postType.icon,
+            size: isTablet ? 16 : 14,
+            color: getTypeColor(postType),
+          ),
+          SizedBox(width: isTablet ? 6 : 4),
           Text(
-            TimeUtils.formatTimeAgo(post.createdAt!),
+            postType.label,
             style: TextStyle(
               fontSize: isTablet ? 13 : 11,
-              color: theme.hintColor,
+              fontWeight: FontWeight.w600,
+              color: getTypeColor(postType),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAuthorSection() {
+    return Row(
+      children: [
+        _buildAuthorAvatar(),
+        SizedBox(width: isTablet ? 12 : 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                post.authorName!,
+                style: TextStyle(
+                  fontSize: isTablet ? 15 : 13,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (post.createdAt != null) ...[
+                SizedBox(height: 2),
+                Text(
+                  TimeUtils.formatTimeAgo(post.createdAt!),
+                  style: TextStyle(
+                    fontSize: isTablet ? 12 : 10,
+                    color: theme.hintColor,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -251,18 +275,21 @@ class PostCard extends StatelessWidget {
     // Số lượng món đồ hiện tại / tổng số
     if (post.itemCount != null && post.itemCount! > 0) {
       String itemText;
+      Color itemColor = Colors.blue.shade600;
+
       if (post.currentItemCount != null) {
-        itemText = '${post.currentItemCount}/${post.itemCount}';
+        if (post.currentItemCount == 0) {
+          itemText = 'Hết đồ';
+          itemColor = Colors.grey.shade600; // Đổi màu khi hết hàng
+        } else {
+          itemText = '${post.currentItemCount}/${post.itemCount}';
+        }
       } else {
         itemText = post.itemCount.toString();
       }
 
       stats.add(
-        _buildStatItem(
-          Icons.inventory_2_outlined,
-          itemText,
-          Colors.blue.shade600,
-        ),
+        _buildStatItem(Icons.inventory_2_outlined, itemText, itemColor),
       );
     }
 
@@ -311,33 +338,8 @@ class PostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildAuthorSection() {
-    return Column(
-      children: [
-        Row(
-          children: [
-            _buildAuthorAvatar(),
-            SizedBox(width: isTablet ? 10 : 8),
-            Expanded(
-              child: Text(
-                post.authorName!,
-                style: TextStyle(
-                  fontSize: isTablet ? 13 : 11,
-                  fontWeight: FontWeight.w500,
-                  color: colorScheme.onSurface,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
   Widget _buildAuthorAvatar() {
-    final radius = isTablet ? 12.0 : 10.0;
+    final radius = isTablet ? 16.0 : 14.0;
 
     if (post.authorAvatar != null && post.authorAvatar!.isNotEmpty) {
       final imageBytes = Base64Utils.decodeImageFromBase64(post.authorAvatar!);
@@ -356,7 +358,7 @@ class PostCard extends StatelessWidget {
       backgroundColor: colorScheme.primaryContainer,
       child: Icon(
         Icons.person,
-        size: isTablet ? 14 : 12,
+        size: isTablet ? 18 : 16,
         color: colorScheme.onPrimaryContainer,
       ),
     );

@@ -8,6 +8,7 @@ import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/create_post_fab.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/posts_list_content.dart';
+import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/scroll_to_top_button.dart';
 import 'package:trao_doi_do_app/presentation/widgets/search_filter_section.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
@@ -20,6 +21,7 @@ class PostsScreen extends HookConsumerWidget {
     final selectedType = useState<PostType>(PostType.all);
     final selectedSort = useState<SortOrder>(SortOrder.newest);
     final searchQuery = useState<String>('');
+    final scrollController = useScrollController();
 
     final isTablet = context.isTablet;
     final theme = context.theme;
@@ -91,37 +93,49 @@ class PostsScreen extends HookConsumerWidget {
     return SmartScaffold(
       appBarType: AppBarType.standard,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // Search and Filter Section
-            SearchFilterSection(
-              searchController: searchController,
-              selectedType: selectedType.value,
-              selectedSort: selectedSort.value,
-              searchQuery: searchQuery.value,
-              onSearch: handleSearch,
-              onTypeFilter: handleTypeFilter,
-              onSortFilter: handleSortFilter,
-              postsCount: postsState.posts.length,
-              isTablet: isTablet,
-              theme: theme,
-              colorScheme: colorScheme,
+            Column(
+              children: [
+                // Search and Filter Section
+                SearchFilterSection(
+                  searchController: searchController,
+                  selectedType: selectedType.value,
+                  selectedSort: selectedSort.value,
+                  searchQuery: searchQuery.value,
+                  onSearch: handleSearch,
+                  onTypeFilter: handleTypeFilter,
+                  onSortFilter: handleSortFilter,
+                  postsCount: postsState.posts.length,
+                  isTablet: isTablet,
+                  theme: theme,
+                  colorScheme: colorScheme,
+                ),
+
+                // Content
+                Expanded(
+                  child: PostsListContent(
+                    postsState: postsState,
+                    isTablet: isTablet,
+                    theme: theme,
+                    colorScheme: colorScheme,
+                    searchQuery: searchQuery.value,
+                    selectedType: selectedType.value,
+                    selectedSort: selectedSort.value,
+                    onPostTap: handlePostTap,
+                    onRefresh: handleRefresh,
+                    onResetFilters: resetFilters,
+                    scrollController: scrollController, // Thêm scrollController
+                  ),
+                ),
+              ],
             ),
 
-            // Content
-            Expanded(
-              child: PostsListContent(
-                postsState: postsState,
-                isTablet: isTablet,
-                theme: theme,
-                colorScheme: colorScheme,
-                searchQuery: searchQuery.value,
-                selectedType: selectedType.value,
-                selectedSort: selectedSort.value,
-                onPostTap: handlePostTap,
-                onRefresh: handleRefresh,
-                onResetFilters: resetFilters,
-              ),
+            // Scroll to top button
+            ScrollToTopButton(
+              scrollController: scrollController,
+              isTablet: isTablet,
+              colorScheme: colorScheme,
             ),
           ],
         ),

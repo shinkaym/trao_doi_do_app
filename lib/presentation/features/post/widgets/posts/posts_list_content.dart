@@ -4,6 +4,7 @@ import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/post/providers/posts_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/post_card.dart';
+import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/post_skeleton.dart';
 import 'dart:convert';
 
 import 'package:trao_doi_do_app/presentation/widgets/list_empty_state.dart';
@@ -20,6 +21,7 @@ class PostsListContent extends HookConsumerWidget {
   final Function(Post) onPostTap;
   final VoidCallback onRefresh;
   final VoidCallback onResetFilters;
+  final ScrollController scrollController;
 
   const PostsListContent({
     super.key,
@@ -33,88 +35,80 @@ class PostsListContent extends HookConsumerWidget {
     required this.onPostTap,
     required this.onRefresh,
     required this.onResetFilters,
+    required this.scrollController,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (postsState.posts.isEmpty && !postsState.isLoading) {
-      return ListEmptyState(
-        isTablet: isTablet,
-        theme: theme,
-        colorScheme: colorScheme,
-        searchQuery: searchQuery,
-        selectedType: selectedType,
-        selectedSort: selectedSort,
-        onResetFilters: onResetFilters,
+    // Hiển thị skeleton khi đang loading lần đầu
+    if (postsState.isLoading && postsState.posts.isEmpty) {
+      return SingleChildScrollView(
+        controller: scrollController,
+        child: Column(
+          children: [
+            SizedBox(height: isTablet ? 16 : 8),
+            PostSkeletonList(
+              isTablet: isTablet,
+              colorScheme: colorScheme,
+              itemCount: 10,
+            ),
+            SizedBox(height: isTablet ? 24 : 16),
+          ],
+        ),
       );
     }
 
-    return Stack(
-      children: [
-        // Posts List - chiếm toàn bộ màn hình
-        RefreshIndicator(
-          onRefresh: () async => onRefresh(),
-          child: CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
-              SliverPadding(
-                padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
-                sliver: SliverList.separated(
-                  itemCount: postsState.posts.length,
-                  itemBuilder: (context, index) {
-                    return PostCard(
-                      post: postsState.posts[index],
-                      isTablet: isTablet,
-                      theme: theme,
-                      colorScheme: colorScheme,
-                      onTap: onPostTap,
-                      getTypeColor: _getTypeColor,
-                      hasImages: _hasImages,
-                      getRewardFromPost: _getRewardFromPost,
-                      getLocationFromPost: _getLocationFromPost,
-                    );
-                  },
-                  separatorBuilder: (context, index) {
-                    // Khoảng cách giữa các card
-                    return SizedBox(height: isTablet ? 8 : 6);
-                  },
-                ),
-              ),
-
-              // Loading indicator
-              if (postsState.isLoading || postsState.isLoadingPage)
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.all(isTablet ? 32 : 16),
-                    child: const Center(child: CircularProgressIndicator()),
-                  ),
-                ),
-
-              // Bottom padding để tránh pagination che phủ nội dung
-              SliverToBoxAdapter(child: SizedBox(height: isTablet ? 120 : 100)),
-            ],
-          ),
+    // Hiển thị empty state
+    if (postsState.posts.isEmpty && !postsState.isLoading) {
+      return SingleChildScrollView(
+        controller: scrollController,
+        child: ListEmptyState(
+          isTablet: isTablet,
+          theme: theme,
+          colorScheme: colorScheme,
+          searchQuery: searchQuery,
+          selectedType: selectedType,
+          selectedSort: selectedSort,
+          onResetFilters: onResetFilters,
         ),
+      );
+    }
 
-        // Floating Pagination - positioned ở bottom
-        if (postsState.totalPage > 1 && postsState.posts.isNotEmpty)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              // Tạo gradient fade effect để làm mờ nội dung phía dưới
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    // Colors.transparent,
-                    colorScheme.background.withOpacity(0.3),
-                    colorScheme.background.withOpacity(0.7),
-                  ],
-                ),
-              ),
+    return RefreshIndicator(
+      onRefresh: () async => onRefresh(),
+      child: CustomScrollView(
+        controller: scrollController,
+        slivers: [
+          // Top spacing
+          SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
+
+          // Posts List
+          SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
+            sliver: SliverList.separated(
+              itemCount: postsState.posts.length,
+              itemBuilder: (context, index) {
+                return PostCard(
+                  post: postsState.posts[index],
+                  isTablet: isTablet,
+                  theme: theme,
+                  colorScheme: colorScheme,
+                  onTap: onPostTap,
+                  getTypeColor: _getTypeColor,
+                  hasImages: _hasImages,
+                  getRewardFromPost: _getRewardFromPost,
+                  getLocationFromPost: _getLocationFromPost,
+                );
+              },
+              separatorBuilder: (context, index) {
+                return SizedBox(height: isTablet ? 8 : 6);
+              },
+            ),
+          ),
+
+          // Pagination - integrated in the scroll view
+          if (postsState.totalPage > 1 && postsState.posts.isNotEmpty)
+            SliverToBoxAdapter(
               child: Pagination(
                 state: postsState,
                 isTablet: isTablet,
@@ -122,8 +116,11 @@ class PostsListContent extends HookConsumerWidget {
                 colorScheme: colorScheme,
               ),
             ),
-          ),
-      ],
+
+          // Bottom spacing
+          SliverToBoxAdapter(child: SizedBox(height: isTablet ? 100 : 80)),
+        ],
+      ),
     );
   }
 

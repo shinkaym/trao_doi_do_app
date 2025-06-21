@@ -14,15 +14,12 @@ class CreatePostFAB extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 60),
-      child: FloatingActionButton(
-        onPressed: onPressed,
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        elevation: 6,
-        child: Icon(Icons.add, size: isTablet ? 24 : 20),
-      ),
+    return FloatingActionButton(
+      onPressed: onPressed,
+      backgroundColor: colorScheme.primary,
+      foregroundColor: colorScheme.onPrimary,
+      elevation: 6,
+      child: Icon(Icons.add, size: isTablet ? 24 : 20),
     );
   }
 }
