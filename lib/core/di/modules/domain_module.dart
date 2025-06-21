@@ -17,6 +17,7 @@ import 'package:trao_doi_do_app/domain/usecases/get_categories_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_interest_detail_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_items_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_transactions_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/mark_all_messages_read_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/onboarding_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_transaction_status_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_transaction_usecase.dart';
@@ -186,3 +187,9 @@ final getMessagesUseCaseProvider = Provider.autoDispose<GetMessagesUseCase>((
   final repository = ref.watch(messageRepositoryProvider);
   return GetMessagesUseCase(repository);
 });
+
+final markAllMessagesReadUseCaseProvider =
+    Provider.autoDispose<MarkAllMessagesReadUseCase>((ref) {
+      final repository = ref.watch(messageRepositoryProvider);
+      return MarkAllMessagesReadUseCase(repository);
+    });

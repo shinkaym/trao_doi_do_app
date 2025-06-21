@@ -5,4 +5,5 @@ import 'package:trao_doi_do_app/domain/usecases/params/message_query.dart';
 
 abstract class MessageRepository {
   Future<Either<Failure, MessagesResponse>> getMessages(MessagesQuery query);
+  Future<Either<Failure, String>> markAllAsRead(int interestID);
 }

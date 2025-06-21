@@ -21,4 +21,12 @@ class MessageRepositoryImpl implements MessageRepository {
       return messagesEntity;
     }, 'Lỗi tải danh sách tin nhắn');
   }
+
+  @override
+  Future<Either<Failure, String>> markAllAsRead(int interestID) async {
+    return handleRepositoryCall<String>(() async {
+      final result = await _remoteDataSource.markAllAsRead(interestID);
+      return result;
+    }, 'Lỗi đánh dấu đã đọc tất cả tin nhắn');
+  }
 }

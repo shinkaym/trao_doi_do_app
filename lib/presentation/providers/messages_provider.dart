@@ -3,52 +3,97 @@ import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/message.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/message_query.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_messages_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/mark_all_messages_read_usecase.dart';
 
 class MessagesListState {
   final bool isLoading;
   final bool isLoadingMore;
+  final bool isMarkingAllRead;
   final List<Message> messages;
   final int currentPage;
   final MessagesQuery query;
   final Failure? failure;
   final bool hasMoreData;
+  final String? markAllReadResult;
 
   MessagesListState({
     this.isLoading = false,
     this.isLoadingMore = false,
+    this.isMarkingAllRead = false,
     this.messages = const [],
     this.currentPage = 1,
     required this.query,
     this.failure,
     this.hasMoreData = true,
+    this.markAllReadResult,
   });
 
   MessagesListState copyWith({
     bool? isLoading,
     bool? isLoadingMore,
+    bool? isMarkingAllRead,
     List<Message>? messages,
     int? currentPage,
     MessagesQuery? query,
     Failure? failure,
     bool? hasMoreData,
+    String? markAllReadResult,
   }) {
     return MessagesListState(
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      isMarkingAllRead: isMarkingAllRead ?? this.isMarkingAllRead,
       messages: messages ?? this.messages,
       currentPage: currentPage ?? this.currentPage,
       query: query ?? this.query,
       failure: failure,
       hasMoreData: hasMoreData ?? this.hasMoreData,
+      markAllReadResult: markAllReadResult,
     );
   }
 }
 
 class MessagesListNotifier extends StateNotifier<MessagesListState> {
   final GetMessagesUseCase _getMessagesUseCase;
+  final MarkAllMessagesReadUseCase _markAllMessagesReadUseCase;
 
-  MessagesListNotifier(this._getMessagesUseCase, int interestID)
-    : super(MessagesListState(query: MessagesQuery(interestID: interestID)));
+  MessagesListNotifier(
+    this._getMessagesUseCase,
+    this._markAllMessagesReadUseCase,
+    int interestID,
+  ) : super(MessagesListState(query: MessagesQuery(interestID: interestID)));
+
+  // Đánh dấu đã đọc tất cả tin nhắn
+  Future<void> markAllAsRead() async {
+    if (state.isMarkingAllRead) return;
+
+    state = state.copyWith(
+      isMarkingAllRead: true,
+      failure: null,
+      markAllReadResult: null,
+    );
+
+    final result = await _markAllMessagesReadUseCase(state.query.interestID);
+
+    result.fold(
+      (failure) =>
+          state = state.copyWith(isMarkingAllRead: false, failure: failure),
+      (resultMessage) {
+        // Cập nhật tất cả tin nhắn thành đã đọc
+        final updatedMessages =
+            state.messages.map((message) {
+              return message.copyWith(isRead: 1);
+            }).toList();
+
+        state = state.copyWith(
+          isMarkingAllRead: false,
+          messages: updatedMessages,
+          markAllReadResult: resultMessage,
+          failure: null,
+        );
+      },
+    );
+  }
 
   // Load messages với các tùy chọn khác nhau
   Future<void> loadMessages({
@@ -92,11 +137,9 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
         int newCurrentPage;
 
         if (isFirstLoad) {
-          // Đảo ngược thứ tự để tin nhắn cũ nhất ở đầu, mới nhất ở cuối
           newMessages = messagesResult.messages.reversed.toList();
           newCurrentPage = 1;
         } else if (isLoadMore) {
-          // Khi load more, thêm tin nhắn cũ hơn vào đầu danh sách
           final oldMessages = messagesResult.messages.reversed.toList();
           newMessages = [...oldMessages, ...state.messages];
           newCurrentPage = state.currentPage + 1;
@@ -119,23 +162,19 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
     );
   }
 
-  // Tìm kiếm tin nhắn
   Future<void> searchMessages(String? search) async {
     final newQuery = state.query.copyWith(search: search, page: 1);
     await loadMessages(newQuery: newQuery, refresh: true);
   }
 
-  // Load more messages (cho infinite scroll)
   Future<void> loadMore() async {
     await loadMessages(isLoadMore: true);
   }
 
-  // Refresh messages
   Future<void> refresh() async {
     await loadMessages(refresh: true);
   }
 
-  // Thêm tin nhắn mới vào đầu danh sách (khi có tin nhắn real-time)
   void addNewMessage(Message message) {
     if (message.interestID == state.query.interestID) {
       final updatedMessages = [...state.messages, message];
@@ -143,20 +182,11 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
     }
   }
 
-  // Cập nhật trạng thái đã đọc của tin nhắn
   void markMessageAsRead(int messageId) {
     final updatedMessages =
         state.messages.map((message) {
           if (message.id == messageId) {
-            return Message(
-              id: message.id,
-              interestID: message.interestID,
-              senderID: message.senderID,
-              receiverID: message.receiverID,
-              message: message.message,
-              isRead: 1, // Mark as read
-              createdAt: message.createdAt,
-            );
+            return message.copyWith(isRead: 1);
           }
           return message;
         }).toList();
@@ -164,7 +194,6 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
     state = state.copyWith(messages: updatedMessages);
   }
 
-  // Đếm số tin nhắn chưa đọc
   int get unreadCount {
     return state.messages.where((message) => message.isRead == 0).length;
   }

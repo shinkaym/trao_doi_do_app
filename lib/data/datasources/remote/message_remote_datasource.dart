@@ -7,6 +7,7 @@ import 'package:trao_doi_do_app/domain/usecases/params/message_query.dart';
 
 abstract class MessageRemoteDataSource {
   Future<MessagesResponseModel> getMessages(MessagesQuery query);
+  Future<String> markAllAsRead(int interestID);
 }
 
 class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
@@ -25,6 +26,21 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
     final result = ApiResponseModel.fromJson(
       response.data,
       (json) => MessagesResponseModel.fromJson(json as Map<String, dynamic>),
+    );
+
+    return result.data!;
+  }
+
+  @override
+  Future<String> markAllAsRead(int interestID) async {
+    final response = await _dioClient.patch(
+      '${ApiConstants.baseUrl}/messages/$interestID',
+      options: Options(extra: {'requiresAuth': true}),
+    );
+
+    final result = ApiResponseModel.fromJson(
+      response.data,
+      (json) => json as String,
     );
 
     return result.data!;

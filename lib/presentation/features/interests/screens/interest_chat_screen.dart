@@ -33,6 +33,9 @@ class InterestChatScreen extends HookConsumerWidget {
 
     final isLoading = useState(true);
     final isSending = useState(false);
+    final hasMarkedAsRead = useState(
+      false,
+    ); // Thêm flag để tránh đánh dấu đã đọc nhiều lần
 
     final isPostOwner = useState<bool>(false);
     final displayName = useState<String>('');
@@ -140,6 +143,38 @@ class InterestChatScreen extends HookConsumerWidget {
       });
       return null;
     }, [interestDetail, authState.user]);
+
+    // Tự động đánh dấu đã đọc tin nhắn khi load xong messages
+    useEffect(() {
+      if (!messagesState.isLoading &&
+          messagesState.messages.isNotEmpty &&
+          !hasMarkedAsRead.value &&
+          messagesNotifier.unreadCount > 0) {
+        Future.microtask(() async {
+          try {
+            await messagesNotifier.markAllAsRead();
+            hasMarkedAsRead.value = true;
+          } catch (e) {
+            print('❌ Lỗi khi đánh dấu đã đọc: $e');
+          }
+        });
+      }
+      return null;
+    }, [messagesState.isLoading, messagesState.messages]);
+
+    // Đánh dấu đã đọc khi có tin nhắn mới từ WebSocket
+    useEffect(() {
+      if (messagesState.messages.isNotEmpty &&
+          messagesNotifier.unreadCount > 0) {
+        // Delay một chút để đảm bảo user nhìn thấy tin nhắn
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          if (messagesNotifier.unreadCount > 0) {
+            messagesNotifier.markAllAsRead();
+          }
+        });
+      }
+      return null;
+    }, [messagesState.messages.length]);
 
     // Handle WebSocket connection state changes
     useEffect(() {

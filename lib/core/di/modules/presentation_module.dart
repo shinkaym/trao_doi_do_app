@@ -153,12 +153,10 @@ final interestDetailProvider = StateNotifierProvider.autoDispose.family<
   return notifier;
 });
 
-final postProvider = StateNotifierProvider<PostNotifier, PostState>(
-  (ref) {
-    final createPostUseCase = ref.watch(createPostUseCaseProvider);
-    return PostNotifier(createPostUseCase);
-  },
-);
+final postProvider = StateNotifierProvider<PostNotifier, PostState>((ref) {
+  final createPostUseCase = ref.watch(createPostUseCaseProvider);
+  return PostNotifier(createPostUseCase);
+});
 
 final postsListProvider =
     StateNotifierProvider.autoDispose<PostsListNotifier, PostsListState>((ref) {
@@ -185,5 +183,12 @@ final postDetailProvider =
 final messagesListProvider = StateNotifierProvider.autoDispose
     .family<MessagesListNotifier, MessagesListState, int>((ref, interestID) {
       final getMessagesUseCase = ref.watch(getMessagesUseCaseProvider);
-      return MessagesListNotifier(getMessagesUseCase, interestID);
+      final markAllMessagesReadUseCase = ref.watch(
+        markAllMessagesReadUseCaseProvider,
+      );
+      return MessagesListNotifier(
+        getMessagesUseCase,
+        markAllMessagesReadUseCase,
+        interestID,
+      );
     });
