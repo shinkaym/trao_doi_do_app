@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:trao_doi_do_app/core/extensions/context_extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
@@ -10,6 +9,7 @@ class InterestedUsersSection extends StatefulWidget {
   final ThemeData theme;
   final ColorScheme colorScheme;
   final Function(int) handleChatTap;
+  final int? authUserId; // Add authUserId parameter
 
   const InterestedUsersSection({
     super.key,
@@ -18,6 +18,7 @@ class InterestedUsersSection extends StatefulWidget {
     required this.theme,
     required this.colorScheme,
     required this.handleChatTap,
+    this.authUserId,
   });
 
   @override
@@ -62,9 +63,6 @@ class InterestedUsersSectionState extends State<InterestedUsersSection>
 
   @override
   Widget build(BuildContext context) {
-    final isTablet = context.isTablet;
-    final colorScheme = context.colorScheme;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -127,77 +125,181 @@ class InterestedUsersSectionState extends State<InterestedUsersSection>
               itemCount: widget.post.interests.length,
               itemBuilder: (context, index) {
                 final interest = widget.post.interests[index];
-                return Container(
-                  margin: EdgeInsets.only(bottom: widget.isTablet ? 8 : 6),
-                  padding: EdgeInsets.all(widget.isTablet ? 12 : 8),
-                  decoration: BoxDecoration(
-                    color: widget.colorScheme.surfaceVariant.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: widget.isTablet ? 16 : 14,
-                        backgroundColor: widget.colorScheme.primary.withOpacity(
-                          0.1,
-                        ),
-                        child: _buildInterestAvatar(
-                          interest,
-                          isTablet,
-                          colorScheme,
-                        ),
-                      ),
-                      SizedBox(width: widget.isTablet ? 12 : 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              interest.userName,
-                              style: TextStyle(
-                                fontSize: widget.isTablet ? 14 : 13,
-                                fontWeight: FontWeight.w600,
-                                color: widget.colorScheme.onSurface,
-                              ),
-                            ),
-                            Text(
-                              'Quan tâm ${TimeUtils.formatTimeAgo(DateTime.parse(interest.createdAt))}',
-                              style: TextStyle(
-                                fontSize: widget.isTablet ? 12 : 11,
-                                color: widget.theme.hintColor,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      InkWell(
-                        onTap: () => widget.handleChatTap(interest.id),
-                        borderRadius: BorderRadius.circular(6),
-                        child: Container(
-                          padding: EdgeInsets.all(widget.isTablet ? 8 : 6),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: widget.colorScheme.outline.withOpacity(
-                                0.3,
-                              ),
-                            ),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Icon(
-                            Icons.chat_outlined,
-                            size: widget.isTablet ? 16 : 14,
-                            color: widget.colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
+                return _buildInterestedUserCard(interest);
               },
             ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildInterestedUserCard(Interest interest) {
+    final hasNewMessage = interest.newMessage.isNotEmpty;
+    final isUnread = interest.newMessageIsRead == 0;
+    final isFromCurrentUser =
+        widget.authUserId != null &&
+        widget.authUserId == interest.messageFromID;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: widget.isTablet ? 8 : 6),
+      padding: EdgeInsets.all(widget.isTablet ? 12 : 8),
+      decoration: BoxDecoration(
+        color: widget.colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // User info row
+          Row(
+            children: [
+              CircleAvatar(
+                radius: widget.isTablet ? 16 : 14,
+                backgroundColor: widget.colorScheme.primary.withOpacity(0.1),
+                child: _buildInterestAvatar(
+                  interest,
+                  widget.isTablet,
+                  widget.colorScheme,
+                ),
+              ),
+              SizedBox(width: widget.isTablet ? 12 : 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      interest.userName,
+                      style: TextStyle(
+                        fontSize: widget.isTablet ? 14 : 13,
+                        fontWeight: FontWeight.w600,
+                        color: widget.colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      'Quan tâm ${TimeUtils.formatTimeAgo(DateTime.parse(interest.createdAt))}',
+                      style: TextStyle(
+                        fontSize: widget.isTablet ? 12 : 11,
+                        color: widget.theme.hintColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              InkWell(
+                onTap: () => widget.handleChatTap(interest.id),
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  padding: EdgeInsets.all(widget.isTablet ? 8 : 6),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: widget.colorScheme.outline.withOpacity(0.3),
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    Icons.chat_outlined,
+                    size: widget.isTablet ? 16 : 14,
+                    color: widget.colorScheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Latest message section
+          if (hasNewMessage) ...[
+            SizedBox(height: widget.isTablet ? 8 : 6),
+            _buildLatestMessageSection(interest, isUnread, isFromCurrentUser),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLatestMessageSection(
+    Interest interest,
+    bool isUnread,
+    bool isFromCurrentUser,
+  ) {
+    // Create message text
+    String messageText;
+    if (isFromCurrentUser) {
+      messageText = 'Bạn: ${interest.newMessage}';
+    } else {
+      messageText = '${interest.userName}: ${interest.newMessage}';
+    }
+
+    return Container(
+      padding: EdgeInsets.all(widget.isTablet ? 10 : 8),
+      decoration: BoxDecoration(
+        color:
+            isUnread
+                ? widget.colorScheme.primary.withOpacity(0.05)
+                : widget.colorScheme.surface,
+        borderRadius: BorderRadius.circular(6),
+        border:
+            isUnread
+                ? Border.all(color: widget.colorScheme.primary.withOpacity(0.2))
+                : Border.all(
+                  color: widget.colorScheme.outline.withOpacity(0.1),
+                ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.chat_bubble_outline,
+            size: widget.isTablet ? 14 : 12,
+            color:
+                isUnread ? widget.colorScheme.primary : widget.theme.hintColor,
+          ),
+          SizedBox(width: widget.isTablet ? 6 : 4),
+          Expanded(
+            child: Text(
+              messageText,
+              style: TextStyle(
+                fontSize: widget.isTablet ? 12 : 11,
+                fontWeight: isUnread ? FontWeight.w500 : FontWeight.normal,
+                color:
+                    isUnread
+                        ? widget.colorScheme.onSurface
+                        : widget.colorScheme.onSurface.withOpacity(0.7),
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          // Show unread message count
+          if (interest.unreadMessageCount > 0) ...[
+            SizedBox(width: widget.isTablet ? 6 : 4),
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: widget.isTablet ? 6 : 4,
+                vertical: widget.isTablet ? 2 : 1,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                borderRadius: BorderRadius.circular(widget.isTablet ? 10 : 8),
+              ),
+              constraints: BoxConstraints(
+                minWidth: widget.isTablet ? 16 : 14,
+                minHeight: widget.isTablet ? 16 : 14,
+              ),
+              child: Text(
+                interest.unreadMessageCount > 99
+                    ? '99+'
+                    : interest.unreadMessageCount.toString(),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: widget.isTablet ? 10 : 9,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -220,7 +322,7 @@ Widget _buildInterestAvatar(
     }
   }
 
-  // Fallback về icon
+  // Fallback to icon
   return CircleAvatar(
     radius: radius,
     backgroundColor: colorScheme.primary,

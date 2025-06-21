@@ -6,8 +6,12 @@ class Interest extends Equatable {
   final int userID;
   final String userName;
   final String userAvatar;
-  final String createdAt;
   final int status;
+  final String createdAt;
+  final String newMessage;
+  final int messageFromID;
+  final int newMessageIsRead;
+  final int unreadMessageCount;
 
   const Interest({
     required this.id,
@@ -17,10 +21,26 @@ class Interest extends Equatable {
     required this.userAvatar,
     required this.status,
     required this.createdAt,
+    required this.newMessage,
+    required this.messageFromID,
+    required this.newMessageIsRead,
+    required this.unreadMessageCount,
   });
 
   @override
-  List<Object?> get props => [id, postID, userID, userName, userAvatar, status, createdAt];
+  List<Object?> get props => [
+    id,
+    postID,
+    userID,
+    userName,
+    userAvatar,
+    status,
+    createdAt,
+    newMessage,
+    messageFromID,
+    newMessageIsRead,
+    unreadMessageCount,
+  ];
 }
 
 class InterestPost extends Equatable {
@@ -90,15 +110,16 @@ class InterestItem extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, 
-    itemID, 
-    name, 
-    categoryName, 
-    image, 
-    quantity, 
-    currentQuantity
+    id,
+    itemID,
+    name,
+    categoryName,
+    image,
+    quantity,
+    currentQuantity,
   ];
 }
+
 class InterestsResult {
   final List<InterestPost> interests;
   final int totalPage;

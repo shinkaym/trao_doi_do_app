@@ -8,6 +8,10 @@ class InterestModel {
   final String userAvatar;
   final int status;
   final String createdAt;
+  final String newMessage;
+  final int messageFromID;
+  final int newMessageIsRead;
+  final int unreadMessageCount;
 
   const InterestModel({
     required this.id,
@@ -17,6 +21,10 @@ class InterestModel {
     required this.userAvatar,
     required this.status,
     required this.createdAt,
+    required this.newMessage,
+    required this.messageFromID,
+    required this.newMessageIsRead,
+    required this.unreadMessageCount,
   });
 
   // Từ JSON API response
@@ -29,6 +37,10 @@ class InterestModel {
       userAvatar: json['userAvatar'] ?? '',
       status: json['status'] ?? 0,
       createdAt: json['createdAt'] ?? '',
+      newMessage: json['newMessage'] ?? '',
+      messageFromID: json['messageFromID'] ?? 0,
+      newMessageIsRead: json['newMessageIsRead'] ?? 0,
+      unreadMessageCount: json['unreadMessageCount'] ?? 0,
     );
   }
 
@@ -42,6 +54,10 @@ class InterestModel {
       'userAvatar': userAvatar,
       'status': status,
       'createdAt': createdAt,
+      'newMessage': newMessage,
+      'messageFromID': messageFromID,
+      'newMessageIsRead': newMessageIsRead,
+      'unreadMessageCount': unreadMessageCount,
     };
   }
 
@@ -55,6 +71,10 @@ class InterestModel {
       userAvatar: userAvatar,
       status: status,
       createdAt: createdAt,
+      newMessage: newMessage,
+      messageFromID: messageFromID,
+      newMessageIsRead: newMessageIsRead,
+      unreadMessageCount: unreadMessageCount,
     );
   }
 
@@ -68,6 +88,10 @@ class InterestModel {
       userAvatar: entity.userAvatar,
       status: entity.status,
       createdAt: entity.createdAt,
+      newMessage: entity.newMessage,
+      messageFromID: entity.messageFromID,
+      newMessageIsRead: entity.newMessageIsRead,
+      unreadMessageCount: entity.unreadMessageCount,
     );
   }
 }

@@ -87,16 +87,33 @@ enum PostType {
   Color get color {
     switch (this) {
       case PostType.giveAway:
-        return Colors.blue;
+        return Colors.blue; // Đồng bộ với CreatePostType.giveAway
       case PostType.foundItem:
-        return Colors.green;
+        return Colors.green; // Đồng bộ với CreatePostType.foundItem
       case PostType.findLost:
-        return Colors.red;
+        return Colors.red; // Đồng bộ với CreatePostType.findLost
       case PostType.freePost:
-        return Colors.purple;
+        return Colors.purple; // Đồng bộ với CreatePostType.freePost
       case PostType.all:
-        return Colors.grey;
+        return Colors.grey; // Màu riêng cho "Tất cả"
     }
+  }
+}
+
+// Phương thức tiện ích để lấy màu từ value
+class PostTypeUtils {
+  static Color getColorFromValue(int? value) {
+    if (value == null) return Colors.grey;
+
+    final createPostType = CreatePostType.fromValue(value);
+    return createPostType.color();
+  }
+
+  static PostType? getPostTypeFromValue(int? value) {
+    return PostType.values.firstWhere(
+      (type) => type.value == value,
+      orElse: () => PostType.all,
+    );
   }
 }
 

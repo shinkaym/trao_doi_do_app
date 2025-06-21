@@ -10,7 +10,6 @@ class PostCard extends StatelessWidget {
   final ThemeData theme;
   final ColorScheme colorScheme;
   final void Function(Post) onTap;
-  final Color Function(PostType) getTypeColor;
   final bool Function(Post) hasImages;
   final String? Function(Post) getRewardFromPost;
   final String Function(Post) getLocationFromPost;
@@ -22,7 +21,6 @@ class PostCard extends StatelessWidget {
     required this.theme,
     required this.colorScheme,
     required this.onTap,
-    required this.getTypeColor,
     required this.hasImages,
     required this.getRewardFromPost,
     required this.getLocationFromPost,
@@ -77,24 +75,20 @@ class PostCard extends StatelessWidget {
         vertical: isTablet ? 6 : 4,
       ),
       decoration: BoxDecoration(
-        color: getTypeColor(postType).withOpacity(0.1),
+        color: postType.color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            postType.icon,
-            size: isTablet ? 16 : 14,
-            color: getTypeColor(postType),
-          ),
+          Icon(postType.icon, size: isTablet ? 16 : 14, color: postType.color),
           SizedBox(width: isTablet ? 6 : 4),
           Text(
             postType.label,
             style: TextStyle(
               fontSize: isTablet ? 13 : 11,
               fontWeight: FontWeight.w600,
-              color: getTypeColor(postType),
+              color: postType.color,
             ),
           ),
         ],

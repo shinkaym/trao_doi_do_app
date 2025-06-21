@@ -94,7 +94,6 @@ class PostsListContent extends HookConsumerWidget {
                   theme: theme,
                   colorScheme: colorScheme,
                   onTap: onPostTap,
-                  getTypeColor: _getTypeColor,
                   hasImages: _hasImages,
                   getRewardFromPost: _getRewardFromPost,
                   getLocationFromPost: _getLocationFromPost,
@@ -122,21 +121,6 @@ class PostsListContent extends HookConsumerWidget {
         ],
       ),
     );
-  }
-
-  Color _getTypeColor(PostType type) {
-    switch (type) {
-      case PostType.giveAway:
-        return Colors.green;
-      case PostType.foundItem:
-        return Colors.blue;
-      case PostType.findLost:
-        return Colors.orange;
-      case PostType.freePost:
-        return Colors.purple;
-      default:
-        return Colors.grey;
-    }
   }
 
   bool _hasImages(Post post) {
