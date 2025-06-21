@@ -51,13 +51,8 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
           Navigator.of(context).pop();
           onTransactionSent?.call();
 
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                next.successMessage ?? 'Đã gửi yêu cầu thành công!',
-              ),
-              backgroundColor: colorScheme.primary,
-            ),
+          context.showSuccessSnackBar(
+            next.successMessage ?? 'Đã gửi yêu cầu thành công!',
           );
 
           // Clear the state after success

@@ -63,22 +63,12 @@ class TransactionTile extends HookConsumerWidget {
           onTransactionUpdated?.call(next.updatedTransaction!);
 
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Cập nhật giao dịch thành công!'),
-                backgroundColor: Colors.green,
-              ),
-            );
+            context.showSuccessSnackBar('Cập nhật giao dịch thành công!');
           }
         } else if (next.failure != null) {
           // Error
           if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(next.failure!.message),
-                backgroundColor: Colors.red,
-              ),
-            );
+            context.showErrorSnackBar(next.failure!.message);
           }
         }
       }

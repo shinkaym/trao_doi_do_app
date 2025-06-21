@@ -1135,7 +1135,6 @@ class AddItemDialog extends HookConsumerWidget {
     );
   }
 
-  // Chỉnh sửa trong method _buildActionButtons - thêm parameter errorMessage
   Widget _buildActionButtons(
     BuildContext context,
     ThemeData theme,

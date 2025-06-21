@@ -138,7 +138,6 @@ class CreatePostUseCase {
   ) {
     final lostLocation = infoJson['lostLocation'] as String?;
     final lostDate = infoJson['lostDate'] as String?;
-    final reward = infoJson['reward'] as String?;
     final category = infoJson['category'] as String?;
 
     if (lostLocation == null || lostLocation.trim().isEmpty) {
@@ -151,12 +150,6 @@ class CreatePostUseCase {
 
     if (category == null || category.trim().isEmpty) {
       return const ValidationFailure('Danh mục không được để trống');
-    }
-
-    if (reward == null || reward.trim().isEmpty) {
-      return const ValidationFailure(
-        'Thông tin phần thưởng không được để trống',
-      );
     }
 
     return null;

@@ -11,6 +11,9 @@ class CommonFields extends StatelessWidget {
   final bool isTablet;
   final ThemeData theme;
   final ColorScheme colorScheme;
+  // Thêm parameters để kiểm soát auto validation
+  final AutovalidateMode titleAutovalidateMode;
+  final AutovalidateMode descriptionAutovalidateMode;
 
   const CommonFields({
     super.key,
@@ -22,6 +25,8 @@ class CommonFields extends StatelessWidget {
     required this.isTablet,
     required this.theme,
     required this.colorScheme,
+    this.titleAutovalidateMode = AutovalidateMode.disabled,
+    this.descriptionAutovalidateMode = AutovalidateMode.disabled,
   });
 
   @override
@@ -67,6 +72,7 @@ class CommonFields extends StatelessWidget {
       child: TextFormField(
         controller: titleController,
         style: theme.textTheme.bodyLarge,
+        autovalidateMode: titleAutovalidateMode,
         decoration: InputDecoration(
           labelText: 'Tiêu đề bài đăng *',
           labelStyle: TextStyle(
@@ -153,6 +159,7 @@ class CommonFields extends StatelessWidget {
         controller: descriptionController,
         style: theme.textTheme.bodyLarge,
         maxLines: 4,
+        autovalidateMode: descriptionAutovalidateMode,
         decoration: InputDecoration(
           labelText: 'Mô tả chi tiết *',
           labelStyle: TextStyle(

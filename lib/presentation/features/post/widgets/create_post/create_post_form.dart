@@ -48,6 +48,14 @@ class CreatePostForm extends HookConsumerWidget {
     final selectedDateTime = useState<DateTime?>(null);
     final isSubmitting = useState(false);
 
+    // Auto validation states - bắt đầu với disabled, chỉ bật sau khi có lỗi
+    final titleAutovalidateMode = useState(AutovalidateMode.disabled);
+    final descriptionAutovalidateMode = useState(AutovalidateMode.disabled);
+    final locationAutovalidateMode = useState(AutovalidateMode.disabled);
+    final categoryAutovalidateMode = useState(AutovalidateMode.disabled);
+    final timeAutovalidateMode = useState(AutovalidateMode.disabled);
+    final rewardAutovalidateMode = useState(AutovalidateMode.disabled);
+
     // Image picker
     final picker = useMemoized(() => ImagePicker());
 
@@ -126,6 +134,14 @@ class CreatePostForm extends HookConsumerWidget {
       categoryController.clear();
       rewardController.clear();
       timeController.clear();
+
+      // Reset auto validation modes khi đổi type
+      titleAutovalidateMode.value = AutovalidateMode.disabled;
+      descriptionAutovalidateMode.value = AutovalidateMode.disabled;
+      locationAutovalidateMode.value = AutovalidateMode.disabled;
+      categoryAutovalidateMode.value = AutovalidateMode.disabled;
+      timeAutovalidateMode.value = AutovalidateMode.disabled;
+      rewardAutovalidateMode.value = AutovalidateMode.disabled;
     }
 
     void removeImage(String imageId) {
@@ -157,6 +173,11 @@ class CreatePostForm extends HookConsumerWidget {
 
           selectedDateTime.value = dateTime;
           timeController.text = TimeUtils.formatAbsolute(dateTime);
+
+          // Trigger validation nếu đã có auto validation mode enabled
+          if (timeAutovalidateMode.value != AutovalidateMode.disabled) {
+            formKey.currentState?.validate();
+          }
         }
       }
     }
@@ -226,7 +247,19 @@ class CreatePostForm extends HookConsumerWidget {
     }
 
     Future<void> submitPost() async {
-      if (!formKey.currentState!.validate()) return;
+      // Validate form và bật auto validation nếu có lỗi
+      final isValid = formKey.currentState!.validate();
+
+      if (!isValid) {
+        // Bật auto validation cho các field có lỗi
+        titleAutovalidateMode.value = AutovalidateMode.onUserInteraction;
+        descriptionAutovalidateMode.value = AutovalidateMode.onUserInteraction;
+        locationAutovalidateMode.value = AutovalidateMode.onUserInteraction;
+        categoryAutovalidateMode.value = AutovalidateMode.onUserInteraction;
+        timeAutovalidateMode.value = AutovalidateMode.onUserInteraction;
+        rewardAutovalidateMode.value = AutovalidateMode.onUserInteraction;
+        return;
+      }
 
       final useCase = ref.read(createPostUseCaseProvider);
       final post = buildPost();
@@ -237,11 +270,32 @@ class CreatePostForm extends HookConsumerWidget {
 
       result.fold((failure) => context.showErrorSnackBar(failure.message), (_) {
         ref.read(postProvider.notifier).reset();
-        context.showSuccessSnackBar('Tạo bài thành công, vui lòng đợi kiểm duyệt!');
+        context.showSuccessSnackBar(
+          'Tạo bài thành công, vui lòng đợi kiểm duyệt!',
+        );
         context.pop();
       });
 
       isSubmitting.value = false;
+    }
+
+    // Validation trigger functions
+    void onLocationChanged() {
+      if (locationAutovalidateMode.value != AutovalidateMode.disabled) {
+        formKey.currentState?.validate();
+      }
+    }
+
+    void onCategoryChanged() {
+      if (categoryAutovalidateMode.value != AutovalidateMode.disabled) {
+        formKey.currentState?.validate();
+      }
+    }
+
+    void onRewardChanged() {
+      if (rewardAutovalidateMode.value != AutovalidateMode.disabled) {
+        formKey.currentState?.validate();
+      }
     }
 
     return Form(
@@ -261,7 +315,7 @@ class CreatePostForm extends HookConsumerWidget {
             ),
             SizedBox(height: isTablet ? 32 : 24),
 
-            // Common Fields
+            // Common Fields với auto validation modes
             CommonFields(
               titleController: titleController,
               descriptionController: descriptionController,
@@ -271,6 +325,8 @@ class CreatePostForm extends HookConsumerWidget {
               isTablet: isTablet,
               theme: theme,
               colorScheme: colorScheme,
+              titleAutovalidateMode: titleAutovalidateMode.value,
+              descriptionAutovalidateMode: descriptionAutovalidateMode.value,
             ),
 
             // Type-specific Fields
@@ -289,6 +345,15 @@ class CreatePostForm extends HookConsumerWidget {
               isTablet: isTablet,
               theme: theme,
               colorScheme: colorScheme,
+              // Thêm auto validation modes cho type-specific fields
+              locationAutovalidateMode: locationAutovalidateMode.value,
+              categoryAutovalidateMode: categoryAutovalidateMode.value,
+              timeAutovalidateMode: timeAutovalidateMode.value,
+              rewardAutovalidateMode: rewardAutovalidateMode.value,
+              // Thêm callback functions cho real-time validation
+              onLocationChanged: onLocationChanged,
+              onCategoryChanged: onCategoryChanged,
+              onRewardChanged: onRewardChanged,
             ),
 
             SizedBox(height: isTablet ? 32 : 24),

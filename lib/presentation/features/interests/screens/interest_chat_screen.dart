@@ -238,12 +238,7 @@ class InterestChatScreen extends HookConsumerWidget {
     useEffect(() {
       if (webSocketState.error != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('WebSocket Error: ${webSocketState.error}'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          context.showErrorSnackBar('WebSocket Error: ${webSocketState.error}');
           webSocketNotifier.clearError();
         });
       }
@@ -292,13 +287,8 @@ class InterestChatScreen extends HookConsumerWidget {
     useEffect(() {
       if (transactionsState.failure != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Lỗi tải giao dịch: ${transactionsState.failure!.message}',
-              ),
-              backgroundColor: Colors.red,
-            ),
+          context.showErrorSnackBar(
+            'Lỗi tải giao dịch: ${transactionsState.failure!.message}',
           );
         });
       }
@@ -309,13 +299,8 @@ class InterestChatScreen extends HookConsumerWidget {
     useEffect(() {
       if (messagesState.failure != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Lỗi tải tin nhắn: ${messagesState.failure!.message}',
-              ),
-              backgroundColor: Colors.red,
-            ),
+          context.showErrorSnackBar(
+            'Lỗi tải tin nhắn: ${messagesState.failure!.message}',
           );
         });
       }
@@ -338,11 +323,8 @@ class InterestChatScreen extends HookConsumerWidget {
         return;
 
       if (!webSocketState.isConnected) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Không thể gửi tin nhắn. Đang kết nối lại...'),
-            backgroundColor: Colors.orange,
-          ),
+        context.showWarningSnackBar(
+          'Không thể gửi tin nhắn. Đang kết nối lại...',
         );
         return;
       }
@@ -358,12 +340,7 @@ class InterestChatScreen extends HookConsumerWidget {
           message: messageText,
         );
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi gửi tin nhắn: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        context.showErrorSnackBar('Lỗi gửi tin nhắn: $e');
       } finally {
         isSending.value = false;
       }
@@ -407,9 +384,7 @@ class InterestChatScreen extends HookConsumerWidget {
           latestTransaction == null || latestTransaction.status != 1;
 
       if (!canCreateTransaction) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đợi yêu cầu mới nhất được phản hồi')),
-        );
+        context.showInfoSnackBar('Đợi yêu cầu mới nhất được phản hồi');
         return;
       }
 

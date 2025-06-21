@@ -20,6 +20,13 @@ class TypeSpecificFields extends HookConsumerWidget {
   final bool isTablet;
   final ThemeData theme;
   final ColorScheme colorScheme;
+  final AutovalidateMode locationAutovalidateMode;
+  final AutovalidateMode categoryAutovalidateMode;
+  final AutovalidateMode timeAutovalidateMode;
+  final AutovalidateMode rewardAutovalidateMode;
+  final VoidCallback? onLocationChanged;
+  final VoidCallback? onCategoryChanged;
+  final VoidCallback? onRewardChanged;
 
   const TypeSpecificFields({
     super.key,
@@ -38,6 +45,13 @@ class TypeSpecificFields extends HookConsumerWidget {
     required this.isTablet,
     required this.theme,
     required this.colorScheme,
+    required this.locationAutovalidateMode,
+    required this.categoryAutovalidateMode,
+    required this.timeAutovalidateMode,
+    required this.rewardAutovalidateMode,
+    this.onLocationChanged,
+    this.onCategoryChanged,
+    this.onRewardChanged,
   });
 
   @override
@@ -165,6 +179,8 @@ class TypeSpecificFields extends HookConsumerWidget {
       ),
       child: TextFormField(
         controller: locationController,
+        autovalidateMode: locationAutovalidateMode, // Thêm dòng này
+        onChanged: (_) => onLocationChanged?.call(), // Thêm dòng này
         style: theme.textTheme.bodyLarge,
         decoration: InputDecoration(
           labelText: 'Địa điểm',
@@ -225,94 +241,97 @@ class TypeSpecificFields extends HookConsumerWidget {
     );
   }
 
-Widget _buildCategoryField() {
-  return Container(
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(16),
-      color: colorScheme.surface,
-      boxShadow: [
-        BoxShadow(
-          color: colorScheme.shadow.withOpacity(0.05),
-          blurRadius: 10,
-          offset: const Offset(0, 2),
-        ),
-      ],
-    ),
-    child: TextFormField(
-      controller: categoryController,
-      style: theme.textTheme.bodyLarge,
-      decoration: InputDecoration(
-        labelText: 'Danh mục',
-        labelStyle: TextStyle(
-          color: colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w500,
-        ),
-        hintText: 'Ví dụ: Điện thoại, Ví, Chìa khóa, Trang sức...',
-        hintStyle: TextStyle(
-          color: theme.hintColor.withOpacity(0.7),
-          fontSize: isTablet ? 16 : 14,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: colorScheme.outline.withOpacity(0.2),
-            width: 1,
+  Widget _buildCategoryField() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: colorScheme.surface,
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: colorScheme.primary, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: colorScheme.error, width: 1),
-        ),
-        filled: true,
-        fillColor: colorScheme.surface,
-        prefixIcon: Container(
-          margin: const EdgeInsets.all(12),
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Colors.blue.shade100,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Icon(
-            Icons.category_rounded,
-            color: Colors.blue.shade600,
-            size: isTablet ? 22 : 20,
-          ),
-        ),
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: isTablet ? 20 : 16,
-          vertical: isTablet ? 20 : 16,
-        ),
+        ],
       ),
-      keyboardType: TextInputType.text,
-      textCapitalization: TextCapitalization.words,
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return 'Vui lòng nhập danh mục';
-        }
-        if (value.trim().length < 2) {
-          return 'Danh mục quá ngắn, vui lòng nhập ít nhất 2 ký tự';
-        }
-        if (value.trim().length > 50) {
-          return 'Danh mục quá dài, tối đa 50 ký tự';
-        }
-        // Kiểm tra chỉ chứa chữ cái, số và dấu cách
-        final validPattern = RegExp(r'^[a-zA-ZÀ-ỹ0-9\s]+$');
-        if (!validPattern.hasMatch(value.trim())) {
-          return 'Danh mục chỉ được chứa chữ cái, số và dấu cách';
-        }
-        return null;
-      },
-    ),
-  );
-}
+      child: TextFormField(
+        controller: categoryController,
+        autovalidateMode: categoryAutovalidateMode, // Thêm dòng này
+        onChanged: (_) => onCategoryChanged?.call(), // Thêm dòng này
+        style: theme.textTheme.bodyLarge,
+        decoration: InputDecoration(
+          labelText: 'Danh mục',
+          labelStyle: TextStyle(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w500,
+          ),
+          hintText: 'Ví dụ: Điện thoại, Ví, Chìa khóa, Trang sức...',
+          hintStyle: TextStyle(
+            color: theme.hintColor.withOpacity(0.7),
+            fontSize: isTablet ? 16 : 14,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(
+              color: colorScheme.outline.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: colorScheme.primary, width: 2),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(16),
+            borderSide: BorderSide(color: colorScheme.error, width: 1),
+          ),
+          filled: true,
+          fillColor: colorScheme.surface,
+          prefixIcon: Container(
+            margin: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade100,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.category_rounded,
+              color: Colors.blue.shade600,
+              size: isTablet ? 22 : 20,
+            ),
+          ),
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 20 : 16,
+            vertical: isTablet ? 20 : 16,
+          ),
+        ),
+        keyboardType: TextInputType.text,
+        textCapitalization: TextCapitalization.words,
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) {
+            return 'Vui lòng nhập danh mục';
+          }
+          if (value.trim().length < 2) {
+            return 'Danh mục quá ngắn, vui lòng nhập ít nhất 2 ký tự';
+          }
+          if (value.trim().length > 50) {
+            return 'Danh mục quá dài, tối đa 50 ký tự';
+          }
+          // Kiểm tra chỉ chứa chữ cái, số và dấu cách
+          final validPattern = RegExp(r'^[a-zA-ZÀ-ỹ0-9\s]+$');
+          if (!validPattern.hasMatch(value.trim())) {
+            return 'Danh mục chỉ được chứa chữ cái, số và dấu cách';
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
   Widget _buildTimeField() {
     String hintText;
     IconData iconData;
@@ -349,6 +368,7 @@ Widget _buildCategoryField() {
       ),
       child: TextFormField(
         controller: timeController,
+        autovalidateMode: timeAutovalidateMode, // Thêm dòng này
         style: theme.textTheme.bodyLarge,
         decoration: InputDecoration(
           labelText: 'Thời gian',
@@ -437,6 +457,8 @@ Widget _buildCategoryField() {
       ),
       child: TextFormField(
         controller: rewardController,
+        autovalidateMode: rewardAutovalidateMode, // Thêm dòng này
+        onChanged: (_) => onRewardChanged?.call(), // Thêm dòng này
         style: theme.textTheme.bodyLarge,
         maxLines: 2,
         decoration: InputDecoration(
@@ -488,6 +510,18 @@ Widget _buildCategoryField() {
         ),
         keyboardType: TextInputType.text,
         textCapitalization: TextCapitalization.sentences,
+        validator: (value) {
+          // Vì là trường tùy chọn, chỉ validate khi có nội dung
+          if (value != null && value.trim().isNotEmpty) {
+            if (value.trim().length < 10) {
+              return 'Phần thưởng quá ngắn, vui lòng mô tả chi tiết hơn';
+            }
+            if (value.trim().length > 200) {
+              return 'Phần thưởng quá dài, tối đa 200 ký tự';
+            }
+          }
+          return null;
+        },
       ),
     );
   }
