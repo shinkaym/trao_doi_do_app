@@ -244,9 +244,9 @@ enum DeliveryMethod {
   String get value {
     switch (this) {
       case DeliveryMethod.meetInPerson:
-        return 'meet_in_person';
+        return 'Gặp trực tiếp';
       case DeliveryMethod.delivery:
-        return 'delivery';
+        return 'Giao hàng';
     }
   }
 }

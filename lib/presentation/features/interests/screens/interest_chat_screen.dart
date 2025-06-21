@@ -10,8 +10,8 @@ import 'package:trao_doi_do_app/domain/entities/message.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/transaction_query.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/chat_app_bar.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/post_info_header.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/transaction_item_selection_bottom_sheet.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/transaction_list_bottom_sheet.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/transaction_item_selection_bottom_sheet.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/transaction_list_bottom_sheet.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter_debouncer/flutter_debouncer.dart';
 

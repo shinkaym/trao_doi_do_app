@@ -19,10 +19,10 @@ class UpdateTransactionStatusUseCase {
     }
 
     // Validate status (1: Pending, 2: Success, 3: Cancelled)
-    if (status < 1 || status > 3) {
+    if (status < 1 || status > 4) {
       return const Left(
         ValidationFailure(
-          'Trạng thái không hợp lệ (1: Pending, 2: Success, 3: Cancelled)',
+          'Trạng thái không hợp lệ',
         ),
       );
     }

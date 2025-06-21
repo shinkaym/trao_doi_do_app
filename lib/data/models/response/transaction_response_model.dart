@@ -127,6 +127,7 @@ class UpdateTransactionRequestModel {
   Map<String, dynamic> toJson() {
     return {
       'items': items.map((item) => item.toJson()).toList(),
+      'method': method,
       'status': status,
     };
   }
