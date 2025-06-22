@@ -8,4 +8,5 @@ abstract class InterestRepository {
   Future<Either<Failure, InterestActionResult>> cancelInterest(int postID);
   Future<Either<Failure, InterestsResult>> getInterests(InterestsQuery query);
   Future<Either<Failure, InterestPost>> getInterestDetail(int interestID);
+  Future<Either<Failure, int>> getUnreadCount();
 }

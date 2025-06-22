@@ -60,4 +60,12 @@ class InterestRepositoryImpl implements InterestRepository {
       return response.toEntity();
     }, 'Lỗi khi tải chi tiết quan tâm');
   }
+
+  @override
+  Future<Either<Failure, int>> getUnreadCount() async {
+    return handleRepositoryCall(() async {
+      final response = await _remoteDataSource.getUnreadCount();
+      return response.unreadMessageCount;
+    }, 'Lỗi khi tải số tin nhắn chưa đọc');
+  }
 }

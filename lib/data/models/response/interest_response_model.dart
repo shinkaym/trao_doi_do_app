@@ -72,3 +72,23 @@ class InterestActionResponseModel {
     return InterestActionResponse(interestID: interestID, message: message);
   }
 }
+
+class UnreadCountResponseModel {
+  final int unreadMessageCount;
+
+  const UnreadCountResponseModel({required this.unreadMessageCount});
+
+  factory UnreadCountResponseModel.fromJson(Map<String, dynamic> json) {
+    return UnreadCountResponseModel(
+      unreadMessageCount: json['unreadMessageCount'] ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'unreadMessageCount': unreadMessageCount};
+  }
+
+  UnreadCountResponse toEntity() {
+    return UnreadCountResponse(unreadMessageCount: unreadMessageCount);
+  }
+}

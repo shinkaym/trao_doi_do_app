@@ -28,3 +28,12 @@ class InterestActionResponse extends Equatable {
   @override
   List<Object?> get props => [interestID, message];
 }
+
+class UnreadCountResponse extends Equatable {
+  final int unreadMessageCount;
+
+  const UnreadCountResponse({required this.unreadMessageCount});
+
+  @override
+  List<Object?> get props => [unreadMessageCount];
+}

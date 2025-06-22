@@ -10,12 +10,27 @@ abstract class InterestRemoteDataSource {
   Future<InterestActionResponseModel> cancelInterest(int postID);
   Future<InterestsResponseModel> getInterests(InterestsQuery query);
   Future<InterestPostModel> getInterestDetail(int interestID);
+  Future<UnreadCountResponseModel> getUnreadCount();
 }
 
 class InterestRemoteDataSourceImpl implements InterestRemoteDataSource {
   final DioClient _dioClient;
 
   InterestRemoteDataSourceImpl(this._dioClient);
+
+   @override
+  Future<UnreadCountResponseModel> getUnreadCount() async {
+    final response = await _dioClient.get(
+      '${ApiConstants.interests}/unread-count',
+    );
+
+    final result = ApiResponseModel.fromJson(
+      response.data,
+      (json) => UnreadCountResponseModel.fromJson(json as Map<String, dynamic>),
+    );
+
+    return result.data!;
+  }
 
   @override
   Future<InterestActionResponseModel> createInterest(int postID) async {

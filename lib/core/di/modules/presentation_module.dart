@@ -13,6 +13,7 @@ import 'package:trao_doi_do_app/presentation/providers/category_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/item_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/interest_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/messages_provider.dart';
+import 'package:trao_doi_do_app/presentation/providers/unread_count_provider.dart';
 import '../modules/core_module.dart';
 import '../modules/domain_module.dart';
 
@@ -152,6 +153,14 @@ final interestDetailProvider = StateNotifierProvider.autoDispose.family<
 
   return notifier;
 });
+
+final unreadCountProvider =
+    StateNotifierProvider.autoDispose<UnreadCountNotifier, UnreadCountState>((
+      ref,
+    ) {
+      final getUnreadCountUseCase = ref.watch(getUnreadCountUseCaseProvider);
+      return UnreadCountNotifier(getUnreadCountUseCase);
+    });
 
 final postProvider = StateNotifierProvider<PostNotifier, PostState>((ref) {
   final createPostUseCase = ref.watch(createPostUseCaseProvider);

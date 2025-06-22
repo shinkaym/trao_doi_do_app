@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/nav_bar_constants.dart';
+import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/presentation/providers/unread_count_provider.dart';
 
 class CustomBottomNavigation extends HookConsumerWidget {
   final int currentIndex;
@@ -31,6 +33,17 @@ class CustomBottomNavigation extends HookConsumerWidget {
       ),
       [animationController],
     );
+
+    // Theo dõi unread count state
+    final unreadCountState = ref.watch(unreadCountProvider);
+
+    // Load unread count khi widget được build lần đầu
+    useEffect(() {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(unreadCountProvider.notifier).loadUnreadCount();
+      });
+      return null;
+    }, []);
 
     // Function để xử lý tap
     void onItemTapped(int index) {
@@ -83,6 +96,7 @@ class CustomBottomNavigation extends HookConsumerWidget {
                     isTablet,
                     scaleAnimation,
                     onItemTapped,
+                    unreadCountState,
                   );
                 }).toList(),
           ),
@@ -98,13 +112,26 @@ class CustomBottomNavigation extends HookConsumerWidget {
     bool isTablet,
     Animation<double> scaleAnimation,
     Function(int) onItemTapped,
+    UnreadCountState unreadCountState,
   ) {
     final theme = context.theme;
     final colorScheme = context.colorScheme;
     final isSelected = currentIndex == index;
 
+    // Kiểm tra xem có phải tab "Quan tâm" không (index = 2)
+    final isInterestsTab = index == 2;
+    final hasUnreadMessages = isInterestsTab && unreadCountState.count > 0;
+
     if (item.isSpecial) {
-      return _buildSpecialButton(context, item, index, isTablet, onItemTapped);
+      return _buildSpecialButton(
+        context,
+        item,
+        index,
+        isTablet,
+        onItemTapped,
+        hasUnreadMessages,
+        unreadCountState.count,
+      );
     }
 
     return Expanded(
@@ -130,24 +157,40 @@ class CustomBottomNavigation extends HookConsumerWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: EdgeInsets.all(isTablet ? 4 : 2),
-                      decoration: BoxDecoration(
-                        color:
-                            isSelected
-                                ? colorScheme.primary.withOpacity(0.2)
-                                : Colors.transparent,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        isSelected ? item.activeIcon : item.inactiveIcon,
-                        size: isTablet ? 26 : 22,
-                        color:
-                            isSelected
-                                ? colorScheme.primary
-                                : theme.hintColor.withOpacity(0.7),
-                      ),
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: EdgeInsets.all(isTablet ? 4 : 2),
+                          decoration: BoxDecoration(
+                            color:
+                                isSelected
+                                    ? colorScheme.primary.withOpacity(0.2)
+                                    : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            isSelected ? item.activeIcon : item.inactiveIcon,
+                            size: isTablet ? 26 : 22,
+                            color:
+                                isSelected
+                                    ? colorScheme.primary
+                                    : theme.hintColor.withOpacity(0.7),
+                          ),
+                        ),
+                        // Badge cho tin nhắn chưa đọc
+                        if (hasUnreadMessages)
+                          Positioned(
+                            right: -2,
+                            top: -2,
+                            child: _buildUnreadBadge(
+                              context,
+                              unreadCountState.count,
+                              isTablet,
+                            ),
+                          ),
+                      ],
                     ),
                     if (showLabels) ...[
                       SizedBox(height: isTablet ? 4 : 2),
@@ -186,6 +229,8 @@ class CustomBottomNavigation extends HookConsumerWidget {
     int index,
     bool isTablet,
     Function(int) onItemTapped,
+    bool hasUnreadMessages,
+    int unreadCount,
   ) {
     final colorScheme = context.colorScheme;
     final isSelected = currentIndex == index;
@@ -225,32 +270,86 @@ class CustomBottomNavigation extends HookConsumerWidget {
               ),
             ],
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
-              Icon(
-                isSelected ? item.activeIcon : item.inactiveIcon,
-                size: isTablet ? 28 : 24,
-                color:
-                    isSelected ? Colors.white : colorScheme.onPrimaryContainer,
-              ),
-              if (showLabels) ...[
-                SizedBox(height: isTablet ? 2 : 1),
-                Text(
-                  item.label,
-                  style: TextStyle(
-                    fontSize: isTablet ? 10 : 8,
-                    fontWeight: FontWeight.w600,
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isSelected ? item.activeIcon : item.inactiveIcon,
+                    size: isTablet ? 28 : 24,
                     color:
                         isSelected
                             ? Colors.white
                             : colorScheme.onPrimaryContainer,
                   ),
-                  textAlign: TextAlign.center,
+                  if (showLabels) ...[
+                    SizedBox(height: isTablet ? 2 : 1),
+                    Text(
+                      item.label,
+                      style: TextStyle(
+                        fontSize: isTablet ? 10 : 8,
+                        fontWeight: FontWeight.w600,
+                        color:
+                            isSelected
+                                ? Colors.white
+                                : colorScheme.onPrimaryContainer,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ],
+              ),
+              // Badge cho special button
+              if (hasUnreadMessages)
+                Positioned(
+                  right: -4,
+                  top: -4,
+                  child: _buildUnreadBadge(context, unreadCount, isTablet),
                 ),
-              ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildUnreadBadge(BuildContext context, int count, bool isTablet) {
+    // final colorScheme = context.colorScheme;
+    final badgeText = count > 99 ? '99+' : count.toString();
+    final fontSize = isTablet ? 10.0 : 8.0;
+    final badgeSize = isTablet ? 20.0 : 16.0;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      constraints: BoxConstraints(minWidth: badgeSize, minHeight: badgeSize),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 6 : 4,
+        vertical: isTablet ? 2 : 1,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.red,
+        shape: BoxShape.circle, // Sử dụng shape circle thay vì borderRadius
+        // border: Border.all(color: colorScheme.surface, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.red.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          badgeText,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: fontSize,
+            fontWeight: FontWeight.bold,
+            height: 1,
+          ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
