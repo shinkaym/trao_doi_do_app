@@ -114,8 +114,9 @@ class UnifiedInterestPostCard extends StatelessWidget {
               ],
               SizedBox(height: isTablet ? 16 : 12),
               _buildPostContent(),
-              // Thêm phần hiển thị tin nhắn gần nhất
-              if (_shouldShowLatestMessage()) ...[
+              // Only show latest message for interestedPost mode
+              if (mode == InterestPostCardMode.interestedPost &&
+                  _shouldShowLatestMessage()) ...[
                 SizedBox(height: isTablet ? 12 : 8),
                 _buildLatestMessageSection(),
               ],
@@ -123,6 +124,33 @@ class UnifiedInterestPostCard extends StatelessWidget {
               _buildActionSection(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Widget tạo badge tròn với số lượng tin nhắn chưa đọc
+  Widget _buildRoundedBadge(int count) {
+    final size = isTablet ? 22.0 : 18.0;
+    final fontSize = isTablet ? 11.0 : 9.0;
+    
+    return Container(
+      width: size,
+      height: size,
+      decoration: const BoxDecoration(
+        color: Colors.red,
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          count > 99 ? '99+' : count.toString(),
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: fontSize,
+            fontWeight: FontWeight.bold,
+            height: 1.0,
+          ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
@@ -189,7 +217,7 @@ class UnifiedInterestPostCard extends StatelessWidget {
     );
   }
 
-  /// Kiểm tra có nên hiển thị tin nhắn gần nhất không
+  /// Kiểm tra có nên hiển thị tin nhắn gần nhất không (chỉ cho interestedPost mode)
   bool _shouldShowLatestMessage() {
     return post.interests.isNotEmpty &&
         post.interests.first.newMessage.isNotEmpty;
@@ -245,41 +273,17 @@ class UnifiedInterestPostCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          // Hiển thị số tin nhắn chưa đọc
+          // Hiển thị badge tròn số tin nhắn chưa đọc
           if (interest.unreadMessageCount > 0) ...[
             SizedBox(width: isTablet ? 8 : 6),
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 8 : 6,
-                vertical: isTablet ? 4 : 2,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(isTablet ? 12 : 10),
-              ),
-              constraints: BoxConstraints(
-                minWidth: isTablet ? 20 : 16,
-                minHeight: isTablet ? 20 : 16,
-              ),
-              child: Text(
-                interest.unreadMessageCount > 99
-                    ? '99+'
-                    : interest.unreadMessageCount.toString(),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: isTablet ? 12 : 10,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
+            _buildRoundedBadge(interest.unreadMessageCount),
           ],
         ],
       ),
     );
   }
 
-  /// Builds the header section with post type and time (time only for postWithInterests mode)
+  /// Builds the header section with post type and time
   Widget _buildHeader() {
     return Row(
       children: [
@@ -312,16 +316,27 @@ class UnifiedInterestPostCard extends StatelessWidget {
             ],
           ),
         ),
+        
         const Spacer(),
-        // Only show time for postWithInterests mode
-        if (mode == InterestPostCardMode.postWithInterests)
-          Text(
-            TimeUtils.formatTimeAgo(DateTime.parse(post.createdAt)),
-            style: TextStyle(
-              fontSize: isTablet ? 13 : 11,
-              color: theme.hintColor,
+        
+        // Show time for both modes
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              TimeUtils.formatTimeAgo(DateTime.parse(post.createdAt)),
+              style: TextStyle(
+                fontSize: isTablet ? 13 : 11,
+                color: theme.hintColor,
+              ),
             ),
-          ),
+            // Show unread message count badge only for postWithInterests mode
+            if (mode == InterestPostCardMode.postWithInterests && post.unreadMessageCount > 0) ...[
+              SizedBox(width: isTablet ? 8 : 6),
+              _buildRoundedBadge(post.unreadMessageCount),
+            ],
+          ],
+        ),
       ],
     );
   }
@@ -397,6 +412,7 @@ class UnifiedInterestPostCard extends StatelessWidget {
       theme: theme,
       colorScheme: colorScheme,
       handleChatTap: handleChatTap,
+      authUserId: authUserId,
     );
   }
 

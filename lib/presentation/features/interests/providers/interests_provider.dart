@@ -14,6 +14,7 @@ class InterestsListState {
   final Failure? failure;
   final bool hasMoreData;
   final bool isLoadingPage;
+  final int unreadMessageCount; // Added unread message count
 
   InterestsListState({
     this.isLoading = false,
@@ -25,6 +26,7 @@ class InterestsListState {
     this.failure,
     this.hasMoreData = true,
     this.isLoadingPage = false,
+    this.unreadMessageCount = 0, // Default to 0
   });
 
   InterestsListState copyWith({
@@ -37,6 +39,7 @@ class InterestsListState {
     Failure? failure,
     bool? hasMoreData,
     bool? isLoadingPage,
+    int? unreadMessageCount,
   }) {
     return InterestsListState(
       isLoading: isLoading ?? this.isLoading,
@@ -48,6 +51,7 @@ class InterestsListState {
       failure: failure,
       hasMoreData: hasMoreData ?? this.hasMoreData,
       isLoadingPage: isLoadingPage ?? this.isLoadingPage,
+      unreadMessageCount: unreadMessageCount ?? this.unreadMessageCount,
     );
   }
 }
@@ -129,6 +133,7 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
             totalPage: actualTotalPage,
             hasMoreData: actualHasMoreData,
             failure: null, // Clear failure khi success
+            unreadMessageCount: interestsResult.unreadMessageCount, // Update unread count
           );
         },
       );
@@ -140,6 +145,22 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
         failure: ServerFailure('Đã xảy ra lỗi không mong muốn'),
       );
     }
+  }
+
+  // Method to update unread message count without full reload
+  void updateUnreadMessageCount(int count) {
+    state = state.copyWith(unreadMessageCount: count);
+  }
+
+  // Method to decrease unread count when messages are read
+  void decreaseUnreadCount(int amount) {
+    final newCount = (state.unreadMessageCount - amount).clamp(0, double.infinity).toInt();
+    state = state.copyWith(unreadMessageCount: newCount);
+  }
+
+  // Method to mark all messages as read
+  void markAllMessagesAsRead() {
+    state = state.copyWith(unreadMessageCount: 0);
   }
 
   // Pagination methods

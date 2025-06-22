@@ -95,6 +95,16 @@ class InterestsScreen extends HookConsumerWidget {
 
     // Handle chat tap
     void handleChatTap(int interestId) {
+      // Mark messages as read for current tab when opening chat
+      final currentTab = tabController.index;
+      if (currentTab == 0) {
+        // For interested posts tab, mark as read when opening chat
+        ref.read(interestedPostsProvider.notifier).markAllMessagesAsRead();
+      } else {
+        // For posts with interests tab, mark as read when opening chat
+        ref.read(postsWithInterestsProvider.notifier).markAllMessagesAsRead();
+      }
+      
       context.pushNamed(
         'interest-chat',
         pathParameters: {'interestId': interestId.toString()},
@@ -143,6 +153,10 @@ class InterestsScreen extends HookConsumerWidget {
     });
 
     final authState = ref.watch(authProvider);
+    
+    // Watch both provider states to get unread message counts
+    final interestedPostsState = ref.watch(interestedPostsProvider);
+    final postsWithInterestsState = ref.watch(postsWithInterestsProvider);
 
     if (!authState.isLoggedIn) {
       return SmartScaffold(
@@ -165,12 +179,14 @@ class InterestsScreen extends HookConsumerWidget {
         children: [
           Column(
             children: [
-              // Tab Bar
+              // Tab Bar with unread message badges
               InterestsTabBar(
                 isTablet: isTablet,
                 theme: theme,
                 colorScheme: colorScheme,
                 tabController: tabController,
+                interestedPostsUnreadCount: interestedPostsState.unreadMessageCount,
+                postsWithInterestsUnreadCount: postsWithInterestsState.unreadMessageCount,
               ),
 
               // Search and Filter Section

@@ -4,10 +4,12 @@ import 'package:trao_doi_do_app/domain/entities/response/interest_response.dart'
 class InterestsResponseModel {
   final List<InterestPostModel> interests;
   final int totalPage;
+  final int unreadMessageCount;
 
   const InterestsResponseModel({
     required this.interests,
     required this.totalPage,
+    required this.unreadMessageCount,
   });
 
   factory InterestsResponseModel.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class InterestsResponseModel {
                 ),
               )
               .toList(),
+      unreadMessageCount: json['unreadMessageCount'] ?? 0,
       totalPage: json['totalPage'] ?? 0,
     );
   }
@@ -27,6 +30,7 @@ class InterestsResponseModel {
   Map<String, dynamic> toJson() {
     return {
       'interests': interests.map((interest) => interest.toJson()).toList(),
+      'unreadMessageCount': unreadMessageCount,
       'totalPage': totalPage,
     };
   }
@@ -34,6 +38,7 @@ class InterestsResponseModel {
   InterestsResponse toEntity() {
     return InterestsResponse(
       interests: interests.map((interest) => interest.toEntity()).toList(),
+      unreadMessageCount: unreadMessageCount,
       totalPage: totalPage,
     );
   }
@@ -44,6 +49,7 @@ class InterestsResponseModel {
           entity.interests
               .map((interest) => InterestPostModel.fromEntity(interest))
               .toList(),
+      unreadMessageCount: entity.unreadMessageCount,
       totalPage: entity.totalPage,
     );
   }

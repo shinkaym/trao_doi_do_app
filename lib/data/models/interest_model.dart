@@ -109,6 +109,7 @@ class InterestPostModel {
   final int type;
   final List<InterestModel> interests;
   final List<InterestItemModel> items;
+  final int unreadMessageCount;
 
   const InterestPostModel({
     required this.id,
@@ -123,6 +124,7 @@ class InterestPostModel {
     required this.type,
     required this.interests,
     required this.items,
+    required this.unreadMessageCount,
   });
 
   // Từ JSON API response
@@ -158,6 +160,7 @@ class InterestPostModel {
                   )
                   .toList()
               : [],
+      unreadMessageCount: json['unreadMessageCount'] ?? 0,
     );
   }
 
@@ -176,6 +179,7 @@ class InterestPostModel {
       'type': type,
       'interests': interests.map((interest) => interest.toJson()).toList(),
       'items': items.map((item) => item.toJson()).toList(),
+      'unreadMessageCount': unreadMessageCount,
     };
   }
 
@@ -194,6 +198,7 @@ class InterestPostModel {
       type: type,
       interests: interests.map((interest) => interest.toEntity()).toList(),
       items: items.map((item) => item.toEntity()).toList(),
+      unreadMessageCount: unreadMessageCount,
     );
   }
 
@@ -218,6 +223,7 @@ class InterestPostModel {
           entity.items
               .map((item) => InterestItemModel.fromEntity(item))
               .toList(),
+      unreadMessageCount: entity.unreadMessageCount,
     );
   }
 }

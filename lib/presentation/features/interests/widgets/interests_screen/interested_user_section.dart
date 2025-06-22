@@ -9,7 +9,7 @@ class InterestedUsersSection extends StatefulWidget {
   final ThemeData theme;
   final ColorScheme colorScheme;
   final Function(int) handleChatTap;
-  final int? authUserId; // Add authUserId parameter
+  final int? authUserId;
 
   const InterestedUsersSection({
     super.key,
@@ -154,15 +154,7 @@ class InterestedUsersSectionState extends State<InterestedUsersSection>
           // User info row
           Row(
             children: [
-              CircleAvatar(
-                radius: widget.isTablet ? 16 : 14,
-                backgroundColor: widget.colorScheme.primary.withOpacity(0.1),
-                child: _buildInterestAvatar(
-                  interest,
-                  widget.isTablet,
-                  widget.colorScheme,
-                ),
-              ),
+              _buildInterestAvatar(interest),
               SizedBox(width: widget.isTablet ? 12 : 8),
               Expanded(
                 child: Column(
@@ -186,34 +178,72 @@ class InterestedUsersSectionState extends State<InterestedUsersSection>
                   ],
                 ),
               ),
-              InkWell(
-                onTap: () => widget.handleChatTap(interest.id),
-                borderRadius: BorderRadius.circular(6),
-                child: Container(
-                  padding: EdgeInsets.all(widget.isTablet ? 8 : 6),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: widget.colorScheme.outline.withOpacity(0.3),
-                    ),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Icon(
-                    Icons.chat_outlined,
-                    size: widget.isTablet ? 16 : 14,
-                    color: widget.colorScheme.primary,
-                  ),
-                ),
-              ),
+              // Chat button with notification badge
+              _buildChatButtonWithBadge(interest),
             ],
           ),
 
-          // Latest message section
+          // Latest message section - Always show if there's a message
           if (hasNewMessage) ...[
             SizedBox(height: widget.isTablet ? 8 : 6),
             _buildLatestMessageSection(interest, isUnread, isFromCurrentUser),
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildChatButtonWithBadge(Interest interest) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        InkWell(
+          onTap: () => widget.handleChatTap(interest.id),
+          borderRadius: BorderRadius.circular(6),
+          child: Container(
+            padding: EdgeInsets.all(widget.isTablet ? 8 : 6),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: widget.colorScheme.outline.withOpacity(0.3),
+              ),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(
+              Icons.chat_outlined,
+              size: widget.isTablet ? 16 : 14,
+              color: widget.colorScheme.primary,
+            ),
+          ),
+        ),
+        // Notification badge
+        if (interest.unreadMessageCount > 0)
+          Positioned(
+            right: -4,
+            top: -4,
+            child: Container(
+              padding: EdgeInsets.all(widget.isTablet ? 4 : 3),
+              decoration: BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              constraints: BoxConstraints(
+                minWidth: widget.isTablet ? 18 : 16,
+                minHeight: widget.isTablet ? 18 : 16,
+              ),
+              child: Text(
+                interest.unreadMessageCount > 99
+                    ? '99+'
+                    : interest.unreadMessageCount.toString(),
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: widget.isTablet ? 10 : 9,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -269,63 +299,34 @@ class InterestedUsersSectionState extends State<InterestedUsersSection>
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          // Show unread message count
-          if (interest.unreadMessageCount > 0) ...[
-            SizedBox(width: widget.isTablet ? 6 : 4),
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: widget.isTablet ? 6 : 4,
-                vertical: widget.isTablet ? 2 : 1,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.red,
-                borderRadius: BorderRadius.circular(widget.isTablet ? 10 : 8),
-              ),
-              constraints: BoxConstraints(
-                minWidth: widget.isTablet ? 16 : 14,
-                minHeight: widget.isTablet ? 16 : 14,
-              ),
-              child: Text(
-                interest.unreadMessageCount > 99
-                    ? '99+'
-                    : interest.unreadMessageCount.toString(),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: widget.isTablet ? 10 : 9,
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
-}
 
-Widget _buildInterestAvatar(
-  Interest interest,
-  bool isTablet,
-  ColorScheme colorScheme,
-) {
-  final radius = isTablet ? 16.0 : 14.0;
+  Widget _buildInterestAvatar(Interest interest) {
+    final radius = widget.isTablet ? 16.0 : 14.0;
 
-  if (interest.userAvatar.isNotEmpty) {
-    final imageBytes = Base64Utils.decodeImageFromBase64(interest.userAvatar);
+    if (interest.userAvatar.isNotEmpty) {
+      final imageBytes = Base64Utils.decodeImageFromBase64(interest.userAvatar);
 
-    if (imageBytes != null) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundImage: MemoryImage(imageBytes),
-      );
+      if (imageBytes != null) {
+        return CircleAvatar(
+          radius: radius,
+          backgroundImage: MemoryImage(imageBytes),
+        );
+      }
     }
-  }
 
-  // Fallback to icon
-  return CircleAvatar(
-    radius: radius,
-    backgroundColor: colorScheme.primary,
-    child: Icon(Icons.person, color: Colors.white, size: isTablet ? 16 : 14),
-  );
+    // Fallback to icon
+    return CircleAvatar(
+      radius: radius,
+      backgroundColor: widget.colorScheme.primary.withOpacity(0.1),
+      child: Icon(
+        Icons.person,
+        color: widget.colorScheme.primary,
+        size: widget.isTablet ? 16 : 14,
+      ),
+    );
+  }
 }

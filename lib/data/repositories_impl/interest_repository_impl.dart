@@ -46,6 +46,7 @@ class InterestRepositoryImpl implements InterestRepository {
       return InterestsResult(
         interests: response.interests.map((e) => e.toEntity()).toList(),
         totalPage: response.totalPage,
+        unreadMessageCount: response.unreadMessageCount,
       );
     }, 'Lỗi khi tải danh sách quan tâm');
   }

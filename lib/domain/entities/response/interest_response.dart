@@ -4,11 +4,16 @@ import 'package:trao_doi_do_app/domain/entities/interest.dart';
 class InterestsResponse extends Equatable {
   final List<InterestPost> interests;
   final int totalPage;
+  final int unreadMessageCount;
 
-  const InterestsResponse({required this.interests, required this.totalPage});
+  const InterestsResponse({
+    required this.interests,
+    required this.totalPage,
+    required this.unreadMessageCount,
+  });
 
   @override
-  List<Object?> get props => [interests, totalPage];
+  List<Object?> get props => [interests, totalPage, unreadMessageCount];
 }
 
 class InterestActionResponse extends Equatable {

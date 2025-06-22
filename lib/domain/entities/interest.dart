@@ -56,6 +56,7 @@ class InterestPost extends Equatable {
   final String authorAvatar;
   final List<Interest> interests;
   final List<InterestItem> items;
+  final int unreadMessageCount;
 
   const InterestPost({
     required this.id,
@@ -70,6 +71,7 @@ class InterestPost extends Equatable {
     required this.authorAvatar,
     required this.interests,
     required this.items,
+    required this.unreadMessageCount,
   });
 
   @override
@@ -86,6 +88,7 @@ class InterestPost extends Equatable {
     authorAvatar,
     interests,
     items,
+    unreadMessageCount,
   ];
 }
 
@@ -123,8 +126,13 @@ class InterestItem extends Equatable {
 class InterestsResult {
   final List<InterestPost> interests;
   final int totalPage;
+  final int unreadMessageCount;
 
-  const InterestsResult({required this.interests, required this.totalPage});
+  const InterestsResult({
+    required this.interests,
+    required this.totalPage,
+    required this.unreadMessageCount,
+  });
 }
 
 class InterestActionResult extends Equatable {

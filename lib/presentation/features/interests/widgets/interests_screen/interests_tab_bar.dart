@@ -5,6 +5,8 @@ class InterestsTabBar extends StatelessWidget {
   final ThemeData theme;
   final ColorScheme colorScheme;
   final TabController tabController;
+  final int interestedPostsUnreadCount; // Unread count for "Đang quan tâm" tab
+  final int postsWithInterestsUnreadCount; // Unread count for "Được quan tâm" tab
 
   const InterestsTabBar({
     super.key,
@@ -12,7 +14,38 @@ class InterestsTabBar extends StatelessWidget {
     required this.theme,
     required this.colorScheme,
     required this.tabController,
+    this.interestedPostsUnreadCount = 0,
+    this.postsWithInterestsUnreadCount = 0,
   });
+
+  Widget _buildBadge(int count) {
+    if (count <= 0) return const SizedBox.shrink();
+    
+    return Container(
+      margin: EdgeInsets.only(left: isTablet ? 6 : 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTablet ? 6 : 4,
+        vertical: isTablet ? 2 : 1,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.red,
+        borderRadius: BorderRadius.circular(isTablet ? 10 : 8),
+      ),
+      constraints: BoxConstraints(
+        minWidth: isTablet ? 18 : 16,
+        minHeight: isTablet ? 18 : 16,
+      ),
+      child: Text(
+        count > 99 ? '99+' : count.toString(),
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: isTablet ? 11 : 10,
+          fontWeight: FontWeight.w600,
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +67,7 @@ class InterestsTabBar extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                _buildBadge(interestedPostsUnreadCount),
               ],
             ),
           ),
@@ -50,6 +84,7 @@ class InterestsTabBar extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                _buildBadge(postsWithInterestsUnreadCount),
               ],
             ),
           ),
