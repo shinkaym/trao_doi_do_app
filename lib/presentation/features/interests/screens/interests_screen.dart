@@ -9,6 +9,7 @@ import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/interested_posts_tab.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/posts_with_interests_tab.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/scroll_to_top_button.dart';
+import 'package:trao_doi_do_app/presentation/providers/chat_notification_websocket_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/login_prompt.dart';
 import 'package:trao_doi_do_app/presentation/providers/interest_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
@@ -31,6 +32,15 @@ class InterestsScreen extends HookConsumerWidget {
     final sharedSearchController = useTextEditingController();
     final sharedSortField = useState('createdAt');
     final sharedSortOrder = useState('DESC');
+
+    final authState = ref.watch(authProvider);
+    final interestedPostsState = ref.watch(interestedPostsProvider);
+    final postsWithInterestsState = ref.watch(postsWithInterestsProvider);
+
+    final totalInterestedPostsUnreadCount =
+        interestedPostsState.unreadMessageCount;
+    final totalPostsWithInterestsUnreadCount =
+        postsWithInterestsState.unreadMessageCount;
 
     void applySharedFiltersToCurrentTab() {
       final currentTab = tabController.index;
@@ -57,6 +67,29 @@ class InterestsScreen extends HookConsumerWidget {
       }
     }
 
+    ref.listen<ChatNotificationWebSocketState>(
+      chatNotificationWebSocketProvider,
+      (previous, next) {
+        if (previous?.lastResponse != next.lastResponse &&
+            next.lastResponse?.event == 'send_message_response' &&
+            next.lastResponse?.isSuccess == true &&
+            next.lastResponse?.data != null) {
+          final data = next.lastResponse!.data!;
+          final messageType = data['type'] as String?;
+
+          if (messageType == 'followedBy') {
+            // Tin nhắn cho tab "Được quan tâm"
+            ref
+                .read(postsWithInterestsProvider.notifier)
+                .incrementUnreadCount();
+          } else if (messageType == 'following') {
+            // Tin nhắn cho tab "Đang quan tâm"
+            ref.read(interestedPostsProvider.notifier).incrementUnreadCount();
+          }
+        }
+      },
+    );
+
     // Load initial data for both tabs
     void loadInitialData() {
       final searchValue =
@@ -82,7 +115,7 @@ class InterestsScreen extends HookConsumerWidget {
       ref
           .read(interestedPostsProvider.notifier)
           .loadInterests(newQuery: interestedQuery, refresh: true);
-      
+
       // Only load unread count for the other tab to optimize performance
       ref
           .read(postsWithInterestsProvider.notifier)
@@ -92,7 +125,7 @@ class InterestsScreen extends HookConsumerWidget {
     // Handle tab changes - load full data for current tab if not loaded yet
     void onTabChanged() {
       if (tabController.indexIsChanging) return;
-      
+
       final currentTab = tabController.index;
       final searchValue =
           sharedSearchController.text.isEmpty
@@ -108,7 +141,6 @@ class InterestsScreen extends HookConsumerWidget {
 
       if (currentTab == 0) {
         final state = ref.read(interestedPostsProvider);
-        // If interests list is empty or type doesn't match, load full data
         if (state.interests.isEmpty || state.query.type != 1) {
           ref
               .read(interestedPostsProvider.notifier)
@@ -116,7 +148,6 @@ class InterestsScreen extends HookConsumerWidget {
         }
       } else {
         final state = ref.read(postsWithInterestsProvider);
-        // If interests list is empty or type doesn't match, load full data
         if (state.interests.isEmpty || state.query.type != 2) {
           ref
               .read(postsWithInterestsProvider.notifier)
@@ -152,16 +183,15 @@ class InterestsScreen extends HookConsumerWidget {
 
     // Handle chat tap
     void handleChatTap(int interestId) {
-      // Mark messages as read for current tab when opening chat
       final currentTab = tabController.index;
       if (currentTab == 0) {
-        // For interested posts tab, mark as read when opening chat
-        ref.read(interestedPostsProvider.notifier).markAllMessagesAsRead();
+        // Reset count cho tab "Đang quan tâm"
+        ref.read(interestedPostsProvider.notifier).resetUnreadCount();
       } else {
-        // For posts with interests tab, mark as read when opening chat
-        ref.read(postsWithInterestsProvider.notifier).markAllMessagesAsRead();
+        // Reset count cho tab "Được quan tâm"
+        ref.read(postsWithInterestsProvider.notifier).resetUnreadCount();
       }
-      
+
       context.pushNamed(
         'interest-chat',
         pathParameters: {'interestId': interestId.toString()},
@@ -209,12 +239,6 @@ class InterestsScreen extends HookConsumerWidget {
       }
     });
 
-    final authState = ref.watch(authProvider);
-    
-    // Watch both provider states to get unread message counts
-    final interestedPostsState = ref.watch(interestedPostsProvider);
-    final postsWithInterestsState = ref.watch(postsWithInterestsProvider);
-
     if (!authState.isLoggedIn) {
       return SmartScaffold(
         appBarType: AppBarType.standard,
@@ -242,8 +266,9 @@ class InterestsScreen extends HookConsumerWidget {
                 theme: theme,
                 colorScheme: colorScheme,
                 tabController: tabController,
-                interestedPostsUnreadCount: interestedPostsState.unreadMessageCount,
-                postsWithInterestsUnreadCount: postsWithInterestsState.unreadMessageCount,
+                interestedPostsUnreadCount: totalInterestedPostsUnreadCount,
+                postsWithInterestsUnreadCount:
+                    totalPostsWithInterestsUnreadCount,
               ),
 
               // Search and Filter Section

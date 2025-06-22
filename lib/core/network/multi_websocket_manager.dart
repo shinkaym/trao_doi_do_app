@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:trao_doi_do_app/core/network/websocket_client.dart';
 import 'package:trao_doi_do_app/domain/entities/response/websocket_response.dart';
 
-enum WebSocketChannel { chat, notification }
+enum WebSocketChannel { chat, chatNotification }
 
 class MultiWebSocketManager {
   final Map<WebSocketChannel, WebSocketClient> _clients = {};
@@ -22,20 +22,24 @@ class MultiWebSocketManager {
   Stream<WebSocketResponse> get chatResponseStream =>
       responseStream.where((response) => _isChatEvent(response.event));
 
-  Stream<WebSocketResponse> get notificationResponseStream =>
-      responseStream.where((response) => _isNotificationEvent(response.event));
+  Stream<WebSocketResponse> get chatNotificationResponseStream => responseStream
+      .where((response) => _isChatNotificationEvent(response.event));
 
   MultiWebSocketManager() {
     _clients[WebSocketChannel.chat] = WebSocketClient();
-    _clients[WebSocketChannel.notification] = WebSocketClient();
+    _clients[WebSocketChannel.chatNotification] = WebSocketClient();
   }
 
   Future<void> connectToChat(String? token) async {
     await _connectChannel(WebSocketChannel.chat, token, '/chat');
   }
 
-  Future<void> connectToNotification(String? token) async {
-    await _connectChannel(WebSocketChannel.notification, token, '/chat-noti');
+  Future<void> connectToChatNotification(String? token) async {
+    await _connectChannel(
+      WebSocketChannel.chatNotification,
+      token,
+      '/chat-noti',
+    );
   }
 
   Future<void> _connectChannel(
@@ -74,8 +78,8 @@ class MultiWebSocketManager {
     _clients[WebSocketChannel.chat]?.sendEvent(event, data);
   }
 
-  void sendNotificationEvent(String event, Map<String, dynamic> data) {
-    _clients[WebSocketChannel.notification]?.sendEvent(event, data);
+  void sendChatNotificationEvent(String event, Map<String, dynamic> data) {
+    _clients[WebSocketChannel.chatNotification]?.sendEvent(event, data);
   }
 
   WebSocketConnectionState getChatConnectionState() {
@@ -83,8 +87,8 @@ class MultiWebSocketManager {
         WebSocketConnectionState.disconnected;
   }
 
-  WebSocketConnectionState getNotificationConnectionState() {
-    return _clients[WebSocketChannel.notification]?.currentState ??
+  WebSocketConnectionState getChatNotificationConnectionState() {
+    return _clients[WebSocketChannel.chatNotification]?.currentState ??
         WebSocketConnectionState.disconnected;
   }
 
@@ -92,8 +96,8 @@ class MultiWebSocketManager {
     _clients[WebSocketChannel.chat]?.disconnect();
   }
 
-  void disconnectNotification() {
-    _clients[WebSocketChannel.notification]?.disconnect();
+  void disconnectChatNotification() {
+    _clients[WebSocketChannel.chatNotification]?.disconnect();
   }
 
   void disconnectAll() {
@@ -120,12 +124,10 @@ class MultiWebSocketManager {
     return chatEvents.contains(event);
   }
 
-  bool _isNotificationEvent(String event) {
-    const notificationEvents = [
-      'new_notification',
-      'message_notification',
-      'system_notification',
+  bool _isChatNotificationEvent(String event) {
+    const chatNotificationEvents = [
+      'join_noti_room_response', 'send_message_response',
     ];
-    return notificationEvents.contains(event);
+    return chatNotificationEvents.contains(event);
   }
 }

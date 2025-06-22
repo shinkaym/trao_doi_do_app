@@ -8,7 +8,7 @@ abstract class WebSocketRepository {
   WebSocketConnectionState get currentConnectionState;
 
   Future<void> connectToChat(String? token);
-  Future<void> connectToNotification(String? token);
+  Future<void> connectToChatNotification(String? token);
   void disconnect();
   void sendEvent(WebSocketEvent event);
   void joinRoom({required int interestID});

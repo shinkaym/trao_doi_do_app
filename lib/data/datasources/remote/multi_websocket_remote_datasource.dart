@@ -11,22 +11,22 @@ abstract class MultiWebSocketRemoteDataSource {
 
   // Specific streams
   Stream<WebSocketResponse> get chatResponseStream;
-  Stream<WebSocketResponse> get notificationResponseStream;
+  Stream<WebSocketResponse> get chatNotificationResponseStream;
 
   // Connection methods
   Future<void> connectToChat(String? token);
-  Future<void> connectToNotification(String? token);
+  Future<void> connectToChatNotification(String? token);
   Future<void> connectBoth(String? token);
 
   // State getters
   WebSocketConnectionState get chatConnectionState;
-  WebSocketConnectionState get notificationConnectionState;
+  WebSocketConnectionState get chatNotificationConnectionState;
 
   // Actions
   void sendChatEvent(WebSocketEvent event);
-  void sendNotificationEvent(WebSocketEvent event);
+  void sendChatNotificationEvent(WebSocketEvent event);
   void disconnectChat();
-  void disconnectNotification();
+  void disconnectChatNotification();
   void disconnectAll();
   void dispose();
 }
@@ -49,21 +49,21 @@ class MultiWebSocketRemoteDataSourceImpl
       _manager.chatResponseStream;
 
   @override
-  Stream<WebSocketResponse> get notificationResponseStream =>
-      _manager.notificationResponseStream;
+  Stream<WebSocketResponse> get chatNotificationResponseStream =>
+      _manager.chatNotificationResponseStream;
 
   @override
   Future<void> connectToChat(String? token) => _manager.connectToChat(token);
 
   @override
-  Future<void> connectToNotification(String? token) =>
-      _manager.connectToNotification(token);
+  Future<void> connectToChatNotification(String? token) =>
+      _manager.connectToChatNotification(token);
 
   @override
   Future<void> connectBoth(String? token) async {
     await Future.wait([
       _manager.connectToChat(token),
-      _manager.connectToNotification(token),
+      _manager.connectToChatNotification(token),
     ]);
   }
 
@@ -72,8 +72,8 @@ class MultiWebSocketRemoteDataSourceImpl
       _manager.getChatConnectionState();
 
   @override
-  WebSocketConnectionState get notificationConnectionState =>
-      _manager.getNotificationConnectionState();
+  WebSocketConnectionState get chatNotificationConnectionState =>
+      _manager.getChatNotificationConnectionState();
 
   @override
   void sendChatEvent(WebSocketEvent event) {
@@ -81,15 +81,15 @@ class MultiWebSocketRemoteDataSourceImpl
   }
 
   @override
-  void sendNotificationEvent(WebSocketEvent event) {
-    _manager.sendNotificationEvent(event.event.value, event.data);
+  void sendChatNotificationEvent(WebSocketEvent event) {
+    _manager.sendChatNotificationEvent(event.event.value, event.data);
   }
 
   @override
   void disconnectChat() => _manager.disconnectChat();
 
   @override
-  void disconnectNotification() => _manager.disconnectNotification();
+  void disconnectChatNotification() => _manager.disconnectChatNotification();
 
   @override
   void disconnectAll() => _manager.disconnectAll();

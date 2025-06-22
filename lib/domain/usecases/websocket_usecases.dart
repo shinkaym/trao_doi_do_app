@@ -12,13 +12,13 @@ class ConnectToChatUseCase {
   }
 }
 
-class ConnectToNotificationUseCase {
+class ConnectToChatNotificationUseCase {
   final WebSocketRepository _repository;
 
-  ConnectToNotificationUseCase(this._repository);
+  ConnectToChatNotificationUseCase(this._repository);
 
   Future<void> call(String? token) async {
-    await _repository.connectToNotification(token);
+    await _repository.connectToChatNotification(token);
   }
 }
 

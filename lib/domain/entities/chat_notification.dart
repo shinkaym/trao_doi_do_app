@@ -1,13 +1,13 @@
 class ChatNotification {
   final int interestID;
   final String type;
-  final int userID;
+  final int senderID;
   final DateTime timestamp;
 
   const ChatNotification({
     required this.interestID,
     required this.type,
-    required this.userID,
+    required this.senderID,
     required this.timestamp,
   });
 
@@ -15,13 +15,13 @@ class ChatNotification {
     return ChatNotification(
       interestID: json['interestID'] as int,
       type: json['type'] as String,
-      userID: json['userID'] as int,
+      senderID: json['senderID'] as int,
       timestamp: DateTime.parse(json['timestamp'] as String),
     );
   }
 
   @override
   String toString() {
-    return 'ChatNotification(interestID: $interestID, type: $type, userID: $userID, timestamp: $timestamp)';
+    return 'ChatNotification(interestID: $interestID, type: $type, senderID: $senderID, timestamp: $timestamp)';
   }
 }

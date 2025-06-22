@@ -9,7 +9,7 @@ abstract class WebSocketRemoteDataSource {
   WebSocketConnectionState get currentConnectionState;
 
   Future<void> connectToChat(String? token);
-  Future<void> connectToNotification(String? token);
+  Future<void> connectToChatNotification(String? token);
   void disconnect();
   void sendEvent(WebSocketEvent event);
   void dispose();
@@ -17,7 +17,7 @@ abstract class WebSocketRemoteDataSource {
 
 class WebSocketRemoteDataSourceImpl implements WebSocketRemoteDataSource {
   final WebSocketClient _chatClient;
-  final WebSocketClient _notificationClient;
+  final WebSocketClient _chatNotificationClient;
   WebSocketClient? _activeClient;
 
   // StreamControllers để broadcast events từ active client
@@ -29,7 +29,7 @@ class WebSocketRemoteDataSourceImpl implements WebSocketRemoteDataSource {
   StreamSubscription<Map<String, dynamic>>? _messageSubscription;
   StreamSubscription<WebSocketConnectionState>? _connectionSubscription;
 
-  WebSocketRemoteDataSourceImpl(this._chatClient, this._notificationClient);
+  WebSocketRemoteDataSourceImpl(this._chatClient, this._chatNotificationClient);
 
   @override
   Stream<WebSocketResponse> get responseStream => _responseController.stream;
@@ -51,10 +51,10 @@ class WebSocketRemoteDataSourceImpl implements WebSocketRemoteDataSource {
   }
 
   @override
-  Future<void> connectToNotification(String? token) async {
-    print('🔄 Switching to notification client...');
-    await _switchActiveClient(_notificationClient);
-    await _notificationClient.connect(token, '/chat-noti');
+  Future<void> connectToChatNotification(String? token) async {
+    print('🔄 Switching to chatNotification client...');
+    await _switchActiveClient(_chatNotificationClient);
+    await _chatNotificationClient.connect(token, '/chat-noti');
   }
 
   Future<void> _switchActiveClient(WebSocketClient newClient) async {
@@ -132,7 +132,7 @@ class WebSocketRemoteDataSourceImpl implements WebSocketRemoteDataSource {
 
     // Dispose clients
     _chatClient.dispose();
-    _notificationClient.dispose();
+    _chatNotificationClient.dispose();
 
     _activeClient = null;
   }

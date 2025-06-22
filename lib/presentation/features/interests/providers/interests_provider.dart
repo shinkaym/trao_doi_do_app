@@ -14,9 +14,8 @@ class InterestsListState {
   final Failure? failure;
   final bool hasMoreData;
   final bool isLoadingPage;
-  final int unreadMessageCount; // Added unread message count
-  final bool isLoadingUnreadCount; // Added loading state for unread count
-
+  final int unreadMessageCount;
+  final bool isLoadingUnreadCount;
   InterestsListState({
     this.isLoading = false,
     this.isLoadingMore = false,
@@ -137,7 +136,8 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
             totalPage: actualTotalPage,
             hasMoreData: actualHasMoreData,
             failure: null, // Clear failure khi success
-            unreadMessageCount: interestsResult.unreadMessageCount, // Update unread count
+            unreadMessageCount:
+                interestsResult.unreadMessageCount, // Update unread count
           );
         },
       );
@@ -161,7 +161,7 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
       final queryToUse = query ?? state.query;
       // Create a query with minimal data - just get first page with 1 item to get unread count
       final countQuery = queryToUse.copyWith(page: 1, limit: 1);
-      
+
       final result = await _getInterestsUseCase(countQuery);
 
       result.fold(
@@ -185,7 +185,8 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
 
   // Method to decrease unread count when messages are read
   void decreaseUnreadCount(int amount) {
-    final newCount = (state.unreadMessageCount - amount).clamp(0, double.infinity).toInt();
+    final newCount =
+        (state.unreadMessageCount - amount).clamp(0, double.infinity).toInt();
     state = state.copyWith(unreadMessageCount: newCount);
   }
 
@@ -235,5 +236,15 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
 
   void refresh() {
     loadInterests(refresh: true);
+  }
+
+  // Thêm method để increment unread count
+  void incrementUnreadCount() {
+    state = state.copyWith(unreadMessageCount: state.unreadMessageCount + 1);
+  }
+
+  // Method để reset unread count khi user vào chat
+  void resetUnreadCount() {
+    state = state.copyWith(unreadMessageCount: 0);
   }
 }

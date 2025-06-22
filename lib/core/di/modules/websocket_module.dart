@@ -12,7 +12,7 @@ import 'package:trao_doi_do_app/domain/repositories/websocket_repository.dart';
 import 'package:trao_doi_do_app/domain/usecases/websocket_usecases.dart';
 import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/chat_websocket_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/notification_websocket_provider.dart';
+import 'package:trao_doi_do_app/presentation/providers/chat_notification_websocket_provider.dart';
 import '../modules/core_module.dart';
 import '../modules/auth_module.dart';
 
@@ -65,13 +65,13 @@ final chatWebSocketProvider = StateNotifierProvider.autoDispose<
   return notifier;
 });
 
-// Notification WebSocket Provider
-final notificationWebSocketProvider = StateNotifierProvider.autoDispose<
-  NotificationWebSocketNotifier,
-  NotificationWebSocketState
+// ChatNotification WebSocket Provider
+final chatNotificationWebSocketProvider = StateNotifierProvider<
+  ChatNotificationWebSocketNotifier,
+  ChatNotificationWebSocketState
 >((ref) {
   final repository = ref.watch(multiWebSocketRepositoryProvider);
-  final notifier = NotificationWebSocketNotifier(repository);
+  final notifier = ChatNotificationWebSocketNotifier(repository);
 
   ref.onDispose(() {
     notifier.disconnect();
@@ -87,27 +87,25 @@ final multiWebSocketConnectionProvider = Provider.autoDispose((ref) {
   // Listen to auth state changes
   ref.listen<AuthState>(authProvider, (previous, next) {
     final chatNotifier = ref.read(chatWebSocketProvider.notifier);
-    final notificationNotifier = ref.read(
-      notificationWebSocketProvider.notifier,
-    );
+    final chatNotificationNotifier = ref.read(chatNotificationWebSocketProvider.notifier);
 
     // Auto connect when user logs in
     if (next.isLoggedIn &&
         next.user != null &&
         (previous?.isLoggedIn != true)) {
-      _autoConnectBoth(ref, chatNotifier, notificationNotifier);
+      _autoConnectBoth(ref, chatNotifier, chatNotificationNotifier);
     }
 
     // Auto disconnect when user logs out
     if (!next.isLoggedIn && (previous?.isLoggedIn == true)) {
       chatNotifier.disconnect();
-      notificationNotifier.disconnect();
+      chatNotificationNotifier.disconnect();
     }
   });
 
   return {
     'chat': ref.read(chatWebSocketProvider.notifier),
-    'notification': ref.read(notificationWebSocketProvider.notifier),
+    'chatNotification': ref.read(chatNotificationWebSocketProvider.notifier),
   };
 });
 
@@ -125,20 +123,21 @@ final chatWebSocketClientProvider = Provider.autoDispose<WebSocketClient>((
   return client;
 });
 
-final notificationWebSocketClientProvider =
-    Provider.autoDispose<WebSocketClient>((ref) {
-      final client = WebSocketClient();
-      ref.onDispose(() {
-        client.dispose();
-      });
-      return client;
-    });
+final chatNotificationWebSocketClientProvider = Provider.autoDispose<WebSocketClient>((
+  ref,
+) {
+  final client = WebSocketClient();
+  ref.onDispose(() {
+    client.dispose();
+  });
+  return client;
+});
 
 final webSocketRemoteDataSourceProvider =
     Provider.autoDispose<WebSocketRemoteDataSource>((ref) {
       final chatClient = ref.watch(chatWebSocketClientProvider);
-      final notificationClient = ref.watch(notificationWebSocketClientProvider);
-      return WebSocketRemoteDataSourceImpl(chatClient, notificationClient);
+      final chatNotificationClient = ref.watch(chatNotificationWebSocketClientProvider);
+      return WebSocketRemoteDataSourceImpl(chatClient, chatNotificationClient);
     });
 
 final webSocketRepositoryProvider = Provider.autoDispose<WebSocketRepository>((
@@ -156,10 +155,10 @@ final connectToChatUseCaseProvider = Provider.autoDispose<ConnectToChatUseCase>(
   },
 );
 
-final connectToNotificationUseCaseProvider =
-    Provider.autoDispose<ConnectToNotificationUseCase>((ref) {
+final connectToChatNotificationUseCaseProvider =
+    Provider.autoDispose<ConnectToChatNotificationUseCase>((ref) {
       final repository = ref.watch(webSocketRepositoryProvider);
-      return ConnectToNotificationUseCase(repository);
+      return ConnectToChatNotificationUseCase(repository);
     });
 
 final disconnectWebSocketUseCaseProvider =
@@ -205,7 +204,7 @@ final getWebSocketConnectionStreamUseCaseProvider =
 void _autoConnectBoth(
   ProviderRef ref,
   ChatWebSocketNotifier chatNotifier,
-  NotificationWebSocketNotifier notificationNotifier,
+  ChatNotificationWebSocketNotifier chatNotificationNotifier,
 ) {
   ref
       .read(authLocalDataSourceProvider)
@@ -213,7 +212,7 @@ void _autoConnectBoth(
       .then((token) {
         if (token != null) {
           chatNotifier.connect(token);
-          notificationNotifier.connect(token);
+          chatNotificationNotifier.connect(token);
         }
       })
       .catchError((error) {

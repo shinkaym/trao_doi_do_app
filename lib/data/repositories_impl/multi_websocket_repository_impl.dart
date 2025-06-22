@@ -22,16 +22,16 @@ class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
       _remoteDataSource.chatResponseStream;
 
   @override
-  Stream<WebSocketResponse> get notificationResponseStream =>
-      _remoteDataSource.notificationResponseStream;
+  Stream<WebSocketResponse> get chatNotificationResponseStream =>
+      _remoteDataSource.chatNotificationResponseStream;
 
   @override
   Future<void> connectToChat(String? token) =>
       _remoteDataSource.connectToChat(token);
 
   @override
-  Future<void> connectToNotification(String? token) =>
-      _remoteDataSource.connectToNotification(token);
+  Future<void> connectToChatNotification(String? token) =>
+      _remoteDataSource.connectToChatNotification(token);
 
   @override
   Future<void> connectBoth(String? token) =>
@@ -42,8 +42,8 @@ class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
       _remoteDataSource.chatConnectionState;
 
   @override
-  WebSocketConnectionState get notificationConnectionState =>
-      _remoteDataSource.notificationConnectionState;
+  WebSocketConnectionState get chatNotificationConnectionState =>
+      _remoteDataSource.chatNotificationConnectionState;
 
   @override
   void sendMessage({
@@ -77,7 +77,8 @@ class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
   void disconnectChat() => _remoteDataSource.disconnectChat();
 
   @override
-  void disconnectNotification() => _remoteDataSource.disconnectNotification();
+  void disconnectChatNotification() =>
+      _remoteDataSource.disconnectChatNotification();
 
   @override
   void disconnectAll() => _remoteDataSource.disconnectAll();

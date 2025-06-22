@@ -6,16 +6,16 @@ abstract class MultiWebSocketRepository {
   Stream<WebSocketResponse> get responseStream;
   Stream<WebSocketConnectionState> get connectionStream;
   Stream<WebSocketResponse> get chatResponseStream;
-  Stream<WebSocketResponse> get notificationResponseStream;
+  Stream<WebSocketResponse> get chatNotificationResponseStream;
 
   // Connection management
   Future<void> connectToChat(String? token);
-  Future<void> connectToNotification(String? token);
+  Future<void> connectToChatNotification(String? token);
   Future<void> connectBoth(String? token);
 
   // State getters
   WebSocketConnectionState get chatConnectionState;
-  WebSocketConnectionState get notificationConnectionState;
+  WebSocketConnectionState get chatNotificationConnectionState;
 
   // Chat actions
   void sendMessage({
@@ -29,7 +29,7 @@ abstract class MultiWebSocketRepository {
 
   // Disconnect actions
   void disconnectChat();
-  void disconnectNotification();
+  void disconnectChatNotification();
   void disconnectAll();
   void dispose();
 }

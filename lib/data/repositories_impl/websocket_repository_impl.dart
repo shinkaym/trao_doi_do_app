@@ -27,8 +27,8 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
   }
 
   @override
-  Future<void> connectToNotification(String? token) async {
-    await _remoteDataSource.connectToNotification(token);
+  Future<void> connectToChatNotification(String? token) async {
+    await _remoteDataSource.connectToChatNotification(token);
   }
 
   @override

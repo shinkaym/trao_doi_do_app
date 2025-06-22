@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/nav_bar_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/presentation/providers/chat_notification_websocket_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/unread_count_provider.dart';
 
 class CustomBottomNavigation extends HookConsumerWidget {
@@ -34,8 +35,17 @@ class CustomBottomNavigation extends HookConsumerWidget {
       [animationController],
     );
 
-    // Theo dõi unread count state
+    // Watch auth state và providers
+    final authState = ref.watch(authProvider);
+    final chatNotificationState = ref.watch(chatNotificationWebSocketProvider);
     final unreadCountState = ref.watch(unreadCountProvider);
+
+    // Notifiers
+    final chatNotificationNotifier = ref.read(
+      chatNotificationWebSocketProvider.notifier,
+    );
+    final unreadCountNotifier = ref.read(unreadCountProvider.notifier);
+    final getAccessTokenUseCase = ref.read(getAccessTokenUseCaseProvider);
 
     // Load unread count khi widget được build lần đầu
     useEffect(() {
@@ -44,6 +54,103 @@ class CustomBottomNavigation extends HookConsumerWidget {
       });
       return null;
     }, []);
+
+    // Lắng nghe WebSocket messages để tự động tăng unread count
+    ref.listen<ChatNotificationWebSocketState>(
+      chatNotificationWebSocketProvider,
+      (previous, next) {
+        // Kiểm tra nếu có tin nhắn mới từ WebSocket
+        if (previous?.lastResponse != next.lastResponse &&
+            next.lastResponse?.event == 'send_message_response' &&
+            next.lastResponse?.isSuccess == true &&
+            next.lastResponse?.data != null) {
+          
+          print('📨 New message received, increasing unread count');
+          
+          // Tăng unread count thêm 1
+          unreadCountNotifier.updateCount(unreadCountState.count + 1);
+          
+          // Có thể thêm haptic feedback để thông báo cho user
+          HapticFeedback.lightImpact();
+        }
+        
+        // Xử lý các event khác nếu cần
+        if (previous?.lastResponse != next.lastResponse &&
+            next.lastResponse != null) {
+          switch (next.lastResponse!.event) {
+            case 'new_chat_notification':
+              // Xử lý notification chat khác
+              print('📢 New chat notification received');
+              unreadCountNotifier.updateCount(unreadCountState.count + 1);
+              break;
+              
+            case 'mark_as_read_response':
+              // Có thể reset unread count nếu server báo đã đọc
+              if (next.lastResponse!.isSuccess) {
+                print('✅ Messages marked as read');
+                // Không cần làm gì vì user sẽ tự decrease count khi vào chat
+              }
+              break;
+              
+            default:
+              // Xử lý các event khác
+              break;
+          }
+        }
+      },
+    );
+
+    // Kết nối tới chat notification WebSocket khi đã đăng nhập
+    useEffect(() {
+      Future.microtask(() async {
+        if (authState.isLoggedIn &&
+            authState.user != null &&
+            !chatNotificationState.isConnected &&
+            !chatNotificationState.isConnecting) {
+          print('🔌 Connecting to chat notification WebSocket...');
+
+          final result = await getAccessTokenUseCase.execute();
+          result.fold(
+            (failure) => {
+              print(
+                '❌ Failed to get access token for chat notification: ${failure.message}',
+              ),
+            },
+            (token) =>
+                chatNotificationNotifier.connectToChatNotification(token),
+          );
+        }
+
+        // Ngắt kết nối khi đăng xuất
+        if (!authState.isLoggedIn && chatNotificationState.isConnected) {
+          print('🔌 Disconnecting from chat notification WebSocket...');
+          chatNotificationNotifier.disconnect();
+        }
+      });
+      return null;
+    }, [authState.isLoggedIn, authState.user]);
+
+    // Xử lý WebSocket connection state changes
+    useEffect(() {
+      if (chatNotificationState.isConnected) {
+        print('✅ Chat notification WebSocket connected');
+      } else if (chatNotificationState.hasError) {
+        print(
+          '❌ Chat notification WebSocket error: ${chatNotificationState.error}',
+        );
+      }
+      return null;
+    }, [chatNotificationState.connectionState]);
+
+    // Xử lý lỗi WebSocket
+    useEffect(() {
+      if (chatNotificationState.error != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          print('❌ Chat notification error: ${chatNotificationState.error}');
+        });
+      }
+      return null;
+    }, [chatNotificationState.error]);
 
     // Function để xử lý tap
     void onItemTapped(int index) {
@@ -97,6 +204,7 @@ class CustomBottomNavigation extends HookConsumerWidget {
                     scaleAnimation,
                     onItemTapped,
                     unreadCountState,
+                    chatNotificationState,
                   );
                 }).toList(),
           ),
@@ -113,14 +221,18 @@ class CustomBottomNavigation extends HookConsumerWidget {
     Animation<double> scaleAnimation,
     Function(int) onItemTapped,
     UnreadCountState unreadCountState,
+    ChatNotificationWebSocketState chatNotificationState,
   ) {
     final theme = context.theme;
     final colorScheme = context.colorScheme;
     final isSelected = currentIndex == index;
 
-    // Kiểm tra xem có phải tab "Quan tâm" không (index = 2)
     final isInterestsTab = index == 2;
-    final hasUnreadMessages = isInterestsTab && unreadCountState.count > 0;
+
+    // Tổng unread count từ unread count provider và chat notification counts
+    final totalUnreadCount = unreadCountState.count;
+    
+    final hasUnreadMessages = isInterestsTab && totalUnreadCount > 0;
 
     if (item.isSpecial) {
       return _buildSpecialButton(
@@ -130,7 +242,7 @@ class CustomBottomNavigation extends HookConsumerWidget {
         isTablet,
         onItemTapped,
         hasUnreadMessages,
-        unreadCountState.count,
+        totalUnreadCount,
       );
     }
 
@@ -186,7 +298,7 @@ class CustomBottomNavigation extends HookConsumerWidget {
                             top: -2,
                             child: _buildUnreadBadge(
                               context,
-                              unreadCountState.count,
+                              totalUnreadCount,
                               isTablet,
                             ),
                           ),
@@ -316,7 +428,6 @@ class CustomBottomNavigation extends HookConsumerWidget {
   }
 
   Widget _buildUnreadBadge(BuildContext context, int count, bool isTablet) {
-    // final colorScheme = context.colorScheme;
     final badgeText = count > 99 ? '99+' : count.toString();
     final fontSize = isTablet ? 10.0 : 8.0;
     final badgeSize = isTablet ? 20.0 : 16.0;
@@ -330,8 +441,7 @@ class CustomBottomNavigation extends HookConsumerWidget {
       ),
       decoration: BoxDecoration(
         color: Colors.red,
-        shape: BoxShape.circle, // Sử dụng shape circle thay vì borderRadius
-        // border: Border.all(color: colorScheme.surface, width: 2),
+        shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
             color: Colors.red.withOpacity(0.3),
