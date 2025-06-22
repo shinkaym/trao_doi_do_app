@@ -57,15 +57,72 @@ class InterestsScreen extends HookConsumerWidget {
       }
     }
 
-    // Load initial data
+    // Load initial data for both tabs
     void loadInitialData() {
-      applySharedFiltersToCurrentTab();
+      final searchValue =
+          sharedSearchController.text.isEmpty
+              ? null
+              : sharedSearchController.text;
+
+      final interestedQuery = InterestsQuery(
+        type: 1, // Interested posts tab
+        sort: sharedSortField.value,
+        order: sharedSortOrder.value,
+        search: searchValue,
+      );
+
+      final postsWithInterestsQuery = InterestsQuery(
+        type: 2, // Posts with interests tab
+        sort: sharedSortField.value,
+        order: sharedSortOrder.value,
+        search: searchValue,
+      );
+
+      // Load full data for current tab (default is tab 0)
+      ref
+          .read(interestedPostsProvider.notifier)
+          .loadInterests(newQuery: interestedQuery, refresh: true);
+      
+      // Only load unread count for the other tab to optimize performance
+      ref
+          .read(postsWithInterestsProvider.notifier)
+          .loadUnreadMessageCount(query: postsWithInterestsQuery);
     }
 
-    // Handle tab changes
+    // Handle tab changes - load full data for current tab if not loaded yet
     void onTabChanged() {
       if (tabController.indexIsChanging) return;
-      applySharedFiltersToCurrentTab();
+      
+      final currentTab = tabController.index;
+      final searchValue =
+          sharedSearchController.text.isEmpty
+              ? null
+              : sharedSearchController.text;
+
+      final query = InterestsQuery(
+        type: currentTab == 0 ? 1 : 2,
+        sort: sharedSortField.value,
+        order: sharedSortOrder.value,
+        search: searchValue,
+      );
+
+      if (currentTab == 0) {
+        final state = ref.read(interestedPostsProvider);
+        // If interests list is empty or type doesn't match, load full data
+        if (state.interests.isEmpty || state.query.type != 1) {
+          ref
+              .read(interestedPostsProvider.notifier)
+              .loadInterests(newQuery: query, refresh: true);
+        }
+      } else {
+        final state = ref.read(postsWithInterestsProvider);
+        // If interests list is empty or type doesn't match, load full data
+        if (state.interests.isEmpty || state.query.type != 2) {
+          ref
+              .read(postsWithInterestsProvider.notifier)
+              .loadInterests(newQuery: query, refresh: true);
+        }
+      }
     }
 
     // Handle search

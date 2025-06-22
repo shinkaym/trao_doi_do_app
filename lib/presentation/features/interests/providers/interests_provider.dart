@@ -15,6 +15,7 @@ class InterestsListState {
   final bool hasMoreData;
   final bool isLoadingPage;
   final int unreadMessageCount; // Added unread message count
+  final bool isLoadingUnreadCount; // Added loading state for unread count
 
   InterestsListState({
     this.isLoading = false,
@@ -27,6 +28,7 @@ class InterestsListState {
     this.hasMoreData = true,
     this.isLoadingPage = false,
     this.unreadMessageCount = 0, // Default to 0
+    this.isLoadingUnreadCount = false,
   });
 
   InterestsListState copyWith({
@@ -40,6 +42,7 @@ class InterestsListState {
     bool? hasMoreData,
     bool? isLoadingPage,
     int? unreadMessageCount,
+    bool? isLoadingUnreadCount,
   }) {
     return InterestsListState(
       isLoading: isLoading ?? this.isLoading,
@@ -52,6 +55,7 @@ class InterestsListState {
       hasMoreData: hasMoreData ?? this.hasMoreData,
       isLoadingPage: isLoadingPage ?? this.isLoadingPage,
       unreadMessageCount: unreadMessageCount ?? this.unreadMessageCount,
+      isLoadingUnreadCount: isLoadingUnreadCount ?? this.isLoadingUnreadCount,
     );
   }
 }
@@ -144,6 +148,33 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
         isLoadingPage: false,
         failure: ServerFailure('Đã xảy ra lỗi không mong muốn'),
       );
+    }
+  }
+
+  // New method to load only unread message count without loading posts
+  Future<void> loadUnreadMessageCount({InterestsQuery? query}) async {
+    if (state.isLoadingUnreadCount) return;
+
+    state = state.copyWith(isLoadingUnreadCount: true);
+
+    try {
+      final queryToUse = query ?? state.query;
+      // Create a query with minimal data - just get first page with 1 item to get unread count
+      final countQuery = queryToUse.copyWith(page: 1, limit: 1);
+      
+      final result = await _getInterestsUseCase(countQuery);
+
+      result.fold(
+        (failure) => state = state.copyWith(isLoadingUnreadCount: false),
+        (interestsResult) {
+          state = state.copyWith(
+            isLoadingUnreadCount: false,
+            unreadMessageCount: interestsResult.unreadMessageCount,
+          );
+        },
+      );
+    } catch (e) {
+      state = state.copyWith(isLoadingUnreadCount: false);
     }
   }
 
