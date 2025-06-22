@@ -184,10 +184,10 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
   }
 
   // Method to decrease unread count when messages are read
-  void decreaseUnreadCount(int amount) {
-    final newCount =
-        (state.unreadMessageCount - amount).clamp(0, double.infinity).toInt();
-    state = state.copyWith(unreadMessageCount: newCount);
+  void decreaseUnreadCount(int countToDecrease) {
+    final newTotalCount = state.unreadMessageCount - countToDecrease;
+    final finalCount = newTotalCount < 0 ? 0 : newTotalCount;
+    state = state.copyWith(unreadMessageCount: finalCount);
   }
 
   // Method to mark all messages as read
@@ -246,5 +246,179 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
   // Method để reset unread count khi user vào chat
   void resetUnreadCount() {
     state = state.copyWith(unreadMessageCount: 0);
+  }
+
+  void updateInterestUnreadCount(int interestId, int newCount) {
+    final updatedInterests =
+        state.interests.map((post) {
+          final updatedInterests =
+              post.interests.map((interest) {
+                if (interest.id == interestId) {
+                  return Interest(
+                    id: interest.id,
+                    postID: interest.postID,
+                    userID: interest.userID,
+                    userName: interest.userName,
+                    userAvatar: interest.userAvatar,
+                    status: interest.status,
+                    createdAt: interest.createdAt,
+                    newMessage: interest.newMessage,
+                    messageFromID: interest.messageFromID,
+                    newMessageIsRead: interest.newMessageIsRead,
+                    unreadMessageCount: newCount,
+                  );
+                }
+                return interest;
+              }).toList();
+
+          return InterestPost(
+            id: post.id,
+            slug: post.slug,
+            title: post.title,
+            type: post.type,
+            description: post.description,
+            createdAt: post.createdAt,
+            updatedAt: post.updatedAt,
+            authorID: post.authorID,
+            authorName: post.authorName,
+            authorAvatar: post.authorAvatar,
+            interests: updatedInterests,
+            items: post.items,
+            unreadMessageCount: post.unreadMessageCount,
+          );
+        }).toList();
+
+    state = state.copyWith(interests: updatedInterests);
+  }
+
+  // Method để tăng unread count cho một interest cụ thể
+  void incrementInterestUnreadCount(int interestId) {
+    final updatedPosts =
+        state.interests.map((post) {
+          // Find if this post contains the interest
+          final updatedInterests =
+              post.interests.map((interest) {
+                if (interest.id == interestId) {
+                  // Create updated interest with incremented count
+                  return Interest(
+                    id: interest.id,
+                    postID: interest.postID,
+                    userID: interest.userID,
+                    userName: interest.userName,
+                    userAvatar: interest.userAvatar,
+                    status: interest.status,
+                    createdAt: interest.createdAt,
+                    newMessage: interest.newMessage,
+                    messageFromID: interest.messageFromID,
+                    newMessageIsRead: interest.newMessageIsRead,
+                    unreadMessageCount: interest.unreadMessageCount + 1,
+                  );
+                }
+                return interest;
+              }).toList();
+
+          // Check if any interest in this post was updated
+          final hasUpdatedInterest = updatedInterests.any(
+            (interest) => interest.id == interestId,
+          );
+
+          if (hasUpdatedInterest) {
+            // Calculate new total unread count for this post
+            final newPostUnreadCount = updatedInterests.fold<int>(
+              0,
+              (sum, interest) => sum + interest.unreadMessageCount,
+            );
+
+            // Return updated post with new interests and total count
+            return InterestPost(
+              id: post.id,
+              slug: post.slug,
+              title: post.title,
+              type: post.type,
+              description: post.description,
+              createdAt: post.createdAt,
+              updatedAt: post.updatedAt,
+              authorID: post.authorID,
+              authorName: post.authorName,
+              authorAvatar: post.authorAvatar,
+              interests: updatedInterests,
+              items: post.items,
+              unreadMessageCount: newPostUnreadCount,
+            );
+          }
+
+          return post;
+        }).toList();
+
+    state = state.copyWith(interests: updatedPosts);
+  }
+
+  // Method để reset unread count cho một interest cụ thể khi user vào chat
+  void resetInterestUnreadCount(int interestId) {
+    final updatedPosts =
+        state.interests.map((post) {
+          // Find if this post contains the interest
+          final updatedInterests =
+              post.interests.map((interest) {
+                if (interest.id == interestId) {
+                  // Create updated interest with reset count
+                  return Interest(
+                    id: interest.id,
+                    postID: interest.postID,
+                    userID: interest.userID,
+                    userName: interest.userName,
+                    userAvatar: interest.userAvatar,
+                    status: interest.status,
+                    createdAt: interest.createdAt,
+                    newMessage: interest.newMessage,
+                    messageFromID: interest.messageFromID,
+                    newMessageIsRead: 1, // Mark as read
+                    unreadMessageCount: 0, // Reset to 0
+                  );
+                }
+                return interest;
+              }).toList();
+
+          // Check if any interest in this post was updated
+          final hasUpdatedInterest = updatedInterests.any(
+            (interest) => interest.id == interestId,
+          );
+
+          if (hasUpdatedInterest) {
+            // Calculate new total unread count for this post
+            final newPostUnreadCount = updatedInterests.fold<int>(
+              0,
+              (sum, interest) => sum + interest.unreadMessageCount,
+            );
+
+            // Return updated post with new interests and total count
+            return InterestPost(
+              id: post.id,
+              slug: post.slug,
+              title: post.title,
+              type: post.type,
+              description: post.description,
+              createdAt: post.createdAt,
+              updatedAt: post.updatedAt,
+              authorID: post.authorID,
+              authorName: post.authorName,
+              authorAvatar: post.authorAvatar,
+              interests: updatedInterests,
+              items: post.items,
+              unreadMessageCount: newPostUnreadCount,
+            );
+          }
+
+          return post;
+        }).toList();
+
+    state = state.copyWith(interests: updatedPosts);
+  }
+
+  int getTotalUnreadCount() {
+    return state.interests.fold<int>(
+      0,
+      (sum, post) => sum + post.unreadMessageCount,
+    );
   }
 }

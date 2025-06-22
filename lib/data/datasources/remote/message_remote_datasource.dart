@@ -40,7 +40,7 @@ class MessageRemoteDataSourceImpl implements MessageRemoteDataSource {
 
     final result = ApiResponseModel.fromJson(
       response.data,
-      (json) => json as String,
+      (json) => json as dynamic,
     );
 
     return result.data!;

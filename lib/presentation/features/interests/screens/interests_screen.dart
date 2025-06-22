@@ -3,6 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/interest_query.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/search_filter_section.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/interests_tab_bar.dart';
@@ -67,28 +68,36 @@ class InterestsScreen extends HookConsumerWidget {
       }
     }
 
-    ref.listen<ChatNotificationWebSocketState>(
-      chatNotificationWebSocketProvider,
-      (previous, next) {
-        if (previous?.lastResponse != next.lastResponse &&
-            next.lastResponse?.event == 'send_message_response' &&
-            next.lastResponse?.isSuccess == true &&
-            next.lastResponse?.data != null) {
-          final data = next.lastResponse!.data!;
-          final messageType = data['type'] as String?;
+    ref.listen<
+      ChatNotificationWebSocketState
+    >(chatNotificationWebSocketProvider, (previous, next) {
+      if (previous?.lastResponse != next.lastResponse &&
+          next.lastResponse?.event == 'send_message_response' &&
+          next.lastResponse?.isSuccess == true &&
+          next.lastResponse?.data != null) {
+        final data = next.lastResponse!.data!;
+        final messageType = data['type'] as String?;
+        final interestID = data['interestID'] as int?;
 
+        if (messageType != null && interestID != null) {
           if (messageType == 'followedBy') {
-            // Tin nhắn cho tab "Được quan tâm"
+            // Tin nhắn cho tab "Được quan tâm" - tăng tổng count và count của interest cụ thể
             ref
                 .read(postsWithInterestsProvider.notifier)
                 .incrementUnreadCount();
+            ref
+                .read(postsWithInterestsProvider.notifier)
+                .incrementInterestUnreadCount(interestID);
           } else if (messageType == 'following') {
-            // Tin nhắn cho tab "Đang quan tâm"
+            // Tin nhắn cho tab "Đang quan tâm" - tăng tổng count và count của interest cụ thể
             ref.read(interestedPostsProvider.notifier).incrementUnreadCount();
+            ref
+                .read(interestedPostsProvider.notifier)
+                .incrementInterestUnreadCount(interestID);
           }
         }
-      },
-    );
+      }
+    });
 
     // Load initial data for both tabs
     void loadInitialData() {
@@ -186,10 +195,68 @@ class InterestsScreen extends HookConsumerWidget {
       final currentTab = tabController.index;
       if (currentTab == 0) {
         // Reset count cho tab "Đang quan tâm"
-        ref.read(interestedPostsProvider.notifier).resetUnreadCount();
+        ref
+            .read(interestedPostsProvider.notifier)
+            .resetInterestUnreadCount(interestId);
+        // Cũng giảm tổng count tương ứng
+        final currentInterest = ref
+            .read(interestedPostsProvider)
+            .interests
+            .expand((post) => post.interests)
+            .firstWhere(
+              (interest) => interest.id == interestId,
+              orElse:
+                  () => const Interest(
+                    id: 0,
+                    postID: 0,
+                    userID: 0,
+                    userName: '',
+                    userAvatar: '',
+                    status: 0,
+                    createdAt: '',
+                    newMessage: '',
+                    messageFromID: 0,
+                    newMessageIsRead: 0,
+                    unreadMessageCount: 0,
+                  ),
+            );
+        if (currentInterest.id != 0) {
+          ref
+              .read(interestedPostsProvider.notifier)
+              .decreaseUnreadCount(currentInterest.unreadMessageCount);
+        }
       } else {
         // Reset count cho tab "Được quan tâm"
-        ref.read(postsWithInterestsProvider.notifier).resetUnreadCount();
+        ref
+            .read(postsWithInterestsProvider.notifier)
+            .resetInterestUnreadCount(interestId);
+        // Cũng giảm tổng count tương ứng
+        final currentInterest = ref
+            .read(postsWithInterestsProvider)
+            .interests
+            .expand((post) => post.interests)
+            .firstWhere(
+              (interest) => interest.id == interestId,
+              orElse:
+                  () => const Interest(
+                    id: 0,
+                    postID: 0,
+                    userID: 0,
+                    userName: '',
+                    userAvatar: '',
+                    status: 0,
+                    createdAt: '',
+                    newMessage: '',
+                    messageFromID: 0,
+                    newMessageIsRead: 0,
+                    unreadMessageCount: 0,
+                  ),
+            );
+        if (currentInterest.id != 0) {
+          ref
+              .read(postsWithInterestsProvider.notifier)
+              .decreaseUnreadCount(currentInterest.unreadMessageCount);
+        }
       }
 
       context.pushNamed(
