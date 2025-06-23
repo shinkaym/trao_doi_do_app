@@ -26,7 +26,7 @@ class PostBottomActionBar extends ConsumerStatefulWidget {
     required this.onChatTap,
     this.isPostOwner = false,
     this.post,
-    required this.postSlug, // Thêm required parameter
+    required this.postSlug,
   }) : super(key: key);
 
   @override
@@ -35,8 +35,8 @@ class PostBottomActionBar extends ConsumerStatefulWidget {
 }
 
 class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
-  bool _isToggling = false; // Trạng thái loading riêng cho toggle
-  bool _isReposting = false; // Trạng thái loading riêng cho repost
+  bool _isToggling = false;
+  bool _isReposting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -54,41 +54,6 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
             _isToggling = false;
             _isReposting = false;
           });
-        }
-
-        // Handle success message
-        if (current.successMessage != null) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(current.successMessage!),
-                backgroundColor: Colors.green,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-
-            // Refresh post detail để cập nhật UI
-            Future.microtask(() {
-              if (mounted) {
-                ref
-                    .read(postDetailProvider.notifier)
-                    .getPostDetail(widget.postSlug);
-              }
-            });
-          }
-        }
-
-        // Handle error
-        if (current.failure != null) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(current.failure!.message),
-                backgroundColor: Colors.red,
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
         }
       }
     });
@@ -276,7 +241,7 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
     final buttonIcon = isLocked ? Icons.lock_open : Icons.lock;
 
     return ElevatedButton(
-      onPressed: _isToggling ? null : _handleToggleStatus,
+      onPressed: _isToggling ? null : () => _handleToggleStatus(context),
       style: ElevatedButton.styleFrom(
         padding: EdgeInsets.symmetric(vertical: isTablet ? 14 : 12),
         backgroundColor: buttonColor,
@@ -371,48 +336,120 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
     return difference.inDays >= 7;
   }
 
-  void _handleToggleStatus() {
+  void _handleToggleStatus(BuildContext context) async {
     if (widget.post != null && !_isToggling) {
-      setState(() {
-        _isToggling = true;
-      });
+      final post = widget.post!;
+      final isLocked = post.status == 4;
+      final actionText = isLocked ? 'mở khóa' : 'khóa';
 
-      ref
-          .read(postProvider.notifier)
-          .togglePostStatus(widget.post!.id!, widget.post!.status!);
+      final confirmed = await context.showConfirmDialog(
+        title: 'Xác nhận',
+        content: 'Bạn có chắc chắn muốn $actionText danh sách quan tâm?',
+        confirmText: 'Xác nhận',
+        cancelText: 'Hủy',
+      );
+
+      if (confirmed == true && mounted) {
+        try {
+          context.showLoadingDialog(message: 'Đang xử lý...');
+
+          setState(() {
+            _isToggling = true;
+          });
+
+          await ref
+              .read(postProvider.notifier)
+              .togglePostStatus(post.id!, post.status!);
+
+          if (mounted) {
+            context.dismissDialog();
+            context.showSuccessSnackBar('Đã $actionText bài đăng thành công!');
+
+            // Refresh post detail
+            ref
+                .read(postDetailProvider.notifier)
+                .getPostDetail(widget.postSlug);
+          }
+        } catch (e) {
+          if (mounted) {
+            context.dismissDialog();
+            context.showErrorSnackBar(
+              'Có lỗi xảy ra khi $actionText bài đăng!',
+            );
+          }
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isToggling = false;
+            });
+          }
+        }
+      }
     }
   }
 
-  void _handleRepost(BuildContext context, bool canRepost) {
+  void _handleRepost(BuildContext context, bool canRepost) async {
     if (widget.post != null && !_isReposting) {
+      final post = widget.post!;
+
       // Kiểm tra nếu chưa đủ 1 tuần
       if (!canRepost) {
         final now = DateTime.now();
-        final createdAt = widget.post!.createdAt!;
+        final createdAt = post.createdAt!;
         final difference = now.difference(createdAt);
         final remainingDays = 7 - difference.inDays;
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
+        context.showInfoDialog(
+          title: 'Thông báo',
+          content:
               'Chỉ có thể đăng lại sau 1 tuần từ lần đăng cuối! Còn lại $remainingDays ngày.',
-            ),
-            backgroundColor: Colors.orange,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 3),
-          ),
+          icon: Icons.info_outline,
         );
         return;
       }
 
-      setState(() {
-        _isReposting = true;
-      });
+      // Hiển thị dialog xác nhận
+      final confirmed = await context.showConfirmDialog(
+        title: 'Xác nhận đăng lại',
+        content: 'Bạn có chắc chắn muốn đăng lại bài đăng này?',
+        confirmText: 'Đăng lại',
+        cancelText: 'Hủy',
+      );
 
-      // Nếu đủ điều kiện thì gọi repost
-      ref
-          .read(postProvider.notifier)
-          .repostPost(widget.post!.id!, widget.post!.createdAt!);
+      if (confirmed == true && mounted) {
+        try {
+          context.showLoadingDialog(message: 'Đang đăng lại...');
+
+          setState(() {
+            _isReposting = true;
+          });
+
+          await ref
+              .read(postProvider.notifier)
+              .repostPost(post.id!, post.createdAt!);
+
+          if (mounted) {
+            context.dismissDialog();
+            context.showSuccessSnackBar('Đã đăng lại bài đăng thành công!');
+
+            // Refresh post detail
+            ref
+                .read(postDetailProvider.notifier)
+                .getPostDetail(widget.postSlug);
+          }
+        } catch (e) {
+          if (mounted) {
+            context.dismissDialog();
+            context.showErrorSnackBar('Có lỗi xảy ra khi đăng lại bài đăng!');
+          }
+        } finally {
+          if (mounted) {
+            setState(() {
+              _isReposting = false;
+            });
+          }
+        }
+      }
     }
   }
 }

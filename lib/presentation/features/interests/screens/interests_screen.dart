@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/interest_query.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/search_filter_section.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/interests_filter_bottom_sheet.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/interests_tab_bar.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/interested_posts_tab.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/interests_top_action_bar.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/posts_with_interests_tab.dart';
-import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/scroll_to_top_button.dart';
+import 'package:trao_doi_do_app/presentation/widgets/scroll_to_top_button.dart';
 import 'package:trao_doi_do_app/presentation/providers/chat_notification_websocket_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/login_prompt.dart';
 import 'package:trao_doi_do_app/presentation/providers/interest_provider.dart';
@@ -30,9 +32,17 @@ class InterestsScreen extends HookConsumerWidget {
     final isInitialized = useRef(false);
     final scrollController = useScrollController();
 
+    // Updated search state management to match PostsScreen
     final sharedSearchController = useTextEditingController();
+    final searchFocusNode = useFocusNode();
+    final isSearchVisible = useState<bool>(false);
+    final searchQuery = useState<String>('');
+
     final sharedSortField = useState('createdAt');
     final sharedSortOrder = useState('DESC');
+
+    // Add debouncer for search
+    final debouncer = useMemoized(() => Debouncer());
 
     final authState = ref.watch(authProvider);
     final interestedPostsState = ref.watch(interestedPostsProvider);
@@ -45,10 +55,7 @@ class InterestsScreen extends HookConsumerWidget {
 
     void applySharedFiltersToCurrentTab() {
       final currentTab = tabController.index;
-      final searchValue =
-          sharedSearchController.text.isEmpty
-              ? null
-              : sharedSearchController.text;
+      final searchValue = searchQuery.value.isEmpty ? null : searchQuery.value;
 
       final query = InterestsQuery(
         type: currentTab == 0 ? 1 : 2,
@@ -68,78 +75,149 @@ class InterestsScreen extends HookConsumerWidget {
       }
     }
 
-    ref.listen<
-      ChatNotificationWebSocketState
-    >(chatNotificationWebSocketProvider, (previous, next) {
-      if (previous?.lastResponse != next.lastResponse &&
-          next.lastResponse?.event == 'send_message_response' &&
-          next.lastResponse?.isSuccess == true &&
-          next.lastResponse?.data != null) {
-        final data = next.lastResponse!.data!;
-        final messageType = data['type'] as String?;
-        final interestID = data['interestID'] as int?;
+    // Updated search handler with debouncing like PostsScreen
+    void handleSearch(String query) {
+      debouncer.debounce(
+        duration: const Duration(milliseconds: 500),
+        onDebounce: () {
+          searchQuery.value = query;
+          applySharedFiltersToCurrentTab();
+        },
+      );
+    }
 
-        if (messageType != null && interestID != null) {
-          if (messageType == 'followedBy') {
-            // Tin nhắn cho tab "Được quan tâm" - tăng tổng count và count của interest cụ thể
-            ref
-                .read(postsWithInterestsProvider.notifier)
-                .incrementUnreadCount();
-            ref
-                .read(postsWithInterestsProvider.notifier)
-                .incrementInterestUnreadCount(interestID);
-          } else if (messageType == 'following') {
-            // Tin nhắn cho tab "Đang quan tâm" - tăng tổng count và count của interest cụ thể
-            ref.read(interestedPostsProvider.notifier).incrementUnreadCount();
-            ref
-                .read(interestedPostsProvider.notifier)
-                .incrementInterestUnreadCount(interestID);
-          }
+    // Handle sort/filter
+    // void onSortFilter(String field, String order) {
+    //   sharedSortField.value = field;
+    //   sharedSortOrder.value = order;
+    //   applySharedFiltersToCurrentTab();
+    // }
+
+    // Reset search function
+    void resetSearch() {
+      searchQuery.value = '';
+      sharedSearchController.clear();
+      isSearchVisible.value = false;
+      applySharedFiltersToCurrentTab();
+    }
+
+    // Reset filters
+    void resetFilters() {
+      sharedSortField.value = 'createdAt';
+      sharedSortOrder.value = 'DESC';
+      applySharedFiltersToCurrentTab();
+    }
+
+    // Reset all filters and search
+    void resetAll() {
+      searchQuery.value = '';
+      sharedSearchController.clear();
+      isSearchVisible.value = false;
+      sharedSortField.value = 'createdAt';
+      sharedSortOrder.value = 'DESC';
+      applySharedFiltersToCurrentTab();
+    }
+
+    // Toggle search visibility
+    void toggleSearch() {
+      isSearchVisible.value = !isSearchVisible.value;
+      if (isSearchVisible.value) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          searchFocusNode.requestFocus();
+        });
+      } else {
+        searchFocusNode.unfocus();
+        if (sharedSearchController.text.isEmpty) {
+          resetSearch();
         }
       }
-    });
+    }
+
+    // Show filter bottom sheet
+    void showFilterBottomSheet() {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder:
+            (context) => InterestsFilterBottomSheet(
+              selectedSort: sharedSortOrder.value,
+              onApplySort: (order) {
+                sharedSortOrder.value = order;
+                applySharedFiltersToCurrentTab();
+              },
+              onResetFilters: resetFilters,
+              isTablet: isTablet,
+              theme: theme,
+              colorScheme: colorScheme,
+            ),
+      );
+    }
+
+    // WebSocket listener (unchanged)
+    ref.listen<ChatNotificationWebSocketState>(
+      chatNotificationWebSocketProvider,
+      (previous, next) {
+        if (previous?.lastResponse != next.lastResponse &&
+            next.lastResponse?.event == 'send_message_response' &&
+            next.lastResponse?.isSuccess == true &&
+            next.lastResponse?.data != null) {
+          final data = next.lastResponse!.data!;
+          final messageType = data['type'] as String?;
+          final interestID = data['interestID'] as int?;
+
+          if (messageType != null && interestID != null) {
+            if (messageType == 'followedBy') {
+              ref
+                  .read(postsWithInterestsProvider.notifier)
+                  .incrementUnreadCount();
+              ref
+                  .read(postsWithInterestsProvider.notifier)
+                  .incrementInterestUnreadCount(interestID);
+            } else if (messageType == 'following') {
+              ref.read(interestedPostsProvider.notifier).incrementUnreadCount();
+              ref
+                  .read(interestedPostsProvider.notifier)
+                  .incrementInterestUnreadCount(interestID);
+            }
+          }
+        }
+      },
+    );
 
     // Load initial data for both tabs
     void loadInitialData() {
-      final searchValue =
-          sharedSearchController.text.isEmpty
-              ? null
-              : sharedSearchController.text;
+      final searchValue = searchQuery.value.isEmpty ? null : searchQuery.value;
 
       final interestedQuery = InterestsQuery(
-        type: 1, // Interested posts tab
+        type: 1,
         sort: sharedSortField.value,
         order: sharedSortOrder.value,
         search: searchValue,
       );
 
       final postsWithInterestsQuery = InterestsQuery(
-        type: 2, // Posts with interests tab
+        type: 2,
         sort: sharedSortField.value,
         order: sharedSortOrder.value,
         search: searchValue,
       );
 
-      // Load full data for current tab (default is tab 0)
       ref
           .read(interestedPostsProvider.notifier)
           .loadInterests(newQuery: interestedQuery, refresh: true);
 
-      // Only load unread count for the other tab to optimize performance
       ref
           .read(postsWithInterestsProvider.notifier)
           .loadUnreadMessageCount(query: postsWithInterestsQuery);
     }
 
-    // Handle tab changes - load full data for current tab if not loaded yet
+    // Handle tab changes
     void onTabChanged() {
       if (tabController.indexIsChanging) return;
 
       final currentTab = tabController.index;
-      final searchValue =
-          sharedSearchController.text.isEmpty
-              ? null
-              : sharedSearchController.text;
+      final searchValue = searchQuery.value.isEmpty ? null : searchQuery.value;
 
       final query = InterestsQuery(
         type: currentTab == 0 ? 1 : 2,
@@ -165,40 +243,18 @@ class InterestsScreen extends HookConsumerWidget {
       }
     }
 
-    // Handle search
-    void onSearch(String value) {
-      applySharedFiltersToCurrentTab();
-    }
-
-    // Handle sort/filter
-    void onSortFilter(String field, String order) {
-      sharedSortField.value = field;
-      sharedSortOrder.value = order;
-      applySharedFiltersToCurrentTab();
-    }
-
-    // Reset filters
-    void resetFilters() {
-      sharedSearchController.clear();
-      sharedSortField.value = 'createdAt';
-      sharedSortOrder.value = 'DESC';
-      applySharedFiltersToCurrentTab();
-    }
-
     // Handle post tap
     void handlePostTap(String slug) {
       context.pushNamed('post-detail', pathParameters: {'slug': slug});
     }
 
-    // Handle chat tap
+    // Handle chat tap (unchanged)
     void handleChatTap(int interestId) {
       final currentTab = tabController.index;
       if (currentTab == 0) {
-        // Reset count cho tab "Đang quan tâm"
         ref
             .read(interestedPostsProvider.notifier)
             .resetInterestUnreadCount(interestId);
-        // Cũng giảm tổng count tương ứng
         final currentInterest = ref
             .read(interestedPostsProvider)
             .interests
@@ -226,11 +282,9 @@ class InterestsScreen extends HookConsumerWidget {
               .decreaseUnreadCount(currentInterest.unreadMessageCount);
         }
       } else {
-        // Reset count cho tab "Được quan tâm"
         ref
             .read(postsWithInterestsProvider.notifier)
             .resetInterestUnreadCount(interestId);
-        // Cũng giảm tổng count tương ứng
         final currentInterest = ref
             .read(postsWithInterestsProvider)
             .interests
@@ -265,7 +319,7 @@ class InterestsScreen extends HookConsumerWidget {
       );
     }
 
-    // Handle like tap
+    // Handle like tap (unchanged)
     Future<void> handleLikeTap(int postId) async {
       await ref.read(interestProvider.notifier).cancelInterest(postId);
 
@@ -288,7 +342,9 @@ class InterestsScreen extends HookConsumerWidget {
           isInitialized.value = true;
         }
       });
-      return null;
+      return () {
+        debouncer.cancel();
+      };
     }, []);
 
     // Listen to tab changes
@@ -323,79 +379,85 @@ class InterestsScreen extends HookConsumerWidget {
 
     return SmartScaffold(
       appBarType: AppBarType.standard,
-      body: Stack(
-        children: [
-          Column(
-            children: [
-              // Tab Bar with unread message badges
-              InterestsTabBar(
-                isTablet: isTablet,
-                theme: theme,
-                colorScheme: colorScheme,
-                tabController: tabController,
-                interestedPostsUnreadCount: totalInterestedPostsUnreadCount,
-                postsWithInterestsUnreadCount:
-                    totalPostsWithInterestsUnreadCount,
-              ),
+      body: SafeArea(
+        child: Stack(
+          children: [
+            Column(
+              children: [
+                // Tab Bar with unread message badges
+                InterestsTabBar(
+                  isTablet: isTablet,
+                  theme: theme,
+                  colorScheme: colorScheme,
+                  tabController: tabController,
+                  interestedPostsUnreadCount: totalInterestedPostsUnreadCount,
+                  postsWithInterestsUnreadCount:
+                      totalPostsWithInterestsUnreadCount,
+                ),
 
-              // Search and Filter Section
-              SearchFilterSection(
-                isTablet: isTablet,
-                theme: theme,
-                colorScheme: colorScheme,
-                currentSortOrder: sharedSortOrder.value,
-                searchController: sharedSearchController,
-                onSearch: onSearch,
-                onSortFilter: onSortFilter,
-              ),
+                // Top Action Bar - New search interface similar to PostsScreen
+                InterestsTopActionBar(
+                  searchController: sharedSearchController,
+                  searchFocusNode: searchFocusNode,
+                  isSearchVisible: isSearchVisible.value,
+                  onSearchChanged: handleSearch,
+                  onSearchToggle: toggleSearch,
+                  onSearchClear: resetSearch,
+                  onFilterPressed: showFilterBottomSheet,
+                  isTablet: isTablet,
+                  colorScheme: colorScheme,
+                  hasActiveSearch: searchQuery.value.isNotEmpty,
+                  hasActiveFilters: sharedSortOrder.value != 'DESC',
+                ),
 
-              // Tab Content
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    final currentTab = tabController.index;
-                    if (currentTab == 0) {
-                      ref.read(interestedPostsProvider.notifier).refresh();
-                    } else {
-                      ref.read(postsWithInterestsProvider.notifier).refresh();
-                    }
-                  },
-                  child: TabBarView(
-                    controller: tabController,
-                    children: [
-                      InterestedPostsTab(
-                        isTablet: isTablet,
-                        theme: theme,
-                        colorScheme: colorScheme,
-                        handlePostTap: handlePostTap,
-                        handleChatTap: handleChatTap,
-                        handleLikeTap: handleLikeTap,
-                        searchController: sharedSearchController,
-                        resetFilters: resetFilters,
-                        scrollController: scrollController,
-                      ),
-                      PostsWithInterestsTab(
-                        isTablet: isTablet,
-                        theme: theme,
-                        colorScheme: colorScheme,
-                        handlePostTap: handlePostTap,
-                        handleChatTap: handleChatTap,
-                        searchController: sharedSearchController,
-                        resetFilters: resetFilters,
-                        scrollController: scrollController,
-                      ),
-                    ],
+                // Tab Content
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      final currentTab = tabController.index;
+                      if (currentTab == 0) {
+                        ref.read(interestedPostsProvider.notifier).refresh();
+                      } else {
+                        ref.read(postsWithInterestsProvider.notifier).refresh();
+                      }
+                    },
+                    child: TabBarView(
+                      controller: tabController,
+                      children: [
+                        InterestedPostsTab(
+                          isTablet: isTablet,
+                          theme: theme,
+                          colorScheme: colorScheme,
+                          handlePostTap: handlePostTap,
+                          handleChatTap: handleChatTap,
+                          handleLikeTap: handleLikeTap,
+                          searchController: sharedSearchController,
+                          resetFilters: resetAll,
+                          scrollController: scrollController,
+                        ),
+                        PostsWithInterestsTab(
+                          isTablet: isTablet,
+                          theme: theme,
+                          colorScheme: colorScheme,
+                          handlePostTap: handlePostTap,
+                          handleChatTap: handleChatTap,
+                          searchController: sharedSearchController,
+                          resetFilters: resetAll,
+                          scrollController: scrollController,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          ScrollToTopButton(
-            scrollController: scrollController,
-            isTablet: isTablet,
-            colorScheme: colorScheme,
-          ),
-        ],
+              ],
+            ),
+            ScrollToTopButton(
+              scrollController: scrollController,
+              isTablet: isTablet,
+              colorScheme: colorScheme,
+            ),
+          ],
+        ),
       ),
     );
   }

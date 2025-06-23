@@ -1,19 +1,100 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/post_query.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/create_post_fab.dart';
-import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/scroll_to_top_button.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/widgets/my-posts/my_posts_filter_bottom_sheet.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/my-posts/my_posts_list_content.dart';
-import 'package:trao_doi_do_app/presentation/widgets/search_filter_section.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/widgets/my-posts/my_posts_top_action_bar.dart';
+import 'package:trao_doi_do_app/presentation/widgets/scroll_to_top_button.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
 class MyPostsScreen extends HookConsumerWidget {
   const MyPostsScreen({super.key});
+
+  void _onToggleStatus(BuildContext context, WidgetRef ref, Post post) async {
+    final postNotifier = ref.read(postProvider.notifier);
+    final isLocked = post.status == 4;
+    final actionText = isLocked ? 'mở khóa' : 'khóa';
+
+    final confirmed = await context.showConfirmDialog(
+      title: 'Xác nhận',
+      content: 'Bạn có chắc chắn muốn $actionText bài đăng này?',
+      confirmText: 'Xác nhận',
+      cancelText: 'Hủy',
+    );
+
+    if (confirmed == true) {
+      try {
+        context.showLoadingDialog(message: 'Đang xử lý...');
+
+        await postNotifier.togglePostStatus(post.id!, post.status ?? 3);
+
+        context.dismissDialog();
+
+        ref.read(myPostsListProvider.notifier).refresh();
+
+        context.showSuccessSnackBar('Đã $actionText bài đăng thành công!');
+      } catch (e) {
+        context.dismissDialog();
+
+        context.showErrorSnackBar('Có lỗi xảy ra khi $actionText bài đăng!');
+      }
+    }
+  }
+
+  void _onRepost(BuildContext context, WidgetRef ref, Post post) async {
+    final postNotifier = ref.read(postProvider.notifier);
+
+    final now = DateTime.now();
+    final difference = now.difference(post.createdAt!);
+    final canRepost = difference.inDays >= 7;
+
+    if (!canRepost) {
+      final now = DateTime.now();
+      final createdAt = post.createdAt!;
+      final difference = now.difference(createdAt);
+      final remainingDays = 7 - difference.inDays;
+
+      context.showInfoDialog(
+        title: 'Thông báo',
+        content:
+            'Chỉ có thể đăng lại sau 1 tuần từ lần đăng cuối! Còn lại $remainingDays ngày.',
+        icon: Icons.info_outline,
+      );
+      return;
+    }
+
+    // Sử dụng dialog extension
+    final confirmed = await context.showConfirmDialog(
+      title: 'Xác nhận đăng lại',
+      content: 'Bạn có chắc chắn muốn đăng lại bài đăng này?',
+      confirmText: 'Đăng lại',
+      cancelText: 'Hủy',
+    );
+
+    if (confirmed == true) {
+      try {
+        context.showLoadingDialog(message: 'Đang đăng lại...');
+
+        await postNotifier.repostPost(post.id!, post.createdAt!);
+
+        context.dismissDialog();
+
+        ref.read(myPostsListProvider.notifier).refresh();
+
+        context.showSuccessSnackBar('Đã đăng lại bài đăng thành công!');
+      } catch (e) {
+        context.dismissDialog();
+
+        context.showErrorSnackBar('Có lỗi xảy ra khi đăng lại bài đăng!');
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,13 +103,17 @@ class MyPostsScreen extends HookConsumerWidget {
     final selectedSort = useState<SortOrder>(SortOrder.newest);
     final searchQuery = useState<String>('');
     final scrollController = useScrollController();
+    final searchFocusNode = useFocusNode();
+    final isSearchVisible = useState<bool>(false);
+
+    final debouncer = useMemoized(() => Debouncer());
 
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
-    final myPostsState = ref.watch(myPostsListProvider);
+    final postsState = ref.watch(myPostsListProvider);
 
-    void loadMyPosts({bool refresh = false}) {
+    void loadPosts({bool refresh = false}) {
       final query = PostsQuery(
         search: searchQuery.value.isEmpty ? null : searchQuery.value,
         type: selectedType.value.value,
@@ -43,26 +128,26 @@ class MyPostsScreen extends HookConsumerWidget {
     }
 
     void handleSearch(String query) {
-      searchQuery.value = query;
-      loadMyPosts(refresh: true);
+      debouncer.debounce(
+        duration: const Duration(milliseconds: 500),
+        onDebounce: () {
+          searchQuery.value = query;
+          loadPosts(refresh: true);
+        },
+      );
     }
 
-    void handleTypeFilter(PostType type) {
+    void handleApplyFilters(PostType type, SortOrder sort) {
       selectedType.value = type;
-      loadMyPosts(refresh: true);
-    }
-
-    void handleSortFilter(SortOrder sort) {
       selectedSort.value = sort;
-      loadMyPosts(refresh: true);
+      loadPosts(refresh: true);
     }
 
     void handleRefresh() {
-      loadMyPosts(refresh: true);
+      loadPosts(refresh: true);
     }
 
     void handlePostTap(Post post) {
-      // Navigate to post detail
       context.pushNamed(
         'post-detail',
         pathParameters: {'slug': post.slug.toString()},
@@ -70,53 +155,102 @@ class MyPostsScreen extends HookConsumerWidget {
     }
 
     void handleCreatePost() {
-      // Navigate to create post
       context.pushNamed('create-post');
     }
 
     void resetFilters() {
+      selectedType.value = PostType.all;
+      selectedSort.value = SortOrder.newest;
+      loadPosts(refresh: true);
+    }
+
+    void resetSearch() {
+      searchQuery.value = '';
+      searchController.clear();
+      isSearchVisible.value = false;
+      loadPosts(refresh: true);
+    }
+
+    void resetAll() {
       searchQuery.value = '';
       selectedType.value = PostType.all;
       selectedSort.value = SortOrder.newest;
       searchController.clear();
-      loadMyPosts(refresh: true);
+      isSearchVisible.value = false;
+      loadPosts(refresh: true);
+    }
+
+    void showFilterBottomSheet() {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder:
+            (context) => MyPostsFilterBottomSheet(
+              selectedType: selectedType.value,
+              selectedSort: selectedSort.value,
+              onApplyFilters: handleApplyFilters,
+              onResetFilters: resetFilters,
+              isTablet: isTablet,
+              theme: theme,
+              colorScheme: colorScheme,
+            ),
+      );
+    }
+
+    void toggleSearch() {
+      isSearchVisible.value = !isSearchVisible.value;
+      if (isSearchVisible.value) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          searchFocusNode.requestFocus();
+        });
+      } else {
+        searchFocusNode.unfocus();
+        if (searchController.text.isEmpty) {
+          resetSearch();
+        }
+      }
     }
 
     // Load posts lần đầu
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        loadMyPosts();
+        loadPosts();
       });
-      return null;
+      return () {
+        debouncer.cancel();
+      };
     }, []);
 
     return SmartScaffold(
       appBarType: AppBarType.standard,
-      showBackButton: true,
       body: SafeArea(
         child: Stack(
           children: [
             Column(
               children: [
-                // Search and Filter Section
-                SearchFilterSection(
+                // Top Action Bar
+                MyPostsTopActionBar(
                   searchController: searchController,
-                  selectedType: selectedType.value,
-                  selectedSort: selectedSort.value,
-                  searchQuery: searchQuery.value,
-                  onSearch: handleSearch,
-                  onTypeFilter: handleTypeFilter,
-                  onSortFilter: handleSortFilter,
-                  postsCount: myPostsState.posts.length,
+                  searchFocusNode: searchFocusNode,
+                  isSearchVisible: isSearchVisible.value,
+                  onSearchChanged: handleSearch,
+                  onSearchToggle: toggleSearch,
+                  onSearchClear: resetSearch,
+                  onFilterPressed: showFilterBottomSheet,
+                  onCreatePressed: handleCreatePost,
                   isTablet: isTablet,
-                  theme: theme,
                   colorScheme: colorScheme,
+                  hasActiveSearch: searchQuery.value.isNotEmpty,
+                  hasActiveFilters:
+                      selectedType.value != PostType.all ||
+                      selectedSort.value != SortOrder.newest,
                 ),
 
                 // Content
                 Expanded(
                   child: MyPostsListContent(
-                    postsState: myPostsState,
+                    postsState: postsState,
                     isTablet: isTablet,
                     theme: theme,
                     colorScheme: colorScheme,
@@ -125,8 +259,11 @@ class MyPostsScreen extends HookConsumerWidget {
                     selectedSort: selectedSort.value,
                     onPostTap: handlePostTap,
                     onRefresh: handleRefresh,
-                    onResetFilters: resetFilters,
+                    onResetFilters: resetAll,
                     scrollController: scrollController,
+                    onToggleStatus:
+                        (post) => _onToggleStatus(context, ref, post),
+                    onRepost: (post) => _onRepost(context, ref, post),
                   ),
                 ),
               ],
@@ -140,11 +277,6 @@ class MyPostsScreen extends HookConsumerWidget {
             ),
           ],
         ),
-      ),
-      floatingActionButton: CreatePostFAB(
-        onPressed: handleCreatePost,
-        isTablet: isTablet,
-        colorScheme: colorScheme,
       ),
     );
   }

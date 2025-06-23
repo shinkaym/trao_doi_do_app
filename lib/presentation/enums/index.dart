@@ -100,23 +100,6 @@ enum PostType {
   }
 }
 
-// Phương thức tiện ích để lấy màu từ value
-class PostTypeUtils {
-  static Color getColorFromValue(int? value) {
-    if (value == null) return Colors.grey;
-
-    final createPostType = CreatePostType.fromValue(value);
-    return createPostType.color();
-  }
-
-  static PostType? getPostTypeFromValue(int? value) {
-    return PostType.values.firstWhere(
-      (type) => type.value == value,
-      orElse: () => PostType.all,
-    );
-  }
-}
-
 // Enum cho trạng thái bài post
 enum PostStatus {
   pending(1),
@@ -180,6 +163,7 @@ enum PostStatus {
     }
   }
 }
+
 
 // Enum cho sắp xếp thời gian
 enum SortOrder {

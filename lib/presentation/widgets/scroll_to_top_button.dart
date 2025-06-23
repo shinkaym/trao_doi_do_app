@@ -81,7 +81,7 @@ class _ScrollToTopButtonState extends State<ScrollToTopButton>
 
     return Positioned(
       right: widget.isTablet ? 24 : 16,
-      bottom: widget.isTablet ? 140 : 120, // Để tránh đè lên FAB
+      bottom: widget.isTablet ? 60 : 40, // Để tránh đè lên FAB
       child: AnimatedBuilder(
         animation: _animationController,
         builder: (context, child) {

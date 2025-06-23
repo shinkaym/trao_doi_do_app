@@ -108,11 +108,14 @@ class PostsListContent extends HookConsumerWidget {
           // Pagination - integrated in the scroll view
           if (postsState.totalPage > 1 && postsState.posts.isNotEmpty)
             SliverToBoxAdapter(
-              child: PostsPagination(
-                state: postsState,
-                isTablet: isTablet,
-                theme: theme,
-                colorScheme: colorScheme,
+              child: Padding(
+                padding: EdgeInsets.all(isTablet ? 12 : 6),
+                child: PostsPagination(
+                  state: postsState,
+                  isTablet: isTablet,
+                  theme: theme,
+                  colorScheme: colorScheme,
+                ),
               ),
             ),
 

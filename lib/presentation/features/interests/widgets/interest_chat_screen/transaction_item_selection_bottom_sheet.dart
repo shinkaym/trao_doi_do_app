@@ -40,12 +40,7 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
       if (previous?.isLoading == true && next.isLoading == false) {
         if (next.failure != null) {
           // Show error
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(next.failure!.message),
-              backgroundColor: colorScheme.error,
-            ),
-          );
+          context.showErrorSnackBar(next.failure!.message);
         } else if (next.createdTransaction != null) {
           // Success - close bottom sheet and show success message
           Navigator.of(context).pop();

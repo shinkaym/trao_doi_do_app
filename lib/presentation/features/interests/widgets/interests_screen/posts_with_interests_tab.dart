@@ -119,7 +119,7 @@ class PostsWithInterestsTab extends ConsumerWidget {
         if (state.totalPage > 1)
           SliverToBoxAdapter(
             child: Padding(
-              padding: EdgeInsets.all(isTablet ? 24 : 16),
+              padding: EdgeInsets.all(isTablet ? 12 : 6),
               child: Pagination(
                 state: state,
                 isTablet: isTablet,

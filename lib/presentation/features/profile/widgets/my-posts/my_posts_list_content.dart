@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/post_card.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/post_skeleton.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/providers/my_posts_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/widgets/my-posts/my_post_card.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/my-posts/my_posts_pagination.dart';
 import 'dart:convert';
 import 'package:trao_doi_do_app/presentation/widgets/list_empty_state.dart';
@@ -21,6 +21,8 @@ class MyPostsListContent extends HookConsumerWidget {
   final VoidCallback onRefresh;
   final VoidCallback onResetFilters;
   final ScrollController scrollController;
+  final Function(Post)? onToggleStatus;
+  final Function(Post)? onRepost;
 
   const MyPostsListContent({
     super.key,
@@ -35,6 +37,8 @@ class MyPostsListContent extends HookConsumerWidget {
     required this.onRefresh,
     required this.onResetFilters,
     required this.scrollController,
+    this.onToggleStatus,
+    this.onRepost,
   });
 
   @override
@@ -87,7 +91,7 @@ class MyPostsListContent extends HookConsumerWidget {
             sliver: SliverList.separated(
               itemCount: postsState.posts.length,
               itemBuilder: (context, index) {
-                return PostCard(
+                return MyPostCard(
                   post: postsState.posts[index],
                   isTablet: isTablet,
                   theme: theme,
@@ -96,6 +100,8 @@ class MyPostsListContent extends HookConsumerWidget {
                   hasImages: _hasImages,
                   getRewardFromPost: _getRewardFromPost,
                   getLocationFromPost: _getLocationFromPost,
+                  onToggleStatus: onToggleStatus,
+                  onRepost: onRepost,
                 );
               },
               separatorBuilder: (context, index) {
@@ -107,11 +113,14 @@ class MyPostsListContent extends HookConsumerWidget {
           // Pagination - integrated in the scroll view
           if (postsState.totalPage > 1 && postsState.posts.isNotEmpty)
             SliverToBoxAdapter(
-              child: MyPostsPagination(
-                state: postsState,
-                isTablet: isTablet,
-                theme: theme,
-                colorScheme: colorScheme,
+              child: Padding(
+                padding: EdgeInsets.all(isTablet ? 12 : 6),
+                child: MyPostsPagination(
+                  state: postsState,
+                  isTablet: isTablet,
+                  theme: theme,
+                  colorScheme: colorScheme,
+                ),
               ),
             ),
 

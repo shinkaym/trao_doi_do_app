@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/post_query.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/create_post_fab.dart';
+import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/posts_filter_bottom_sheet.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/posts_list_content.dart';
-import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/scroll_to_top_button.dart';
-import 'package:trao_doi_do_app/presentation/widgets/search_filter_section.dart';
+import 'package:trao_doi_do_app/presentation/widgets/scroll_to_top_button.dart';
+import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/posts_top_action_bar.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
 class PostsScreen extends HookConsumerWidget {
@@ -22,6 +23,10 @@ class PostsScreen extends HookConsumerWidget {
     final selectedSort = useState<SortOrder>(SortOrder.newest);
     final searchQuery = useState<String>('');
     final scrollController = useScrollController();
+    final searchFocusNode = useFocusNode();
+    final isSearchVisible = useState<bool>(false);
+
+    final debouncer = useMemoized(() => Debouncer());
 
     final isTablet = context.isTablet;
     final theme = context.theme;
@@ -43,16 +48,17 @@ class PostsScreen extends HookConsumerWidget {
     }
 
     void handleSearch(String query) {
-      searchQuery.value = query;
-      loadPosts(refresh: true);
+      debouncer.debounce(
+        duration: const Duration(milliseconds: 500),
+        onDebounce: () {
+          searchQuery.value = query;
+          loadPosts(refresh: true);
+        },
+      );
     }
 
-    void handleTypeFilter(PostType type) {
+    void handleApplyFilters(PostType type, SortOrder sort) {
       selectedType.value = type;
-      loadPosts(refresh: true);
-    }
-
-    void handleSortFilter(SortOrder sort) {
       selectedSort.value = sort;
       loadPosts(refresh: true);
     }
@@ -62,7 +68,6 @@ class PostsScreen extends HookConsumerWidget {
     }
 
     void handlePostTap(Post post) {
-      // Navigate to post detail
       context.pushNamed(
         'post-detail',
         pathParameters: {'slug': post.slug.toString()},
@@ -70,16 +75,61 @@ class PostsScreen extends HookConsumerWidget {
     }
 
     void handleCreatePost() {
-      // Navigate to create post
       context.pushNamed('create-post');
     }
 
     void resetFilters() {
+      selectedType.value = PostType.all;
+      selectedSort.value = SortOrder.newest;
+      loadPosts(refresh: true);
+    }
+
+    void resetSearch() {
+      searchQuery.value = '';
+      searchController.clear();
+      isSearchVisible.value = false;
+      loadPosts(refresh: true);
+    }
+
+    void resetAll() {
       searchQuery.value = '';
       selectedType.value = PostType.all;
       selectedSort.value = SortOrder.newest;
       searchController.clear();
+      isSearchVisible.value = false;
       loadPosts(refresh: true);
+    }
+
+    void showFilterBottomSheet() {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder:
+            (context) => PostsFilterBottomSheet(
+              selectedType: selectedType.value,
+              selectedSort: selectedSort.value,
+              onApplyFilters: handleApplyFilters,
+              onResetFilters: resetFilters,
+              isTablet: isTablet,
+              theme: theme,
+              colorScheme: colorScheme,
+            ),
+      );
+    }
+
+    void toggleSearch() {
+      isSearchVisible.value = !isSearchVisible.value;
+      if (isSearchVisible.value) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          searchFocusNode.requestFocus();
+        });
+      } else {
+        searchFocusNode.unfocus();
+        if (searchController.text.isEmpty) {
+          resetSearch();
+        }
+      }
     }
 
     // Load posts lần đầu
@@ -87,7 +137,9 @@ class PostsScreen extends HookConsumerWidget {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         loadPosts();
       });
-      return null;
+      return () {
+        debouncer.cancel();
+      };
     }, []);
 
     return SmartScaffold(
@@ -97,19 +149,22 @@ class PostsScreen extends HookConsumerWidget {
           children: [
             Column(
               children: [
-                // Search and Filter Section
-                SearchFilterSection(
+                // Top Action Bar
+                PostsTopActionBar(
                   searchController: searchController,
-                  selectedType: selectedType.value,
-                  selectedSort: selectedSort.value,
-                  searchQuery: searchQuery.value,
-                  onSearch: handleSearch,
-                  onTypeFilter: handleTypeFilter,
-                  onSortFilter: handleSortFilter,
-                  postsCount: postsState.posts.length,
+                  searchFocusNode: searchFocusNode,
+                  isSearchVisible: isSearchVisible.value,
+                  onSearchChanged: handleSearch,
+                  onSearchToggle: toggleSearch,
+                  onSearchClear: resetSearch,
+                  onFilterPressed: showFilterBottomSheet,
+                  onCreatePressed: handleCreatePost,
                   isTablet: isTablet,
-                  theme: theme,
                   colorScheme: colorScheme,
+                  hasActiveSearch: searchQuery.value.isNotEmpty,
+                  hasActiveFilters:
+                      selectedType.value != PostType.all ||
+                      selectedSort.value != SortOrder.newest,
                 ),
 
                 // Content
@@ -124,8 +179,8 @@ class PostsScreen extends HookConsumerWidget {
                     selectedSort: selectedSort.value,
                     onPostTap: handlePostTap,
                     onRefresh: handleRefresh,
-                    onResetFilters: resetFilters,
-                    scrollController: scrollController, // Thêm scrollController
+                    onResetFilters: resetAll,
+                    scrollController: scrollController,
                   ),
                 ),
               ],
@@ -139,11 +194,6 @@ class PostsScreen extends HookConsumerWidget {
             ),
           ],
         ),
-      ),
-      floatingActionButton: CreatePostFAB(
-        onPressed: handleCreatePost,
-        isTablet: isTablet,
-        colorScheme: colorScheme,
       ),
     );
   }
