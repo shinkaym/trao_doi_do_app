@@ -1,7 +1,8 @@
 import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/network/dio_client.dart';
-import 'package:trao_doi_do_app/data/models/item_warehouse_models.dart';
+import 'package:trao_doi_do_app/data/models/request/item_warehouse_request_model.dart';
 import 'package:trao_doi_do_app/data/models/response/api_response_model.dart';
+import 'package:trao_doi_do_app/data/models/response/item_warehouse_response_model.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/old_stock_query.dart';
 
 abstract class ItemWarehouseRemoteDataSource {

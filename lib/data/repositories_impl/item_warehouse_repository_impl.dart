@@ -1,8 +1,9 @@
 import 'package:dartz/dartz.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/item_warehouse_remote_datasource.dart';
-import 'package:trao_doi_do_app/data/models/item_warehouse_models.dart';
-import 'package:trao_doi_do_app/domain/entities/item_warehouse.dart';
+import 'package:trao_doi_do_app/data/models/request/item_warehouse_request_model.dart';
+import 'package:trao_doi_do_app/domain/entities/request/item_warehouse_request.dart';
+import 'package:trao_doi_do_app/domain/entities/response/item_warehouse_response.dart';
 import 'package:trao_doi_do_app/domain/repositories/item_warehouse_repository.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/old_stock_query.dart';

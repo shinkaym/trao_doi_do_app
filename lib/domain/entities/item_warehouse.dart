@@ -1,18 +1,5 @@
 import 'package:equatable/equatable.dart';
 
-class ClaimItemRequest extends Equatable {
-  final int itemID;
-  final int quantity;
-
-  const ClaimItemRequest({
-    required this.itemID,
-    required this.quantity,
-  });
-
-  @override
-  List<Object?> get props => [itemID, quantity];
-}
-
 class ItemWarehouse extends Equatable {
   final int id;
   final int itemID;
@@ -36,24 +23,15 @@ class ItemWarehouse extends Equatable {
 
   @override
   List<Object?> get props => [
-        id,
-        itemID,
-        warehouseID,
-        categoryName,
-        code,
-        description,
-        itemName,
-        status,
-      ];
-}
-
-class ClaimItemResponse extends Equatable {
-  final ItemWarehouse itemWarehouse;
-
-  const ClaimItemResponse({required this.itemWarehouse});
-
-  @override
-  List<Object?> get props => [itemWarehouse];
+    id,
+    itemID,
+    warehouseID,
+    categoryName,
+    code,
+    description,
+    itemName,
+    status,
+  ];
 }
 
 class OldStockItem extends Equatable {
@@ -77,25 +55,12 @@ class OldStockItem extends Equatable {
 
   @override
   List<Object?> get props => [
-        categoryName,
-        claimItemRequests,
-        description,
-        itemId,
-        itemImage,
-        itemName,
-        quantity,
-      ];
-}
-
-class OldStockResponse extends Equatable {
-  final List<OldStockItem> itemOldStocks;
-  final int totalPage;
-
-  const OldStockResponse({
-    required this.itemOldStocks,
-    required this.totalPage,
-  });
-
-  @override
-  List<Object?> get props => [itemOldStocks, totalPage];
+    categoryName,
+    claimItemRequests,
+    description,
+    itemId,
+    itemImage,
+    itemName,
+    quantity,
+  ];
 }
