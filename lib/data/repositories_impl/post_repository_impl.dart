@@ -48,4 +48,13 @@ class PostRepositoryImpl implements PostRepository {
       return postDetailEntity;
     }, 'Lỗi tải chi tiết bài đăng');
   }
+
+   @override
+  Future<Either<Failure, dynamic>> updatePost(int postID, UpdatePost updatePost) async {
+    return handleRepositoryCall<dynamic>(() async {
+      final updatePostModel = UpdatePostModel.fromEntity(updatePost);
+      final result = await _remoteDataSource.updatePost(postID, updatePostModel);
+      return result;
+    }, 'Lỗi cập nhật bài đăng');
+  }
 }

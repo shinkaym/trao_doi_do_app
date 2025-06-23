@@ -20,6 +20,7 @@ import 'package:trao_doi_do_app/domain/usecases/get_transactions_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_unread_count_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/mark_all_messages_read_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/onboarding_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/update_post_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_transaction_status_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_transaction_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_interest_usecase.dart';
@@ -155,6 +156,13 @@ final createPostUseCaseProvider = Provider.autoDispose<CreatePostUseCase>((
 ) {
   final repository = ref.watch(postRepositoryProvider);
   return CreatePostUseCase(repository);
+});
+
+final updatePostUseCaseProvider = Provider.autoDispose<UpdatePostUseCase>((
+  ref,
+) {
+  final repository = ref.watch(postRepositoryProvider);
+  return UpdatePostUseCase(repository);
 });
 
 final getInterestDetailUseCaseProvider =

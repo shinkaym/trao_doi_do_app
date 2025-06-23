@@ -122,6 +122,7 @@ enum PostStatus {
   pending(1),
   rejected(2),
   approved(3),
+  locked(4),
   unknown(0);
 
   final int value;
@@ -142,6 +143,8 @@ enum PostStatus {
         return 'Đã từ chối';
       case PostStatus.approved:
         return 'Đã duyệt';
+      case PostStatus.locked:
+        return 'Đã khóa';
       case PostStatus.unknown:
         return 'Không xác định';
     }
@@ -155,6 +158,8 @@ enum PostStatus {
         return Icons.block;
       case PostStatus.approved:
         return Icons.check_circle;
+      case PostStatus.locked:
+        return Icons.lock;
       case PostStatus.unknown:
         return Icons.help;
     }
@@ -168,6 +173,8 @@ enum PostStatus {
         return Colors.red;
       case PostStatus.approved:
         return Colors.green;
+      case PostStatus.locked:
+        return Colors.blueGrey;
       case PostStatus.unknown:
         return Colors.grey;
     }

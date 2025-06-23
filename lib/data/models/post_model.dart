@@ -529,3 +529,42 @@ class OldItemModel {
     );
   }
 }
+
+class UpdatePostModel {
+  final String? title;
+  final String? description;
+  final List<String>? images;
+  final bool? isRepost;
+  final int? status;
+
+  const UpdatePostModel({
+    this.title,
+    this.description,
+    this.images,
+    this.isRepost,
+    this.status,
+  });
+
+  factory UpdatePostModel.fromEntity(UpdatePost updatePost) {
+    return UpdatePostModel(
+      title: updatePost.title,
+      description: updatePost.description,
+      images: updatePost.images,
+      isRepost: updatePost.isRepost,
+      status: updatePost.status,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> json = {};
+
+    // Chỉ thêm field nào không null
+    if (title != null) json['title'] = title;
+    if (description != null) json['description'] = description;
+    if (images != null) json['images'] = images;
+    if (isRepost != null) json['isRepost'] = isRepost;
+    if (status != null) json['status'] = status;
+
+    return json;
+  }
+}

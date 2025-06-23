@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_post_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/update_post_usecase.dart';
 
 class PostState {
   final bool isLoading;
@@ -26,6 +27,8 @@ class PostState {
   final String category;
   // Common for foundItem and findLost
   final int categoryID;
+  final bool isRepost;
+  final int status;
 
   PostState({
     this.isLoading = false,
@@ -44,6 +47,8 @@ class PostState {
     this.reward = '',
     this.category = '',
     this.categoryID = 0,
+    this.isRepost = false,
+    this.status = 1,
   });
 
   PostState copyWith({
@@ -63,6 +68,8 @@ class PostState {
     String? reward,
     String? category,
     int? categoryID,
+    bool? isRepost, // Thêm parameter
+    int? status,
   }) {
     return PostState(
       isLoading: isLoading ?? this.isLoading,
@@ -81,6 +88,8 @@ class PostState {
       reward: reward ?? this.reward,
       category: category ?? this.category,
       categoryID: categoryID ?? this.categoryID,
+      isRepost: isRepost ?? this.isRepost,
+      status: status ?? this.status,
     );
   }
 
@@ -111,8 +120,10 @@ class PostState {
 
 class PostNotifier extends StateNotifier<PostState> {
   final CreatePostUseCase _createPostUseCase;
+  final UpdatePostUseCase _updatePostUseCase;
 
-  PostNotifier(this._createPostUseCase) : super(PostState());
+  PostNotifier(this._createPostUseCase, this._updatePostUseCase)
+    : super(PostState());
 
   void updateTitle(String title) {
     state = state.copyWith(title: title);
@@ -223,5 +234,106 @@ class PostNotifier extends StateNotifier<PostState> {
 
   void reset() {
     state = state.copyWith(newItems: [], oldItems: [], images: []);
+  }
+
+  void updateIsRepost(bool isRepost) {
+    state = state.copyWith(isRepost: isRepost);
+  }
+
+  void updateStatus(int status) {
+    state = state.copyWith(status: status);
+  }
+
+  Future<void> updatePost(
+    int postID, {
+    String? title,
+    String? description,
+    List<String>? images,
+    bool? isRepost,
+    int? status,
+  }) async {
+    state = state.copyWith(isLoading: true, failure: null);
+
+    final updatePost = UpdatePost(
+      title: title,
+      description: description,
+      images: images,
+      isRepost: isRepost,
+      status: status,
+    );
+
+    final result = await _updatePostUseCase(postID, updatePost);
+
+    result.fold(
+      (failure) => state = state.copyWith(isLoading: false, failure: failure),
+      (message) {
+        state = state.copyWith(
+          isLoading: false,
+          successMessage: 'Cập nhật bài đăng thành công!',
+        );
+      },
+    );
+  }
+
+  Future<void> togglePostStatus(int postID, int currentStatus) async {
+    state = state.copyWith(isLoading: true, failure: null);
+
+    // Chuyển đổi status: 3 <-> 4
+    final newStatus = currentStatus == 3 ? 4 : 3;
+
+    final updatePost = UpdatePost(
+      status: newStatus, // Chỉ gửi status
+    );
+
+    final result = await _updatePostUseCase(postID, updatePost);
+
+    result.fold(
+      (failure) => state = state.copyWith(isLoading: false, failure: failure),
+      (message) {
+        state = state.copyWith(
+          isLoading: false,
+          status: newStatus,
+          successMessage:
+              newStatus == 4 ? 'Đã khóa bài đăng!' : 'Đã mở khóa bài đăng!',
+        );
+      },
+    );
+  }
+
+  Future<void> repostPost(int postID, DateTime createdAt) async {
+    state = state.copyWith(isLoading: true, failure: null);
+
+    final updatePost = UpdatePost(
+      isRepost: true, // Chỉ gửi isRepost
+    );
+
+    final result = await _updatePostUseCase(postID, updatePost);
+
+    result.fold(
+      (failure) => state = state.copyWith(isLoading: false, failure: failure),
+      (message) {
+        state = state.copyWith(
+          isLoading: false,
+          isRepost: true,
+          successMessage: 'Đã đăng lại bài đăng thành công!',
+        );
+      },
+    );
+  }
+
+  Future<void> updatePostTitle(int postID, String title) async {
+    await updatePost(postID, title: title);
+  }
+
+  Future<void> updatePostDescription(int postID, String description) async {
+    await updatePost(postID, description: description);
+  }
+
+  Future<void> updatePostImages(int postID, List<String> images) async {
+    await updatePost(postID, images: images);
+  }
+
+  Future<void> updatePostStatus(int postID, int status) async {
+    await updatePost(postID, status: status);
   }
 }

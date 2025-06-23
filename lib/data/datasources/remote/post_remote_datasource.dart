@@ -11,6 +11,7 @@ abstract class PostRemoteDataSource {
   Future<PostsResponseModel> getPosts(PostsQuery query);
   Future<PostsResponseModel> myPosts(PostsQuery query);
   Future<PostDetailResponseModel> getPostBySlug(String slug);
+  Future<String> updatePost(int postID, UpdatePostModel updatePost);
 }
 
 class PostRemoteDataSourceImpl implements PostRemoteDataSource {
@@ -74,6 +75,21 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
     final result = ApiResponseModel.fromJson(
       response.data,
       (json) => PostDetailResponseModel.fromJson(json as Map<String, dynamic>),
+    );
+
+    return result.data!;
+  }
+
+    @override
+  Future<String> updatePost(int postID, UpdatePostModel updatePost) async {
+    final response = await _dioClient.patch(
+      '${ApiConstants.posts}/$postID',
+      data: updatePost.toJson(),
+    );
+
+    final result = ApiResponseModel.fromJson(
+      response.data,
+      (data) => data.toString(),
     );
 
     return result.data!;

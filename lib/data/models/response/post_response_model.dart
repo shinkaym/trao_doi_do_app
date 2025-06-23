@@ -62,3 +62,4 @@ class PostDetailResponseModel {
     return PostDetailResponseModel(post: entity.post as PostDetailModel);
   }
 }
+

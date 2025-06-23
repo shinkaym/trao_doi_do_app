@@ -221,3 +221,22 @@ class FindLostInfo {
     category: json['category'] ?? '',
   );
 }
+
+class UpdatePost extends Equatable {
+  final String? title;
+  final String? description;
+  final List<String>? images;
+  final bool? isRepost;
+  final int? status;
+
+  const UpdatePost({
+    this.title,
+    this.description,
+    this.images,
+    this.isRepost,
+    this.status,
+  });
+
+  @override
+  List<Object?> get props => [title, description, images, isRepost, status];
+}
