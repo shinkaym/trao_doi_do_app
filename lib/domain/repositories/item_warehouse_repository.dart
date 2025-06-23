@@ -15,4 +15,5 @@ abstract class ItemWarehouseRepository {
   Future<Either<Failure, OldStockResponse>> getOldStock(OldStockQuery query);
   Future<Either<Failure, GetClaimRequestsResponse>> getClaimRequests();
   Future<Either<Failure, String>> deleteClaimRequest(int itemID);
+  Future<Either<Failure, String>> deleteAllClaimRequests();
 }

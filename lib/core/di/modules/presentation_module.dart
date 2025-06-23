@@ -9,6 +9,9 @@ import 'package:trao_doi_do_app/presentation/features/post/providers/post_detail
 import 'package:trao_doi_do_app/presentation/features/profile/providers/my_posts_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/splash/providers/splash_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/onboarding/providers/onboarding_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/warehouse/providers/claim_request_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/warehouse/providers/claim_requests_list_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/warehouse/providers/old_stock_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/category_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/item_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/interest_provider.dart';
@@ -202,3 +205,40 @@ final messagesListProvider = StateNotifierProvider.autoDispose
         interestID,
       );
     });
+
+final claimRequestProvider =
+    StateNotifierProvider<ClaimRequestNotifier, ClaimRequestState>((ref) {
+      final createClaimRequestUseCase = ref.watch(
+        createClaimRequestUseCaseProvider,
+      );
+      final updateClaimRequestUseCase = ref.watch(
+        updateClaimRequestUseCaseProvider,
+      );
+      final deleteClaimRequestUseCase = ref.watch(
+        deleteClaimRequestUseCaseProvider,
+      );
+      final deleteAllClaimRequestsUseCase = ref.watch(
+        deleteAllClaimRequestsUseCaseProvider,
+      );
+
+      return ClaimRequestNotifier(
+        createClaimRequestUseCase,
+        updateClaimRequestUseCase,
+        deleteClaimRequestUseCase,
+        deleteAllClaimRequestsUseCase,
+      );
+    });
+
+final oldStockProvider =
+    StateNotifierProvider.autoDispose<OldStockNotifier, OldStockState>((ref) {
+      final getOldStockUseCase = ref.watch(getOldStockUseCaseProvider);
+      return OldStockNotifier(getOldStockUseCase);
+    });
+
+final claimRequestsListProvider = StateNotifierProvider.autoDispose<
+  ClaimRequestsListNotifier,
+  ClaimRequestsListState
+>((ref) {
+  final getClaimRequestsUseCase = ref.watch(getClaimRequestsUseCaseProvider);
+  return ClaimRequestsListNotifier(getClaimRequestsUseCase);
+});

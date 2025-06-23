@@ -13,6 +13,7 @@ abstract class ItemWarehouseRemoteDataSource {
   Future<OldStockResponseModel> getOldStock(OldStockQuery query);
   Future<GetClaimRequestsResponseModel> getClaimRequests();
   Future<String> deleteClaimRequest(int itemID);
+  Future<String> deleteAllClaimRequests();
 }
 
 class ItemWarehouseRemoteDataSourceImpl
@@ -86,8 +87,21 @@ class ItemWarehouseRemoteDataSourceImpl
   @override
   Future<String> deleteClaimRequest(int itemID) async {
     final response = await _dioClient.delete(
+      '${ApiConstants.clientItemWarehouses}${ApiConstants.claimRequest}/$itemID',
+    );
+
+    final result = ApiResponseModel.fromJson(
+      response.data,
+      (data) => data.toString(),
+    );
+
+    return result.message;
+  }
+
+  @override
+  Future<String> deleteAllClaimRequests() async {
+    final response = await _dioClient.delete(
       '${ApiConstants.clientItemWarehouses}${ApiConstants.claimRequest}',
-      data: {'itemID': itemID},
     );
 
     final result = ApiResponseModel.fromJson(

@@ -68,4 +68,12 @@ class ItemWarehouseRepositoryImpl implements ItemWarehouseRepository {
       return result;
     }, 'Lỗi xóa claim request');
   }
+
+  @override
+  Future<Either<Failure, String>> deleteAllClaimRequests() async {
+    return handleRepositoryCall<String>(() async {
+      final result = await _remoteDataSource.deleteAllClaimRequests();
+      return result;
+    }, 'Lỗi xóa tất cả claim request');
+  }
 }

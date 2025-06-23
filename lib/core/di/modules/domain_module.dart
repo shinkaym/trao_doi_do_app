@@ -16,6 +16,7 @@ import 'package:trao_doi_do_app/domain/repositories/post_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/message_repository.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_claim_request_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_transaction_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/delete_all_claim_requests_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/delete_claim_request_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_categories_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_claim_requests_usecase.dart';
@@ -251,4 +252,10 @@ final deleteClaimRequestUseCaseProvider =
     Provider.autoDispose<DeleteClaimRequestUseCase>((ref) {
       final repository = ref.watch(itemWarehouseRepositoryProvider);
       return DeleteClaimRequestUseCase(repository);
+    });
+
+final deleteAllClaimRequestsUseCaseProvider =
+    Provider.autoDispose<DeleteAllClaimRequestsUseCase>((ref) {
+      final repository = ref.watch(itemWarehouseRepositoryProvider);
+      return DeleteAllClaimRequestsUseCase(repository);
     });
