@@ -7,6 +7,7 @@ class PostsQuery extends Equatable {
   final String? order; // ASC, DESC
   final int? type; // 1: giveAway, 2: foundItem, 3: findLost, 4: freePost
   final String? search;
+  final int? status;
 
   const PostsQuery({
     this.page = 1,
@@ -15,6 +16,7 @@ class PostsQuery extends Equatable {
     this.order,
     this.type,
     this.search,
+    this.status,
   });
 
   Map<String, dynamic> toQueryParams() {
@@ -24,6 +26,7 @@ class PostsQuery extends Equatable {
     if (order != null) params['order'] = order;
     if (type != null) params['type'] = type;
     if (search != null) params['search'] = search;
+    if (search != null) params['status'] = status;
 
     return params;
   }
@@ -35,6 +38,7 @@ class PostsQuery extends Equatable {
     String? order,
     int? type,
     String? search,
+    int? status,
   }) {
     return PostsQuery(
       page: page ?? this.page,
@@ -43,9 +47,10 @@ class PostsQuery extends Equatable {
       order: order ?? this.order,
       type: type ?? this.type,
       search: search ?? this.search,
+      status: status ?? this.status,
     );
   }
 
   @override
-  List<Object?> get props => [page, limit, sort, order, type, search];
+  List<Object?> get props => [page, limit, sort, order, type, search, status];
 }

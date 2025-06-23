@@ -97,7 +97,10 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
     }
 
     // UI cho chủ sở hữu bài đăng
-    if (widget.post == null) return const SizedBox.shrink();
+    if (widget.post == null || widget.post!.status == 1) {
+      // Ẩn action bar nếu đang chờ duyệt
+      return const SizedBox.shrink();
+    }
 
     final postStatus = widget.post!.status;
     final createdAt = widget.post!.createdAt;

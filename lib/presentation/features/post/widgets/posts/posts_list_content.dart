@@ -7,7 +7,7 @@ import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/post_ca
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/post_skeleton.dart';
 import 'dart:convert';
 
-import 'package:trao_doi_do_app/presentation/widgets/list_empty_state.dart';
+import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/posts_empty_state.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/posts_pagination.dart';
 
 class PostsListContent extends HookConsumerWidget {
@@ -62,7 +62,7 @@ class PostsListContent extends HookConsumerWidget {
     if (postsState.posts.isEmpty && !postsState.isLoading) {
       return SingleChildScrollView(
         controller: scrollController,
-        child: ListEmptyState(
+        child: PostsEmptyState(
           isTablet: isTablet,
           theme: theme,
           colorScheme: colorScheme,

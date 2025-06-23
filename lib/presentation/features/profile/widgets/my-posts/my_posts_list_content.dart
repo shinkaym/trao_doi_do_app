@@ -5,9 +5,9 @@ import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/post_skeleton.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/providers/my_posts_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/my-posts/my_post_card.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/widgets/my-posts/my_posts_empty_state.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/my-posts/my_posts_pagination.dart';
 import 'dart:convert';
-import 'package:trao_doi_do_app/presentation/widgets/list_empty_state.dart';
 
 class MyPostsListContent extends HookConsumerWidget {
   final MyPostsListState postsState;
@@ -17,6 +17,7 @@ class MyPostsListContent extends HookConsumerWidget {
   final String searchQuery;
   final PostType selectedType;
   final SortOrder selectedSort;
+  final PostStatus selectedStatus;
   final Function(Post) onPostTap;
   final VoidCallback onRefresh;
   final VoidCallback onResetFilters;
@@ -33,6 +34,7 @@ class MyPostsListContent extends HookConsumerWidget {
     required this.searchQuery,
     required this.selectedType,
     required this.selectedSort,
+    required this.selectedStatus,
     required this.onPostTap,
     required this.onRefresh,
     required this.onResetFilters,
@@ -65,13 +67,14 @@ class MyPostsListContent extends HookConsumerWidget {
     if (postsState.posts.isEmpty && !postsState.isLoading) {
       return SingleChildScrollView(
         controller: scrollController,
-        child: ListEmptyState(
+        child: MyPostsEmptyState(
           isTablet: isTablet,
           theme: theme,
           colorScheme: colorScheme,
           searchQuery: searchQuery,
           selectedType: selectedType,
           selectedSort: selectedSort,
+          selectedStatus: selectedStatus,
           onResetFilters: onResetFilters,
         ),
       );

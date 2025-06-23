@@ -4,7 +4,8 @@ import 'package:trao_doi_do_app/presentation/enums/index.dart';
 class MyPostsFilterBottomSheet extends StatefulWidget {
   final PostType selectedType;
   final SortOrder selectedSort;
-  final Function(PostType, SortOrder) onApplyFilters;
+  final PostStatus selectedStatus;
+  final Function(PostType, SortOrder, PostStatus) onApplyFilters;
   final VoidCallback onResetFilters;
   final bool isTablet;
   final ThemeData theme;
@@ -14,6 +15,7 @@ class MyPostsFilterBottomSheet extends StatefulWidget {
     super.key,
     required this.selectedType,
     required this.selectedSort,
+    required this.selectedStatus,
     required this.onApplyFilters,
     required this.onResetFilters,
     required this.isTablet,
@@ -35,6 +37,7 @@ class _MyPostsFilterBottomSheetState extends State<MyPostsFilterBottomSheet>
   // Temporary state for filters
   late PostType _tempSelectedType;
   late SortOrder _tempSelectedSort;
+  late PostStatus _tempSelectedStatus;
 
   @override
   void initState() {
@@ -43,6 +46,7 @@ class _MyPostsFilterBottomSheetState extends State<MyPostsFilterBottomSheet>
     // Initialize temporary state with current values
     _tempSelectedType = widget.selectedType;
     _tempSelectedSort = widget.selectedSort;
+    _tempSelectedStatus = widget.selectedStatus;
 
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 350),
@@ -75,7 +79,11 @@ class _MyPostsFilterBottomSheetState extends State<MyPostsFilterBottomSheet>
   }
 
   void _applyFilters() {
-    widget.onApplyFilters(_tempSelectedType, _tempSelectedSort);
+    widget.onApplyFilters(
+      _tempSelectedType,
+      _tempSelectedSort,
+      _tempSelectedStatus,
+    );
     _closeSheet();
   }
 
@@ -83,6 +91,7 @@ class _MyPostsFilterBottomSheetState extends State<MyPostsFilterBottomSheet>
     setState(() {
       _tempSelectedType = PostType.all;
       _tempSelectedSort = SortOrder.newest;
+      _tempSelectedStatus = PostStatus.all;
     });
   }
 
@@ -94,12 +103,14 @@ class _MyPostsFilterBottomSheetState extends State<MyPostsFilterBottomSheet>
 
   bool get _hasChanges {
     return _tempSelectedType != widget.selectedType ||
-        _tempSelectedSort != widget.selectedSort;
+        _tempSelectedSort != widget.selectedSort ||
+        _tempSelectedStatus != widget.selectedStatus;
   }
 
   bool get _hasActiveFilters {
     return _tempSelectedType != PostType.all ||
-        _tempSelectedSort != SortOrder.newest;
+        _tempSelectedSort != SortOrder.newest ||
+        _tempSelectedStatus != PostStatus.all;
   }
 
   @override
@@ -171,11 +182,21 @@ class _MyPostsFilterBottomSheetState extends State<MyPostsFilterBottomSheet>
                               // Type Filter Section
                               _buildFilterSection(
                                 title: 'Loại bài đăng',
-                                icon: Icons.category_outlined,
+                              icon: Icons.category_outlined,
                                 iconColor: Colors.purple.shade600,
                                 iconBackgroundColor: Colors.purple.shade100,
                                 child: _buildTypeFilters(),
                               ),
+                              SizedBox(height: widget.isTablet ? 28 : 24),
+
+                              _buildFilterSection(
+                                title: 'Trạng thái',
+                                icon: Icons.flag_outlined,
+                                iconColor: Colors.teal.shade600,
+                                iconBackgroundColor: Colors.teal.shade100,
+                                child: _buildStatusFilters(), // Thêm method này
+                              ),
+
                               SizedBox(height: widget.isTablet ? 28 : 24),
 
                               // Sort Filter Section
@@ -391,6 +412,28 @@ class _MyPostsFilterBottomSheetState extends State<MyPostsFilterBottomSheet>
                   onSelected: () {
                     setState(() {
                       _tempSelectedSort = sort;
+                    });
+                  },
+                ),
+              )
+              .toList(),
+    );
+  }
+
+  Widget _buildStatusFilters() {
+    return Wrap(
+      spacing: widget.isTablet ? 12 : 10,
+      runSpacing: widget.isTablet ? 12 : 10,
+      children:
+          PostStatus.values
+              .map(
+                (status) => _buildFilterChip(
+                  label: status.label,
+                  icon: status.icon,
+                  isSelected: _tempSelectedStatus == status,
+                  onSelected: () {
+                    setState(() {
+                      _tempSelectedStatus = status;
                     });
                   },
                 ),

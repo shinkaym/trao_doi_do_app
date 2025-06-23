@@ -101,6 +101,7 @@ class MyPostsScreen extends HookConsumerWidget {
     final searchController = useTextEditingController();
     final selectedType = useState<PostType>(PostType.all);
     final selectedSort = useState<SortOrder>(SortOrder.newest);
+    final selectedStatus = useState<PostStatus>(PostStatus.all);
     final searchQuery = useState<String>('');
     final scrollController = useScrollController();
     final searchFocusNode = useFocusNode();
@@ -117,6 +118,7 @@ class MyPostsScreen extends HookConsumerWidget {
       final query = PostsQuery(
         search: searchQuery.value.isEmpty ? null : searchQuery.value,
         type: selectedType.value.value,
+        status: selectedStatus.value.value,
         sort: selectedSort.value.sort,
         order: selectedSort.value.order,
         page: refresh ? 1 : 1,
@@ -137,9 +139,10 @@ class MyPostsScreen extends HookConsumerWidget {
       );
     }
 
-    void handleApplyFilters(PostType type, SortOrder sort) {
+    void handleApplyFilters(PostType type, SortOrder sort, PostStatus status) {
       selectedType.value = type;
       selectedSort.value = sort;
+      selectedStatus.value = status;
       loadPosts(refresh: true);
     }
 
@@ -161,6 +164,7 @@ class MyPostsScreen extends HookConsumerWidget {
     void resetFilters() {
       selectedType.value = PostType.all;
       selectedSort.value = SortOrder.newest;
+      selectedStatus.value = PostStatus.all;
       loadPosts(refresh: true);
     }
 
@@ -175,6 +179,7 @@ class MyPostsScreen extends HookConsumerWidget {
       searchQuery.value = '';
       selectedType.value = PostType.all;
       selectedSort.value = SortOrder.newest;
+      selectedStatus.value = PostStatus.all;
       searchController.clear();
       isSearchVisible.value = false;
       loadPosts(refresh: true);
@@ -189,6 +194,7 @@ class MyPostsScreen extends HookConsumerWidget {
             (context) => MyPostsFilterBottomSheet(
               selectedType: selectedType.value,
               selectedSort: selectedSort.value,
+              selectedStatus: selectedStatus.value,
               onApplyFilters: handleApplyFilters,
               onResetFilters: resetFilters,
               isTablet: isTablet,
@@ -244,7 +250,8 @@ class MyPostsScreen extends HookConsumerWidget {
                   hasActiveSearch: searchQuery.value.isNotEmpty,
                   hasActiveFilters:
                       selectedType.value != PostType.all ||
-                      selectedSort.value != SortOrder.newest,
+                      selectedSort.value != SortOrder.newest ||
+                      selectedStatus.value != PostStatus.all,
                 ),
 
                 // Content
@@ -257,6 +264,7 @@ class MyPostsScreen extends HookConsumerWidget {
                     searchQuery: searchQuery.value,
                     selectedType: selectedType.value,
                     selectedSort: selectedSort.value,
+                    selectedStatus: selectedStatus.value,
                     onPostTap: handlePostTap,
                     onRefresh: handleRefresh,
                     onResetFilters: resetAll,

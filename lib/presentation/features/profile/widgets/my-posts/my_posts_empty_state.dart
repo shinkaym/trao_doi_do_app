@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
-class ListEmptyState extends StatelessWidget {
+class MyPostsEmptyState extends StatelessWidget {
   final bool isTablet;
   final ThemeData theme;
   final ColorScheme colorScheme;
   final String searchQuery;
   final PostType selectedType;
   final SortOrder selectedSort;
+  final PostStatus selectedStatus;
   final VoidCallback onResetFilters;
 
-  const ListEmptyState({
+  const MyPostsEmptyState({
     super.key,
     required this.isTablet,
     required this.theme,
@@ -18,15 +19,18 @@ class ListEmptyState extends StatelessWidget {
     required this.searchQuery,
     required this.selectedType,
     required this.selectedSort,
+    required this.selectedStatus,
     required this.onResetFilters,
   });
 
   @override
   Widget build(BuildContext context) {
     // Kiểm tra xem có đang áp dụng bộ lọc không
-    final hasActiveFilters = searchQuery.isNotEmpty ||
+    final hasActiveFilters =
+        searchQuery.isNotEmpty ||
         selectedType != PostType.all ||
-        selectedSort != SortOrder.newest;
+        selectedSort != SortOrder.newest ||
+        selectedStatus != PostStatus.all;
 
     return Center(
       child: Column(
