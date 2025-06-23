@@ -58,9 +58,6 @@ class MyPostCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHeaderRow(postType, postStatus),
-              SizedBox(height: isTablet ? 12 : 8),
-              if (post.authorName != null && post.authorName!.isNotEmpty)
-                _buildAuthorSection(),
               SizedBox(height: isTablet ? 16 : 12),
               _buildTitleAndDescription(),
               if (hasImages(post)) _buildImagesSection(),
@@ -144,42 +141,17 @@ class MyPostCard extends StatelessWidget {
             ],
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildAuthorSection() {
-    return Row(
-      children: [
-        _buildAuthorAvatar(),
-        SizedBox(width: isTablet ? 12 : 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                post.authorName!,
-                style: TextStyle(
-                  fontSize: isTablet ? 15 : 13,
-                  fontWeight: FontWeight.w600,
-                  color: colorScheme.onSurface,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (post.createdAt != null) ...[
-                SizedBox(height: 2),
-                Text(
-                  TimeUtils.formatTimeAgo(post.createdAt!),
-                  style: TextStyle(
-                    fontSize: isTablet ? 12 : 10,
-                    color: theme.hintColor,
-                  ),
-                ),
-              ],
-            ],
+        // Spacer để đẩy thời gian sang bên phải
+        const Spacer(),
+        // Thời gian ở góc phải
+        if (post.createdAt != null)
+          Text(
+            TimeUtils.formatTimeAgo(post.createdAt!),
+            style: TextStyle(
+              fontSize: isTablet ? 12 : 10,
+              color: theme.hintColor,
+            ),
           ),
-        ),
       ],
     );
   }
@@ -406,10 +378,7 @@ class MyPostCard extends StatelessWidget {
     if (buttons.isEmpty) return const SizedBox.shrink();
 
     return Column(
-      children: [
-        SizedBox(height: isTablet ? 12 : 8),
-        Row(children: buttons),
-      ],
+      children: [SizedBox(height: isTablet ? 12 : 8), Row(children: buttons)],
     );
   }
 
@@ -471,32 +440,6 @@ class MyPostCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildAuthorAvatar() {
-    final radius = isTablet ? 16.0 : 14.0;
-
-    if (post.authorAvatar != null && post.authorAvatar!.isNotEmpty) {
-      final imageBytes = Base64Utils.decodeImageFromBase64(post.authorAvatar!);
-
-      if (imageBytes != null) {
-        return CircleAvatar(
-          radius: radius,
-          backgroundImage: MemoryImage(imageBytes),
-          child: null,
-        );
-      }
-    }
-
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: colorScheme.primaryContainer,
-      child: Icon(
-        Icons.person,
-        size: isTablet ? 18 : 16,
-        color: colorScheme.onPrimaryContainer,
       ),
     );
   }

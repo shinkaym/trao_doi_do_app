@@ -176,11 +176,12 @@ class MyPostsListNotifier extends StateNotifier<MyPostsListState> {
     loadPosts(newQuery: newQuery, refresh: true);
   }
 
-  void applyFilter({String? search, int? type, String? sort, String? order}) {
+  void applyFilter({String? search, int? type, String? sort, String? order, int? status}) {
     final newQuery = state.query.copyWith(
       search: search,
       type: type,
       sort: sort,
+      status: status,
       order: order,
       page: 1,
     );

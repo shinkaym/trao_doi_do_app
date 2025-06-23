@@ -26,7 +26,7 @@ class PostsQuery extends Equatable {
     if (order != null) params['order'] = order;
     if (type != null) params['type'] = type;
     if (search != null) params['search'] = search;
-    if (search != null) params['status'] = status;
+    if (status != null) params['status'] = status;
 
     return params;
   }
