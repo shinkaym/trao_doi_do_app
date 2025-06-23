@@ -113,29 +113,29 @@ class PostContentSection extends HookConsumerWidget {
             decoration: BoxDecoration(
               color: PostStatus.fromValue(
                 post.status ?? 0,
-              ).color().withOpacity(0.1),
+              ).color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: PostStatus.fromValue(
                   post.status ?? 0,
-                ).color().withOpacity(0.3),
+                ).color.withOpacity(0.3),
               ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  PostStatus.fromValue(post.status ?? 0).icon(),
+                  PostStatus.fromValue(post.status ?? 0).icon,
                   size: 12,
-                  color: PostStatus.fromValue(post.status ?? 0).color(),
+                  color: PostStatus.fromValue(post.status ?? 0).color,
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  PostStatus.fromValue(post.status ?? 0).label(),
+                  PostStatus.fromValue(post.status ?? 0).label,
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w500,
-                    color: PostStatus.fromValue(post.status ?? 0).color(),
+                    color: PostStatus.fromValue(post.status ?? 0).color,
                   ),
                 ),
               ],
@@ -146,15 +146,15 @@ class PostContentSection extends HookConsumerWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: CreatePostType.fromValue(post.type).color().withOpacity(0.1),
+            color: PostType.fromValue(post.type).color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            CreatePostType.fromValue(post.type).label(),
+            PostType.fromValue(post.type).label,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: CreatePostType.fromValue(post.type).color(),
+              color: PostType.fromValue(post.type).color,
             ),
           ),
         ),

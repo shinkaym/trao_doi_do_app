@@ -47,11 +47,11 @@ class TransactionTile extends HookConsumerWidget {
     final transactionState = ref.watch(transactionProvider);
     final transactionsNotifier = ref.read(transactionsListProvider.notifier);
 
-    final statusColor = TransactionStatus.fromValue(transaction.status).color();
+    final statusColor = TransactionStatus.fromValue(transaction.status).color;
     final statusText = TransactionStatus.fromValue(
       transaction.status,
-    ).label(isPostOwner: isPostOwner);
-    final statusIcon = TransactionStatus.fromValue(transaction.status).icon();
+    ).getLabel(isPostOwner: isPostOwner);
+    final statusIcon = TransactionStatus.fromValue(transaction.status).icon;
 
     // Listen to transaction state changes
     ref.listen<TransactionState>(transactionProvider, (previous, next) {

@@ -42,7 +42,7 @@ class CreatePostForm extends HookConsumerWidget {
     final timeController = useTextEditingController();
 
     // State hooks
-    final selectedType = useState(CreatePostType.giveAway);
+    final selectedType = useState(PostType.giveAway);
     final images = useState<List<PostImage>>([]);
     final giveAwayItems = useState<List<GiveAwayItem>>([]);
     final selectedDateTime = useState<DateTime?>(null);
@@ -122,7 +122,7 @@ class CreatePostForm extends HookConsumerWidget {
       );
     }
 
-    void handleTypeChange(CreatePostType type) {
+    void handleTypeChange(PostType type) {
       ref.read(postProvider.notifier).reset();
 
       selectedType.value = type;
@@ -215,7 +215,7 @@ class CreatePostForm extends HookConsumerWidget {
     }
 
     Post buildPost() {
-      final typeValue = selectedType.value.value;
+      final typeValue = selectedType.value.index;
       final title = titleController.text.trim();
       final description = descriptionController.text.trim();
       final imagesBase64 =
@@ -223,12 +223,12 @@ class CreatePostForm extends HookConsumerWidget {
 
       final info = <String, dynamic>{};
 
-      if (selectedType.value == CreatePostType.findLost) {
+      if (selectedType.value == PostType.findLost) {
         info['lostLocation'] = locationController.text.trim();
         info['lostDate'] = selectedDateTime.value?.toIso8601String() ?? '';
         info['reward'] = rewardController.text.trim();
         info['category'] = categoryController.text.trim();
-      } else if (selectedType.value == CreatePostType.foundItem) {
+      } else if (selectedType.value == PostType.foundItem) {
         info['foundLocation'] = locationController.text.trim();
         info['foundDate'] = selectedDateTime.value?.toIso8601String() ?? '';
       }

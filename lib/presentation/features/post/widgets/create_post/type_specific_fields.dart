@@ -5,7 +5,7 @@ import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/models/give_away_item.dart';
 
 class TypeSpecificFields extends HookConsumerWidget {
-  final CreatePostType selectedType;
+  final PostType selectedType;
   final TextEditingController locationController;
   final TextEditingController timeController;
   final TextEditingController rewardController;
@@ -132,16 +132,16 @@ class TypeSpecificFields extends HookConsumerWidget {
 
   // Helper getters to determine which fields are needed
   bool get _needsLocationField =>
-      selectedType != CreatePostType.freePost &&
-      selectedType != CreatePostType.giveAway;
-  bool get _needsCategoryField => selectedType == CreatePostType.findLost;
+      selectedType != PostType.freePost &&
+      selectedType != PostType.giveAway;
+  bool get _needsCategoryField => selectedType == PostType.findLost;
   bool get _needsTimeField =>
-      selectedType != CreatePostType.freePost &&
-      selectedType != CreatePostType.giveAway;
-  bool get _needsRewardField => selectedType == CreatePostType.findLost;
+      selectedType != PostType.freePost &&
+      selectedType != PostType.giveAway;
+  bool get _needsRewardField => selectedType == PostType.findLost;
   bool get _needsGiveAwaySection =>
-      selectedType == CreatePostType.giveAway ||
-      selectedType == CreatePostType.foundItem;
+      selectedType == PostType.giveAway ||
+      selectedType == PostType.foundItem;
 
   Widget _buildLocationField() {
     String hintText;
@@ -149,12 +149,12 @@ class TypeSpecificFields extends HookConsumerWidget {
     Color iconColor;
 
     switch (selectedType) {
-      case CreatePostType.findLost:
+      case PostType.findLost:
         hintText = 'Ví dụ: Công viên Tao Đàn, Quận 1...';
         iconData = Icons.location_off;
         iconColor = Colors.red.shade400;
         break;
-      case CreatePostType.foundItem:
+      case PostType.foundItem:
         hintText = 'Ví dụ: Trước cửa hàng Circle K, Đường Nguyễn Huệ...';
         iconData = Icons.location_on;
         iconColor = Colors.green.shade400;
@@ -338,12 +338,12 @@ class TypeSpecificFields extends HookConsumerWidget {
     Color iconColor;
 
     switch (selectedType) {
-      case CreatePostType.findLost:
+      case PostType.findLost:
         hintText = 'Thời gian thất lạc';
         iconData = Icons.schedule;
         iconColor = Colors.orange.shade600;
         break;
-      case CreatePostType.foundItem:
+      case PostType.foundItem:
         hintText = 'Thời gian tìm thấy';
         iconData = Icons.event_available;
         iconColor = Colors.green.shade600;
@@ -557,7 +557,7 @@ class TypeSpecificFields extends HookConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  selectedType == CreatePostType.foundItem
+                  selectedType == PostType.foundItem
                       ? Icons.search_rounded
                       : Icons.card_giftcard_rounded,
                   color: colorScheme.primary,
@@ -570,7 +570,7 @@ class TypeSpecificFields extends HookConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      selectedType == CreatePostType.foundItem
+                      selectedType == PostType.foundItem
                           ? 'Món đồ tìm thấy'
                           : 'Danh sách món đồ',
                       style: theme.textTheme.titleMedium?.copyWith(
@@ -691,7 +691,7 @@ class TypeSpecificFields extends HookConsumerWidget {
           ),
           SizedBox(height: isTablet ? 16 : 12),
           Text(
-            selectedType == CreatePostType.foundItem
+            selectedType == PostType.foundItem
                 ? 'Chưa có món đồ nào được thêm'
                 : 'Danh sách còn trống',
             style: theme.textTheme.titleSmall?.copyWith(

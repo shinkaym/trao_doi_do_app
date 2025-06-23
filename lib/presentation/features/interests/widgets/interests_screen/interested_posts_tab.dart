@@ -102,7 +102,7 @@ class InterestedPostsTab extends ConsumerWidget {
             itemCount: state.interests.length,
             itemBuilder: (context, index) {
               final post = state.interests[index];
-              final postType = CreatePostType.fromValue(post.type);
+              final postType = PostType.fromValue(post.type);
               final authState = ref.read(authProvider);
 
               return UnifiedInterestPostCard.interestedPost(

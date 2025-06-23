@@ -33,7 +33,7 @@ class PostInfoHeader extends StatelessWidget {
     final colorScheme = context.colorScheme;
 
     // Get post type information
-    final postTypeEnum = CreatePostType.fromValue(post.type);
+    final postTypeEnum = PostType.fromValue(post.type);
     final latestTransaction =
         transactions.isNotEmpty ? transactions.first : null;
 
@@ -55,7 +55,7 @@ class PostInfoHeader extends StatelessWidget {
   Widget _buildPostInfoCard(
     ThemeData theme,
     ColorScheme colorScheme,
-    CreatePostType postTypeEnum,
+    PostType postTypeEnum,
   ) {
     return Container(
       padding: EdgeInsets.all(isTablet ? 16 : 12),
@@ -70,9 +70,9 @@ class PostInfoHeader extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              postTypeEnum.icon(),
+              postTypeEnum.icon,
               size: isTablet ? 24 : 20,
-              color: postTypeEnum.color(),
+              color: postTypeEnum.color,
             ),
             SizedBox(width: isTablet ? 12 : 8),
             Expanded(
@@ -80,7 +80,7 @@ class PostInfoHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Về bài đăng: ${postTypeEnum.label()}',
+                    'Về bài đăng: ${postTypeEnum.label}',
                     style: TextStyle(
                       fontSize: isTablet ? 12 : 11,
                       color: theme.hintColor,
@@ -177,9 +177,9 @@ class PostInfoHeader extends StatelessWidget {
       );
     } else if (latestTransaction != null) {
       return Icon(
-        TransactionStatus.fromValue(latestTransaction.status).icon(),
+        TransactionStatus.fromValue(latestTransaction.status).icon,
         size: isTablet ? 20 : 18,
-        color: TransactionStatus.fromValue(latestTransaction.status).color(),
+        color: TransactionStatus.fromValue(latestTransaction.status).color,
       );
     } else {
       return Icon(
@@ -232,19 +232,19 @@ class PostInfoHeader extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: TransactionStatus.fromValue(
                     latestTransaction.status,
-                  ).color().withOpacity(0.1),
+                  ).color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
                   TransactionStatus.fromValue(
                     latestTransaction.status,
-                  ).label(isPostOwner: isPostOwner),
+                  ).getLabel(isPostOwner: isPostOwner),
                   style: TextStyle(
                     fontSize: isTablet ? 11 : 10,
                     color:
                         TransactionStatus.fromValue(
                           latestTransaction.status,
-                        ).color(),
+                        ).color,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

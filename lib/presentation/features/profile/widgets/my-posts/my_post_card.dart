@@ -117,10 +117,10 @@ class MyPostCard extends StatelessWidget {
             vertical: isTablet ? 6 : 4,
           ),
           decoration: BoxDecoration(
-            color: postStatus.color().withOpacity(0.1),
+            color: postStatus.color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: postStatus.color().withOpacity(0.3),
+              color: postStatus.color.withOpacity(0.3),
               width: 1,
             ),
           ),
@@ -128,17 +128,17 @@ class MyPostCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                postStatus.icon(),
+                postStatus.icon,
                 size: isTablet ? 16 : 14,
-                color: postStatus.color(),
+                color: postStatus.color,
               ),
               SizedBox(width: isTablet ? 6 : 4),
               Text(
-                postStatus.label(),
+                postStatus.label,
                 style: TextStyle(
                   fontSize: isTablet ? 13 : 11,
                   fontWeight: FontWeight.w600,
-                  color: postStatus.color(),
+                  color: postStatus.color,
                 ),
               ),
             ],

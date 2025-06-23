@@ -9,7 +9,7 @@ import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest
 /// Can show both interested posts and posts with interests based on the mode
 class UnifiedInterestPostCard extends StatelessWidget {
   final InterestPost post;
-  final CreatePostType postType;
+  final PostType postType;
   final bool isTablet;
   final ThemeData theme;
   final ColorScheme colorScheme;
@@ -41,7 +41,7 @@ class UnifiedInterestPostCard extends StatelessWidget {
   /// Factory constructor for interested posts (posts the user is interested in)
   factory UnifiedInterestPostCard.interestedPost({
     required InterestPost post,
-    required CreatePostType postType,
+    required PostType postType,
     required bool isTablet,
     required ThemeData theme,
     required ColorScheme colorScheme,
@@ -69,7 +69,7 @@ class UnifiedInterestPostCard extends StatelessWidget {
   /// Factory constructor for posts with interests (user's posts that others are interested in)
   factory UnifiedInterestPostCard.postWithInterests({
     required InterestPost post,
-    required CreatePostType postType,
+    required PostType postType,
     required bool isTablet,
     required ThemeData theme,
     required ColorScheme colorScheme,
@@ -293,24 +293,24 @@ class UnifiedInterestPostCard extends StatelessWidget {
             vertical: isTablet ? 6 : 4,
           ),
           decoration: BoxDecoration(
-            color: postType.color().withOpacity(0.1),
+            color: postType.color.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                postType.icon(),
+                postType.icon,
                 size: isTablet ? 16 : 14,
-                color: postType.color(),
+                color: postType.color,
               ),
               SizedBox(width: isTablet ? 6 : 4),
               Text(
-                postType.label(),
+                postType.label,
                 style: TextStyle(
                   fontSize: isTablet ? 13 : 11,
                   fontWeight: FontWeight.w600,
-                  color: postType.color(),
+                  color: postType.color,
                 ),
               ),
             ],

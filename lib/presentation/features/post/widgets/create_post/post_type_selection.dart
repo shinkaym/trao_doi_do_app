@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
 class PostTypeSelection extends StatelessWidget {
-  final CreatePostType selectedType;
-  final Function(CreatePostType) onTypeChanged;
+  final PostType selectedType;
+  final Function(PostType) onTypeChanged;
   final bool isTablet;
   final ThemeData theme;
   final ColorScheme colorScheme;
@@ -18,6 +18,9 @@ class PostTypeSelection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final filteredTypes = PostType.values.skip(1).toList();
+
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -38,9 +41,9 @@ class PostTypeSelection extends StatelessWidget {
             crossAxisSpacing: isTablet ? 16 : 12,
             mainAxisSpacing: isTablet ? 16 : 12,
           ),
-          itemCount: CreatePostType.values.length - 1,
+          itemCount: filteredTypes.length,
           itemBuilder: (context, index) {
-            final type = CreatePostType.values[index];
+            final type = filteredTypes[index];
             final isSelected = selectedType == type;
 
             return Card(
@@ -50,7 +53,7 @@ class PostTypeSelection extends StatelessWidget {
                 side: BorderSide(
                   color:
                       isSelected
-                          ? type.color()
+                          ? type.color
                           : colorScheme.outline.withOpacity(0.2),
                   width: isSelected ? 2 : 1,
                 ),
@@ -61,24 +64,24 @@ class PostTypeSelection extends StatelessWidget {
                 child: Container(
                   padding: EdgeInsets.all(isTablet ? 16 : 12),
                   decoration: BoxDecoration(
-                    color: isSelected ? type.color().withOpacity(0.1) : null,
+                    color: isSelected ? type.color.withOpacity(0.1) : null,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
-                        type.icon(),
+                        type.icon,
                         size: isTablet ? 32 : 28,
-                        color: isSelected ? type.color() : theme.hintColor,
+                        color: isSelected ? type.color : theme.hintColor,
                       ),
                       SizedBox(height: isTablet ? 12 : 8),
                       Text(
-                        type.label(),
+                        type.label,
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: isSelected ? type.color() : theme.hintColor,
+                          color: isSelected ? type.color : theme.hintColor,
                           fontSize: isTablet ? 14 : 12,
                         ),
                         maxLines: 2,
