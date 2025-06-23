@@ -7,7 +7,7 @@ class MarkAllMessagesReadUseCase {
 
   MarkAllMessagesReadUseCase(this._repository);
 
-  Future<Either<Failure, dynamic>> call(int interestID) async {
+  Future<Either<Failure, String>> call(int interestID) async {
     if (interestID <= 0) {
       return const Left(ValidationFailure('Interest ID không hợp lệ'));
     }

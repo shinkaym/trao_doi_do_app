@@ -23,8 +23,8 @@ class MessageRepositoryImpl implements MessageRepository {
   }
 
   @override
-  Future<Either<Failure, dynamic>> markAllAsRead(int interestID) async {
-    return handleRepositoryCall<dynamic>(() async {
+  Future<Either<Failure, String>> markAllAsRead(int interestID) async {
+    return handleRepositoryCall<String>(() async {
       final result = await _remoteDataSource.markAllAsRead(interestID);
       return result;
     }, 'Lỗi đánh dấu đã đọc tất cả tin nhắn');
