@@ -1,6 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/category_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/item_repository_impl.dart';
+import 'package:trao_doi_do_app/data/repositories_impl/item_warehouse_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/onboarding_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/transaction_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/interest_repository_impl.dart';
@@ -8,18 +9,22 @@ import 'package:trao_doi_do_app/data/repositories_impl/post_repository_impl.dart
 import 'package:trao_doi_do_app/data/repositories_impl/message_repository_impl.dart';
 import 'package:trao_doi_do_app/domain/repositories/category_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/item_repository.dart';
+import 'package:trao_doi_do_app/domain/repositories/item_warehouse_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/onboarding_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/interest_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/post_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/message_repository.dart';
+import 'package:trao_doi_do_app/domain/usecases/create_claim_request_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_transaction_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_categories_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_interest_detail_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_items_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/get_old_stock_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_transactions_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_unread_count_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/mark_all_messages_read_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/onboarding_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/update_claim_request_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_post_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_transaction_status_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_transaction_usecase.dart';
@@ -86,6 +91,12 @@ final messageRepositoryProvider = Provider.autoDispose<MessageRepository>((
   final remoteDataSource = ref.watch(messageRemoteDataSourceProvider);
   return MessageRepositoryImpl(remoteDataSource);
 });
+
+final itemWarehouseRepositoryProvider =
+    Provider.autoDispose<ItemWarehouseRepository>((ref) {
+      final remoteDataSource = ref.watch(itemWarehouseRemoteDataSourceProvider);
+      return ItemWarehouseRepositoryImpl(remoteDataSource);
+    });
 
 // =============================================================================
 // USE CASE PROVIDERS
@@ -208,3 +219,22 @@ final markAllMessagesReadUseCaseProvider =
       final repository = ref.watch(messageRepositoryProvider);
       return MarkAllMessagesReadUseCase(repository);
     });
+
+final createClaimRequestUseCaseProvider =
+    Provider.autoDispose<CreateClaimRequestUseCase>((ref) {
+      final repository = ref.watch(itemWarehouseRepositoryProvider);
+      return CreateClaimRequestUseCase(repository);
+    });
+
+final updateClaimRequestUseCaseProvider =
+    Provider.autoDispose<UpdateClaimRequestUseCase>((ref) {
+      final repository = ref.watch(itemWarehouseRepositoryProvider);
+      return UpdateClaimRequestUseCase(repository);
+    });
+
+final getOldStockUseCaseProvider = Provider.autoDispose<GetOldStockUseCase>((
+  ref,
+) {
+  final repository = ref.watch(itemWarehouseRepositoryProvider);
+  return GetOldStockUseCase(repository);
+});

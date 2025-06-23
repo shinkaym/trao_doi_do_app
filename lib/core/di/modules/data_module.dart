@@ -3,6 +3,7 @@ import 'package:trao_doi_do_app/data/datasources/local/category_local_datasource
 import 'package:trao_doi_do_app/data/datasources/local/onboarding_local_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/category_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/item_remote_datasource.dart';
+import 'package:trao_doi_do_app/data/datasources/remote/item_warehouse_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/transaction_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/interest_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/post_remote_datasource.dart';
@@ -74,4 +75,10 @@ final messageRemoteDataSourceProvider =
     Provider.autoDispose<MessageRemoteDataSource>((ref) {
       final dioClient = ref.watch(dioClientProvider);
       return MessageRemoteDataSourceImpl(dioClient);
+    });
+
+final itemWarehouseRemoteDataSourceProvider =
+    Provider.autoDispose<ItemWarehouseRemoteDataSource>((ref) {
+      final dioClient = ref.watch(dioClientProvider);
+      return ItemWarehouseRemoteDataSourceImpl(dioClient);
     });
