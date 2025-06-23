@@ -141,3 +141,59 @@ class OldStockItemModel {
     );
   }
 }
+
+class ClaimRequestItemModel {
+  final String categoryName;
+  final int itemID;
+  final String itemImage;
+  final String itemName;
+  final int quantity;
+
+  const ClaimRequestItemModel({
+    required this.categoryName,
+    required this.itemID,
+    required this.itemImage,
+    required this.itemName,
+    required this.quantity,
+  });
+
+  factory ClaimRequestItemModel.fromJson(Map<String, dynamic> json) {
+    return ClaimRequestItemModel(
+      categoryName: json['categoryName'] as String,
+      itemID: json['itemID'] as int,
+      itemImage: json['itemImage'] as String,
+      itemName: json['itemName'] as String,
+      quantity: json['quantity'] as int,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'categoryName': categoryName,
+      'itemID': itemID,
+      'itemImage': itemImage,
+      'itemName': itemName,
+      'quantity': quantity,
+    };
+  }
+
+  ClaimRequestItem toEntity() {
+    return ClaimRequestItem(
+      categoryName: categoryName,
+      itemID: itemID,
+      itemImage: itemImage,
+      itemName: itemName,
+      quantity: quantity,
+    );
+  }
+
+  factory ClaimRequestItemModel.fromEntity(ClaimRequestItem entity) {
+    return ClaimRequestItemModel(
+      categoryName: entity.categoryName,
+      itemID: entity.itemID,
+      itemImage: entity.itemImage,
+      itemName: entity.itemName,
+      quantity: entity.quantity,
+    );
+  }
+}

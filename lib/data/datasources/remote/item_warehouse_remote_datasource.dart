@@ -11,6 +11,8 @@ abstract class ItemWarehouseRemoteDataSource {
   );
   Future<String> updateClaimRequest(int itemID, int newQuantity);
   Future<OldStockResponseModel> getOldStock(OldStockQuery query);
+  Future<GetClaimRequestsResponseModel> getClaimRequests();
+  Future<String> deleteClaimRequest(int itemID);
 }
 
 class ItemWarehouseRemoteDataSourceImpl
@@ -64,5 +66,35 @@ class ItemWarehouseRemoteDataSourceImpl
     );
 
     return result.data!;
+  }
+
+  @override
+  Future<GetClaimRequestsResponseModel> getClaimRequests() async {
+    final response = await _dioClient.get(
+      '${ApiConstants.clientItemWarehouses}${ApiConstants.claimRequest}',
+    );
+
+    final result = ApiResponseModel.fromJson(
+      response.data,
+      (json) =>
+          GetClaimRequestsResponseModel.fromJson(json as Map<String, dynamic>),
+    );
+
+    return result.data!;
+  }
+
+  @override
+  Future<String> deleteClaimRequest(int itemID) async {
+    final response = await _dioClient.delete(
+      '${ApiConstants.clientItemWarehouses}${ApiConstants.claimRequest}',
+      data: {'itemID': itemID},
+    );
+
+    final result = ApiResponseModel.fromJson(
+      response.data,
+      (data) => data.toString(),
+    );
+
+    return result.message;
   }
 }

@@ -52,4 +52,20 @@ class ItemWarehouseRepositoryImpl implements ItemWarehouseRepository {
       return result.toEntity();
     }, 'Lỗi tải danh sách kho cũ');
   }
+
+  @override
+  Future<Either<Failure, GetClaimRequestsResponse>> getClaimRequests() async {
+    return handleRepositoryCall<GetClaimRequestsResponse>(() async {
+      final result = await _remoteDataSource.getClaimRequests();
+      return result.toEntity();
+    }, 'Lỗi tải danh sách claim request');
+  }
+
+  @override
+  Future<Either<Failure, String>> deleteClaimRequest(int itemID) async {
+    return handleRepositoryCall<String>(() async {
+      final result = await _remoteDataSource.deleteClaimRequest(itemID);
+      return result;
+    }, 'Lỗi xóa claim request');
+  }
 }

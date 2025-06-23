@@ -16,7 +16,9 @@ import 'package:trao_doi_do_app/domain/repositories/post_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/message_repository.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_claim_request_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_transaction_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/delete_claim_request_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_categories_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/get_claim_requests_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_interest_detail_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_items_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_old_stock_usecase.dart';
@@ -238,3 +240,15 @@ final getOldStockUseCaseProvider = Provider.autoDispose<GetOldStockUseCase>((
   final repository = ref.watch(itemWarehouseRepositoryProvider);
   return GetOldStockUseCase(repository);
 });
+
+final getClaimRequestsUseCaseProvider =
+    Provider.autoDispose<GetClaimRequestsUseCase>((ref) {
+      final repository = ref.watch(itemWarehouseRepositoryProvider);
+      return GetClaimRequestsUseCase(repository);
+    });
+
+final deleteClaimRequestUseCaseProvider =
+    Provider.autoDispose<DeleteClaimRequestUseCase>((ref) {
+      final repository = ref.watch(itemWarehouseRepositoryProvider);
+      return DeleteClaimRequestUseCase(repository);
+    });

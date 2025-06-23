@@ -22,3 +22,12 @@ class OldStockResponse extends Equatable {
   @override
   List<Object?> get props => [itemOldStocks, totalPage];
 }
+
+class GetClaimRequestsResponse extends Equatable {
+  final List<ClaimRequestItem> claimRequests;
+
+  const GetClaimRequestsResponse({required this.claimRequests});
+
+  @override
+  List<Object?> get props => [claimRequests];
+}

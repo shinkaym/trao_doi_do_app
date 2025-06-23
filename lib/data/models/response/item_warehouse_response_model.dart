@@ -75,3 +75,39 @@ class OldStockResponseModel {
     );
   }
 }
+
+class GetClaimRequestsResponseModel {
+  final List<ClaimRequestItemModel> claimRequests;
+
+  const GetClaimRequestsResponseModel({required this.claimRequests});
+
+  factory GetClaimRequestsResponseModel.fromJson(Map<String, dynamic> json) {
+    return GetClaimRequestsResponseModel(
+      claimRequests: (json['claimRequests'] as List<dynamic>)
+          .map((item) =>
+              ClaimRequestItemModel.fromJson(item as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'claimRequests': claimRequests.map((item) => item.toJson()).toList(),
+    };
+  }
+
+  GetClaimRequestsResponse toEntity() {
+    return GetClaimRequestsResponse(
+      claimRequests: claimRequests.map((item) => item.toEntity()).toList(),
+    );
+  }
+
+  factory GetClaimRequestsResponseModel.fromEntity(
+      GetClaimRequestsResponse entity) {
+    return GetClaimRequestsResponseModel(
+      claimRequests: entity.claimRequests
+          .map((item) => ClaimRequestItemModel.fromEntity(item))
+          .toList(),
+    );
+  }
+}
