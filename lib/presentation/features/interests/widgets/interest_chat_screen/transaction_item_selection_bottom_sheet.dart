@@ -13,12 +13,14 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
   final List<InterestItem> postItems;
   final int interestId;
   final VoidCallback? onTransactionSent;
+  final int? postType;
 
   const TransactionItemSelectionBottomSheet({
     super.key,
     required this.postItems,
     required this.interestId,
     this.onTransactionSent,
+    this.postType,
   });
 
   @override
@@ -31,6 +33,9 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
     final theme = context.theme;
     final colorScheme = context.colorScheme;
     final isTablet = context.isTablet;
+
+    // Kiểm tra nếu là tìm đồ thất lạc
+    final isLostItemSearch = postType == 3;
 
     // Listen to transaction state
     final transactionState = ref.watch(transactionProvider);
@@ -46,9 +51,12 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
           Navigator.of(context).pop();
           onTransactionSent?.call();
 
-          context.showSuccessSnackBar(
-            next.successMessage ?? 'Đã gửi yêu cầu thành công!',
-          );
+          final successMessage =
+              isLostItemSearch
+                  ? 'Đã gửi thông tin món đồ thành công!'
+                  : 'Đã gửi yêu cầu thành công!';
+
+          context.showSuccessSnackBar(next.successMessage ?? successMessage);
 
           // Clear the state after success
           Future.delayed(const Duration(milliseconds: 500), () {
@@ -125,14 +133,16 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
             child: Row(
               children: [
                 Icon(
-                  Icons.shopping_cart,
+                  isLostItemSearch ? Icons.find_in_page : Icons.shopping_cart,
                   color: colorScheme.primary,
                   size: isTablet ? 24 : 20,
                 ),
                 SizedBox(width: isTablet ? 12 : 8),
                 Expanded(
                   child: Text(
-                    'Chọn món đồ cần xin',
+                    isLostItemSearch
+                        ? 'Chọn món đồ bạn có'
+                        : 'Chọn món đồ cần xin',
                     style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: isTablet ? 20 : 18,
@@ -196,7 +206,9 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
                     ),
                     SizedBox(width: isTablet ? 8 : 6),
                     Text(
-                      'Phương thức giao dịch',
+                      isLostItemSearch
+                          ? 'Phương thức liên hệ'
+                          : 'Phương thức giao dịch',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                         fontSize: isTablet ? 16 : 14,
@@ -418,7 +430,9 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
                             ),
                             SizedBox(height: isTablet ? 4 : 2),
                             Text(
-                              'Có sẵn: $maxQuantity',
+                              isLostItemSearch
+                                  ? 'Số lượng cần tìm: $maxQuantity'
+                                  : 'Có sẵn: $maxQuantity',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.hintColor,
                                 fontSize: isTablet ? 13 : 12,
@@ -523,8 +537,12 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
                         )
                         : Text(
                           hasSelectedItems
-                              ? 'Gửi yêu cầu (${selectedItems.value.length} món) - ${selectedDeliveryMethod.value.displayName}'
-                              : 'Chọn ít nhất 1 món đồ',
+                              ? (isLostItemSearch
+                                  ? 'Gửi thông tin (${selectedItems.value.length} món) - ${selectedDeliveryMethod.value.displayName}'
+                                  : 'Gửi yêu cầu (${selectedItems.value.length} món) - ${selectedDeliveryMethod.value.displayName}')
+                              : (isLostItemSearch
+                                  ? 'Chọn ít nhất 1 món đồ bạn có'
+                                  : 'Chọn ít nhất 1 món đồ'),
                           style: TextStyle(
                             fontSize: isTablet ? 16 : 14,
                             fontWeight: FontWeight.w600,

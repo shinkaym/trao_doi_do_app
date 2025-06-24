@@ -20,6 +20,7 @@ class TransactionTile extends HookConsumerWidget {
   final List<InterestItem> items;
   final Function(Transaction)? onTransactionUpdated;
   final int index;
+  final int? postType;
 
   const TransactionTile({
     super.key,
@@ -28,6 +29,7 @@ class TransactionTile extends HookConsumerWidget {
     required this.items,
     required this.index,
     this.onTransactionUpdated,
+    this.postType,
   });
 
   @override
@@ -330,6 +332,7 @@ class TransactionTile extends HookConsumerWidget {
             TransactionActionButtons(
               transaction: transaction,
               isPostOwner: isPostOwner,
+              postType: postType,
               index: index,
               isEditing: isEditing.value,
               isLoading: transactionState.isLoading,

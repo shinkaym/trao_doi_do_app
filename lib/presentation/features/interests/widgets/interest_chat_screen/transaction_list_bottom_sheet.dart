@@ -11,6 +11,7 @@ class TransactionListBottomSheet extends HookConsumerWidget {
   final bool isPostOwner;
   final Function(Transaction)? onTransactionUpdated;
   final List<InterestItem> items;
+  final int? postType;
 
   const TransactionListBottomSheet({
     super.key,
@@ -18,6 +19,7 @@ class TransactionListBottomSheet extends HookConsumerWidget {
     required this.isPostOwner,
     required this.items,
     this.onTransactionUpdated,
+    this.postType,
   });
 
   @override
@@ -154,6 +156,7 @@ class TransactionListBottomSheet extends HookConsumerWidget {
                       // Gọi callback nếu có
                       onTransactionUpdated?.call(updatedTransaction);
                     },
+                    postType: postType,
                   );
                 },
               ),

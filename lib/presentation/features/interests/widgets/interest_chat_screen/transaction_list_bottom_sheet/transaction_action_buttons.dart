@@ -14,6 +14,7 @@ class TransactionActionButtons extends StatelessWidget {
   final VoidCallback? onReject;
   final VoidCallback? onComplete;
   final VoidCallback? onUndo;
+  final int? postType;
 
   const TransactionActionButtons({
     super.key,
@@ -28,6 +29,7 @@ class TransactionActionButtons extends StatelessWidget {
     this.onReject,
     this.onComplete,
     this.onUndo,
+    this.postType,
   });
 
   // Thêm method xử lý dialog từ chối
@@ -89,8 +91,8 @@ class TransactionActionButtons extends StatelessWidget {
       children: [
         SizedBox(height: isTablet ? 16 : 12),
 
-        // Edit mode actions (chỉ cho pending transactions)
-        if (isEditing && transaction.status == 1) ...[
+        // Edit mode actions (chỉ cho pending transactions và postType != 3)
+        if (isEditing && transaction.status == 1 && postType != 3) ...[
           Row(
             children: [
               Expanded(
@@ -137,24 +139,30 @@ class TransactionActionButtons extends StatelessWidget {
                   ),
                 ),
               ),
-              SizedBox(width: isTablet ? 12 : 8),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: onEdit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: isTablet ? 12 : 8),
-                  ),
-                  child: Text(
-                    'Chỉnh sửa',
-                    style: TextStyle(
-                      fontSize: isTablet ? 14 : 13,
-                      fontWeight: FontWeight.w600,
+
+              // Chỉ hiện nút chỉnh sửa nếu postType != 3
+              if (postType != 3) ...[
+                SizedBox(width: isTablet ? 12 : 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onEdit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(
+                        vertical: isTablet ? 12 : 8,
+                      ),
+                    ),
+                    child: Text(
+                      'Chỉnh sửa',
+                      style: TextStyle(
+                        fontSize: isTablet ? 14 : 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
 

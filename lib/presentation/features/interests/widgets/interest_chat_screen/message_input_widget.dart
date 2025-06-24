@@ -10,6 +10,7 @@ class MessageInputWidget extends StatelessWidget {
   final bool isTablet;
   final VoidCallback onSend;
   final VoidCallback onItemTransaction;
+  final int? postType; // Add this parameter
 
   const MessageInputWidget({
     super.key,
@@ -21,11 +22,15 @@ class MessageInputWidget extends StatelessWidget {
     required this.isTablet,
     required this.onSend,
     required this.onItemTransaction,
+    this.postType, // Add this parameter
   });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
+
+    // Check if post type is not freePost (4)
+    final shouldShowTransactionButton = !isPostOwner && postType != 4;
 
     return Container(
       padding: EdgeInsets.all(isTablet ? 16 : 12),
@@ -38,8 +43,8 @@ class MessageInputWidget extends StatelessWidget {
       child: SafeArea(
         child: Row(
           children: [
-            // Transaction button (only for non-post-owner)
-            if (!isPostOwner)
+            // Transaction button (only for non-post-owner and non-freePost)
+            if (shouldShowTransactionButton)
               IconButton(
                 onPressed: onItemTransaction,
                 icon: const Icon(Icons.shopping_cart),

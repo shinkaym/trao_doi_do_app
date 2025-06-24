@@ -419,7 +419,12 @@ class InterestChatScreen extends HookConsumerWidget {
           latestTransaction == null || latestTransaction.status != 1;
 
       if (!canCreateTransaction) {
-        context.showInfoSnackBar('Đợi yêu cầu mới nhất được phản hồi');
+        // Thay đổi message dựa trên post type
+        final waitMessage =
+            interestDetail?.type == 3
+                ? 'Đợi phản hồi từ chủ bài viết'
+                : 'Đợi yêu cầu mới nhất được phản hồi';
+        context.showInfoSnackBar(waitMessage);
         return;
       }
 
@@ -431,6 +436,8 @@ class InterestChatScreen extends HookConsumerWidget {
             (_) => TransactionItemSelectionBottomSheet(
               postItems: interestDetail?.items ?? [],
               interestId: int.parse(interestId),
+              postType:
+                  interestDetail?.type, // Truyền postType vào bottom sheet
               onTransactionSent: () {
                 transactionsNotifier.refresh();
               },
@@ -526,6 +533,7 @@ class InterestChatScreen extends HookConsumerWidget {
               isTablet: isTablet,
               onSend: sendMessage,
               onItemTransaction: handleItemTransactionTap,
+              postType: interestDetail?.type,
             ),
           ],
         ),

@@ -36,6 +36,9 @@ class PostInfoHeader extends StatelessWidget {
     final postTypeEnum = PostType.fromValue(post.type);
     final latestTransaction =
         transactions.isNotEmpty ? transactions.first : null;
+    
+    // Check if post type is freePost (4) - don't show transaction section
+    final shouldShowTransaction = post.type != 4;
 
     return Container(
       margin: EdgeInsets.all(isTablet ? 16 : 12),
@@ -44,9 +47,11 @@ class PostInfoHeader extends StatelessWidget {
           // Post info
           _buildPostInfoCard(theme, colorScheme, postTypeEnum),
 
-          // Latest transaction info
-          SizedBox(height: isTablet ? 8 : 6),
-          _buildTransactionInfoCard(theme, colorScheme, latestTransaction),
+          // Latest transaction info (only if not freePost)
+          if (shouldShowTransaction) ...[
+            SizedBox(height: isTablet ? 8 : 6),
+            _buildTransactionInfoCard(theme, colorScheme, latestTransaction),
+          ],
         ],
       ),
     );
