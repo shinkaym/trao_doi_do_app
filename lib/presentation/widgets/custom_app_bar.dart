@@ -177,33 +177,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   ) {
     final actions = <Widget>[];
 
-    // Search Button (optional)
-    actions.add(
-      Container(
-        margin: EdgeInsets.only(right: isTablet ? 8 : 4),
-        child: IconButton(
-          icon: Container(
-            padding: EdgeInsets.all(isTablet ? 10 : 8),
-            decoration: BoxDecoration(
-              color: isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.grey.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(50),
-            ),
-            child: Icon(
-              Icons.search_rounded,
-              color: foregroundColor.withOpacity(0.8),
-              size: isTablet ? 22 : 20,
-            ),
-          ),
-          onPressed: () {
-            // Handle search
-          },
-          tooltip: 'Tìm kiếm',
-        ),
-      ),
-    );
-
     // Notification Button
     if (showNotificationButton) {
       actions.add(
