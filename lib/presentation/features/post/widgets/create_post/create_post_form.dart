@@ -17,6 +17,7 @@ import 'package:trao_doi_do_app/presentation/features/post/widgets/create_post/t
 import 'package:trao_doi_do_app/presentation/models/give_away_item.dart';
 import 'package:trao_doi_do_app/presentation/models/post_image.dart';
 import 'package:trao_doi_do_app/presentation/widgets/image_picker_bottom_sheet.dart';
+import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 
 class CreatePostForm extends HookConsumerWidget {
   final bool isTablet;
@@ -219,7 +220,7 @@ class CreatePostForm extends HookConsumerWidget {
       final title = titleController.text.trim();
       final description = descriptionController.text.trim();
       final imagesBase64 =
-          images.value.map((img) => base64Encode(img.imageData!)).toList();
+          images.value.map((img) => Base64Utils.encodeImageToDataUri(img.imageData!)).toList();
 
       final info = <String, dynamic>{};
 
