@@ -151,11 +151,11 @@ class PostModel {
     switch (type) {
       case 1:
       case 2:
+      case 3:
         json['newItems'] = newItems.map((item) => item.toJson()).toList();
         json['oldItems'] = oldItems.map((item) => item.toJson()).toList();
         json['images'] = images;
         break;
-      case 3:
       case 4:
         json['images'] = images;
         break;

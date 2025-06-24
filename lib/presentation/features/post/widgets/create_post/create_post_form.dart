@@ -38,7 +38,6 @@ class CreatePostForm extends HookConsumerWidget {
     final titleController = useTextEditingController();
     final descriptionController = useTextEditingController();
     final locationController = useTextEditingController();
-    final categoryController = useTextEditingController();
     final rewardController = useTextEditingController();
     final timeController = useTextEditingController();
 
@@ -71,7 +70,7 @@ class CreatePostForm extends HookConsumerWidget {
     }, []);
 
     // Helper function for image picker bottom sheet
-    Future<void> _showImagePickerBottomSheet({
+    Future<void> showImagePickerBottomSheet({
       required BuildContext context,
       required ImagePicker picker,
       required Function(Uint8List bytes, double sizeInMB) onImagePicked,
@@ -102,7 +101,7 @@ class CreatePostForm extends HookConsumerWidget {
         return;
       }
 
-      await _showImagePickerBottomSheet(
+      await showImagePickerBottomSheet(
         context: context,
         picker: picker,
         title: 'Chọn ảnh bài đăng',
@@ -132,7 +131,6 @@ class CreatePostForm extends HookConsumerWidget {
       giveAwayItems.value = [];
       selectedDateTime.value = null;
       locationController.clear();
-      categoryController.clear();
       rewardController.clear();
       timeController.clear();
 
@@ -184,7 +182,7 @@ class CreatePostForm extends HookConsumerWidget {
     }
 
     // Helper function for add item dialog
-    void _showAddItemDialog({
+    void showAddItemDialog({
       required BuildContext context,
       required WidgetRef ref,
       required Function(GiveAwayItem) onItemAdded,
@@ -201,7 +199,7 @@ class CreatePostForm extends HookConsumerWidget {
         return;
       }
 
-      _showAddItemDialog(
+      showAddItemDialog(
         context: context,
         ref: ref,
         onItemAdded: (item) {
@@ -220,7 +218,9 @@ class CreatePostForm extends HookConsumerWidget {
       final title = titleController.text.trim();
       final description = descriptionController.text.trim();
       final imagesBase64 =
-          images.value.map((img) => Base64Utils.encodeImageToDataUri(img.imageData!)).toList();
+          images.value
+              .map((img) => Base64Utils.encodeImageToDataUri(img.imageData!))
+              .toList();
 
       final info = <String, dynamic>{};
 
@@ -228,7 +228,6 @@ class CreatePostForm extends HookConsumerWidget {
         info['lostLocation'] = locationController.text.trim();
         info['lostDate'] = selectedDateTime.value?.toIso8601String() ?? '';
         info['reward'] = rewardController.text.trim();
-        info['category'] = categoryController.text.trim();
       } else if (selectedType.value == PostType.foundItem) {
         info['foundLocation'] = locationController.text.trim();
         info['foundDate'] = selectedDateTime.value?.toIso8601String() ?? '';
@@ -287,12 +286,6 @@ class CreatePostForm extends HookConsumerWidget {
       }
     }
 
-    void onCategoryChanged() {
-      if (categoryAutovalidateMode.value != AutovalidateMode.disabled) {
-        formKey.currentState?.validate();
-      }
-    }
-
     void onRewardChanged() {
       if (rewardAutovalidateMode.value != AutovalidateMode.disabled) {
         formKey.currentState?.validate();
@@ -336,7 +329,6 @@ class CreatePostForm extends HookConsumerWidget {
               locationController: locationController,
               timeController: timeController,
               rewardController: rewardController,
-              categoryController: categoryController,
               onSelectDateTime: selectDateTime,
               giveAwayItems: giveAwayItems.value,
               onAddGiveAwayItem: addGiveAwayItem,
@@ -353,7 +345,6 @@ class CreatePostForm extends HookConsumerWidget {
               rewardAutovalidateMode: rewardAutovalidateMode.value,
               // Thêm callback functions cho real-time validation
               onLocationChanged: onLocationChanged,
-              onCategoryChanged: onCategoryChanged,
               onRewardChanged: onRewardChanged,
             ),
 

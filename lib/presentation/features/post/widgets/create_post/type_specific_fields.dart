@@ -9,7 +9,6 @@ class TypeSpecificFields extends HookConsumerWidget {
   final TextEditingController locationController;
   final TextEditingController timeController;
   final TextEditingController rewardController;
-  final TextEditingController categoryController;
   final Category? selectedCategory;
   final VoidCallback onSelectDateTime;
   final List<GiveAwayItem> giveAwayItems;
@@ -25,7 +24,6 @@ class TypeSpecificFields extends HookConsumerWidget {
   final AutovalidateMode timeAutovalidateMode;
   final AutovalidateMode rewardAutovalidateMode;
   final VoidCallback? onLocationChanged;
-  final VoidCallback? onCategoryChanged;
   final VoidCallback? onRewardChanged;
 
   const TypeSpecificFields({
@@ -34,7 +32,6 @@ class TypeSpecificFields extends HookConsumerWidget {
     required this.locationController,
     required this.timeController,
     required this.rewardController,
-    required this.categoryController,
     this.selectedCategory,
     required this.onSelectDateTime,
     required this.giveAwayItems,
@@ -50,7 +47,6 @@ class TypeSpecificFields extends HookConsumerWidget {
     required this.timeAutovalidateMode,
     required this.rewardAutovalidateMode,
     this.onLocationChanged,
-    this.onCategoryChanged,
     this.onRewardChanged,
   });
 
@@ -82,11 +78,6 @@ class TypeSpecificFields extends HookConsumerWidget {
     // Location field
     if (_needsLocationField) {
       fields.add(_buildLocationField());
-    }
-
-    // Category field
-    if (_needsCategoryField) {
-      fields.add(_buildCategoryField());
     }
 
     // Time field
@@ -132,16 +123,14 @@ class TypeSpecificFields extends HookConsumerWidget {
 
   // Helper getters to determine which fields are needed
   bool get _needsLocationField =>
-      selectedType != PostType.freePost &&
-      selectedType != PostType.giveAway;
-  bool get _needsCategoryField => selectedType == PostType.findLost;
+      selectedType != PostType.freePost && selectedType != PostType.giveAway;
   bool get _needsTimeField =>
-      selectedType != PostType.freePost &&
-      selectedType != PostType.giveAway;
+      selectedType != PostType.freePost && selectedType != PostType.giveAway;
   bool get _needsRewardField => selectedType == PostType.findLost;
   bool get _needsGiveAwaySection =>
       selectedType == PostType.giveAway ||
-      selectedType == PostType.foundItem;
+      selectedType == PostType.foundItem ||
+      selectedType == PostType.findLost;
 
   Widget _buildLocationField() {
     String hintText;
@@ -234,97 +223,6 @@ class TypeSpecificFields extends HookConsumerWidget {
           }
           if (value.trim().length < 5) {
             return 'Địa điểm quá ngắn, vui lòng nhập chi tiết hơn';
-          }
-          return null;
-        },
-      ),
-    );
-  }
-
-  Widget _buildCategoryField() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextFormField(
-        controller: categoryController,
-        autovalidateMode: categoryAutovalidateMode, // Thêm dòng này
-        onChanged: (_) => onCategoryChanged?.call(), // Thêm dòng này
-        style: theme.textTheme.bodyLarge,
-        decoration: InputDecoration(
-          labelText: 'Danh mục',
-          labelStyle: TextStyle(
-            color: colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
-          ),
-          hintText: 'Ví dụ: Điện thoại, Ví, Chìa khóa, Trang sức...',
-          hintStyle: TextStyle(
-            color: theme.hintColor.withOpacity(0.7),
-            fontSize: isTablet ? 16 : 14,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(
-              color: colorScheme.outline.withOpacity(0.2),
-              width: 1,
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: colorScheme.primary, width: 2),
-          ),
-          errorBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: colorScheme.error, width: 1),
-          ),
-          filled: true,
-          fillColor: colorScheme.surface,
-          prefixIcon: Container(
-            margin: const EdgeInsets.all(12),
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade100,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              Icons.category_rounded,
-              color: Colors.blue.shade600,
-              size: isTablet ? 22 : 20,
-            ),
-          ),
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: isTablet ? 20 : 16,
-            vertical: isTablet ? 20 : 16,
-          ),
-        ),
-        keyboardType: TextInputType.text,
-        textCapitalization: TextCapitalization.words,
-        validator: (value) {
-          if (value == null || value.trim().isEmpty) {
-            return 'Vui lòng nhập danh mục';
-          }
-          if (value.trim().length < 2) {
-            return 'Danh mục quá ngắn, vui lòng nhập ít nhất 2 ký tự';
-          }
-          if (value.trim().length > 50) {
-            return 'Danh mục quá dài, tối đa 50 ký tự';
-          }
-          // Kiểm tra chỉ chứa chữ cái, số và dấu cách
-          final validPattern = RegExp(r'^[a-zA-ZÀ-ỹ0-9\s]+$');
-          if (!validPattern.hasMatch(value.trim())) {
-            return 'Danh mục chỉ được chứa chữ cái, số và dấu cách';
           }
           return null;
         },
@@ -559,6 +457,8 @@ class TypeSpecificFields extends HookConsumerWidget {
                 child: Icon(
                   selectedType == PostType.foundItem
                       ? Icons.search_rounded
+                      : selectedType == PostType.findLost
+                      ? Icons.help_outline_rounded
                       : Icons.card_giftcard_rounded,
                   color: colorScheme.primary,
                   size: isTablet ? 24 : 22,
@@ -572,6 +472,8 @@ class TypeSpecificFields extends HookConsumerWidget {
                     Text(
                       selectedType == PostType.foundItem
                           ? 'Món đồ tìm thấy'
+                          : selectedType == PostType.findLost
+                          ? 'Tìm kiếm món đồ'
                           : 'Danh sách món đồ',
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,

@@ -297,7 +297,7 @@ class _ClaimRequestsBottomSheetState
                 SizedBox(width: widget.isTablet ? 16 : 12),
                 Expanded(
                   child: Text(
-                    'Danh sách yêu cầu',
+                    'Danh sách món đồ đã yêu cầu',
                     style: widget.theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       fontSize: widget.isTablet ? 22 : 18,

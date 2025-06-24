@@ -198,27 +198,23 @@ class FindLostInfo {
   final String lostLocation;
   final String lostDate;
   final String reward;
-  final String category;
 
   FindLostInfo({
     required this.lostLocation,
     required this.lostDate,
     required this.reward,
-    required this.category,
   });
 
   Map<String, dynamic> toJson() => {
     'lostLocation': lostLocation,
     'lostDate': lostDate,
     'reward': reward,
-    'category': category,
   };
 
   factory FindLostInfo.fromJson(Map<String, dynamic> json) => FindLostInfo(
     lostLocation: json['lostLocation'] ?? '',
     lostDate: json['lostDate'] ?? '',
     reward: json['reward'] ?? '',
-    category: json['category'] ?? '',
   );
 }
 

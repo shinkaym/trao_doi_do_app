@@ -54,7 +54,7 @@ class AddItemDialog extends HookConsumerWidget {
           );
         }).toList();
 
-    Future<void> _showImagePickerBottomSheet({
+    Future<void> showImagePickerBottomSheet({
       required BuildContext context,
       required ImagePicker picker,
       required Function(Uint8List bytes, double sizeInMB) onImagePicked,
@@ -222,7 +222,7 @@ class AddItemDialog extends HookConsumerWidget {
                         isTablet,
                         selectedImageData,
                         picker,
-                        _showImagePickerBottomSheet,
+                        showImagePickerBottomSheet,
                         errorMessage, // Truyền errorMessage vào đây
                       ),
 
@@ -1230,7 +1230,7 @@ class AddItemDialog extends HookConsumerWidget {
                   );
                   final base64Image = base64Encode(item.imageData!);
                   final postNotifier = ref.read(postProvider.notifier);
-
+                  
                   if (item.isFromPreset) {
                     postNotifier.addOldItem(
                       OldItem(

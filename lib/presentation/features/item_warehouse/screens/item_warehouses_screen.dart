@@ -273,7 +273,7 @@ class ItemWarehousesScreen extends HookConsumerWidget {
               ),
             ),
             onPressed: showClaimRequestsBottomSheet,
-            tooltip: 'Danh sách yêu cầu',
+            tooltip: 'Danh sách món đồ đã yêu cầu',
           ),
         ),
         Container(

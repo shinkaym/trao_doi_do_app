@@ -138,7 +138,6 @@ class CreatePostUseCase {
   ) {
     final lostLocation = infoJson['lostLocation'] as String?;
     final lostDate = infoJson['lostDate'] as String?;
-    final category = infoJson['category'] as String?;
 
     if (lostLocation == null || lostLocation.trim().isEmpty) {
       return const ValidationFailure('Địa điểm thất lạc không được để trống');
@@ -148,8 +147,31 @@ class CreatePostUseCase {
       return const ValidationFailure('Ngày thất lạc không được để trống');
     }
 
-    if (category == null || category.trim().isEmpty) {
-      return const ValidationFailure('Danh mục không được để trống');
+    if (post.newItems.isEmpty && post.oldItems.isEmpty) {
+      return const ValidationFailure('Phải có ít nhất một món đồ');
+    }
+
+    // Validate newItems
+    for (final item in post.newItems) {
+      if (item.name.trim().isEmpty) {
+        return const ValidationFailure('Tên món đồ mới không được để trống');
+      }
+      if (item.categoryID <= 0) {
+        return const ValidationFailure('Phải chọn danh mục cho món đồ mới');
+      }
+      if (item.quantity <= 0) {
+        return const ValidationFailure('Số lượng món đồ mới phải lớn hơn 0');
+      }
+    }
+
+    // Validate oldItems
+    for (final item in post.oldItems) {
+      if (item.itemID <= 0) {
+        return const ValidationFailure('ID món đồ cũ không hợp lệ');
+      }
+      if (item.quantity <= 0) {
+        return const ValidationFailure('Số lượng món đồ cũ phải lớn hơn 0');
+      }
     }
 
     return null;

@@ -24,7 +24,6 @@ class PostState {
   final String lostLocation;
   final String lostDate;
   final String reward;
-  final String category;
   // Common for foundItem and findLost
   final int categoryID;
   final bool isRepost;
@@ -45,7 +44,6 @@ class PostState {
     this.lostLocation = '',
     this.lostDate = '',
     this.reward = '',
-    this.category = '',
     this.categoryID = 0,
     this.isRepost = false,
     this.status = 1,
@@ -66,7 +64,6 @@ class PostState {
     String? lostLocation,
     String? lostDate,
     String? reward,
-    String? category,
     int? categoryID,
     bool? isRepost, // Thêm parameter
     int? status,
@@ -86,7 +83,6 @@ class PostState {
       lostLocation: lostLocation ?? this.lostLocation,
       lostDate: lostDate ?? this.lostDate,
       reward: reward ?? this.reward,
-      category: category ?? this.category,
       categoryID: categoryID ?? this.categoryID,
       isRepost: isRepost ?? this.isRepost,
       status: status ?? this.status,
@@ -109,7 +105,6 @@ class PostState {
             lostLocation: lostLocation,
             lostDate: lostDate,
             reward: reward,
-            category: category,
           ).toJson(),
         );
       default:
@@ -157,10 +152,6 @@ class PostNotifier extends StateNotifier<PostState> {
 
   void updateReward(String reward) {
     state = state.copyWith(reward: reward);
-  }
-
-  void updateCategory(String category) {
-    state = state.copyWith(category: category);
   }
 
   // For foundItem and findLost
