@@ -9,9 +9,9 @@ import 'package:trao_doi_do_app/presentation/features/post/providers/post_detail
 import 'package:trao_doi_do_app/presentation/features/profile/providers/my_posts_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/splash/providers/splash_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/onboarding/providers/onboarding_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/providers/claim_request_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/providers/claim_requests_list_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/providers/old_stock_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/providers/claim_request_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/providers/claim_requests_list_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/providers/old_stock_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/category_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/item_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/interest_provider.dart';
@@ -235,7 +235,7 @@ final oldStockProvider =
       return OldStockNotifier(getOldStockUseCase);
     });
 
-final claimRequestsListProvider = StateNotifierProvider.autoDispose<
+final claimRequestsListProvider = StateNotifierProvider<
   ClaimRequestsListNotifier,
   ClaimRequestsListState
 >((ref) {

@@ -85,7 +85,9 @@ enum PostStatus {
 // Enum cho sắp xếp thời gian
 enum SortOrder {
   newest('Mới nhất', Icons.arrow_downward, 'createdAt', 'DESC'),
-  oldest('Cũ nhất', Icons.arrow_upward, 'createdAt', 'ASC');
+  oldest('Cũ nhất', Icons.arrow_upward, 'createdAt', 'ASC'),
+  quantityAsc('Số lượng tăng dần', Icons.arrow_upward, 'quantity', 'ASC'),
+  quantityDesc('Số lượng giảm dần', Icons.arrow_downward, 'quantity', 'DESC');
 
   const SortOrder(this.label, this.icon, this.sort, this.order);
   final String label;

@@ -95,8 +95,8 @@ class ClaimRequestNotifier extends StateNotifier<ClaimRequestState> {
           state = state.copyWith(
             isSubmitting: false,
             createdClaimResponse: claimResponse,
-            successMessage: 'Tạo yêu cầu claim thành công!',
-            claimItems: [], // Clear items after successful creation
+            successMessage: 'Tạo yêu cầu thành công!',
+            claimItems: [],
           ),
     );
   }

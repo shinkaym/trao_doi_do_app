@@ -3,17 +3,17 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/widgets/item_detail/bottom_action_bar.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/widgets/item_detail/contact_bottom_sheet.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/widgets/item_detail/dialogs.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/widgets/item_detail/donor_info.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/widgets/item_detail/image_gallery.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/widgets/item_detail/item_description.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/widgets/item_detail/item_details.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/widgets/item_detail/item_header.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/widgets/item_detail/item_rules.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/widgets/item_detail/pickup_options.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/widgets/item_detail/registration_info.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/widgets/item_detail/bottom_action_bar.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/widgets/item_detail/contact_bottom_sheet.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/widgets/item_detail/dialogs.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/widgets/item_detail/donor_info.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/widgets/item_detail/image_gallery.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/widgets/item_detail/item_description.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/widgets/item_detail/item_details.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/widgets/item_detail/item_header.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/widgets/item_detail/item_rules.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/widgets/item_detail/pickup_options.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/widgets/item_detail/registration_info.dart';
 
 class ItemDetailScreen extends HookConsumerWidget {
   final String itemId;

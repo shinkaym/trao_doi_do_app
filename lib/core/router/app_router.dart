@@ -11,9 +11,10 @@ import 'package:trao_doi_do_app/presentation/features/auth/screens/register_scre
 import 'package:trao_doi_do_app/presentation/features/auth/screens/reset_password_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/screens/interest_chat_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/screens/interests_screen.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/screens/item_warehouses_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/post/screens/create_post_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/screens/my_posts_screen.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/screens/item_detail_screen.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/screens/item_detail_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/notification/screens/notification_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/onboarding/screens/onboarding_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/post/screens/post_detail_screen.dart';
@@ -23,7 +24,6 @@ import 'package:trao_doi_do_app/presentation/features/profile/screens/edit_profi
 import 'package:trao_doi_do_app/presentation/features/profile/screens/profile_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/ranking/screens/ranking_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/splash/screens/splash_screen.dart';
-import 'package:trao_doi_do_app/presentation/features/warehouse/screens/warehouse_screen.dart';
 import 'package:trao_doi_do_app/presentation/widgets/scaffold_with_navbar.dart';
 
 // Create a separate provider for router state to prevent circular dependencies
@@ -226,7 +226,7 @@ GoRoute _buildWarehouseRoute() {
   return GoRoute(
     path: RouteConstants.warehouse,
     name: RouteNames.warehouse,
-    builder: (context, state) => const WarehouseScreen(),
+    builder: (context, state) => const ItemWarehousesScreen(),
     routes: [
       GoRoute(
         path: '${RouteConstants.itemDetail}/:${RouteConstants.idParam}',

@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:trao_doi_do_app/core/constants/api_constants.dart';
 import 'package:trao_doi_do_app/core/network/dio_client.dart';
 import 'package:trao_doi_do_app/data/models/request/item_warehouse_request_model.dart';
@@ -27,7 +28,7 @@ class ItemWarehouseRemoteDataSourceImpl
     List<ClaimItemRequestModel> claimItems,
   ) async {
     final response = await _dioClient.post(
-      '$ApiConstants.clientItemWarehouses$ApiConstants.claimRequest',
+      ApiConstants.claimRequest,
       data: claimItems.map((item) => item.toJson()).toList(),
     );
 
@@ -42,7 +43,7 @@ class ItemWarehouseRemoteDataSourceImpl
   @override
   Future<String> updateClaimRequest(int itemID, int newQuantity) async {
     final response = await _dioClient.patch(
-      '$ApiConstants.clientItemWarehouses$ApiConstants.claimRequest',
+      ApiConstants.claimRequest,
       data: {'itemID': itemID, 'newQuantity': newQuantity},
     );
 
@@ -57,8 +58,9 @@ class ItemWarehouseRemoteDataSourceImpl
   @override
   Future<OldStockResponseModel> getOldStock(OldStockQuery query) async {
     final response = await _dioClient.get(
-      '$ApiConstants.clientItemWarehouses$ApiConstants.oldStock',
+      ApiConstants.oldStock,
       queryParameters: query.toQueryParams(),
+      options: Options(extra: {'requiresAuth': false}),
     );
 
     final result = ApiResponseModel.fromJson(
@@ -71,9 +73,7 @@ class ItemWarehouseRemoteDataSourceImpl
 
   @override
   Future<GetClaimRequestsResponseModel> getClaimRequests() async {
-    final response = await _dioClient.get(
-      '${ApiConstants.clientItemWarehouses}${ApiConstants.claimRequest}',
-    );
+    final response = await _dioClient.get(ApiConstants.claimRequest);
 
     final result = ApiResponseModel.fromJson(
       response.data,
@@ -87,7 +87,7 @@ class ItemWarehouseRemoteDataSourceImpl
   @override
   Future<String> deleteClaimRequest(int itemID) async {
     final response = await _dioClient.delete(
-      '${ApiConstants.clientItemWarehouses}${ApiConstants.claimRequest}/$itemID',
+      '${ApiConstants.claimRequest}/$itemID',
     );
 
     final result = ApiResponseModel.fromJson(
@@ -101,7 +101,7 @@ class ItemWarehouseRemoteDataSourceImpl
   @override
   Future<String> deleteAllClaimRequests() async {
     final response = await _dioClient.delete(
-      '${ApiConstants.clientItemWarehouses}${ApiConstants.claimRequest}',
+      ApiConstants.claimRequest,
     );
 
     final result = ApiResponseModel.fromJson(

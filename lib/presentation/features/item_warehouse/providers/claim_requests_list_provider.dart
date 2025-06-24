@@ -59,6 +59,10 @@ class ClaimRequestsListNotifier extends StateNotifier<ClaimRequestsListState> {
     final updatedClaimRequests =
         state.claimRequests.where((item) => item.itemID != itemID).toList();
     state = state.copyWith(claimRequests: updatedClaimRequests);
+
+    if (updatedClaimRequests.isEmpty) {
+      refresh();
+    }
   }
 
   // Helper method to update an item in the list after update
@@ -77,5 +81,9 @@ class ClaimRequestsListNotifier extends StateNotifier<ClaimRequestsListState> {
           return item;
         }).toList();
     state = state.copyWith(claimRequests: updatedClaimRequests);
+  }
+
+  void clearAllClaimRequests() {
+    state = state.copyWith(claimRequests: []);
   }
 }

@@ -38,7 +38,7 @@ class OldStockItem extends Equatable {
   final String categoryName;
   final int claimItemRequests;
   final String description;
-  final int itemId;
+  final int itemID;
   final String itemImage;
   final String itemName;
   final int quantity;
@@ -47,7 +47,7 @@ class OldStockItem extends Equatable {
     required this.categoryName,
     required this.claimItemRequests,
     required this.description,
-    required this.itemId,
+    required this.itemID,
     required this.itemImage,
     required this.itemName,
     required this.quantity,
@@ -58,7 +58,7 @@ class OldStockItem extends Equatable {
     categoryName,
     claimItemRequests,
     description,
-    itemId,
+    itemID,
     itemImage,
     itemName,
     quantity,

@@ -16,8 +16,8 @@ class ApiConstants {
   static const String refreshToken = '/refresh-token';
   static const String messages = '/messages';
   static const String clientItemWarehouses = '/client/item-warehouses';
-  static const String claimRequest = '/claim-request';
-  static const String oldStock = '/old-stock';
+  static const String claimRequest = '$clientItemWarehouses/claim-request';
+  static const String oldStock = '$clientItemWarehouses/old-stock';
   static const String myPosts= '$posts/my-post';
 
   // Headers

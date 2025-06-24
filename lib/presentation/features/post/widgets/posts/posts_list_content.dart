@@ -6,7 +6,6 @@ import 'package:trao_doi_do_app/presentation/features/post/providers/posts_provi
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/post_card.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/post_skeleton.dart';
 import 'dart:convert';
-
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/posts_empty_state.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/posts_pagination.dart';
 

@@ -5,16 +5,16 @@ class OldStockQuery extends Equatable {
   final int limit;
   final String? sort; // name column
   final String? order; // ASC/DESC
-  final String? searchBy;
-  final String? searchValue;
+  final int? categoryID;
+  final String? search;
 
   const OldStockQuery({
     this.page = 1,
     this.limit = 10,
     this.sort,
     this.order,
-    this.searchBy,
-    this.searchValue,
+    this.categoryID,
+    this.search,
   });
 
   Map<String, dynamic> toQueryParams() {
@@ -22,8 +22,8 @@ class OldStockQuery extends Equatable {
 
     if (sort != null) params['sort'] = sort;
     if (order != null) params['order'] = order;
-    if (searchBy != null) params['searchBy'] = searchBy;
-    if (searchValue != null) params['searchValue'] = searchValue;
+    if (categoryID != null) params['categoryID'] = categoryID;
+    if (search != null) params['search'] = search;
 
     return params;
   }
@@ -33,19 +33,19 @@ class OldStockQuery extends Equatable {
     int? limit,
     String? sort,
     String? order,
-    String? searchBy,
-    String? searchValue,
+    int? categoryID,
+    String? search,
   }) {
     return OldStockQuery(
       page: page ?? this.page,
       limit: limit ?? this.limit,
       sort: sort ?? this.sort,
       order: order ?? this.order,
-      searchBy: searchBy ?? this.searchBy,
-      searchValue: searchValue ?? this.searchValue,
+      categoryID: categoryID ?? this.categoryID,
+      search: search ?? this.search,
     );
   }
 
   @override
-  List<Object?> get props => [page, limit, sort, order, searchBy, searchValue];
+  List<Object?> get props => [page, limit, sort, order, categoryID, search];
 }

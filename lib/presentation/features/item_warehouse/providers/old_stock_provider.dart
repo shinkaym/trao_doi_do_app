@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/item_warehouse.dart';
-import 'package:trao_doi_do_app/domain/usecases/params/old_stock_query.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_old_stock_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/params/old_stock_query.dart';
 
 class OldStockState {
   final bool isLoading;
@@ -87,7 +87,6 @@ class OldStockNotifier extends StateNotifier<OldStockState> {
     }
 
     final result = await _getOldStockUseCase(state.query);
-
     result.fold(
       (failure) =>
           state = state.copyWith(
@@ -156,12 +155,8 @@ class OldStockNotifier extends StateNotifier<OldStockState> {
   }
 
   // Filter and search methods
-  void search(String? searchValue, String? searchBy) {
-    final newQuery = state.query.copyWith(
-      searchValue: searchValue,
-      searchBy: searchBy,
-      page: 1,
-    );
+  void search(String? searchValue) {
+    final newQuery = state.query.copyWith(search: searchValue, page: 1);
     loadOldStock(newQuery: newQuery, refresh: true);
   }
 
@@ -170,21 +165,31 @@ class OldStockNotifier extends StateNotifier<OldStockState> {
     loadOldStock(newQuery: newQuery, refresh: true);
   }
 
+  void filterByCategory(int? categoryID) {
+    final newQuery = state.query.copyWith(categoryID: categoryID, page: 1);
+    loadOldStock(newQuery: newQuery, refresh: true);
+  }
+
   void applyFilter({
-    String? searchValue,
-    String? searchBy,
+    String? search,
     String? sort,
     String? order,
+    int? categoryID,
     int? limit,
   }) {
     final newQuery = state.query.copyWith(
-      searchValue: searchValue,
-      searchBy: searchBy,
+      search: search,
       sort: sort,
       order: order,
+      categoryID: categoryID,
       limit: limit,
       page: 1,
     );
+    loadOldStock(newQuery: newQuery, refresh: true);
+  }
+
+  void clearFilter() {
+    const newQuery = OldStockQuery(page: 1);
     loadOldStock(newQuery: newQuery, refresh: true);
   }
 

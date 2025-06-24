@@ -78,7 +78,7 @@ class OldStockItemModel {
   final String categoryName;
   final int claimItemRequests;
   final String description;
-  final int itemId;
+  final int itemID;
   final String itemImage;
   final String itemName;
   final int quantity;
@@ -87,7 +87,7 @@ class OldStockItemModel {
     required this.categoryName,
     required this.claimItemRequests,
     required this.description,
-    required this.itemId,
+    required this.itemID,
     required this.itemImage,
     required this.itemName,
     required this.quantity,
@@ -95,24 +95,24 @@ class OldStockItemModel {
 
   factory OldStockItemModel.fromJson(Map<String, dynamic> json) {
     return OldStockItemModel(
-      categoryName: json['category_name'] as String,
-      claimItemRequests: json['claim_item_requests'] as int,
+      categoryName: json['categoryName'] as String,
+      claimItemRequests: json['claimItemRequests'] as int,
       description: json['description'] as String,
-      itemId: json['item_id'] as int,
-      itemImage: json['item_image'] as String,
-      itemName: json['item_name'] as String,
+      itemID: json['itemID'] as int,
+      itemImage: json['itemImage'] as String,
+      itemName: json['itemName'] as String,
       quantity: json['quantity'] as int,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'category_name': categoryName,
-      'claim_item_requests': claimItemRequests,
+      'categoryName': categoryName,
+      'claimItemRequests': claimItemRequests,
       'description': description,
-      'item_id': itemId,
-      'item_image': itemImage,
-      'item_name': itemName,
+      'itemID': itemID,
+      'itemImage': itemImage,
+      'itemName': itemName,
       'quantity': quantity,
     };
   }
@@ -122,7 +122,7 @@ class OldStockItemModel {
       categoryName: categoryName,
       claimItemRequests: claimItemRequests,
       description: description,
-      itemId: itemId,
+      itemID: itemID,
       itemImage: itemImage,
       itemName: itemName,
       quantity: quantity,
@@ -134,7 +134,7 @@ class OldStockItemModel {
       categoryName: entity.categoryName,
       claimItemRequests: entity.claimItemRequests,
       description: entity.description,
-      itemId: entity.itemId,
+      itemID: entity.itemID,
       itemImage: entity.itemImage,
       itemName: entity.itemName,
       quantity: entity.quantity,
