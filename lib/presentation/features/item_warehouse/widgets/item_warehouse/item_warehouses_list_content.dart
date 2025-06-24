@@ -59,18 +59,35 @@ class ItemWarehousesListContent extends HookConsumerWidget {
       );
     }
 
-    // Hiển thị empty state
+    // Hiển thị empty state - FIX: Sử dụng LayoutBuilder để lấy chiều cao available
     if (oldStockState.items.isEmpty && !oldStockState.isLoading) {
-      return SingleChildScrollView(
-        controller: scrollController,
-        child: ItemWarehousesEmptyState(
-          isTablet: isTablet,
-          theme: theme,
-          colorScheme: colorScheme,
-          searchQuery: searchQuery,
-          selectedCategories: selectedCategories,
-          selectedSort: selectedSort,
-          onResetFilters: onResetFilters,
+      return RefreshIndicator(
+        onRefresh: () async => onRefresh(),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              controller: scrollController,
+              physics:
+                  const AlwaysScrollableScrollPhysics(), // Cho phép pull to refresh
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight:
+                      constraints.maxHeight, // Đảm bảo chiều cao tối thiểu
+                ),
+                child: IntrinsicHeight(
+                  child: ItemWarehousesEmptyState(
+                    isTablet: isTablet,
+                    theme: theme,
+                    colorScheme: colorScheme,
+                    searchQuery: searchQuery,
+                    selectedCategories: selectedCategories,
+                    selectedSort: selectedSort,
+                    onResetFilters: onResetFilters,
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       );
     }

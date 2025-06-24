@@ -63,19 +63,36 @@ class MyPostsListContent extends HookConsumerWidget {
       );
     }
 
-    // Hiển thị empty state
+    // Hiển thị empty state - FIX: Sử dụng LayoutBuilder để lấy chiều cao available
     if (postsState.posts.isEmpty && !postsState.isLoading) {
-      return SingleChildScrollView(
-        controller: scrollController,
-        child: MyPostsEmptyState(
-          isTablet: isTablet,
-          theme: theme,
-          colorScheme: colorScheme,
-          searchQuery: searchQuery,
-          selectedType: selectedType,
-          selectedSort: selectedSort,
-          selectedStatus: selectedStatus,
-          onResetFilters: onResetFilters,
+      return RefreshIndicator(
+        onRefresh: () async => onRefresh(),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              controller: scrollController,
+              physics:
+                  const AlwaysScrollableScrollPhysics(), // Cho phép pull to refresh
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight:
+                      constraints.maxHeight, // Đảm bảo chiều cao tối thiểu
+                ),
+                child: IntrinsicHeight(
+                  child: MyPostsEmptyState(
+                    isTablet: isTablet,
+                    theme: theme,
+                    colorScheme: colorScheme,
+                    searchQuery: searchQuery,
+                    selectedType: selectedType,
+                    selectedSort: selectedSort,
+                    selectedStatus: selectedStatus,
+                    onResetFilters: onResetFilters,
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       );
     }
