@@ -2,6 +2,7 @@ enum WebSocketEventType {
   joinRoom('join_room'),
   leftRoom('left_room'),
   sendMessage('send_message'),
+  sendTransaction('send_transaction'),
   ping('ping'),
   pong('pong');
 
@@ -50,6 +51,16 @@ class WebSocketEvent {
         'userID': userID,
         'message': message,
       },
+    );
+  }
+
+  factory WebSocketEvent.sendTransaction({
+    required int interestID,
+    required int receiverID,
+  }) {
+    return WebSocketEvent(
+      event: WebSocketEventType.sendTransaction,
+      data: {'interestID': interestID, 'receiverID': receiverID},
     );
   }
 

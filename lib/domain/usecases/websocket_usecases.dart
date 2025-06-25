@@ -72,6 +72,16 @@ class SendMessageUseCase {
   }
 }
 
+class SendTransactionUseCase {
+  final WebSocketRepository _repository;
+
+  SendTransactionUseCase(this._repository);
+
+  void call({required int interestID, required int receiverID}) {
+    _repository.sendTransaction(interestID: interestID, receiverID: receiverID);
+  }
+}
+
 class GetWebSocketResponseStreamUseCase {
   final WebSocketRepository _repository;
 

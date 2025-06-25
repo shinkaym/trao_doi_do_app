@@ -113,6 +113,17 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
             }
             break;
 
+          case 'send_transaction_response':
+            // Xử lý response từ transaction
+            if (response.isSuccess) {
+              // Transaction thành công - UI sẽ handle refresh
+            } else {
+              state = state.copyWith(
+                error: response.error ?? 'Failed to send transaction',
+              );
+            }
+            break;
+
           case 'left_room_response':
             if (response.isSuccess) {
               state = state.copyWith(messages: [], currentRoomID: null);
@@ -235,6 +246,15 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
       userID: userID,
       message: message,
     );
+  }
+
+  void sendTransaction({required int interestID, required int receiverID}) {
+    if (!state.isConnected) {
+      state = state.copyWith(error: 'Cannot send transaction: not connected');
+      return;
+    }
+
+    _repository.sendTransaction(interestID: interestID, receiverID: receiverID);
   }
 
   void clearChatError() {

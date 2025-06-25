@@ -62,6 +62,15 @@ class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
   }
 
   @override
+  void sendTransaction({required int interestID, required int receiverID}) {
+    final event = WebSocketEvent.sendTransaction(
+      interestID: interestID,
+      receiverID: receiverID,
+    );
+    _remoteDataSource.sendChatEvent(event);
+  }
+
+  @override
   void joinRoom({required int interestID}) {
     final event = WebSocketEvent.joinRoom(interestID: interestID);
     _remoteDataSource.sendChatEvent(event);

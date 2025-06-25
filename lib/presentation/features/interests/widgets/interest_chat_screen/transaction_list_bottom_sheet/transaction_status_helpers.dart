@@ -40,8 +40,7 @@ class TransactionStatusHelpers {
           transactionsNotifier.refresh();
 
           if (context.mounted) {
-            final statusText = _getSuccessMessage(newStatus);
-            context.showSuccessDialog(title: 'Thành công', message: statusText);
+            context.showSnackBar(_getSuccessMessage(newStatus));
           }
           onTransactionUpdated?.call(updatedTransaction);
         },

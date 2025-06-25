@@ -19,5 +19,6 @@ abstract class WebSocketRepository {
     required int userID,
     required String message,
   });
+  void sendTransaction({required int interestID, required int receiverID});
   void dispose();
 }

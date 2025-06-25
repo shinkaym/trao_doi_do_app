@@ -70,6 +70,15 @@ class WebSocketRepositoryImpl implements WebSocketRepository {
   }
 
   @override
+  void sendTransaction({required int interestID, required int receiverID}) {
+    final event = WebSocketEvent.sendTransaction(
+      interestID: interestID,
+      receiverID: receiverID,
+    );
+    sendEvent(event);
+  }
+
+  @override
   void dispose() {
     _remoteDataSource.dispose();
   }

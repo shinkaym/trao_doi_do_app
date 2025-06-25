@@ -87,7 +87,9 @@ final multiWebSocketConnectionProvider = Provider.autoDispose((ref) {
   // Listen to auth state changes
   ref.listen<AuthState>(authProvider, (previous, next) {
     final chatNotifier = ref.read(chatWebSocketProvider.notifier);
-    final chatNotificationNotifier = ref.read(chatNotificationWebSocketProvider.notifier);
+    final chatNotificationNotifier = ref.read(
+      chatNotificationWebSocketProvider.notifier,
+    );
 
     // Auto connect when user logs in
     if (next.isLoggedIn &&
@@ -123,20 +125,21 @@ final chatWebSocketClientProvider = Provider.autoDispose<WebSocketClient>((
   return client;
 });
 
-final chatNotificationWebSocketClientProvider = Provider.autoDispose<WebSocketClient>((
-  ref,
-) {
-  final client = WebSocketClient();
-  ref.onDispose(() {
-    client.dispose();
-  });
-  return client;
-});
+final chatNotificationWebSocketClientProvider =
+    Provider.autoDispose<WebSocketClient>((ref) {
+      final client = WebSocketClient();
+      ref.onDispose(() {
+        client.dispose();
+      });
+      return client;
+    });
 
 final webSocketRemoteDataSourceProvider =
     Provider.autoDispose<WebSocketRemoteDataSource>((ref) {
       final chatClient = ref.watch(chatWebSocketClientProvider);
-      final chatNotificationClient = ref.watch(chatNotificationWebSocketClientProvider);
+      final chatNotificationClient = ref.watch(
+        chatNotificationWebSocketClientProvider,
+      );
       return WebSocketRemoteDataSourceImpl(chatClient, chatNotificationClient);
     });
 
@@ -183,6 +186,12 @@ final sendMessageUseCaseProvider = Provider.autoDispose<SendMessageUseCase>((
   final repository = ref.watch(webSocketRepositoryProvider);
   return SendMessageUseCase(repository);
 });
+
+final sendTransactionUseCaseProvider =
+    Provider.autoDispose<SendTransactionUseCase>((ref) {
+      final repository = ref.watch(webSocketRepositoryProvider);
+      return SendTransactionUseCase(repository);
+    });
 
 final getWebSocketResponseStreamUseCaseProvider =
     Provider.autoDispose<GetWebSocketResponseStreamUseCase>((ref) {

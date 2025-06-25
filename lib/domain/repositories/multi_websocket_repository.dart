@@ -24,6 +24,7 @@ abstract class MultiWebSocketRepository {
     required int userID,
     required String message,
   });
+  void sendTransaction({required int interestID, required int receiverID});
   void joinRoom({required int interestID});
   void leftRoom({required int interestID});
 

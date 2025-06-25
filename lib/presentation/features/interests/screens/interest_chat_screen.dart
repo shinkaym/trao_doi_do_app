@@ -402,6 +402,10 @@ class InterestChatScreen extends HookConsumerWidget {
               items: interestDetail?.items ?? [],
               onTransactionUpdated: (updatedTransaction) {
                 // Transaction will be updated via provider
+                webSocketNotifier.sendTransaction(
+                  interestID: int.parse(interestId),
+                  receiverID: displayUserId.value!,
+                );
               },
             ),
       );
@@ -440,6 +444,10 @@ class InterestChatScreen extends HookConsumerWidget {
                   interestDetail?.type, // Truyền postType vào bottom sheet
               onTransactionSent: () {
                 transactionsNotifier.refresh();
+                webSocketNotifier.sendTransaction(
+                  interestID: int.parse(interestId),
+                  receiverID: displayUserId.value!,
+                );
               },
             ),
       );
@@ -448,6 +456,19 @@ class InterestChatScreen extends HookConsumerWidget {
     void handleRefreshTransactions() {
       transactionsNotifier.refresh();
     }
+
+    useEffect(() {
+      final response = webSocketState.lastResponse;
+      if (response?.event == 'send_transaction_response') {
+        if (response!.isSuccess) {
+          // Use Future.microtask to avoid state modification during build
+          Future.microtask(() {
+            handleRefreshTransactions();
+          });
+        }
+      }
+      return null;
+    }, [webSocketState.lastResponse]);
 
     final isTablet = context.isTablet;
     final colorScheme = context.colorScheme;

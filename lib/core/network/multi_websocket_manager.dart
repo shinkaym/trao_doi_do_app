@@ -115,9 +115,11 @@ class MultiWebSocketManager {
   bool _isChatEvent(String event) {
     const chatEvents = [
       'send_message',
+      'send_transaction',
       'join_room',
       'left_room',
       'send_message_response',
+      'send_transaction_response',
       'join_room_response',
       'left_room_response',
     ];
