@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/message.dart';
@@ -15,6 +17,8 @@ class MessagesListState {
   final Failure? failure;
   final bool hasMoreData;
   final String? markAllReadResult;
+  final DateTime? lastLoadTime;
+  final Set<int> loadingPages; // Track which pages are currently loading
 
   MessagesListState({
     this.isLoading = false,
@@ -26,6 +30,8 @@ class MessagesListState {
     this.failure,
     this.hasMoreData = true,
     this.markAllReadResult,
+    this.lastLoadTime,
+    this.loadingPages = const {},
   });
 
   MessagesListState copyWith({
@@ -38,6 +44,8 @@ class MessagesListState {
     Failure? failure,
     bool? hasMoreData,
     String? markAllReadResult,
+    DateTime? lastLoadTime,
+    Set<int>? loadingPages,
   }) {
     return MessagesListState(
       isLoading: isLoading ?? this.isLoading,
@@ -49,13 +57,22 @@ class MessagesListState {
       failure: failure,
       hasMoreData: hasMoreData ?? this.hasMoreData,
       markAllReadResult: markAllReadResult,
+      lastLoadTime: lastLoadTime ?? this.lastLoadTime,
+      loadingPages: loadingPages ?? this.loadingPages,
     );
   }
+
+  bool get canLoadMore => hasMoreData && !isLoadingMore && !isLoading;
 }
 
 class MessagesListNotifier extends StateNotifier<MessagesListState> {
   final GetMessagesUseCase _getMessagesUseCase;
   final MarkAllMessagesReadUseCase _markAllMessagesReadUseCase;
+  
+  // Debouncing and optimization
+  Timer? _loadMoreTimer;
+  static const Duration _loadMoreDebounce = Duration(milliseconds: 300);
+  static const Duration _minTimeBetweenLoads = Duration(milliseconds: 500);
 
   MessagesListNotifier(
     this._getMessagesUseCase,
@@ -63,7 +80,12 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
     int interestID,
   ) : super(MessagesListState(query: MessagesQuery(interestID: interestID)));
 
-  // Đánh dấu đã đọc tất cả tin nhắn
+  @override
+  void dispose() {
+    _loadMoreTimer?.cancel();
+    super.dispose();
+  }
+
   Future<void> markAllAsRead() async {
     if (state.isMarkingAllRead) return;
 
@@ -79,11 +101,10 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
       (failure) =>
           state = state.copyWith(isMarkingAllRead: false, failure: failure),
       (resultMessage) {
-        // Cập nhật tất cả tin nhắn thành đã đọc
-        final updatedMessages =
-            state.messages.map((message) {
-              return message.copyWith(isRead: 1);
-            }).toList();
+        // Efficiently update all messages to read status
+        final updatedMessages = state.messages.map((message) {
+          return message.isRead == 0 ? message.copyWith(isRead: 1) : message;
+        }).toList();
 
         state = state.copyWith(
           isMarkingAllRead: false,
@@ -95,71 +116,130 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
     );
   }
 
-  // Load messages với các tùy chọn khác nhau
   Future<void> loadMessages({
     MessagesQuery? newQuery,
     bool refresh = false,
     bool isLoadMore = false,
   }) async {
-    if (state.isLoading || state.isLoadingMore) return;
+    // Prevent multiple simultaneous loads
+    if (!refresh && !isLoadMore && state.isLoading) return;
+    if (isLoadMore && !state.canLoadMore) return;
+    
+    // Debounce load more requests
+    if (isLoadMore && _shouldDebounceLoadMore()) return;
 
     final query = newQuery ?? state.query;
     final isFirstLoad = refresh || state.messages.isEmpty;
+    final nextPage = isLoadMore ? state.currentPage + 1 : 1;
 
+    // Update loading state
     if (isFirstLoad) {
       state = state.copyWith(
         isLoading: true,
         failure: null,
         query: query.copyWith(page: 1),
         currentPage: 1,
+        loadingPages: {1},
       );
     } else if (isLoadMore) {
-      if (!state.hasMoreData) return;
-
       state = state.copyWith(
         isLoadingMore: true,
         failure: null,
-        query: query.copyWith(page: state.currentPage + 1),
+        loadingPages: {...state.loadingPages, nextPage},
       );
     }
 
-    final result = await _getMessagesUseCase(state.query);
+    try {
+      final queryToUse = isLoadMore 
+          ? state.query.copyWith(page: nextPage)
+          : state.query.copyWith(page: 1);
+          
+      final result = await _getMessagesUseCase(queryToUse);
 
-    result.fold(
-      (failure) =>
+      await result.fold(
+        (failure) async {
           state = state.copyWith(
             isLoading: false,
             isLoadingMore: false,
             failure: failure,
-          ),
-      (messagesResult) {
-        List<Message> newMessages;
-        int newCurrentPage;
+            loadingPages: state.loadingPages..remove(nextPage),
+          );
+        },
+        (messagesResult) async {
+          await _handleLoadSuccess(messagesResult, isFirstLoad, isLoadMore, nextPage);
+        },
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        isLoadingMore: false,
+        loadingPages: state.loadingPages..remove(nextPage),
+      );
+    }
+  }
 
-        if (isFirstLoad) {
-          newMessages = messagesResult.messages.reversed.toList();
-          newCurrentPage = 1;
-        } else if (isLoadMore) {
-          final oldMessages = messagesResult.messages.reversed.toList();
-          newMessages = [...oldMessages, ...state.messages];
-          newCurrentPage = state.currentPage + 1;
-        } else {
-          newMessages = state.messages;
-          newCurrentPage = state.currentPage;
-        }
+  bool _shouldDebounceLoadMore() {
+    final lastLoad = state.lastLoadTime;
+    if (lastLoad == null) return false;
+    
+    final timeSinceLastLoad = DateTime.now().difference(lastLoad);
+    return timeSinceLastLoad < _minTimeBetweenLoads;
+  }
 
-        final hasMoreData = messagesResult.messages.length >= state.query.limit;
+  Future<void> _handleLoadSuccess(
+    dynamic messagesResult,
+    bool isFirstLoad,
+    bool isLoadMore,
+    int pageLoaded,
+  ) async {
+    final newMessages = messagesResult.messages as List<Message>;
+    final hasMoreData = newMessages.length >= state.query.limit;
 
-        state = state.copyWith(
-          isLoading: false,
-          isLoadingMore: false,
-          messages: newMessages,
-          currentPage: newCurrentPage,
-          hasMoreData: hasMoreData,
-          failure: null,
-        );
-      },
+    List<Message> finalMessages;
+    int newCurrentPage;
+
+    if (isFirstLoad) {
+      // For first load, reverse to show newest at bottom
+      finalMessages = newMessages.reversed.toList();
+      newCurrentPage = 1;
+    } else if (isLoadMore) {
+      // For load more, add older messages at the beginning
+      // But keep them in the order they should appear (older first)
+      final olderMessages = newMessages.reversed.toList();
+      finalMessages = [...olderMessages, ...state.messages];
+      newCurrentPage = pageLoaded;
+    } else {
+      finalMessages = state.messages;
+      newCurrentPage = state.currentPage;
+    }
+
+    // Remove duplicates while preserving order
+    finalMessages = _removeDuplicateMessages(finalMessages);
+
+    state = state.copyWith(
+      isLoading: false,
+      isLoadingMore: false,
+      messages: finalMessages,
+      currentPage: newCurrentPage,
+      hasMoreData: hasMoreData,
+      failure: null,
+      lastLoadTime: DateTime.now(),
+      loadingPages: state.loadingPages..remove(pageLoaded),
     );
+  }
+
+  List<Message> _removeDuplicateMessages(List<Message> messages) {
+    final seen = <int>{};
+    final uniqueMessages = <Message>[];
+    
+    for (final message in messages) {
+      if (!seen.contains(message.id)) {
+        seen.add(message.id);
+        uniqueMessages.add(message);
+      }
+    }
+    
+    return uniqueMessages;
   }
 
   Future<void> searchMessages(String? search) async {
@@ -168,7 +248,15 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
   }
 
   Future<void> loadMore() async {
-    await loadMessages(isLoadMore: true);
+    // Cancel any pending load more timer
+    _loadMoreTimer?.cancel();
+    
+    // Debounce load more requests
+    _loadMoreTimer = Timer(_loadMoreDebounce, () {
+      if (mounted && state.canLoadMore) {
+        loadMessages(isLoadMore: true);
+      }
+    });
   }
 
   Future<void> refresh() async {
@@ -176,25 +264,196 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
   }
 
   void addNewMessage(Message message) {
-    if (message.interestID == state.query.interestID) {
-      final updatedMessages = [...state.messages, message];
+    if (message.interestID != state.query.interestID) return;
+    
+    // Check if message already exists to prevent duplicates
+    final messageExists = state.messages.any((m) => m.id == message.id);
+    if (messageExists) return;
+    
+    // Add new message at the end (most recent)
+    final updatedMessages = [...state.messages, message];
+    state = state.copyWith(messages: updatedMessages);
+  }
+
+  void addNewMessages(List<Message> newMessages) {
+    if (newMessages.isEmpty) return;
+    
+    // Filter messages for this interest and remove duplicates
+    final relevantMessages = newMessages
+        .where((msg) => msg.interestID == state.query.interestID)
+        .where((msg) => !state.messages.any((existing) => existing.id == msg.id))
+        .toList();
+    
+    if (relevantMessages.isEmpty) return;
+    
+    final updatedMessages = [...state.messages, ...relevantMessages];
+    state = state.copyWith(messages: updatedMessages);
+  }
+
+  void updateMessage(Message updatedMessage) {
+    if (updatedMessage.interestID != state.query.interestID) return;
+    
+    final messageIndex = state.messages.indexWhere((m) => m.id == updatedMessage.id);
+    if (messageIndex == -1) return;
+    
+    final updatedMessages = [...state.messages];
+    updatedMessages[messageIndex] = updatedMessage;
+    
+    state = state.copyWith(messages: updatedMessages);
+  }
+
+  void removeMessage(int messageId) {
+    final updatedMessages = state.messages.where((m) => m.id != messageId).toList();
+    state = state.copyWith(messages: updatedMessages);
+  }
+
+  void markMessageAsRead(int messageId) {
+    final messageIndex = state.messages.indexWhere((m) => m.id == messageId);
+    if (messageIndex == -1) return;
+    
+    final message = state.messages[messageIndex];
+    if (message.isRead == 1) return; // Already read
+    
+    final updatedMessages = [...state.messages];
+    updatedMessages[messageIndex] = message.copyWith(isRead: 1);
+    
+    state = state.copyWith(messages: updatedMessages);
+  }
+
+  void markMessagesAsRead(List<int> messageIds) {
+    bool hasChanges = false;
+    final updatedMessages = state.messages.map((message) {
+      if (messageIds.contains(message.id) && message.isRead == 0) {
+        hasChanges = true;
+        return message.copyWith(isRead: 1);
+      }
+      return message;
+    }).toList();
+    
+    if (hasChanges) {
       state = state.copyWith(messages: updatedMessages);
     }
   }
 
-  void markMessageAsRead(int messageId) {
-    final updatedMessages =
-        state.messages.map((message) {
-          if (message.id == messageId) {
-            return message.copyWith(isRead: 1);
-          }
-          return message;
-        }).toList();
-
-    state = state.copyWith(messages: updatedMessages);
+  void clearMessages() {
+    state = state.copyWith(
+      messages: [],
+      currentPage: 1,
+      hasMoreData: true,
+      failure: null,
+      lastLoadTime: null,
+      loadingPages: {},
+    );
   }
 
+  void resetState() {
+    state = MessagesListState(query: state.query);
+  }
+
+  // Utility methods
+  bool get hasMessages => state.messages.isNotEmpty;
+  
+  bool get hasUnreadMessages => state.messages.any((m) => m.isRead == 0);
+  
   int get unreadCount {
     return state.messages.where((message) => message.isRead == 0).length;
+  }
+  
+  int get totalMessageCount => state.messages.length;
+  
+  Message? get lastMessage => state.messages.isNotEmpty ? state.messages.last : null;
+  
+  Message? get firstMessage => state.messages.isNotEmpty ? state.messages.first : null;
+  
+  List<Message> get unreadMessages => state.messages.where((m) => m.isRead == 0).toList();
+  
+  // Performance monitoring
+  void logPerformanceMetrics() {
+    print('Messages count: ${state.messages.length}');
+    print('Current page: ${state.currentPage}');
+    print('Has more data: ${state.hasMoreData}');
+    print('Loading pages: ${state.loadingPages}');
+    print('Last load time: ${state.lastLoadTime}');
+  }
+  
+  // Batch operations for better performance
+  void batchUpdateMessages(List<Message> updatedMessages) {
+    if (updatedMessages.isEmpty) return;
+    
+    final Map<int, Message> updateMap = {
+      for (var msg in updatedMessages) msg.id: msg
+    };
+    
+    final updatedList = state.messages.map((message) {
+      return updateMap[message.id] ?? message;
+    }).toList();
+    
+    state = state.copyWith(messages: updatedList);
+  }
+  
+  void batchRemoveMessages(List<int> messageIds) {
+    if (messageIds.isEmpty) return;
+    
+    final idsToRemove = messageIds.toSet();
+    final filteredMessages = state.messages
+        .where((message) => !idsToRemove.contains(message.id))
+        .toList();
+    
+    state = state.copyWith(messages: filteredMessages);
+  }
+  
+  // Real-time updates optimization
+  void optimizeForRealTime() {
+    // Limit memory usage by keeping only recent messages if list gets too large
+    const maxMessages = 1000;
+    
+    if (state.messages.length > maxMessages) {
+      // Keep the most recent messages
+      final recentMessages = state.messages.skip(state.messages.length - maxMessages).toList();
+      
+      state = state.copyWith(
+        messages: recentMessages,
+        // Reset pagination since we've trimmed old messages
+        currentPage: 1,
+        hasMoreData: true,
+      );
+    }
+  }
+  
+  // Error recovery
+  void retryLastOperation() {
+    if (state.failure != null) {
+      if (state.messages.isEmpty) {
+        loadMessages(refresh: true);
+      } else {
+        loadMessages(isLoadMore: true);
+      }
+    }
+  }
+  
+  void clearError() {
+    if (state.failure != null) {
+      state = state.copyWith(failure: null);
+    }
+  }
+  
+  // Preload optimization
+  void preloadNextPage() {
+    if (state.canLoadMore && !state.loadingPages.contains(state.currentPage + 1)) {
+      // Preload next page in background without updating UI loading state
+      final nextPageQuery = state.query.copyWith(page: state.currentPage + 1);
+      
+      _getMessagesUseCase(nextPageQuery).then((result) {
+        result.fold(
+          (failure) {
+            // Silently handle preload failures
+          },
+          (messagesResult) {
+            // Cache the preloaded messages for faster access
+            // This would require additional state management
+          },
+        );
+      });
+    }
   }
 }

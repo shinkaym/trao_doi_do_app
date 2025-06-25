@@ -4,6 +4,13 @@ import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/message.dart';
 
+enum MessagePosition {
+  single, // Tin nhắn đơn lẻ
+  first, // Tin nhắn đầu tiên trong chuỗi
+  middle, // Tin nhắn ở giữa chuỗi
+  last, // Tin nhắn cuối cùng trong chuỗi
+}
+
 class MessageBubble extends StatelessWidget {
   final Message message;
   final bool isCurrentUser;
@@ -39,13 +46,14 @@ class MessageBubble extends StatelessWidget {
     final senderAvatar = isCurrentUser ? currentUserAvatar : otherUserAvatar;
 
     bool shouldShowTime = _shouldShowTime();
+    MessagePosition position = _getMessagePosition();
 
     return Container(
       margin: EdgeInsets.only(
-        bottom: isTablet ? 12 : 8,
+        bottom: _getBottomMargin(position),
         left: isCurrentUser ? (isTablet ? 24 : 16) : 16,
         right: isCurrentUser ? 16 : (isTablet ? 24 : 16),
-        top: 4,
+        top: _getTopMargin(position),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -76,12 +84,7 @@ class MessageBubble extends StatelessWidget {
                         isCurrentUser
                             ? colorScheme.primary
                             : colorScheme.surfaceVariant,
-                    borderRadius: BorderRadius.only(
-                      topLeft: const Radius.circular(16),
-                      topRight: const Radius.circular(16),
-                      bottomLeft: Radius.circular(isCurrentUser ? 16 : 4),
-                      bottomRight: Radius.circular(isCurrentUser ? 4 : 16),
-                    ),
+                    borderRadius: _getBorderRadius(position),
                   ),
                   child: Text(
                     message.message,
@@ -129,6 +132,83 @@ class MessageBubble extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  MessagePosition _getMessagePosition() {
+    final isFirstMessage = messageIndex == 0;
+    final isLastMessage = messageIndex == messages.length - 1;
+
+    final prevMessage = isFirstMessage ? null : messages[messageIndex - 1];
+    final nextMessage = isLastMessage ? null : messages[messageIndex + 1];
+
+    final hasPrevFromSameSender = prevMessage?.senderID == message.senderID;
+    final hasNextFromSameSender = nextMessage?.senderID == message.senderID;
+
+    if (!hasPrevFromSameSender && !hasNextFromSameSender) {
+      return MessagePosition.single;
+    } else if (!hasPrevFromSameSender && hasNextFromSameSender) {
+      return MessagePosition.first;
+    } else if (hasPrevFromSameSender && hasNextFromSameSender) {
+      return MessagePosition.middle;
+    } else {
+      return MessagePosition.last;
+    }
+  }
+
+  BorderRadius _getBorderRadius(MessagePosition position) {
+    switch (position) {
+      case MessagePosition.single:
+        // Tin nhắn đơn lẻ - bo góc bình thường
+        return BorderRadius.only(
+          topLeft: const Radius.circular(16),
+          topRight: const Radius.circular(16),
+          bottomLeft: Radius.circular(isCurrentUser ? 16 : 4),
+          bottomRight: Radius.circular(isCurrentUser ? 4 : 16),
+        );
+
+      case MessagePosition.first:
+        // Tin nhắn đầu tiên - ngược lại với last
+        return BorderRadius.only(
+          topLeft: const Radius.circular(16),
+          topRight: const Radius.circular(16),
+          bottomLeft: Radius.circular(isCurrentUser ? 16 : 4),
+          bottomRight: Radius.circular(isCurrentUser ? 4 : 16),
+        );
+
+      case MessagePosition.middle:
+        // Tin nhắn ở giữa - chỉ bo góc theo hướng đối diện
+        return BorderRadius.only(
+          topLeft: Radius.circular(isCurrentUser ? 16 : 4),
+          topRight: Radius.circular(isCurrentUser ? 4 : 16),
+          bottomLeft: Radius.circular(isCurrentUser ? 16 : 4),
+          bottomRight: Radius.circular(isCurrentUser ? 4 : 16),
+        );
+
+      case MessagePosition.last:
+        // Tin nhắn cuối cùng - giống single
+        return BorderRadius.only(
+          topLeft: Radius.circular(isCurrentUser ? 16 : 4),
+          topRight: Radius.circular(isCurrentUser ? 4 : 16),
+          bottomLeft: const Radius.circular(16),
+          bottomRight: const Radius.circular(16),
+        );
+    }
+  }
+
+  double _getTopMargin(MessagePosition position) {
+    if (position == MessagePosition.first ||
+        position == MessagePosition.single) {
+      return 8.0;
+    }
+    return 2.0; // Khoảng cách nhỏ cho tin nhắn liên tiếp
+  }
+
+  double _getBottomMargin(MessagePosition position) {
+    if (position == MessagePosition.last ||
+        position == MessagePosition.single) {
+      return isTablet ? 12 : 8;
+    }
+    return 2.0; // Khoảng cách nhỏ cho tin nhắn liên tiếp
   }
 
   bool _shouldShowTime() {
