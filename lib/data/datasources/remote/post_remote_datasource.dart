@@ -12,6 +12,7 @@ abstract class PostRemoteDataSource {
   Future<PostsResponseModel> myPosts(PostsQuery query);
   Future<PostDetailResponseModel> getPostBySlug(String slug);
   Future<String> updatePost(int postID, UpdatePostModel updatePost);
+  Future<String> deletePost(int postID);
 }
 
 class PostRemoteDataSourceImpl implements PostRemoteDataSource {
@@ -80,12 +81,24 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
     return result.data!;
   }
 
-    @override
+  @override
   Future<String> updatePost(int postID, UpdatePostModel updatePost) async {
     final response = await _dioClient.patch(
       '${ApiConstants.posts}/$postID',
       data: updatePost.toJson(),
     );
+
+    final result = ApiResponseModel.fromJson(
+      response.data,
+      (data) => data.toString(),
+    );
+
+    return result.data!;
+  }
+
+  @override
+  Future<String> deletePost(int postID) async {
+    final response = await _dioClient.delete('${ApiConstants.posts}/$postID');
 
     final result = ApiResponseModel.fromJson(
       response.data,

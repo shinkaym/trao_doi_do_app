@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_post_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/delete_post_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_post_usecase.dart';
 
 class PostState {
@@ -116,9 +117,13 @@ class PostState {
 class PostNotifier extends StateNotifier<PostState> {
   final CreatePostUseCase _createPostUseCase;
   final UpdatePostUseCase _updatePostUseCase;
+  final DeletePostUseCase _deletePostUseCase;
 
-  PostNotifier(this._createPostUseCase, this._updatePostUseCase)
-    : super(PostState());
+  PostNotifier(
+    this._createPostUseCase,
+    this._updatePostUseCase,
+    this._deletePostUseCase,
+  ) : super(PostState());
 
   void updateTitle(String title) {
     state = state.copyWith(title: title);
@@ -233,6 +238,22 @@ class PostNotifier extends StateNotifier<PostState> {
 
   void updateStatus(int status) {
     state = state.copyWith(status: status);
+  }
+
+  Future<void> deletePost(int postID) async {
+    state = state.copyWith(isLoading: true, failure: null);
+
+    final result = await _deletePostUseCase(postID);
+
+    result.fold(
+      (failure) => state = state.copyWith(isLoading: false, failure: failure),
+      (message) {
+        state = state.copyWith(
+          isLoading: false,
+          successMessage: 'Xóa bài đăng thành công!',
+        );
+      },
+    );
   }
 
   Future<void> updatePost(

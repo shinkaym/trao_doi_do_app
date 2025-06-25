@@ -9,5 +9,9 @@ abstract class PostRepository {
   Future<Either<Failure, PostsResponse>> getPosts(PostsQuery query);
   Future<Either<Failure, PostsResponse>> myPosts(PostsQuery query);
   Future<Either<Failure, PostDetailResponse>> getPostBySlug(String slug);
-  Future<Either<Failure, dynamic>> updatePost(int postID, UpdatePost updatePost);
+  Future<Either<Failure, dynamic>> updatePost(
+    int postID,
+    UpdatePost updatePost,
+  );
+  Future<Either<Failure, String>> deletePost(int postID);
 }

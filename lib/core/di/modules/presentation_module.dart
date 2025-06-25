@@ -168,7 +168,10 @@ final unreadCountProvider =
 final postProvider = StateNotifierProvider<PostNotifier, PostState>((ref) {
   final createPostUseCase = ref.watch(createPostUseCaseProvider);
   final updatePostUseCase = ref.watch(updatePostUseCaseProvider);
-  return PostNotifier(createPostUseCase, updatePostUseCase);
+  final deletePostUseCase = ref.watch(
+    deletePostUseCaseProvider,
+  ); // Thêm dòng này
+  return PostNotifier(createPostUseCase, updatePostUseCase, deletePostUseCase);
 });
 
 final postsListProvider =
