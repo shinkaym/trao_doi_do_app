@@ -9,6 +9,7 @@ import 'package:trao_doi_do_app/presentation/features/auth/screens/forgot_passwo
 import 'package:trao_doi_do_app/presentation/features/auth/screens/login_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/screens/register_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/screens/reset_password_screen.dart';
+import 'package:trao_doi_do_app/presentation/features/home/screens/home_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/screens/interest_chat_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/screens/interests_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/item_warehouse/screens/item_warehouses_screen.dart';
@@ -89,7 +90,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (!routerState.isOnboardingCompleted) {
           return RouteConstants.onboarding;
         }
-        return RouteConstants.posts;
+        // Redirect to home instead of posts after splash
+        return RouteConstants.home;
       }
 
       // Stay on splash while it's active
@@ -97,17 +99,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      // Protected routes - use utility function
+      // Protected routes - TẤT CẢ các màn hình chính đều yêu cầu đăng nhập
       if (RouteUtils.isProtectedRoute(currentPath)) {
         if (!routerState.isLoggedIn) {
           return RouteConstants.login;
         }
       }
 
-      // Auth routes - redirect if already logged in
+      // Auth routes - redirect to home if already logged in
       if (RouteUtils.isAuthRoute(currentPath)) {
         if (routerState.isLoggedIn) {
-          return RouteConstants.posts;
+          return RouteConstants.home; // Redirect to home instead of posts
         }
       }
 
@@ -187,13 +189,22 @@ ShellRoute _buildShellRoute() {
       );
     },
     routes: [
+      _buildHomeRoute(), // Thêm home route
       _buildPostsRoute(),
       _buildWarehouseRoute(),
       _buildInterestsRoute(),
-      _buildRankingRoute(),
-      _buildProfileRoute(),
+      _buildProfileRoute(), // Profile sẽ chứa ranking
       _buildNotificationRoute(),
     ],
+  );
+}
+
+// Thêm Home Route
+GoRoute _buildHomeRoute() {
+  return GoRoute(
+    path: RouteConstants.home,
+    name: RouteNames.home,
+    builder: (context, state) => const HomeScreen(),
   );
 }
 
@@ -201,7 +212,10 @@ GoRoute _buildPostsRoute() {
   return GoRoute(
     path: RouteConstants.posts,
     name: RouteNames.posts,
-    builder: (context, state) => const PostsScreen(),
+    builder: (context, state) {
+      final extra = state.extra as Map<String, dynamic>?;
+      return PostsScreen(extra: extra);
+    },
     routes: [
       GoRoute(
         path: '${RouteConstants.postDetail}/:${RouteConstants.slugParam}',
@@ -212,11 +226,12 @@ GoRoute _buildPostsRoute() {
         },
       ),
       GoRoute(
-        path:
-            RouteConstants
-                .createPost, // Sử dụng 'create-post' thay vì '/posts/create-post'
+        path: RouteConstants.createPost,
         name: RouteNames.createPost,
-        builder: (context, state) => const CreatePostScreen(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return CreatePostScreen(extra: extra);
+        },
       ),
     ],
   );
@@ -261,14 +276,6 @@ GoRoute _buildInterestsRoute() {
   );
 }
 
-GoRoute _buildRankingRoute() {
-  return GoRoute(
-    path: RouteConstants.ranking,
-    name: RouteNames.ranking,
-    builder: (context, state) => const RankingScreen(),
-  );
-}
-
 GoRoute _buildProfileRoute() {
   return GoRoute(
     path: RouteConstants.profile,
@@ -289,6 +296,12 @@ GoRoute _buildProfileRoute() {
         path: RouteConstants.myPosts,
         name: RouteNames.myPosts,
         builder: (context, state) => const MyPostsScreen(),
+      ),
+      // Ranking là con của Profile
+      GoRoute(
+        path: RouteConstants.ranking,
+        name: RouteNames.ranking,
+        builder: (context, state) => const RankingScreen(),
       ),
     ],
   );

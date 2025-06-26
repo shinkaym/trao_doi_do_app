@@ -11,6 +11,7 @@ class AdaptiveAppBar {
     AppBarType? forceType,
     bool? showNotification,
     bool? showBackButton,
+    bool? showSearchButton,
     List<Widget>? actions,
     PreferredSizeWidget? bottom,
   }) {
@@ -23,12 +24,14 @@ class AdaptiveAppBar {
     final appBarTitle = title ?? config?.title ?? '';
     final showNotif = showNotification ?? config?.showNotification ?? true;
     final showBack = showBackButton ?? config?.showBackButton ?? false;
+    final showSearch = showSearchButton ?? config?.showSearchButton ?? false;
 
     switch (type) {
       case AppBarType.standard:
         return CustomAppBar(
           title: appBarTitle,
           showNotificationButton: showNotif,
+          showSearchButton: showSearch,
           showBackButton: showBack,
           additionalActions: actions,
           bottom: bottom,
@@ -39,6 +42,7 @@ class AdaptiveAppBar {
           title: appBarTitle,
           showNotificationButton: false,
           showBackButton: showBack,
+          showSearchButton: showSearch,
           additionalActions: actions,
           bottom: bottom,
         );

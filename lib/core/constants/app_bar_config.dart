@@ -6,6 +6,7 @@ class AppBarConfig {
   final String title;
   final bool showNotification;
   final bool showBackButton;
+  final bool showSearchButton;
   final List<Widget>? actions;
   final PreferredSizeWidget? bottom;
 
@@ -14,13 +15,19 @@ class AppBarConfig {
     required this.title,
     this.showNotification = true,
     this.showBackButton = false,
+    this.showSearchButton = false,
     this.actions,
     this.bottom,
   });
 
   // Predefined configs cho các màn hình
   static const Map<String, AppBarConfig> screenConfigs = {
-    // Main screens
+    // Main screens - tất cả đều yêu cầu đăng nhập
+    '/home': AppBarConfig(
+      type: AppBarType.standard,
+      title: 'Trao đổi đồ', // Hoặc tên app của bạn
+      showNotification: true,
+    ),
     '/posts': AppBarConfig(
       type: AppBarType.standard,
       title: 'Bài đăng',
@@ -36,18 +43,38 @@ class AppBarConfig {
       title: 'Quan tâm',
       showNotification: true,
     ),
-    '/ranking': AppBarConfig(
-      type: AppBarType.standard,
-      title: 'Xếp hạng',
-      showNotification: true,
-    ),
     '/profile': AppBarConfig(
       type: AppBarType.standard,
       title: 'Hồ sơ',
       showNotification: true,
     ),
 
-    // Sub screens
+    // Auth screens - không yêu cầu đăng nhập
+    '/login': AppBarConfig(
+      type: AppBarType.minimal,
+      title: 'Đăng nhập',
+      showNotification: false,
+    ),
+    '/register': AppBarConfig(
+      type: AppBarType.minimal,
+      title: 'Đăng ký',
+      showNotification: false,
+      showBackButton: true,
+    ),
+    '/forgot-password': AppBarConfig(
+      type: AppBarType.minimal,
+      title: 'Quên mật khẩu',
+      showNotification: false,
+      showBackButton: true,
+    ),
+    '/reset-password': AppBarConfig(
+      type: AppBarType.minimal,
+      title: 'Đặt lại mật khẩu',
+      showNotification: false,
+      showBackButton: true,
+    ),
+
+    // Sub screens - yêu cầu đăng nhập
     '/posts/create-post': AppBarConfig(
       type: AppBarType.standard,
       title: 'Tạo bài đăng',
@@ -69,6 +96,12 @@ class AppBarConfig {
     '/profile/my-posts': AppBarConfig(
       type: AppBarType.standard,
       title: 'Bài đăng của tôi',
+      showNotification: true,
+      showBackButton: true,
+    ),
+    '/profile/ranking': AppBarConfig(
+      type: AppBarType.standard,
+      title: 'Xếp hạng',
       showNotification: true,
       showBackButton: true,
     ),

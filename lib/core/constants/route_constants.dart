@@ -10,10 +10,10 @@ class RouteConstants {
   static const String resetPassword = '/reset-password';
 
   // ========== MAIN NAVIGATION ROUTES ==========
+  static const String home = '/home';          // Màn hình chính
   static const String posts = '/posts';
   static const String warehouse = '/warehouse';
   static const String interests = '/interests';
-  static const String ranking = '/ranking';
   static const String profile = '/profile';
   static const String notifications = '/notifications';
 
@@ -25,6 +25,7 @@ class RouteConstants {
   static const String editProfile = 'edit';
   static const String changePassword = 'change-password';
   static const String myPosts = 'my-posts';
+  static const String ranking = 'ranking';     // Ranking là con của profile
 
   // ========== FULL ROUTE PATHS (để kiểm tra navigation) ==========
   static const String fullPostDetail = '/posts/post-detail';
@@ -34,6 +35,7 @@ class RouteConstants {
   static const String fullEditProfile = '/profile/edit';
   static const String fullChangePassword = '/profile/change-password';
   static const String fullMyPosts = '/profile/my-posts';
+  static const String fullRanking = '/profile/ranking';
 
   // ========== ROUTE PARAMETERS ==========
   static const String slugParam = 'slug';
@@ -47,11 +49,22 @@ class RouteConstants {
       '$fullInterestChat/$interestId';
 
   // ========== ROUTE COLLECTIONS ==========
+  // Tất cả các màn hình chính đều yêu cầu đăng nhập
   static const Set<String> protectedRoutes = {
+    home,
+    posts,
+    warehouse,
+    interests,
+    profile,
+    notifications,
+    fullPostDetail,
+    fullCreatePost,
+    fullItemDetail,
+    fullInterestChat,
     fullEditProfile,
     fullChangePassword,
     fullMyPosts,
-    fullInterestChat,
+    fullRanking,
   };
 
   static const Set<String> authRoutes = {
@@ -71,24 +84,28 @@ class RouteConstants {
     fullEditProfile,
     fullChangePassword,
     fullMyPosts,
+    fullRanking,
+    notifications,
   };
 
+  // Navigation routes với home làm mặc định
   static const Map<String, int> navigationRoutes = {
-    posts: 0,
-    warehouse: 1,
-    interests: 2,
-    ranking: 3,
+    home: 0,        // Home là tab đầu tiên
+    posts: 1,
+    warehouse: 2,
+    interests: 3,
     profile: 4,
   };
 
   static const Map<String, int> subRouteMapping = {
-    fullPostDetail: 0,
-    fullCreatePost: 0,
-    fullItemDetail: 1,
-    fullInterestChat: 2,
+    fullPostDetail: 1,
+    fullCreatePost: 1,
+    fullItemDetail: 2,
+    fullInterestChat: 3,
     fullEditProfile: 4,
     fullChangePassword: 4,
     fullMyPosts: 4,
+    fullRanking: 4,     // Ranking thuộc profile
   };
 }
 
@@ -106,10 +123,10 @@ class RouteNames {
   static const String resetPassword = 'reset-password';
 
   // Main navigation routes
+  static const String home = 'home';
   static const String posts = 'posts';
   static const String warehouse = 'warehouse';
   static const String interests = 'interests';
-  static const String ranking = 'ranking';
   static const String profile = 'profile';
   static const String notifications = 'notifications';
 
@@ -121,4 +138,5 @@ class RouteNames {
   static const String editProfile = 'edit-profile';
   static const String changePassword = 'change-password';
   static const String myPosts = 'my-posts';
+  static const String ranking = 'ranking';
 }

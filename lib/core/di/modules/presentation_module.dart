@@ -1,4 +1,5 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/interest_detail_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/transaction_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/transactions_provider.dart';
@@ -16,6 +17,7 @@ import 'package:trao_doi_do_app/presentation/providers/category_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/item_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/interest_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/messages_provider.dart';
+import 'package:trao_doi_do_app/presentation/providers/search_suggestion_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/unread_count_provider.dart';
 import '../modules/core_module.dart';
 import '../modules/domain_module.dart';
@@ -180,6 +182,15 @@ final postsListProvider =
       return PostsListNotifier(getPostsUseCase);
     });
 
+final postsProviderFamily = StateNotifierProvider.family
+    .autoDispose<PostsListNotifier, PostsListState, PostType>((ref, postType) {
+      // Inject GetPostsUseCase dependency here
+      final getPostsUseCase = ref.watch(getPostsUseCaseProvider);
+      return PostsListNotifier(getPostsUseCase);
+
+      // Temporary mock implementation
+    });
+
 final myPostsListProvider =
     StateNotifierProvider.autoDispose<MyPostsListNotifier, MyPostsListState>((
       ref,
@@ -245,3 +256,8 @@ final claimRequestsListProvider = StateNotifierProvider<
   final getClaimRequestsUseCase = ref.watch(getClaimRequestsUseCaseProvider);
   return ClaimRequestsListNotifier(getClaimRequestsUseCase);
 });
+
+final searchSuggestionsProvider =
+    StateNotifierProvider<SearchSuggestionsNotifier, SearchSuggestionsState>(
+      (ref) => SearchSuggestionsNotifier(ref.read(getPostsUseCaseProvider)),
+    );

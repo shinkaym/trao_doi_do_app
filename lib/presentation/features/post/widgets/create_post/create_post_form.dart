@@ -23,12 +23,14 @@ class CreatePostForm extends HookConsumerWidget {
   final bool isTablet;
   final ThemeData theme;
   final ColorScheme colorScheme;
+  final PostType? preselectedType;
 
   const CreatePostForm({
     super.key,
     required this.isTablet,
     required this.theme,
     required this.colorScheme,
+    this.preselectedType,
   });
 
   @override
@@ -42,7 +44,7 @@ class CreatePostForm extends HookConsumerWidget {
     final timeController = useTextEditingController();
 
     // State hooks
-    final selectedType = useState(PostType.giveAway);
+    final selectedType = useState(preselectedType ?? PostType.giveAway);
     final images = useState<List<PostImage>>([]);
     final giveAwayItems = useState<List<GiveAwayItem>>([]);
     final selectedDateTime = useState<DateTime?>(null);

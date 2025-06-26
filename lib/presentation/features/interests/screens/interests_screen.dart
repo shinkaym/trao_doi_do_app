@@ -13,7 +13,6 @@ import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/posts_with_interests_tab.dart';
 import 'package:trao_doi_do_app/presentation/widgets/scroll_to_top_button.dart';
 import 'package:trao_doi_do_app/presentation/providers/chat_notification_websocket_provider.dart';
-import 'package:trao_doi_do_app/presentation/widgets/login_prompt.dart';
 import 'package:trao_doi_do_app/presentation/providers/interest_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
@@ -44,7 +43,6 @@ class InterestsScreen extends HookConsumerWidget {
     // Add debouncer for search
     final debouncer = useMemoized(() => Debouncer());
 
-    final authState = ref.watch(authProvider);
     final interestedPostsState = ref.watch(interestedPostsProvider);
     final postsWithInterestsState = ref.watch(postsWithInterestsProvider);
 
@@ -85,13 +83,6 @@ class InterestsScreen extends HookConsumerWidget {
         },
       );
     }
-
-    // Handle sort/filter
-    // void onSortFilter(String field, String order) {
-    //   sharedSortField.value = field;
-    //   sharedSortOrder.value = order;
-    //   applySharedFiltersToCurrentTab();
-    // }
 
     // Reset search function
     void resetSearch() {
@@ -154,7 +145,7 @@ class InterestsScreen extends HookConsumerWidget {
       );
     }
 
-    // WebSocket listener (unchanged)
+    // WebSocket listener
     ref.listen<ChatNotificationWebSocketState>(
       chatNotificationWebSocketProvider,
       (previous, next) {
@@ -248,7 +239,7 @@ class InterestsScreen extends HookConsumerWidget {
       context.pushNamed('post-detail', pathParameters: {'slug': slug});
     }
 
-    // Handle chat tap (unchanged)
+    // Handle chat tap
     void handleChatTap(int interestId) {
       final currentTab = tabController.index;
       if (currentTab == 0) {
@@ -319,7 +310,7 @@ class InterestsScreen extends HookConsumerWidget {
       );
     }
 
-    // Handle like tap (unchanged)
+    // Handle like tap
     Future<void> handleLikeTap(int postId) async {
       await ref.read(interestProvider.notifier).cancelInterest(postId);
 
@@ -361,21 +352,6 @@ class InterestsScreen extends HookConsumerWidget {
         }
       }
     });
-
-    if (!authState.isLoggedIn) {
-      return SmartScaffold(
-        appBarType: AppBarType.standard,
-        body: LoginPrompt(
-          isTablet: isTablet,
-          theme: theme,
-          colorScheme: colorScheme,
-          title: 'Đăng nhập để xem danh sách bài đăng đã và được quan tâm',
-          description:
-              'Bạn cần đăng nhập để có thể xem danh sách bài đăng đã và được quan tâm. Đăng nhập ngay để trải nghiệm đầy đủ tính năng.',
-          guestInfoText: '',
-        ),
-      );
-    }
 
     return SmartScaffold(
       appBarType: AppBarType.standard,

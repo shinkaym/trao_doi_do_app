@@ -5,12 +5,12 @@ import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/create_post/create_post_form.dart';
-import 'package:trao_doi_do_app/presentation/widgets/login_prompt.dart';
-import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
 class CreatePostScreen extends HookConsumerWidget {
-  const CreatePostScreen({super.key});
+  final Map<String, dynamic>? extra;
+
+  const CreatePostScreen({super.key, this.extra});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,18 +18,17 @@ class CreatePostScreen extends HookConsumerWidget {
     final theme = context.theme;
     final colorScheme = context.colorScheme;
 
-    // Watch auth state
+    final preselectedType = extra?['type'] as PostType?;
+
+    // Watch auth state chỉ để lấy thông tin user
     final authState = ref.watch(authProvider);
 
     // Track if we've already attempted refresh
     final hasRefreshed = useRef(false);
 
     useEffect(() {
-      // Chỉ refresh khi auth đã được khởi tạo và user đã login
-      if (authState.isInitialized &&
-          authState.isLoggedIn &&
-          authState.user != null &&
-          !hasRefreshed.value) {
+      // Refresh user info một lần khi màn hình được tạo
+      if (authState.user != null && !hasRefreshed.value) {
         hasRefreshed.value = true;
 
         // Delay một chút để tránh gọi trong build cycle
@@ -38,47 +37,19 @@ class CreatePostScreen extends HookConsumerWidget {
         });
       }
 
-      // Reset flag khi user logout
-      if (!authState.isLoggedIn) {
-        hasRefreshed.value = false;
-      }
-
       return null;
-    }, [authState.isInitialized, authState.isLoggedIn, authState.user?.id]);
+    }, [authState.user?.id]);
 
     return SmartScaffold(
       title: 'Đăng bài',
       appBarType: AppBarType.standard,
       showBackButton: true,
-      body: _buildBody(authState, isTablet, theme, colorScheme),
-    );
-  }
-
-  Widget _buildBody(
-    AuthState authState,
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    // Hiển thị loading khi đang khởi tạo
-    if (!authState.isInitialized) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    // Hiển thị form tạo bài nếu đã login
-    if (authState.isLoggedIn && authState.user != null) {
-      return CreatePostForm(
+      body: CreatePostForm(
         isTablet: isTablet,
         theme: theme,
         colorScheme: colorScheme,
-      );
-    }
-
-    // Hiển thị login prompt nếu chưa login
-    return LoginPrompt(
-      isTablet: isTablet,
-      theme: theme,
-      colorScheme: colorScheme,
+        preselectedType: preselectedType,
+      ),
     );
   }
 }

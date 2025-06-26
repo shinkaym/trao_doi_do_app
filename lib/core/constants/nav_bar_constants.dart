@@ -1,43 +1,43 @@
 import 'package:flutter/material.dart';
 
 class NavBarConstants {
-  // Main routes cho bottom navigation
+  // Main routes cho bottom navigation - với home làm màn hình chính
   static const List<String> routes = [
-    '/posts',
-    '/warehouse',
-    '/interests',
-    '/ranking',
-    '/profile',
+    '/home', // Màn hình chính
+    '/posts', // Bài đăng
+    '/warehouse', // Kho đồ
+    '/interests', // Quan tâm
+    '/profile', // Hồ sơ (bao gồm ranking)
   ];
 
-  // Navigation items configuration
+  // Navigation items configuration - 5 tab chính
   static const List<NavigationItemConfig> navigationItems = [
+    NavigationItemConfig(
+      label: 'Trang chủ',
+      activeIcon: Icons.home,
+      inactiveIcon: Icons.home_outlined,
+      route: '/home',
+      index: 0,
+    ),
     NavigationItemConfig(
       label: 'Bài đăng',
       activeIcon: Icons.article,
       inactiveIcon: Icons.article_outlined,
       route: '/posts',
-      index: 0,
+      index: 1,
     ),
     NavigationItemConfig(
       label: 'Kho đồ',
       activeIcon: Icons.inventory,
       inactiveIcon: Icons.inventory_2_outlined,
       route: '/warehouse',
-      index: 1,
+      index: 2,
     ),
     NavigationItemConfig(
       label: 'Quan tâm',
       activeIcon: Icons.favorite,
       inactiveIcon: Icons.favorite_border,
       route: '/interests',
-      index: 2,
-    ),
-    NavigationItemConfig(
-      label: 'Xếp hạng',
-      activeIcon: Icons.leaderboard,
-      inactiveIcon: Icons.leaderboard_outlined,
-      route: '/ranking',
       index: 3,
     ),
     NavigationItemConfig(

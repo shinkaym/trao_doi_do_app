@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class SearchTextField extends StatelessWidget {
+class SearchTextField extends StatefulWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
   final Function(String) onChanged;
@@ -21,17 +21,39 @@ class SearchTextField extends StatelessWidget {
   });
 
   @override
+  State<SearchTextField> createState() => _SearchTextFieldState();
+}
+
+class _SearchTextFieldState extends State<SearchTextField> {
+  @override
+  void initState() {
+    super.initState();
+    // Listen to controller changes để rebuild widget
+    widget.controller.addListener(_onTextChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isTablet ? 16 : 12,
-        vertical: isTablet ? 8 : 6,
+        horizontal: widget.isTablet ? 16 : 12,
+        vertical: widget.isTablet ? 8 : 6,
       ),
       decoration: BoxDecoration(
-        color: colorScheme.surface,
+        color: widget.colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: colorScheme.primary.withOpacity(0.5),
+          color: widget.colorScheme.primary.withOpacity(0.5),
           width: 2,
         ),
       ),
@@ -39,59 +61,59 @@ class SearchTextField extends StatelessWidget {
         children: [
           Icon(
             Icons.search,
-            color: colorScheme.primary,
-            size: isTablet ? 20 : 18,
+            color: widget.colorScheme.primary,
+            size: widget.isTablet ? 20 : 18,
           ),
-          SizedBox(width: isTablet ? 8 : 6),
+          SizedBox(width: widget.isTablet ? 8 : 6),
           Expanded(
             child: TextField(
-              controller: controller,
-              focusNode: focusNode,
-              onChanged: onChanged,
+              controller: widget.controller,
+              focusNode: widget.focusNode,
+              onChanged: widget.onChanged,
               decoration: InputDecoration(
                 hintText: 'Nhập từ khóa tìm kiếm...',
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
                 hintStyle: TextStyle(
-                  color: colorScheme.onSurfaceVariant,
-                  fontSize: isTablet ? 16 : 14,
+                  color: widget.colorScheme.onSurfaceVariant,
+                  fontSize: widget.isTablet ? 16 : 14,
                 ),
               ),
               style: TextStyle(
-                color: colorScheme.onSurface,
-                fontSize: isTablet ? 16 : 14,
+                color: widget.colorScheme.onSurface,
+                fontSize: widget.isTablet ? 16 : 14,
               ),
             ),
           ),
-          if (controller.text.isNotEmpty) ...[
-            SizedBox(width: isTablet ? 8 : 4),
+          if (widget.controller.text.isNotEmpty) ...[
+            SizedBox(width: widget.isTablet ? 8 : 4),
             InkWell(
               onTap: () {
-                controller.clear();
-                onClear();
+                widget.controller.clear();
+                widget.onClear();
               },
               borderRadius: BorderRadius.circular(16),
               child: Container(
                 padding: const EdgeInsets.all(4),
                 child: Icon(
                   Icons.clear,
-                  color: colorScheme.onSurfaceVariant,
-                  size: isTablet ? 16 : 14,
+                  color: widget.colorScheme.onSurfaceVariant,
+                  size: widget.isTablet ? 16 : 14,
                 ),
               ),
             ),
           ],
-          SizedBox(width: isTablet ? 8 : 4),
+          SizedBox(width: widget.isTablet ? 8 : 4),
           InkWell(
-            onTap: onToggle,
+            onTap: widget.onToggle,
             borderRadius: BorderRadius.circular(16),
             child: Container(
               padding: const EdgeInsets.all(4),
               child: Icon(
                 Icons.keyboard_arrow_up,
-                color: colorScheme.onSurfaceVariant,
-                size: isTablet ? 20 : 18,
+                color: widget.colorScheme.onSurfaceVariant,
+                size: widget.isTablet ? 20 : 18,
               ),
             ),
           ),

@@ -9,6 +9,7 @@ class SmartScaffold extends StatelessWidget {
   final AppBarType? appBarType;
   final bool? showNotification;
   final bool? showBackButton;
+  final bool? showSearchButton;
   final List<Widget>? appBarActions;
   final PreferredSizeWidget? appBarBottom;
   final Widget? floatingActionButton;
@@ -24,6 +25,7 @@ class SmartScaffold extends StatelessWidget {
     this.appBarType,
     this.showNotification,
     this.showBackButton,
+    this.showSearchButton,
     this.appBarActions,
     this.appBarBottom,
     this.floatingActionButton,
@@ -45,6 +47,7 @@ class SmartScaffold extends StatelessWidget {
         forceType: appBarType,
         showNotification: showNotification,
         showBackButton: showBackButton,
+        showSearchButton: showSearchButton,
         actions: appBarActions,
         bottom: appBarBottom,
       ),

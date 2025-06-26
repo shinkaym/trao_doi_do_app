@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 
 enum AppBarType {
   standard, // CustomAppBar thường với notification
@@ -43,6 +44,13 @@ enum PostType {
       orElse: () => PostType.all,
     );
   }
+
+  static List<PostType> get allPostTypes => [
+    PostType.giveAway,
+    PostType.foundItem,
+    PostType.findLost,
+    PostType.freePost,
+  ];
 }
 
 // Enum cho trạng thái bài post
@@ -155,4 +163,41 @@ enum DeliveryMethod {
         return 'Giao hàng';
     }
   }
+}
+
+enum FeatureType {
+  createPost(
+    'Đăng bài',
+    Icons.add_circle_outline,
+    Colors.blue,
+    RouteNames.createPost,
+  ),
+  inventory(
+    'Kho đồ cũ',
+    Icons.inventory_2_outlined,
+    Colors.green,
+    RouteNames.warehouse,
+  ),
+  ranking(
+    'Bảng xếp hạng',
+    Icons.leaderboard_outlined,
+    Colors.orange,
+    RouteNames.ranking,
+  ),
+  favorites(
+    'Quan tâm',
+    Icons.favorite_outline,
+    Colors.red,
+    RouteNames.interests,
+  );
+
+  const FeatureType(this.title, this.icon, this.color, this.route);
+
+  final String title;
+  final IconData icon;
+  final Color color;
+  final String route;
+
+  /// Lấy tất cả features
+  static List<FeatureType> get allFeatures => FeatureType.values;
 }

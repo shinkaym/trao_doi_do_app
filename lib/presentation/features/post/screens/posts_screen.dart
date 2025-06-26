@@ -14,17 +14,29 @@ import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/posts_t
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
 class PostsScreen extends HookConsumerWidget {
-  const PostsScreen({super.key});
+  final Map<String, dynamic>? extra;
+
+  const PostsScreen({super.key, this.extra});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final searchController = useTextEditingController();
-    final selectedType = useState<PostType>(PostType.all);
+    final preselectedType = extra?['type'] as PostType?;
+    final preselectedSearch = extra?['search'] as String?;
+    final autoFocus = extra?['autoFocus'] as bool? ?? true;
+
+    // Khởi tạo searchController với giá trị preselected
+    final searchController = useTextEditingController(
+      text: preselectedSearch ?? '',
+    );
+
+    final selectedType = useState<PostType>(preselectedType ?? PostType.all);
     final selectedSort = useState<SortOrder>(SortOrder.newest);
-    final searchQuery = useState<String>('');
+    final searchQuery = useState<String>(preselectedSearch ?? '');
     final scrollController = useScrollController();
     final searchFocusNode = useFocusNode();
-    final isSearchVisible = useState<bool>(false);
+    final isSearchVisible = useState<bool>(
+      preselectedSearch?.isNotEmpty ?? false,
+    );
 
     final debouncer = useMemoized(() => Debouncer());
 
@@ -120,7 +132,7 @@ class PostsScreen extends HookConsumerWidget {
 
     void toggleSearch() {
       isSearchVisible.value = !isSearchVisible.value;
-      if (isSearchVisible.value) {
+      if (isSearchVisible.value && autoFocus) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           searchFocusNode.requestFocus();
         });
@@ -132,10 +144,15 @@ class PostsScreen extends HookConsumerWidget {
       }
     }
 
-    // Load posts lần đầu
+    // Load posts lần đầu và focus search nếu có preselected search
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         loadPosts();
+        
+        // Nếu có preselected search và autoFocus = true, focus vào search field
+        if (preselectedSearch?.isNotEmpty == true && autoFocus) {
+          searchFocusNode.requestFocus();
+        }
       });
       return () {
         debouncer.cancel();
