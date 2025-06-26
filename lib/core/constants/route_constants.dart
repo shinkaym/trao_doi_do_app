@@ -10,7 +10,7 @@ class RouteConstants {
   static const String resetPassword = '/reset-password';
 
   // ========== MAIN NAVIGATION ROUTES ==========
-  static const String home = '/home';          // Màn hình chính
+  static const String home = '/home'; // Màn hình chính
   static const String posts = '/posts';
   static const String warehouse = '/warehouse';
   static const String interests = '/interests';
@@ -25,7 +25,9 @@ class RouteConstants {
   static const String editProfile = 'edit';
   static const String changePassword = 'change-password';
   static const String myPosts = 'my-posts';
-  static const String ranking = 'ranking';     // Ranking là con của profile
+  static const String ranking = 'ranking'; // Ranking là con của profile
+  static const String appointments =
+      'appointments'; // Appointments là con của profile
 
   // ========== FULL ROUTE PATHS (để kiểm tra navigation) ==========
   static const String fullPostDetail = '/posts/post-detail';
@@ -36,11 +38,13 @@ class RouteConstants {
   static const String fullChangePassword = '/profile/change-password';
   static const String fullMyPosts = '/profile/my-posts';
   static const String fullRanking = '/profile/ranking';
+  static const String fullAppointments = '/profile/appointments';
 
   // ========== ROUTE PARAMETERS ==========
   static const String slugParam = 'slug';
   static const String idParam = 'id';
   static const String interestIdParam = 'interestId';
+  static const String appointmentIdParam = 'appointmentId';
 
   // ========== ROUTE BUILDERS ==========
   static String buildPostDetailRoute(String slug) => '$fullPostDetail/$slug';
@@ -65,6 +69,7 @@ class RouteConstants {
     fullChangePassword,
     fullMyPosts,
     fullRanking,
+    fullAppointments,
   };
 
   static const Set<String> authRoutes = {
@@ -85,12 +90,13 @@ class RouteConstants {
     fullChangePassword,
     fullMyPosts,
     fullRanking,
+    fullAppointments,
     notifications,
   };
 
   // Navigation routes với home làm mặc định
   static const Map<String, int> navigationRoutes = {
-    home: 0,        // Home là tab đầu tiên
+    home: 0, // Home là tab đầu tiên
     posts: 1,
     warehouse: 2,
     interests: 3,
@@ -105,7 +111,8 @@ class RouteConstants {
     fullEditProfile: 4,
     fullChangePassword: 4,
     fullMyPosts: 4,
-    fullRanking: 4,     // Ranking thuộc profile
+    fullRanking: 4, // Ranking thuộc profile
+    fullAppointments: 4, // Appointments thuộc profile
   };
 }
 
@@ -139,4 +146,5 @@ class RouteNames {
   static const String changePassword = 'change-password';
   static const String myPosts = 'my-posts';
   static const String ranking = 'ranking';
+  static const String appointments = 'appointments';
 }

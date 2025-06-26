@@ -1,4 +1,5 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/data/repositories_impl/appointment_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/category_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/item_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/item_warehouse_repository_impl.dart';
@@ -7,6 +8,7 @@ import 'package:trao_doi_do_app/data/repositories_impl/transaction_repository_im
 import 'package:trao_doi_do_app/data/repositories_impl/interest_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/post_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/message_repository_impl.dart';
+import 'package:trao_doi_do_app/domain/repositories/appointment_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/category_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/item_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/item_warehouse_repository.dart';
@@ -19,6 +21,8 @@ import 'package:trao_doi_do_app/domain/usecases/create_transaction_usecase.dart'
 import 'package:trao_doi_do_app/domain/usecases/delete_all_claim_requests_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/delete_claim_request_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/delete_post_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/get_appointment_detail_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/get_appointments_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_categories_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_claim_requests_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_interest_detail_usecase.dart';
@@ -100,6 +104,12 @@ final itemWarehouseRepositoryProvider =
     Provider.autoDispose<ItemWarehouseRepository>((ref) {
       final remoteDataSource = ref.watch(itemWarehouseRemoteDataSourceProvider);
       return ItemWarehouseRepositoryImpl(remoteDataSource);
+    });
+
+final appointmentRepositoryProvider =
+    Provider.autoDispose<AppointmentRepository>((ref) {
+      final remoteDataSource = ref.watch(appointmentRemoteDataSourceProvider);
+      return AppointmentRepositoryImpl(remoteDataSource);
     });
 
 // =============================================================================
@@ -266,4 +276,16 @@ final deleteAllClaimRequestsUseCaseProvider =
     Provider.autoDispose<DeleteAllClaimRequestsUseCase>((ref) {
       final repository = ref.watch(itemWarehouseRepositoryProvider);
       return DeleteAllClaimRequestsUseCase(repository);
+    });
+
+final getAppointmentsUseCaseProvider =
+    Provider.autoDispose<GetAppointmentsUseCase>((ref) {
+      final repository = ref.watch(appointmentRepositoryProvider);
+      return GetAppointmentsUseCase(repository);
+    });
+
+final getAppointmentDetailUseCaseProvider =
+    Provider.autoDispose<GetAppointmentDetailUseCase>((ref) {
+      final repository = ref.watch(appointmentRepositoryProvider);
+      return GetAppointmentDetailUseCase(repository);
     });

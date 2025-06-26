@@ -18,7 +18,9 @@ class ApiConstants {
   static const String clientItemWarehouses = '/client/item-warehouses';
   static const String claimRequest = '$clientItemWarehouses/claim-request';
   static const String oldStock = '$clientItemWarehouses/old-stock';
-  static const String myPosts= '$posts/my-post';
+  static const String myPosts = '$posts/my-post';
+  static const String clientAppointments = '/client/appointments';
+  static const String appointments = '/appointments';
 
   // Headers
   static const String contentType = 'Content-Type';

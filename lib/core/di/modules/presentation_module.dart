@@ -1,5 +1,8 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
+import 'package:trao_doi_do_app/presentation/features/appointments/providers/appointment_detail_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/appointments/providers/appointment_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/appointments/providers/appointments_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/interest_detail_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/transaction_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/transactions_provider.dart';
@@ -261,3 +264,34 @@ final searchSuggestionsProvider =
     StateNotifierProvider<SearchSuggestionsNotifier, SearchSuggestionsState>(
       (ref) => SearchSuggestionsNotifier(ref.read(getPostsUseCaseProvider)),
     );
+
+final appointmentsListProvider = StateNotifierProvider.autoDispose<
+  AppointmentsListNotifier,
+  AppointmentsListState
+>((ref) {
+  final getAppointmentsUseCase = ref.watch(getAppointmentsUseCaseProvider);
+  return AppointmentsListNotifier(getAppointmentsUseCase);
+});
+
+final appointmentDetailProvider = StateNotifierProvider.autoDispose
+    .family<AppointmentDetailNotifier, AppointmentDetailState, int>((
+      ref,
+      appointmentID,
+    ) {
+      final getAppointmentDetailUseCase = ref.watch(
+        getAppointmentDetailUseCaseProvider,
+      );
+      final notifier = AppointmentDetailNotifier(getAppointmentDetailUseCase);
+
+      // Auto load khi provider được tạo
+      Future.microtask(() => notifier.loadAppointmentDetail(appointmentID));
+
+      return notifier;
+    });
+
+final appointmentUpdatingProvider = Provider.family<bool, int>((
+  ref,
+  appointmentID,
+) {
+  return ref.watch(appointmentProvider).isAppointmentUpdating(appointmentID);
+});

@@ -1,6 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/data/datasources/local/category_local_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/local/onboarding_local_datasource.dart';
+import 'package:trao_doi_do_app/data/datasources/remote/appointment_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/category_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/item_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/item_warehouse_remote_datasource.dart';
@@ -81,4 +82,10 @@ final itemWarehouseRemoteDataSourceProvider =
     Provider.autoDispose<ItemWarehouseRemoteDataSource>((ref) {
       final dioClient = ref.watch(dioClientProvider);
       return ItemWarehouseRemoteDataSourceImpl(dioClient);
+    });
+
+final appointmentRemoteDataSourceProvider =
+    Provider.autoDispose<AppointmentRemoteDataSource>((ref) {
+      final dioClient = ref.watch(dioClientProvider);
+      return AppointmentRemoteDataSourceImpl(dioClient);
     });

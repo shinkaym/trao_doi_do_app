@@ -95,7 +95,19 @@ enum SortOrder {
   newest('Mới nhất', Icons.arrow_downward, 'createdAt', 'DESC'),
   oldest('Cũ nhất', Icons.arrow_upward, 'createdAt', 'ASC'),
   quantityAsc('Số lượng tăng dần', Icons.arrow_upward, 'quantity', 'ASC'),
-  quantityDesc('Số lượng giảm dần', Icons.arrow_downward, 'quantity', 'DESC');
+  quantityDesc('Số lượng giảm dần', Icons.arrow_downward, 'quantity', 'DESC'),
+  startTimeAsc(
+    'Thời gian lịch hẹn tăng dần',
+    Icons.arrow_upward,
+    'startTime',
+    'ASC',
+  ),
+  startTimeDesc(
+    'Thời gian lịch hẹn giảm dần',
+    Icons.arrow_downward,
+    'startTime',
+    'DESC',
+  );
 
   const SortOrder(this.label, this.icon, this.sort, this.order);
   final String label;
@@ -200,4 +212,26 @@ enum FeatureType {
 
   /// Lấy tất cả features
   static List<FeatureType> get allFeatures => FeatureType.values;
+}
+
+enum AppointmentStatus {
+  scheduled('Đã hẹn', Icons.schedule, Colors.blue, 1),
+  rejected('Đã từ chối', Icons.cancel, Colors.red, 2);
+
+  const AppointmentStatus(this.label, this.icon, this.color, this.value);
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final int value;
+
+  static AppointmentStatus fromValue(int value) {
+    return AppointmentStatus.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => AppointmentStatus.scheduled,
+    );
+  }
+
+  /// Lấy tất cả appointment statuses
+  static List<AppointmentStatus> get allStatuses => AppointmentStatus.values;
 }

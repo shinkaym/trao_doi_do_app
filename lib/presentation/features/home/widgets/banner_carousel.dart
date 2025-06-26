@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
-import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 
 class BannerCarousel extends StatelessWidget {
   final List<Map<String, dynamic>> bannerSlides;
@@ -21,16 +20,14 @@ class BannerCarousel extends StatelessWidget {
         itemBuilder: (context, index, realIndex) {
           final slide = bannerSlides[index];
           return GestureDetector(
-            onTap: () {
-              context.showInfoSnackBar(
-                'Chuyển tới bài đăng: ${slide['title']}',
-              );
-            },
+            onTap: () {},
             child: Container(
               width: MediaQuery.of(context).size.width,
               // Loại bỏ margin horizontal để full width
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(0), // Có thể để 0 hoặc giá trị nhỏ
+                borderRadius: BorderRadius.circular(
+                  0,
+                ), // Có thể để 0 hoặc giá trị nhỏ
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
@@ -40,7 +37,9 @@ class BannerCarousel extends StatelessWidget {
                 ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(0), // Có thể để 0 hoặc giá trị nhỏ
+                borderRadius: BorderRadius.circular(
+                  0,
+                ), // Có thể để 0 hoặc giá trị nhỏ
                 child: Stack(
                   fit: StackFit.expand,
                   children: [

@@ -105,6 +105,12 @@ class AppBarConfig {
       showNotification: true,
       showBackButton: true,
     ),
+    '/profile/appointments': AppBarConfig(
+      type: AppBarType.standard,
+      title: 'Cuộc hẹn',
+      showNotification: true,
+      showBackButton: true,
+    ),
     '/notifications': AppBarConfig(
       type: AppBarType.minimal,
       title: 'Thông báo',

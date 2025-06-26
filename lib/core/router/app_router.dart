@@ -24,6 +24,8 @@ import 'package:trao_doi_do_app/presentation/features/profile/screens/change_pas
 import 'package:trao_doi_do_app/presentation/features/profile/screens/edit_profile_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/screens/profile_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/ranking/screens/ranking_screen.dart';
+import 'package:trao_doi_do_app/presentation/features/appointments/screens/appointments_screen.dart';
+// import 'package:trao_doi_do_app/presentation/features/appointments/screens/appointment_detail_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/splash/screens/splash_screen.dart';
 import 'package:trao_doi_do_app/presentation/widgets/scaffold_with_navbar.dart';
 
@@ -193,7 +195,7 @@ ShellRoute _buildShellRoute() {
       _buildPostsRoute(),
       _buildWarehouseRoute(),
       _buildInterestsRoute(),
-      _buildProfileRoute(), // Profile sẽ chứa ranking
+      _buildProfileRoute(), // Profile sẽ chứa ranking và appointments
       _buildNotificationRoute(),
     ],
   );
@@ -302,6 +304,12 @@ GoRoute _buildProfileRoute() {
         path: RouteConstants.ranking,
         name: RouteNames.ranking,
         builder: (context, state) => const RankingScreen(),
+      ),
+      // Appointments là con của Profile
+      GoRoute(
+        path: RouteConstants.appointments,
+        name: RouteNames.appointments,
+        builder: (context, state) => const AppointmentsScreen(),
       ),
     ],
   );
