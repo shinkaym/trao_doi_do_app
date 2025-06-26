@@ -15,15 +15,14 @@ class SplashScreen extends HookConsumerWidget {
     final colorScheme = context.colorScheme;
     final isDark = context.isDarkMode;
 
-    // Animation controllers using hooks
     final logoController = useAnimationController(
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1200),
     );
     final textController = useAnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600),
     );
     final progressController = useAnimationController(
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 3500),
     );
 
     // Animations using useMemoized for performance
@@ -60,7 +59,10 @@ class SplashScreen extends HookConsumerWidget {
 
     final progressAnimation = useMemoized(
       () => Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: progressController, curve: Curves.easeInOut),
+        CurvedAnimation(
+          parent: progressController,
+          curve: Curves.easeInOutCubic,
+        ), // Đổi curve cho mượt hơn
       ),
       [progressController],
     );
@@ -68,7 +70,7 @@ class SplashScreen extends HookConsumerWidget {
     // State for preventing multiple initializations
     final isInitialized = useRef(false);
 
-    // Splash sequence function
+    // Enhanced splash sequence function với progress tracking
     final startSplashSequence = useCallback(() async {
       if (isInitialized.value) return;
       isInitialized.value = true;
@@ -77,17 +79,19 @@ class SplashScreen extends HookConsumerWidget {
         // Start splash state
         ref.read(splashProvider.notifier).startSplash();
 
-        // Run animation sequence
-        await Future.delayed(const Duration(milliseconds: 300));
+        // Stage 1: Logo animation (0-300ms)
         logoController.forward();
+        await Future.delayed(const Duration(milliseconds: 300));
 
-        await Future.delayed(const Duration(milliseconds: 800));
+        // Stage 2: Text animation (300-900ms)
         textController.forward();
 
-        await Future.delayed(const Duration(milliseconds: 200));
+        // Stage 3: Start progress immediately với logo/text (0-3500ms total)
         progressController.forward();
+        await Future.delayed(const Duration(milliseconds: 600));
 
-        await Future.delayed(const Duration(milliseconds: 2500));
+        // Stage 4: Wait for progress to complete (total ~4000ms)
+        await Future.delayed(const Duration(milliseconds: 3100));
 
         // Complete splash
         ref.read(splashProvider.notifier).completeSplash();
@@ -156,7 +160,7 @@ class SplashScreen extends HookConsumerWidget {
                   colorScheme: colorScheme,
                   progressAnimation: progressAnimation,
                 ),
-                _BottomBranding(isTablet: isTablet, theme: theme),
+                // _BottomBranding(isTablet: isTablet, theme: theme),
               ],
             ),
           ),
@@ -269,7 +273,7 @@ class _TextSection extends HookWidget {
             ),
             SizedBox(height: isTablet ? 12 : 8),
             Text(
-              'Share & Save',
+              '"Kết nối - Tìm lại - Trao đi"',
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: theme.hintColor,
                 fontSize: isTablet ? 18 : 16,
@@ -309,33 +313,84 @@ class _LoadingSection extends HookWidget {
       ),
       child: Column(
         children: [
+          // Enhanced progress bar với animation mượt mà hơn
           Container(
             width: double.infinity,
-            height: 4,
+            height: 6, // Tăng từ 4 lên 6 để dễ nhìn hơn
             decoration: BoxDecoration(
               color: colorScheme.surfaceVariant,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(3),
             ),
-            child: FractionallySizedBox(
-              alignment: Alignment.centerLeft,
-              widthFactor: progressAnimation.value,
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [colorScheme.primary, colorScheme.primaryContainer],
+            child: Stack(
+              children: [
+                // Progress bar chính
+                FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: progressAnimation.value,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          colorScheme.primary,
+                          colorScheme.primaryContainer,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colorScheme.primary.withOpacity(0.3),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(2),
                 ),
-              ),
+                // Shimmer effect (tùy chọn)
+                if (progressAnimation.value > 0)
+                  Positioned.fill(
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: progressAnimation.value,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(3),
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.white.withOpacity(0.0),
+                              Colors.white.withOpacity(0.1),
+                              Colors.white.withOpacity(0.0),
+                            ],
+                            stops: const [0.0, 0.5, 1.0],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
           SizedBox(height: isTablet ? 20 : 16),
-          Text(
-            'Đang khởi tạo...',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.hintColor,
-              fontSize: isTablet ? 16 : 14,
-            ),
+          // Progress percentage text
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Đang khởi tạo...',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.hintColor,
+                  fontSize: isTablet ? 16 : 14,
+                ),
+              ),
+              Text(
+                '${(progressAnimation.value * 100).toInt()}%',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.primary,
+                  fontSize: isTablet ? 16 : 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -343,35 +398,35 @@ class _LoadingSection extends HookWidget {
   }
 }
 
-class _BottomBranding extends StatelessWidget {
-  final bool isTablet;
-  final ThemeData theme;
+// class _BottomBranding extends StatelessWidget {
+//   final bool isTablet;
+//   final ThemeData theme;
 
-  const _BottomBranding({required this.isTablet, required this.theme});
+//   const _BottomBranding({required this.isTablet, required this.theme});
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: isTablet ? 40 : 24),
-      child: Column(
-        children: [
-          Text(
-            'Version 1.0.0',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.hintColor.withOpacity(0.6),
-              fontSize: isTablet ? 14 : 12,
-            ),
-          ),
-          SizedBox(height: isTablet ? 8 : 4),
-          Text(
-            '© 2025 ShareAndSave App',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.hintColor.withOpacity(0.4),
-              fontSize: isTablet ? 12 : 10,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Padding(
+//       padding: EdgeInsets.only(bottom: isTablet ? 40 : 24),
+//       child: Column(
+//         children: [
+//           Text(
+//             'Version 1.0.0',
+//             style: theme.textTheme.bodySmall?.copyWith(
+//               color: theme.hintColor.withOpacity(0.6),
+//               fontSize: isTablet ? 14 : 12,
+//             ),
+//           ),
+//           SizedBox(height: isTablet ? 8 : 4),
+//           Text(
+//             '© 2025 ShareAndSave App',
+//             style: theme.textTheme.bodySmall?.copyWith(
+//               color: theme.hintColor.withOpacity(0.4),
+//               fontSize: isTablet ? 12 : 10,
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }

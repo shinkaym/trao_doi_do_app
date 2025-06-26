@@ -132,7 +132,8 @@ class OnboardingScreen extends HookConsumerWidget {
         body: SafeArea(
           child: Column(
             children: [
-              _buildHeader(context, isTablet, isLastPage, skipOnboarding),
+              // Header with skip button only
+              _buildSkipButton(context, isTablet, isLastPage, skipOnboarding),
               Expanded(
                 child: PageView.builder(
                   controller: pageController,
@@ -164,7 +165,7 @@ class OnboardingScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildHeader(
+  Widget _buildSkipButton(
     BuildContext context,
     bool isTablet,
     bool isLastPage,
@@ -172,70 +173,23 @@ class OnboardingScreen extends HookConsumerWidget {
   ) {
     final theme = context.theme;
 
+    if (isLastPage) return const SizedBox.shrink();
+
     return Padding(
       padding: EdgeInsets.all(isTablet ? 24 : 16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: isTablet ? 50 : 40,
-                height: isTablet ? 50 : 40,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: theme.colorScheme.primary.withOpacity(0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.asset(
-                    'assets/images/logo.png',
-                    fit: BoxFit.cover,
-                    errorBuilder:
-                        (_, __, ___) => Container(
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.apps,
-                            color: Colors.white,
-                            size: isTablet ? 28 : 24,
-                          ),
-                        ),
-                  ),
-                ),
-              ),
-              SizedBox(width: isTablet ? 16 : 12),
-              Text(
-                'ShareAndSave',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                  fontSize: isTablet ? 24 : 20,
-                ),
-              ),
-            ],
-          ),
-          if (!isLastPage)
-            TextButton(
-              onPressed: onSkip,
-              child: Text(
-                'Bỏ qua',
-                style: TextStyle(
-                  color: theme.hintColor,
-                  fontSize: isTablet ? 16 : 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: TextButton(
+          onPressed: onSkip,
+          child: Text(
+            'Bỏ qua',
+            style: TextStyle(
+              color: theme.hintColor,
+              fontSize: isTablet ? 16 : 14,
+              fontWeight: FontWeight.w500,
             ),
-        ],
+          ),
+        ),
       ),
     );
   }
