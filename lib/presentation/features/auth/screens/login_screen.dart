@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
@@ -51,7 +52,7 @@ class LoginScreen extends HookConsumerWidget {
           !current.isLoading) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (context.mounted) {
-            context.goNamed('posts');
+            context.goNamed(RouteNames.home);
           }
         });
       }
@@ -91,7 +92,6 @@ class LoginScreen extends HookConsumerWidget {
         statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
       ),
       child: SmartScaffold(
-        showBackButton: true,
         appBarType: AppBarType.minimal,
         body: SafeArea(
           top: false,

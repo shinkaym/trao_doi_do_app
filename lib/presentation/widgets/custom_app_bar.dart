@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/widgets/search_suggestions_overlay.dart';
@@ -362,7 +363,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
                 if (context.canPop) {
                   context.pop();
                 } else {
-                  context.goNamed('posts');
+                  context.goNamed(RouteNames.home);
                 }
               },
         ),
@@ -474,24 +475,62 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
       );
     }
 
-    // Hiển thị title khi không ở chế độ tìm kiếm
-    return Row(
-      children: [
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            '0306221241\nPhạm Huỳnh Đăng Khoa',
-            style: TextStyle(
-              color: appBarFgColor,
-              fontSize: isTablet ? 16 : 14,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.2,
+    // Hiển thị title động dựa trên trạng thái đăng nhập
+    return Consumer(
+      builder: (context, ref, child) {
+        final authState = ref.watch(authProvider);
+
+        // Kiểm tra nếu đã đăng nhập và có user data
+        if (authState.isLoggedIn && authState.user != null) {
+          final user = authState.user!;
+
+          // Lấy số từ email (split by @)
+          String emailPrefix = '';
+          emailPrefix = user.email.split('@').first;
+
+          // Lấy fullName
+          String displayName = user.fullName;
+
+          return Row(
+            children: [
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '$emailPrefix\n$displayName',
+                  style: TextStyle(
+                    color: appBarFgColor,
+                    fontSize: isTablet ? 16 : 14,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: -0.2,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          );
+        }
+
+        // Nếu chưa đăng nhập hoặc đang loading, hiển thị title mặc định
+        return Row(
+          children: [
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                widget.title,
+                style: TextStyle(
+                  color: appBarFgColor,
+                  fontSize: isTablet ? 16 : 14,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.2,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 

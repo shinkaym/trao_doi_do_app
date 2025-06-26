@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 
@@ -54,14 +55,6 @@ final mockOnboardingPages = [
     icon: Icons.people,
     color: Colors.purple,
   ),
-  OnboardingData(
-    title: 'Sẵn sàng chưa?',
-    subtitle: 'Bắt đầu sử dụng',
-    description:
-        'Tạo tài khoản và bắt đầu hành trình chia sẻ hoặc tìm lại món đồ yêu thích của bạn.',
-    icon: Icons.rocket_launch,
-    color: Colors.teal,
-  ),
 ];
 
 class OnboardingScreen extends HookConsumerWidget {
@@ -95,12 +88,18 @@ class OnboardingScreen extends HookConsumerWidget {
       }
     }
 
-    // Hàm để bỏ qua onboarding
+    // Hàm để bỏ qua onboarding - chuyển đến trang auth thay vì home
     Future<void> skipOnboarding() async {
       final completeOnboarding = ref.read(completeOnboardingProvider);
       await completeOnboarding();
       if (context.mounted) {
-        context.goNamed('posts');
+        // Check if user is logged in to decide where to go
+        final authState = ref.read(authProvider);
+        if (authState.isLoggedIn) {
+          context.goNamed(RouteNames.home);
+        } else {
+          context.goNamed(RouteNames.login);
+        }
       }
     }
 
@@ -110,9 +109,6 @@ class OnboardingScreen extends HookConsumerWidget {
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
-      } else {
-        // Đây là trang cuối, không cần làm gì thêm
-        // Người dùng sẽ chọn Đăng ký hoặc Đăng nhập
       }
     }
 
@@ -386,7 +382,9 @@ class OnboardingScreen extends HookConsumerWidget {
                             Expanded(
                               child: OutlinedButton(
                                 onPressed:
-                                    () => onCompleteAndNavigate('register'),
+                                    () => onCompleteAndNavigate(
+                                      RouteNames.register,
+                                    ),
                                 style: OutlinedButton.styleFrom(
                                   side: BorderSide(
                                     color: pages[currentPage].color,
@@ -411,7 +409,9 @@ class OnboardingScreen extends HookConsumerWidget {
                             SizedBox(width: isTablet ? 12 : 8),
                             Expanded(
                               child: ElevatedButton(
-                                onPressed: () => onCompleteAndNavigate('login'),
+                                onPressed:
+                                    () =>
+                                        onCompleteAndNavigate(RouteNames.login),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: pages[currentPage].color,
                                   shape: RoundedRectangleBorder(
@@ -429,6 +429,7 @@ class OnboardingScreen extends HookConsumerWidget {
                                   style: TextStyle(
                                     fontSize: isTablet ? 14 : 12,
                                     fontWeight: FontWeight.w600,
+                                    color: Colors.white,
                                   ),
                                 ),
                               ),
@@ -458,12 +459,14 @@ class OnboardingScreen extends HookConsumerWidget {
                                 style: TextStyle(
                                   fontSize: isTablet ? 16 : 14,
                                   fontWeight: FontWeight.w600,
+                                  color: Colors.white,
                                 ),
                               ),
                               SizedBox(width: isTablet ? 12 : 8),
                               Icon(
                                 Icons.arrow_forward,
                                 size: isTablet ? 20 : 18,
+                                color: Colors.white,
                               ),
                             ],
                           ),

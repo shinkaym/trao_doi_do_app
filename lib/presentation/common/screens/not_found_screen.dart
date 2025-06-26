@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 
 class NotFoundScreen extends StatelessWidget {
@@ -8,7 +9,7 @@ class NotFoundScreen extends StatelessWidget {
   const NotFoundScreen({super.key, this.path});
 
   void _handleGoHome(BuildContext context) {
-    context.goNamed('posts');
+    context.goNamed(RouteNames.home);
   }
 
   void _handleGoBack(BuildContext context) {
