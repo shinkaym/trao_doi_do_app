@@ -277,7 +277,6 @@ class ProfileScreen extends HookConsumerWidget {
           colorScheme: colorScheme,
           icon: Icons.edit_outlined,
           title: 'Chỉnh sửa thông tin',
-          subtitle: 'Cập nhật thông tin cá nhân',
           onTap: () => context.pushNamed('edit-profile'),
         ),
         SizedBox(height: isTablet ? 16 : 12),
@@ -288,8 +287,17 @@ class ProfileScreen extends HookConsumerWidget {
           colorScheme: colorScheme,
           icon: Icons.lock_outline,
           title: 'Đổi mật khẩu',
-          subtitle: 'Thay đổi mật khẩu đăng nhập',
           onTap: () => context.pushNamed('change-password'),
+        ),
+        SizedBox(height: isTablet ? 16 : 12),
+
+        _buildMenuItem(
+          isTablet: isTablet,
+          theme: theme,
+          colorScheme: colorScheme,
+          icon: Icons.leaderboard_outlined,
+          title: 'Bảng xếp hạng',
+          onTap: () => context.pushNamed('ranking'),
         ),
         SizedBox(height: isTablet ? 16 : 12),
 
@@ -299,8 +307,17 @@ class ProfileScreen extends HookConsumerWidget {
           colorScheme: colorScheme,
           icon: Icons.history,
           title: 'Lịch sử bài đăng',
-          subtitle: 'Xem các bài đăng trước đây',
           onTap: () => context.pushNamed('my-posts'),
+        ),
+        SizedBox(height: isTablet ? 16 : 12),
+
+        _buildMenuItem(
+          isTablet: isTablet,
+          theme: theme,
+          colorScheme: colorScheme,
+          icon: Icons.calendar_today_outlined,
+          title: 'Danh sách cuộc hẹn',
+          onTap: () => context.pushNamed('appointments'),
         ),
         SizedBox(height: isTablet ? 16 : 12),
 
@@ -361,7 +378,6 @@ class ProfileScreen extends HookConsumerWidget {
     required ColorScheme colorScheme,
     required IconData icon,
     required String title,
-    required String subtitle,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -393,26 +409,13 @@ class ProfileScreen extends HookConsumerWidget {
             ),
             SizedBox(width: isTablet ? 16 : 12),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: isTablet ? 16 : 14,
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: isTablet ? 14 : 12,
-                      color: theme.hintColor,
-                    ),
-                  ),
-                ],
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: isTablet ? 16 : 14,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
               ),
             ),
             Icon(
