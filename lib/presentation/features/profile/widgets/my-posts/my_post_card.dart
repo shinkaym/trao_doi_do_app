@@ -15,6 +15,7 @@ class MyPostCard extends StatelessWidget {
   final String Function(Post) getLocationFromPost;
   final void Function(Post)? onToggleStatus;
   final void Function(Post)? onRepost;
+  final void Function(Post)? onDelete; // Callback xóa
 
   const MyPostCard({
     super.key,
@@ -28,6 +29,7 @@ class MyPostCard extends StatelessWidget {
     required this.getLocationFromPost,
     this.onToggleStatus,
     this.onRepost,
+    this.onDelete,
   });
 
   @override
@@ -57,7 +59,7 @@ class MyPostCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildHeaderRow(postType, postStatus),
+              _buildHeaderRow(context, postType, postStatus),
               SizedBox(height: isTablet ? 16 : 12),
               _buildTitleAndDescription(),
               if (hasImages(post)) _buildImagesSection(),
@@ -73,7 +75,11 @@ class MyPostCard extends StatelessWidget {
     );
   }
 
-  Widget _buildHeaderRow(PostType postType, PostStatus postStatus) {
+  Widget _buildHeaderRow(
+    BuildContext context,
+    PostType postType,
+    PostStatus postStatus,
+  ) {
     return Row(
       children: [
         // Post Type
@@ -143,7 +149,7 @@ class MyPostCard extends StatelessWidget {
         ),
         // Spacer để đẩy thời gian sang bên phải
         const Spacer(),
-        // Thời gian ở góc phải
+        // Thời gian
         if (post.createdAt != null)
           Text(
             TimeUtils.formatTimeAgo(post.createdAt!),
@@ -337,7 +343,7 @@ class MyPostCard extends StatelessWidget {
       buttons.add(
         Expanded(
           child: _buildActionButton(
-            label: 'Khóa quan tâm',
+            label: 'Khóa',
             icon: Icons.lock,
             backgroundColor: Colors.orange,
             onPressed: () => onToggleStatus?.call(post),
@@ -349,7 +355,7 @@ class MyPostCard extends StatelessWidget {
       buttons.add(
         Expanded(
           child: _buildActionButton(
-            label: 'Mở khóa quan tâm',
+            label: 'Mở khóa',
             icon: Icons.lock_open,
             backgroundColor: Colors.green,
             onPressed: () => onToggleStatus?.call(post),
@@ -361,15 +367,32 @@ class MyPostCard extends StatelessWidget {
     // Nút Đăng lại
     if (postStatus == PostStatus.approved || postStatus == PostStatus.locked) {
       if (buttons.isNotEmpty) {
-        buttons.add(SizedBox(width: isTablet ? 16 : 12));
+        buttons.add(SizedBox(width: isTablet ? 12 : 8));
       }
       buttons.add(
         Expanded(
           child: _buildActionButton(
-            label: 'Đăng lại',
+            label: 'Ghim',
             icon: Icons.refresh,
             backgroundColor: colorScheme.primary,
             onPressed: () => onRepost?.call(post),
+          ),
+        ),
+      );
+    }
+
+    // Nút Xóa - hiển thị khi có callback onDelete
+    if (onDelete != null) {
+      if (buttons.isNotEmpty) {
+        buttons.add(SizedBox(width: isTablet ? 12 : 8));
+      }
+      buttons.add(
+        Expanded(
+          child: _buildActionButton(
+            label: 'Xóa bài',
+            icon: Icons.delete_outline,
+            backgroundColor: Colors.red.shade600,
+            onPressed: () => onDelete?.call(post),
           ),
         ),
       );

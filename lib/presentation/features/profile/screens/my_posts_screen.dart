@@ -23,7 +23,7 @@ class MyPostsScreen extends HookConsumerWidget {
 
     final confirmed = await context.showConfirmDialog(
       title: 'Xác nhận',
-      content: 'Bạn có chắc chắn muốn $actionText bài đăng này?',
+      content: 'Bạn có chắc chắn muốn $actionText quan tâm của bài đăng này?',
       confirmText: 'Xác nhận',
       cancelText: 'Hủy',
     );
@@ -38,7 +38,7 @@ class MyPostsScreen extends HookConsumerWidget {
 
         ref.read(myPostsListProvider.notifier).refresh();
 
-        context.showSuccessSnackBar('Đã $actionText bài đăng thành công!');
+        context.showSuccessSnackBar('Đã $actionText quan tâm của bài đăng thành công!');
       } catch (e) {
         context.dismissDialog();
 
@@ -63,7 +63,7 @@ class MyPostsScreen extends HookConsumerWidget {
       context.showInfoDialog(
         title: 'Thông báo',
         content:
-            'Chỉ có thể đăng lại sau 1 tuần từ lần đăng cuối! Còn lại $remainingDays ngày.',
+            'Chỉ có thể ghim sau 1 tuần từ lần đăng cuối! Còn lại $remainingDays ngày.',
         icon: Icons.info_outline,
       );
       return;
@@ -71,15 +71,15 @@ class MyPostsScreen extends HookConsumerWidget {
 
     // Sử dụng dialog extension
     final confirmed = await context.showConfirmDialog(
-      title: 'Xác nhận đăng lại',
-      content: 'Bạn có chắc chắn muốn đăng lại bài đăng này?',
-      confirmText: 'Đăng lại',
+      title: 'Xác nhận ghim',
+      content: 'Bạn có chắc chắn muốn ghim bài đăng này?',
+      confirmText: 'Ghim',
       cancelText: 'Hủy',
     );
 
     if (confirmed == true) {
       try {
-        context.showLoadingDialog(message: 'Đang đăng lại...');
+        context.showLoadingDialog(message: 'Đang ghim...');
 
         await postNotifier.repostPost(post.id!, post.createdAt!);
 
@@ -87,11 +87,42 @@ class MyPostsScreen extends HookConsumerWidget {
 
         ref.read(myPostsListProvider.notifier).refresh();
 
-        context.showSuccessSnackBar('Đã đăng lại bài đăng thành công!');
+        context.showSuccessSnackBar('Đã ghim bài đăng thành công!');
       } catch (e) {
         context.dismissDialog();
 
-        context.showErrorSnackBar('Có lỗi xảy ra khi đăng lại bài đăng!');
+        context.showErrorSnackBar('Có lỗi xảy ra khi ghim bài đăng!');
+      }
+    }
+  }
+
+  // Thêm function xóa bài đăng
+  void _onDeletePost(BuildContext context, WidgetRef ref, Post post) async {
+    final postNotifier = ref.read(postProvider.notifier);
+
+    final confirmed = await context.showConfirmDialog(
+      title: 'Xác nhận xóa',
+      content: 'Bạn có chắc chắn muốn xóa bài đăng này? Hành động này không thể hoàn tác.',
+      confirmText: 'Xóa',
+      cancelText: 'Hủy',
+    );
+
+    if (confirmed == true) {
+      try {
+        context.showLoadingDialog(message: 'Đang xóa bài đăng...');
+
+        await postNotifier.deletePost(post.id!);
+
+        context.dismissDialog();
+
+        // Refresh danh sách sau khi xóa thành công
+        ref.read(myPostsListProvider.notifier).refresh();
+
+        context.showSuccessSnackBar('Đã xóa bài đăng thành công!');
+      } catch (e) {
+        context.dismissDialog();
+
+        context.showErrorSnackBar('Có lỗi xảy ra khi xóa bài đăng!');
       }
     }
   }
@@ -272,6 +303,7 @@ class MyPostsScreen extends HookConsumerWidget {
                     onToggleStatus:
                         (post) => _onToggleStatus(context, ref, post),
                     onRepost: (post) => _onRepost(context, ref, post),
+                    onDelete: (post) => _onDeletePost(context, ref, post),
                   ),
                 ),
               ],

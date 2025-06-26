@@ -24,6 +24,7 @@ class MyPostsListContent extends HookConsumerWidget {
   final ScrollController scrollController;
   final Function(Post)? onToggleStatus;
   final Function(Post)? onRepost;
+  final Function(Post)? onDelete;
 
   const MyPostsListContent({
     super.key,
@@ -41,6 +42,7 @@ class MyPostsListContent extends HookConsumerWidget {
     required this.scrollController,
     this.onToggleStatus,
     this.onRepost,
+    this.onDelete,
   });
 
   @override
@@ -122,6 +124,7 @@ class MyPostsListContent extends HookConsumerWidget {
                   getLocationFromPost: _getLocationFromPost,
                   onToggleStatus: onToggleStatus,
                   onRepost: onRepost,
+                  onDelete: onDelete,
                 );
               },
               separatorBuilder: (context, index) {

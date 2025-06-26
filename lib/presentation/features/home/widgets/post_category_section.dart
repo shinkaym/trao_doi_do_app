@@ -69,9 +69,15 @@ class PostCategorySection extends HookConsumerWidget {
 
           SizedBox(height: isTablet ? 16 : 12),
 
-          // Posts Slideshow
+          // Posts Slideshow - Thay thế loading bằng skeleton
           if (postsState.isLoading)
-            _LoadingSlideshow(isTablet: isTablet)
+            Padding(
+              padding: EdgeInsets.only(bottom: isTablet ? 16 : 12),
+              child: SkeletonPostsSlideshow(
+                isTablet: isTablet,
+                animated: true, // Sử dụng animation cho skeleton
+              ),
+            )
           else if (postsState.posts.isNotEmpty)
             Padding(
               padding: EdgeInsets.only(bottom: isTablet ? 16 : 12),
@@ -122,7 +128,6 @@ class _CategoryHeader extends StatelessWidget {
             padding: EdgeInsets.all(isTablet ? 12 : 10),
             decoration: BoxDecoration(
               color: postType.color.withOpacity(0.15),
-              // shape: BoxShape.circle, // Changed from BorderRadius.circular(8) to circle
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -139,13 +144,9 @@ class _CategoryHeader extends StatelessWidget {
             child: Text(
               postType.label,
               style: TextStyle(
-                fontSize:
-                    isTablet
-                        ? 18
-                        : 16, // Increased from 18:16 to match college links
+                fontSize: isTablet ? 18 : 16,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface,
-                // letterSpacing: 0.5,
               ),
             ),
           ),
@@ -268,40 +269,6 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-class _LoadingSlideshow extends StatelessWidget {
-  final bool isTablet;
-
-  const _LoadingSlideshow({required this.isTablet});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: isTablet ? 180 : 150,
-      child: CarouselSlider.builder(
-        itemCount: 4,
-        itemBuilder: (context, index, realIndex) {
-          return Container(
-            width: MediaQuery.of(context).size.width,
-            margin: EdgeInsets.zero, // Loại bỏ margin để full width
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Center(child: CircularProgressIndicator()),
-          );
-        },
-        options: CarouselOptions(
-          height: isTablet ? 180 : 150,
-          viewportFraction: 1.0, // Full width như banner
-          enableInfiniteScroll: false,
-          enlargeCenterPage: false,
-          autoPlay: false,
-        ),
-      ),
-    );
-  }
-}
-
 class _PostsSlideshow extends StatefulWidget {
   final List<Post> posts;
   final PostType postType;
@@ -356,8 +323,8 @@ class _PostsSlideshowState extends State<_PostsSlideshow> {
             autoPlayInterval: const Duration(seconds: 4),
             autoPlayAnimationDuration: const Duration(milliseconds: 800),
             autoPlayCurve: Curves.fastOutSlowIn,
-            enlargeCenterPage: false, // Tắt việc phóng to slide ở giữa
-            viewportFraction: 1.0, // Full width như banner
+            enlargeCenterPage: false,
+            viewportFraction: 1.0,
             enableInfiniteScroll: widget.posts.length > 1,
             pauseAutoPlayOnTouch: true,
             pauseAutoPlayOnManualNavigate: true,
@@ -401,6 +368,372 @@ class _PostsSlideshowState extends State<_PostsSlideshow> {
               ),
             );
           }).toList(),
+    );
+  }
+}
+
+mixin SkeletonAnimation on TickerProvider {
+  late AnimationController _shimmerController;
+  late Animation<double> _shimmerAnimation;
+
+  void initializeShimmerAnimation() {
+    _shimmerController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _shimmerAnimation = Tween<double>(
+      begin: -1.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _shimmerController,
+      curve: Curves.easeInOut,
+    ));
+    _shimmerController.repeat();
+  }
+
+  void disposeShimmerAnimation() {
+    _shimmerController.dispose();
+  }
+
+  Animation<double> get shimmerAnimation => _shimmerAnimation;
+}
+
+// Skeleton container widget
+class SkeletonContainer extends StatelessWidget {
+  final double? width;
+  final double? height;
+  final BorderRadius? borderRadius;
+  final Color? baseColor;
+  final Color? highlightColor;
+
+  const SkeletonContainer({
+    Key? key,
+    this.width,
+    this.height,
+    this.borderRadius,
+    this.baseColor,
+    this.highlightColor,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: baseColor ?? (isDark ? Colors.grey[800] : Colors.grey[300]),
+        borderRadius: borderRadius ?? BorderRadius.circular(4),
+      ),
+    );
+  }
+}
+
+// Animated skeleton container
+class AnimatedSkeletonContainer extends StatefulWidget {
+  final double? width;
+  final double? height;
+  final BorderRadius? borderRadius;
+  final Color? baseColor;
+  final Color? highlightColor;
+
+  const AnimatedSkeletonContainer({
+    Key? key,
+    this.width,
+    this.height,
+    this.borderRadius,
+    this.baseColor,
+    this.highlightColor,
+  }) : super(key: key);
+
+  @override
+  State<AnimatedSkeletonContainer> createState() => _AnimatedSkeletonContainerState();
+}
+
+class _AnimatedSkeletonContainerState extends State<AnimatedSkeletonContainer>
+    with TickerProviderStateMixin, SkeletonAnimation {
+  
+  @override
+  void initState() {
+    super.initState();
+    initializeShimmerAnimation();
+  }
+
+  @override
+  void dispose() {
+    disposeShimmerAnimation();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    final baseColor = widget.baseColor ?? (isDark ? Colors.grey[800]! : Colors.grey[300]!);
+    final highlightColor = widget.highlightColor ?? (isDark ? Colors.grey[700]! : Colors.grey[100]!);
+
+    return AnimatedBuilder(
+      animation: shimmerAnimation,
+      builder: (context, child) {
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            borderRadius: widget.borderRadius ?? BorderRadius.circular(4),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                baseColor,
+                highlightColor,
+                baseColor,
+              ],
+              stops: [
+                0.0,
+                0.5 + shimmerAnimation.value * 0.3,
+                1.0,
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// Skeleton Post Card
+class SkeletonPostCard extends StatelessWidget {
+  final bool isTablet;
+  final bool animated;
+
+  const SkeletonPostCard({
+    Key? key,
+    required this.isTablet,
+    this.animated = true,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.symmetric(vertical: 0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      child: Container(
+        height: isTablet ? 160 : 140,
+        child: Row(
+          children: [
+            // Left side - Image skeleton
+            _buildImageSkeleton(),
+            
+            // Right side - Information skeleton
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.all(isTablet ? 16 : 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Title and description skeleton
+                    _buildTitleAndDescriptionSkeleton(context),
+                    
+                    // Location and reward skeleton
+                    _buildLocationAndRewardSkeleton(),
+                    
+                    // Time skeleton
+                    _buildTimeSkeleton(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageSkeleton() {
+    return ClipRRect(
+      borderRadius: const BorderRadius.only(
+        topLeft: Radius.circular(8),
+        bottomLeft: Radius.circular(8),
+      ),
+      child: animated
+          ? AnimatedSkeletonContainer(
+              width: isTablet ? 140 : 120,
+              height: double.infinity,
+              borderRadius: BorderRadius.zero,
+            )
+          : SkeletonContainer(
+              width: isTablet ? 140 : 120,
+              height: double.infinity,
+              borderRadius: BorderRadius.zero,
+            ),
+    );
+  }
+
+  Widget _buildTitleAndDescriptionSkeleton(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Title skeleton
+        animated
+            ? AnimatedSkeletonContainer(
+                width: double.infinity,
+                height: isTablet ? 15 : 13,
+                borderRadius: BorderRadius.circular(4),
+              )
+            : SkeletonContainer(
+                width: double.infinity,
+                height: isTablet ? 15 : 13,
+                borderRadius: BorderRadius.circular(4),
+              ),
+        
+        SizedBox(height: isTablet ? 6 : 4),
+        
+        // Description skeleton (2 lines)
+        animated
+            ? AnimatedSkeletonContainer(
+                width: double.infinity,
+                height: isTablet ? 12 : 11,
+                borderRadius: BorderRadius.circular(4),
+              )
+            : SkeletonContainer(
+                width: double.infinity,
+                height: isTablet ? 12 : 11,
+                borderRadius: BorderRadius.circular(4),
+              ),
+        
+        SizedBox(height: isTablet ? 3 : 2),
+        
+        animated
+            ? AnimatedSkeletonContainer(
+                width: MediaQuery.of(context).size.width * 0.6,
+                height: isTablet ? 12 : 11,
+                borderRadius: BorderRadius.circular(4),
+              )
+            : SkeletonContainer(
+                width: 150,
+                height: isTablet ? 12 : 11,
+                borderRadius: BorderRadius.circular(4),
+              ),
+      ],
+    );
+  }
+
+  Widget _buildLocationAndRewardSkeleton() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Location chip skeleton
+        animated
+            ? AnimatedSkeletonContainer(
+                width: 100,
+                height: isTablet ? 20 : 18,
+                borderRadius: BorderRadius.circular(6),
+              )
+            : SkeletonContainer(
+                width: 100,
+                height: isTablet ? 20 : 18,
+                borderRadius: BorderRadius.circular(6),
+              ),
+        
+        SizedBox(height: isTablet ? 4 : 3),
+        
+        // Reward chip skeleton
+        animated
+            ? AnimatedSkeletonContainer(
+                width: 80,
+                height: isTablet ? 20 : 18,
+                borderRadius: BorderRadius.circular(6),
+              )
+            : SkeletonContainer(
+                width: 80,
+                height: isTablet ? 20 : 18,
+                borderRadius: BorderRadius.circular(6),
+              ),
+      ],
+    );
+  }
+
+  Widget _buildTimeSkeleton() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        animated
+            ? AnimatedSkeletonContainer(
+                width: 60,
+                height: isTablet ? 10 : 9,
+                borderRadius: BorderRadius.circular(4),
+              )
+            : SkeletonContainer(
+                width: 60,
+                height: isTablet ? 10 : 9,
+                borderRadius: BorderRadius.circular(4),
+              ),
+      ],
+    );
+  }
+}
+
+// Skeleton Slideshow
+class SkeletonPostsSlideshow extends StatelessWidget {
+  final bool isTablet;
+  final bool animated;
+
+  const SkeletonPostsSlideshow({
+    Key? key,
+    required this.isTablet,
+    this.animated = true,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Carousel skeleton
+        SizedBox(
+          height: isTablet ? 180 : 150,
+          child: CarouselSlider.builder(
+            itemCount: 3,
+            itemBuilder: (context, index, realIndex) {
+              return Container(
+                width: MediaQuery.of(context).size.width,
+                child: SkeletonPostCard(
+                  isTablet: isTablet,
+                  animated: animated,
+                ),
+              );
+            },
+            options: CarouselOptions(
+              height: isTablet ? 180 : 150,
+              viewportFraction: 1.0,
+              enableInfiniteScroll: false,
+              enlargeCenterPage: false,
+              autoPlay: false,
+            ),
+          ),
+        ),
+        
+        // Page indicators skeleton
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(3, (index) {
+            return Container(
+              width: 6,
+              height: 6,
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.grey[400],
+              ),
+            );
+          }),
+        ),
+      ],
     );
   }
 }

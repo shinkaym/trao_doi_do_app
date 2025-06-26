@@ -37,6 +37,7 @@ class PostBottomActionBar extends ConsumerStatefulWidget {
 class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
   bool _isToggling = false;
   bool _isReposting = false;
+  bool _isDeleting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +54,18 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
           setState(() {
             _isToggling = false;
             _isReposting = false;
+            _isDeleting = false;
           });
+        }
+
+        // Handle success message for delete action
+        if (current.successMessage != null && 
+            current.successMessage!.contains('Xóa bài đăng thành công')) {
+          if (mounted) {
+            context.showSuccessSnackBar(current.successMessage!);
+            // Navigate back after successful deletion
+            context.pop();
+          }
         }
       }
     });
@@ -119,29 +131,39 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
         ],
       ),
       child: SafeArea(
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Nút khóa/mở khóa danh sách quan tâm
-            Expanded(
-              child: _buildToggleStatusButton(
-                isTablet,
-                colorScheme,
-                postStatus!,
-              ),
+            // Hàng đầu tiên: Khóa/Mở khóa và Đăng lại
+            Row(
+              children: [
+                // Nút khóa/mở khóa danh sách quan tâm
+                Expanded(
+                  child: _buildToggleStatusButton(
+                    isTablet,
+                    colorScheme,
+                    postStatus!,
+                  ),
+                ),
+
+                // Nút ghim (hiển thị khi status = 3 hoặc 4)
+                if (postStatus == 3 || postStatus == 4) ...[
+                  SizedBox(width: isTablet ? 16 : 12),
+                  Expanded(
+                    child: _buildRepostButton(
+                      context,
+                      isTablet,
+                      colorScheme,
+                      canRepost,
+                    ),
+                  ),
+                ],
+              ],
             ),
 
-            // Nút đăng lại (hiển thị khi status = 3 hoặc 4)
-            if (postStatus == 3 || postStatus == 4) ...[
-              SizedBox(width: isTablet ? 16 : 12),
-              Expanded(
-                child: _buildRepostButton(
-                  context,
-                  isTablet,
-                  colorScheme,
-                  canRepost,
-                ),
-              ),
-            ],
+            // Hàng thứ hai: Nút xóa bài đăng
+            SizedBox(height: isTablet ? 12 : 8),
+            _buildDeleteButton(context, isTablet, colorScheme),
           ],
         ),
       ),
@@ -313,7 +335,7 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
           SizedBox(width: isTablet ? 8 : 6),
           Flexible(
             child: Text(
-              _isReposting ? 'Đang xử lý...' : 'Đăng lại',
+              _isReposting ? 'Đang xử lý...' : 'Ghim',
               style: TextStyle(
                 fontSize: isTablet ? 14 : 12,
                 fontWeight: FontWeight.w600,
@@ -323,6 +345,54 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDeleteButton(
+    BuildContext context,
+    bool isTablet,
+    ColorScheme colorScheme,
+  ) {
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: _isDeleting ? null : () => _handleDeletePost(context),
+        style: ElevatedButton.styleFrom(
+          padding: EdgeInsets.symmetric(vertical: isTablet ? 14 : 12),
+          backgroundColor: Colors.red,
+          disabledBackgroundColor: Colors.red.withOpacity(0.6),
+          elevation: 1,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (_isDeleting)
+              SizedBox(
+                width: isTablet ? 16 : 14,
+                height: isTablet ? 16 : 14,
+                child: const CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            else
+              Icon(
+                Icons.delete_outline,
+                size: isTablet ? 18 : 16,
+                color: Colors.white,
+              ),
+            SizedBox(width: isTablet ? 8 : 6),
+            Text(
+              _isDeleting ? 'Đang xóa...' : 'Xóa bài đăng',
+              style: TextStyle(
+                fontSize: isTablet ? 14 : 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -405,7 +475,7 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
         context.showInfoDialog(
           title: 'Thông báo',
           content:
-              'Chỉ có thể đăng lại sau 1 tuần từ lần đăng cuối! Còn lại $remainingDays ngày.',
+              'Chỉ có thể ghim sau 1 tuần từ lần đăng cuối! Còn lại $remainingDays ngày.',
           icon: Icons.info_outline,
         );
         return;
@@ -413,15 +483,15 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
 
       // Hiển thị dialog xác nhận
       final confirmed = await context.showConfirmDialog(
-        title: 'Xác nhận đăng lại',
-        content: 'Bạn có chắc chắn muốn đăng lại bài đăng này?',
-        confirmText: 'Đăng lại',
+        title: 'Xác nhận ghim',
+        content: 'Bạn có chắc chắn muốn ghim bài đăng này?',
+        confirmText: 'Ghim',
         cancelText: 'Hủy',
       );
 
       if (confirmed == true && mounted) {
         try {
-          context.showLoadingDialog(message: 'Đang đăng lại...');
+          context.showLoadingDialog(message: 'Đang ghim...');
 
           setState(() {
             _isReposting = true;
@@ -433,7 +503,7 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
 
           if (mounted) {
             context.dismissDialog();
-            context.showSuccessSnackBar('Đã đăng lại bài đăng thành công!');
+            context.showSuccessSnackBar('Đã ghim bài đăng thành công!');
 
             // Refresh post detail
             ref
@@ -443,12 +513,56 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
         } catch (e) {
           if (mounted) {
             context.dismissDialog();
-            context.showErrorSnackBar('Có lỗi xảy ra khi đăng lại bài đăng!');
+            context.showErrorSnackBar('Có lỗi xảy ra khi ghim bài đăng!');
           }
         } finally {
           if (mounted) {
             setState(() {
               _isReposting = false;
+            });
+          }
+        }
+      }
+    }
+  }
+
+  void _handleDeletePost(BuildContext context) async {
+    if (widget.post != null && !_isDeleting) {
+      final post = widget.post!;
+
+      // Hiển thị dialog xác nhận xóa với cảnh báo nghiêm trọng
+      final confirmed = await context.showConfirmDialog(
+        title: 'Xác nhận xóa bài đăng',
+        content: 'Bạn có chắc chắn muốn xóa bài đăng này?\n\n'
+            '⚠️ Hành động này không thể hoàn tác!\n'
+            '• Tất cả thông tin bài đăng sẽ bị xóa vĩnh viễn\n'
+            '• Danh sách quan tâm sẽ bị xóa\n'
+            '• Các cuộc trò chuyện liên quan sẽ bị ảnh hưởng',
+        confirmText: 'Xóa bài đăng',
+        cancelText: 'Hủy',
+        // isDestructive: true,
+      );
+
+      if (confirmed == true && mounted) {
+        try {
+          context.showLoadingDialog(message: 'Đang xóa bài đăng...');
+
+          setState(() {
+            _isDeleting = true;
+          });
+
+          await ref
+              .read(postProvider.notifier)
+              .deletePost(post.id!);
+
+          // Success handling is done in the listener above
+        } catch (e) {
+          if (mounted) {
+            context.dismissDialog();
+            context.showErrorSnackBar('Có lỗi xảy ra khi xóa bài đăng!');
+            
+            setState(() {
+              _isDeleting = false;
             });
           }
         }
