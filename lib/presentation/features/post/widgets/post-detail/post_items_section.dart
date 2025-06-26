@@ -5,10 +5,16 @@ import 'package:trao_doi_do_app/domain/entities/post.dart';
 
 class PostItemsSection extends StatelessWidget {
   final List<ItemDetail> items;
+  final bool showTransactionButton;
+  final VoidCallback? onTransactionTap;
+  final int? postType;
 
   const PostItemsSection({
     super.key,
     required this.items,
+    this.showTransactionButton = false,
+    this.onTransactionTap,
+    this.postType,
   });
 
   @override
@@ -22,13 +28,53 @@ class PostItemsSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Đồ vật',
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+          // Header with title and transaction button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Text(
+                'Đồ vật',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              
+              // Compact transaction button
+              if (showTransactionButton && onTransactionTap != null)
+                ElevatedButton.icon(
+                  onPressed: onTransactionTap,
+                  icon: Icon(
+                    Icons.swap_horiz,
+                    size: 16,
+                  ),
+                  label: Text(
+                    postType == 3 ? 'Yêu cầu gửi' : 'Tạo giao dịch',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12, 
+                      vertical: 8
+                    ),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ),
+            ],
           ),
+          
           SizedBox(height: isTablet ? 16 : 12),
+          
+          // Items list
           ...items.map(
             (item) => _buildItemCard(item, isTablet, theme, colorScheme),
           ),

@@ -15,7 +15,7 @@ class MyApp extends HookConsumerWidget {
 
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'Trao Đổi Đồ Cũ Và Đồ Thất Lạc',
+      title: 'ShareAndSave',
       locale: const Locale('vi'),
       supportedLocales: const [Locale('vi')],
       localizationsDelegates: const [

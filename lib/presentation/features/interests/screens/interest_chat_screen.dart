@@ -401,7 +401,6 @@ class InterestChatScreen extends HookConsumerWidget {
               isPostOwner: isPostOwner.value,
               items: interestDetail?.items ?? [],
               onTransactionUpdated: (updatedTransaction) {
-                // Transaction will be updated via provider
                 webSocketNotifier.sendTransaction(
                   interestID: int.parse(interestId),
                   receiverID: displayUserId.value!,
