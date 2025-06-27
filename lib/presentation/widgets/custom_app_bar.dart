@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/widgets/search_suggestions_overlay.dart';
 
-class CustomAppBar extends ConsumerStatefulWidget
-    implements PreferredSizeWidget {
+class CustomAppBar extends HookConsumerWidget implements PreferredSizeWidget {
   final String title;
   final bool showNotificationButton;
   final int notificationCount;
@@ -44,9 +44,6 @@ class CustomAppBar extends ConsumerStatefulWidget
   });
 
   @override
-  ConsumerState<CustomAppBar> createState() => _CustomAppBarState();
-
-  @override
   Size get preferredSize {
     final isTablet =
         WidgetsBinding
@@ -68,172 +65,157 @@ class CustomAppBar extends ConsumerStatefulWidget
 
     return Size.fromHeight(toolbarHeight + bottomHeight);
   }
-}
-
-class _CustomAppBarState extends ConsumerState<CustomAppBar>
-    with TickerProviderStateMixin {
-  bool _isSearchMode = false;
-  late AnimationController _searchAnimationController;
-  late Animation<double> _searchAnimation;
-  late TextEditingController _searchController;
-  FocusNode _searchFocusNode = FocusNode();
-  OverlayEntry? _overlayEntry;
 
   @override
-  void initState() {
-    super.initState();
-    _searchController = widget.searchController ?? TextEditingController();
-    _searchAnimationController = AnimationController(
+  Widget build(BuildContext context, WidgetRef ref) {
+    // State hooks
+    final isSearchMode = useState(false);
+    final overlayEntry = useState<OverlayEntry?>(null);
+
+    // Animation hooks
+    final animationController = useAnimationController(
       duration: const Duration(milliseconds: 300),
-      vsync: this,
     );
-    _searchAnimation = CurvedAnimation(
-      parent: _searchAnimationController,
-      curve: Curves.easeInOut,
+    final searchAnimation = useMemoized(
+      () =>
+          CurvedAnimation(parent: animationController, curve: Curves.easeInOut),
+      [animationController],
     );
 
-    // Listen to focus changes
-    _searchFocusNode.addListener(() {
-      if (_searchFocusNode.hasFocus && _searchController.text.isNotEmpty) {
-        _showOverlay();
-      } else {
-        _hideOverlay();
-      }
-    });
-  }
+    // Text controller and focus node hooks
+    final internalSearchController = useTextEditingController();
+    final searchControllerToUse = searchController ?? internalSearchController;
+    final searchFocusNode = useFocusNode();
 
-  @override
-  void dispose() {
-    _searchAnimationController.dispose();
-    if (widget.searchController == null) {
-      _searchController.dispose();
+    // Utility functions
+    void hideOverlay() {
+      overlayEntry.value?.remove();
+      overlayEntry.value = null;
     }
-    _searchFocusNode.dispose();
-    _hideOverlay();
-    super.dispose();
-  }
 
-  void _toggleSearch() {
-    setState(() {
-      _isSearchMode = !_isSearchMode;
-      if (_isSearchMode) {
-        _searchAnimationController.forward();
+    void showOverlay() {
+      hideOverlay();
+
+      final overlay = Overlay.of(context);
+      final renderBox = context.findRenderObject() as RenderBox?;
+      if (renderBox == null) return;
+
+      final size = renderBox.size;
+      final offset = renderBox.localToGlobal(Offset.zero);
+
+      overlayEntry.value = OverlayEntry(
+        builder:
+            (context) => Positioned(
+              top: offset.dy + size.height,
+              left: 0,
+              right: 0,
+              child: Material(
+                color: Colors.transparent,
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final searchState = ref.watch(searchSuggestionsProvider);
+
+                    if (searchState.query.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
+
+                    return SearchSuggestionsOverlay(
+                      suggestions: searchState.suggestions,
+                      isLoading: searchState.isLoading,
+                      searchQuery: searchState.query,
+                      onPostTap: (post) {
+                        hideOverlay();
+                        navigateToPostDetail(
+                          context,
+                          post,
+                          isSearchMode,
+                          animationController,
+                          ref,
+                        );
+                      },
+                      onViewAll: () {
+                        hideOverlay();
+                        navigateToPostsWithSearch(
+                          context,
+                          searchState.query,
+                          isSearchMode,
+                          animationController,
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ),
+      );
+
+      overlay.insert(overlayEntry.value!);
+    }
+
+    void toggleSearch() {
+      isSearchMode.value = !isSearchMode.value;
+      if (isSearchMode.value) {
+        animationController.forward();
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _searchFocusNode.requestFocus();
+          searchFocusNode.requestFocus();
         });
       } else {
-        _searchAnimationController.reverse();
-        _searchController.clear();
-        _searchFocusNode.unfocus();
-        _hideOverlay();
+        animationController.reverse();
+        searchControllerToUse.clear();
+        searchFocusNode.unfocus();
+        hideOverlay();
         // Clear search suggestions
         ref.read(searchSuggestionsProvider.notifier).clear();
       }
-    });
-  }
-
-  void _performSearch(String query) {
-    if (widget.onSearch != null) {
-      widget.onSearch!(query);
     }
 
-    // Trigger search suggestions
-    ref.read(searchSuggestionsProvider.notifier).searchWithDebounce(query);
+    void performSearch(String query) {
+      if (onSearch != null) {
+        onSearch!(query);
+      }
 
-    if (query.trim().isNotEmpty && _searchFocusNode.hasFocus) {
-      _showOverlay();
-    } else {
-      _hideOverlay();
+      // Trigger search suggestions
+      ref.read(searchSuggestionsProvider.notifier).searchWithDebounce(query);
+
+      if (query.trim().isNotEmpty && searchFocusNode.hasFocus) {
+        showOverlay();
+      } else {
+        hideOverlay();
+      }
     }
-  }
 
-  void _showOverlay() {
-    _hideOverlay();
+    // Focus listener effect
+    useEffect(() {
+      void onFocusChange() {
+        if (searchFocusNode.hasFocus && searchControllerToUse.text.isNotEmpty) {
+          showOverlay();
+        } else {
+          hideOverlay();
+        }
+      }
 
-    final overlay = Overlay.of(context);
-    final renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null) return;
+      searchFocusNode.addListener(onFocusChange);
+      return () => searchFocusNode.removeListener(onFocusChange);
+    }, [searchFocusNode, searchControllerToUse]);
 
-    final size = renderBox.size;
-    final offset = renderBox.localToGlobal(Offset.zero);
+    // Cleanup effect
+    useEffect(() {
+      return () {
+        hideOverlay();
+      };
+    }, []);
 
-    _overlayEntry = OverlayEntry(
-      builder:
-          (context) => Positioned(
-            top: offset.dy + size.height,
-            left: 0,
-            right: 0,
-            child: Material(
-              color: Colors.transparent,
-              child: Consumer(
-                builder: (context, ref, child) {
-                  final searchState = ref.watch(searchSuggestionsProvider);
-
-                  if (searchState.query.isEmpty) {
-                    return const SizedBox.shrink();
-                  }
-
-                  return SearchSuggestionsOverlay(
-                    suggestions: searchState.suggestions,
-                    isLoading: searchState.isLoading,
-                    searchQuery: searchState.query,
-                    onPostTap: (post) {
-                      _hideOverlay();
-                      _navigateToPostDetail(context, post);
-                    },
-                    onViewAll: () {
-                      _hideOverlay();
-                      _navigateToPostsWithSearch(context, searchState.query);
-                    },
-                  );
-                },
-              ),
-            ),
-          ),
-    );
-
-    overlay.insert(_overlayEntry!);
-  }
-
-  void _hideOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
-  }
-
-  void _navigateToPostDetail(BuildContext context, post) {
-    context.pushNamed(
-      'post-detail',
-      pathParameters: {'slug': post.slug.toString()},
-    );
-    _toggleSearch();
-  }
-
-  void _navigateToPostsWithSearch(BuildContext context, String searchQuery) {
-    if (searchQuery.trim().isEmpty) return;
-
-    context.pushNamed(
-      'posts',
-      extra: {'search': searchQuery.trim(), 'autoFocus': false},
-    );
-
-    _toggleSearch();
-  }
-
-  @override
-  Widget build(BuildContext context) {
     final isTablet = context.isTablet;
     final isDark = context.isDarkMode;
 
     // Facebook-inspired colors
     final appBarBgColor =
-        widget.backgroundColor ??
-        (isDark ? const Color(0xFF1B1B1B) : Colors.white);
+        backgroundColor ?? (isDark ? const Color(0xFF1B1B1B) : Colors.white);
     final appBarFgColor =
-        widget.foregroundColor ??
-        (isDark ? Colors.white : const Color(0xFF1C1E21));
+        foregroundColor ?? (isDark ? Colors.white : const Color(0xFF1C1E21));
     final toolbarHeight = isTablet ? 70.0 : 60.0;
 
-    // Tạo SystemUiOverlayStyle một lần duy nhất
+    // Create SystemUiOverlayStyle once
     final overlayStyle = SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
@@ -264,9 +246,9 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
           ),
         ),
         bottom:
-            widget.bottom != null
+            bottom != null
                 ? PreferredSize(
-                  preferredSize: widget.bottom!.preferredSize,
+                  preferredSize: bottom!.preferredSize,
                   child: Container(
                     decoration: BoxDecoration(
                       color: appBarBgColor,
@@ -280,244 +262,225 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
                         ),
                       ),
                     ),
-                    child: widget.bottom!,
+                    child: bottom!,
                   ),
                 )
                 : null,
-        leading: _buildLeading(
+        leading: buildLeading(
           context,
           isTablet,
           isDark,
           appBarBgColor,
           appBarFgColor,
+          isSearchMode.value,
+          toggleSearch,
         ),
-        title: _buildTitle(
+        title: buildTitle(
           context,
           isTablet,
           isDark,
           appBarBgColor,
           appBarFgColor,
+          isSearchMode.value,
+          searchAnimation,
+          searchControllerToUse,
+          searchFocusNode,
+          performSearch,
+          hideOverlay,
+          ref,
+          title,
+          searchHint ?? 'Tìm kiếm...',
         ),
         actions:
-            _isSearchMode
+            isSearchMode.value
                 ? []
-                : _buildActions(context, appBarFgColor, isTablet, isDark),
+                : buildActions(
+                  context,
+                  appBarFgColor,
+                  isTablet,
+                  isDark,
+                  toggleSearch,
+                  showNotificationButton,
+                  notificationCount,
+                  onNotificationTap,
+                  additionalActions,
+                ),
         titleSpacing: 0,
       ),
     );
   }
+}
 
-  Widget? _buildLeading(
-    BuildContext context,
-    bool isTablet,
-    bool isDark,
-    Color appBarBgColor,
-    Color appBarFgColor,
-  ) {
-    if (_isSearchMode) {
-      return Container(
-        margin: EdgeInsets.only(left: isTablet ? 12 : 8),
-        child: IconButton(
-          icon: Container(
-            padding: EdgeInsets.all(isTablet ? 10 : 8),
-            decoration: BoxDecoration(
-              color:
-                  isDark
-                      ? Colors.white.withOpacity(0.1)
-                      : Colors.grey.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(50),
-            ),
-            child: Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: appBarFgColor,
-              size: isTablet ? 20 : 18,
-            ),
-          ),
-          onPressed: _toggleSearch,
-        ),
-      );
-    }
-
-    if (widget.showBackButton) {
-      return Container(
-        margin: EdgeInsets.only(left: isTablet ? 12 : 8),
-        child: IconButton(
-          icon: Container(
-            padding: EdgeInsets.all(isTablet ? 10 : 8),
-            decoration: BoxDecoration(
-              color:
-                  isDark
-                      ? Colors.white.withOpacity(0.1)
-                      : Colors.grey.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(50),
-            ),
-            child: Icon(
-              Icons.arrow_back_ios_new_rounded,
-              color: appBarFgColor,
-              size: isTablet ? 20 : 18,
-            ),
-          ),
-          onPressed:
-              widget.onBackPressed ??
-              () {
-                if (context.canPop) {
-                  context.pop();
-                } else {
-                  context.goNamed(RouteNames.home);
-                }
-              },
-        ),
-      );
-    }
-
+// Helper functions moved outside the widget
+Widget? buildLeading(
+  BuildContext context,
+  bool isTablet,
+  bool isDark,
+  Color appBarBgColor,
+  Color appBarFgColor,
+  bool isSearchMode,
+  VoidCallback toggleSearch,
+) {
+  if (isSearchMode) {
     return Container(
-      margin: EdgeInsets.only(left: isTablet ? 16 : 12),
-      child: _buildLogo(context, isTablet),
+      margin: EdgeInsets.only(left: isTablet ? 12 : 8),
+      child: IconButton(
+        icon: Container(
+          padding: EdgeInsets.all(isTablet ? 10 : 8),
+          decoration: BoxDecoration(
+            color:
+                isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.grey.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(50),
+          ),
+          child: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: appBarFgColor,
+            size: isTablet ? 20 : 18,
+          ),
+        ),
+        onPressed: toggleSearch,
+      ),
     );
   }
 
-  Widget? _buildTitle(
-    BuildContext context,
-    bool isTablet,
-    bool isDark,
-    Color appBarBgColor,
-    Color appBarFgColor,
-  ) {
-    if (_isSearchMode) {
-      return AnimatedBuilder(
-        animation: _searchAnimation,
-        builder: (context, child) {
-          return Container(
-            margin: EdgeInsets.only(
-              right: isTablet ? 16 : 12,
-              top: isTablet ? 12 : 8,
-              bottom: isTablet ? 12 : 8,
-            ),
-            child: Row(
-              children: [
-                // Search input field
-                Expanded(
-                  child: Container(
-                    height: isTablet ? 46 : 40,
-                    decoration: BoxDecoration(
+  // Add other leading logic here...
+  return Container(
+    margin: EdgeInsets.only(left: isTablet ? 16 : 12),
+    child: buildLogo(context, isTablet),
+  );
+}
+
+Widget? buildTitle(
+  BuildContext context,
+  bool isTablet,
+  bool isDark,
+  Color appBarBgColor,
+  Color appBarFgColor,
+  bool isSearchMode,
+  Animation<double> searchAnimation,
+  TextEditingController searchController,
+  FocusNode searchFocusNode,
+  Function(String) performSearch,
+  VoidCallback hideOverlay,
+  WidgetRef ref,
+  String title,
+  String searchHint,
+) {
+  if (isSearchMode) {
+    return AnimatedBuilder(
+      animation: searchAnimation,
+      builder: (context, child) {
+        return Container(
+          margin: EdgeInsets.only(
+            right: isTablet ? 16 : 12,
+            top: isTablet ? 12 : 8,
+            bottom: isTablet ? 12 : 8,
+          ),
+          child: Row(
+            children: [
+              // Search input field
+              Expanded(
+                child: Container(
+                  height: isTablet ? 46 : 40,
+                  decoration: BoxDecoration(
+                    color:
+                        isDark
+                            ? Colors.white.withOpacity(0.1)
+                            : Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(25),
+                    border: Border.all(
                       color:
                           isDark
-                              ? Colors.white.withOpacity(0.1)
-                              : Colors.grey.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(25),
-                      border: Border.all(
-                        color:
-                            isDark
-                                ? Colors.white.withOpacity(0.2)
-                                : Colors.grey.withOpacity(0.3),
-                        width: 1,
-                      ),
+                              ? Colors.white.withOpacity(0.2)
+                              : Colors.grey.withOpacity(0.3),
+                      width: 1,
                     ),
-                    child: TextField(
-                      controller: _searchController,
-                      focusNode: _searchFocusNode,
-                      style: TextStyle(
-                        color: appBarFgColor,
+                  ),
+                  child: TextField(
+                    controller: searchController,
+                    focusNode: searchFocusNode,
+                    style: TextStyle(
+                      color: appBarFgColor,
+                      fontSize: isTablet ? 16 : 14,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: searchHint,
+                      hintStyle: TextStyle(
+                        color: appBarFgColor.withOpacity(0.6),
                         fontSize: isTablet ? 16 : 14,
                       ),
-                      decoration: InputDecoration(
-                        hintText: widget.searchHint,
-                        hintStyle: TextStyle(
-                          color: appBarFgColor.withOpacity(0.6),
-                          fontSize: isTablet ? 16 : 14,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: isTablet ? 20 : 16,
-                          vertical: isTablet ? 14 : 12,
-                        ),
-                        suffixIcon:
-                            _searchController.text.isNotEmpty
-                                ? IconButton(
-                                  icon: Icon(
-                                    Icons.clear_rounded,
-                                    color: appBarFgColor.withOpacity(0.6),
-                                    size: isTablet ? 22 : 20,
-                                  ),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    _hideOverlay();
-                                    ref
-                                        .read(
-                                          searchSuggestionsProvider.notifier,
-                                        )
-                                        .clear();
-                                    setState(() {});
-                                  },
-                                )
-                                : Icon(
-                                  Icons.search_rounded,
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: isTablet ? 20 : 16,
+                        vertical: isTablet ? 14 : 12,
+                      ),
+                      suffixIcon:
+                          searchController.text.isNotEmpty
+                              ? IconButton(
+                                icon: Icon(
+                                  Icons.clear_rounded,
                                   color: appBarFgColor.withOpacity(0.6),
                                   size: isTablet ? 22 : 20,
                                 ),
-                      ),
-                      onChanged: (value) {
-                        setState(() {});
-                        _performSearch(value);
-                      },
-                      onSubmitted: (value) {
-                        _performSearch(value);
-                        _navigateToPostsWithSearch(context, value);
-                      },
-                      textInputAction: TextInputAction.search,
+                                onPressed: () {
+                                  searchController.clear();
+                                  hideOverlay();
+                                  ref
+                                      .read(searchSuggestionsProvider.notifier)
+                                      .clear();
+                                },
+                              )
+                              : Icon(
+                                Icons.search_rounded,
+                                color: appBarFgColor.withOpacity(0.6),
+                                size: isTablet ? 22 : 20,
+                              ),
                     ),
+                    onChanged: performSearch,
+                    onSubmitted: (value) {
+                      performSearch(value);
+                      navigateToPostsWithSearch(
+                        context,
+                        value,
+                        useState(true),
+                        useAnimationController(),
+                      );
+                    },
+                    textInputAction: TextInputAction.search,
                   ),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-    }
-
-    // Hiển thị title động dựa trên trạng thái đăng nhập
-    return Consumer(
-      builder: (context, ref, child) {
-        final authState = ref.watch(authProvider);
-
-        // Kiểm tra nếu đã đăng nhập và có user data
-        if (authState.isLoggedIn && authState.user != null) {
-          final user = authState.user!;
-
-          // Lấy số từ email (split by @)
-          String emailPrefix = '';
-          emailPrefix = user.email.split('@').first;
-
-          // Lấy fullName
-          String displayName = user.fullName;
-
-          return Row(
-            children: [
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '$emailPrefix\n$displayName',
-                  style: TextStyle(
-                    color: appBarFgColor,
-                    fontSize: isTablet ? 16 : 14,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: -0.2,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
-          );
-        }
+          ),
+        );
+      },
+    );
+  }
 
-        // Nếu chưa đăng nhập hoặc đang loading, hiển thị title mặc định
+  // Display dynamic title based on login status
+  return Consumer(
+    builder: (context, ref, child) {
+      final authState = ref.watch(authProvider);
+
+      // Check if logged in and has user data
+      if (authState.isLoggedIn && authState.user != null) {
+        final user = authState.user!;
+
+        // Get number from email (split by @)
+        String emailPrefix = '';
+        emailPrefix = user.email.split('@').first;
+
+        // Get fullName
+        String displayName = user.fullName;
+
         return Row(
           children: [
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                widget.title,
+                '$emailPrefix\n$displayName',
                 style: TextStyle(
                   color: appBarFgColor,
                   fontSize: isTablet ? 16 : 14,
@@ -530,281 +493,335 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
             ),
           ],
         );
-      },
-    );
-  }
+      }
 
-  Widget _buildLogo(BuildContext context, bool isTablet) {
-    final double size = isTablet ? 20 : 18;
-
-    return Container(
-      width: size,
-      height: size,
-      margin: EdgeInsets.all(4),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(4),
-        child: Image.asset(
-          'assets/images/logo.png',
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              width: size,
-              height: size,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF1877F2), Color(0xFF42A5F5)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(4),
+      // If not logged in or loading, show default title
+      return Row(
+        children: [
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: appBarFgColor,
+                fontSize: isTablet ? 16 : 14,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.2,
               ),
-              child: Icon(
-                Icons.swap_horiz_rounded,
-                color: Colors.white,
-                size: size * 0.5,
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  List<Widget> _buildActions(
-    BuildContext context,
-    Color foregroundColor,
-    bool isTablet,
-    bool isDark,
-  ) {
-    final actions = <Widget>[];
-
-    // Search Button
-    if (widget.showSearchButton) {
-      actions.add(
-        Container(
-          margin: EdgeInsets.only(right: isTablet ? 8 : 4),
-          child: IconButton(
-            icon: Container(
-              padding: EdgeInsets.all(isTablet ? 10 : 8),
-              decoration: BoxDecoration(
-                color:
-                    isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : Colors.grey.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: Icon(
-                Icons.search_rounded,
-                color: foregroundColor.withOpacity(0.8),
-                size: isTablet ? 22 : 20,
-              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-            onPressed: _toggleSearch,
-            tooltip: 'Tìm kiếm',
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Widget buildLogo(BuildContext context, bool isTablet) {
+  final double size = isTablet ? 20 : 18;
+
+  return Container(
+    width: size,
+    height: size,
+    margin: EdgeInsets.all(4),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: Image.asset(
+        'assets/images/logo.png',
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF1877F2), Color(0xFF42A5F5)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Icon(
+              Icons.swap_horiz_rounded,
+              color: Colors.white,
+              size: size * 0.5,
+            ),
+          );
+        },
+      ),
+    ),
+  );
+}
+
+List<Widget> buildActions(
+  BuildContext context,
+  Color foregroundColor,
+  bool isTablet,
+  bool isDark,
+  VoidCallback toggleSearch,
+  bool showNotificationButton,
+  int notificationCount,
+  VoidCallback? onNotificationTap,
+  List<Widget>? additionalActions,
+) {
+  final actions = <Widget>[];
+
+  // Search Button
+  actions.add(
+    Container(
+      margin: EdgeInsets.only(right: isTablet ? 8 : 4),
+      child: IconButton(
+        icon: Container(
+          padding: EdgeInsets.all(isTablet ? 10 : 8),
+          decoration: BoxDecoration(
+            color:
+                isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.grey.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(50),
+          ),
+          child: Icon(
+            Icons.search_rounded,
+            color: foregroundColor.withOpacity(0.8),
+            size: isTablet ? 22 : 20,
           ),
         ),
-      );
-    }
+        onPressed: toggleSearch,
+        tooltip: 'Tìm kiếm',
+      ),
+    ),
+  );
 
-    // Notification Button
-    if (widget.showNotificationButton) {
-      actions.add(
-        Container(
-          margin: EdgeInsets.only(right: isTablet ? 8 : 4),
-          child: _buildNotificationButton(
-            context,
-            foregroundColor,
-            isTablet,
-            isDark,
-          ),
-        ),
-      );
-    }
-
-    // Additional Actions
-    if (widget.additionalActions != null) {
-      actions.addAll(widget.additionalActions!);
-    }
-
-    // More Options Menu
+  // Notification Button
+  if (showNotificationButton) {
     actions.add(
       Container(
-        margin: EdgeInsets.only(right: isTablet ? 16 : 12),
-        child: _buildMoreOptionsMenu(
+        margin: EdgeInsets.only(right: isTablet ? 8 : 4),
+        child: buildNotificationButton(
           context,
           foregroundColor,
           isTablet,
           isDark,
+          notificationCount,
+          onNotificationTap,
         ),
       ),
     );
-
-    return actions;
   }
 
-  Widget _buildMoreOptionsMenu(
-    BuildContext context,
-    Color foregroundColor,
-    bool isTablet,
-    bool isDark,
-  ) {
-    return PopupMenuButton<String>(
-      offset: Offset(0, isTablet ? 60 : 50),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
-      elevation: 8,
-      child: Container(
-        padding: EdgeInsets.all(isTablet ? 10 : 8),
-        decoration: BoxDecoration(
-          color:
-              isDark
-                  ? Colors.white.withOpacity(0.1)
-                  : Colors.grey.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(50),
+  // Additional Actions
+  if (additionalActions != null) {
+    actions.addAll(additionalActions);
+  }
+
+  // More Options Menu
+  actions.add(
+    Container(
+      margin: EdgeInsets.only(right: isTablet ? 16 : 12),
+      child: buildMoreOptionsMenu(context, foregroundColor, isTablet, isDark),
+    ),
+  );
+
+  return actions;
+}
+
+Widget buildNotificationButton(
+  BuildContext context,
+  Color foregroundColor,
+  bool isTablet,
+  bool isDark,
+  int notificationCount,
+  VoidCallback? onNotificationTap,
+) {
+  return Stack(
+    clipBehavior: Clip.none,
+    children: [
+      IconButton(
+        icon: Container(
+          padding: EdgeInsets.all(isTablet ? 10 : 8),
+          decoration: BoxDecoration(
+            color:
+                isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.grey.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(50),
+          ),
+          child: Icon(
+            Icons.notifications_none_rounded,
+            color: foregroundColor.withOpacity(0.8),
+            size: isTablet ? 22 : 20,
+          ),
         ),
-        child: Icon(
-          Icons.more_vert_rounded,
-          color: foregroundColor.withOpacity(0.8),
-          size: isTablet ? 22 : 20,
-        ),
+        onPressed:
+            onNotificationTap ??
+            () => context.pushNamed(RouteNames.notifications),
+        tooltip: 'Thông báo',
       ),
-      itemBuilder:
-          (BuildContext context) => [
-            PopupMenuItem<String>(
-              value: 'about',
-              height: isTablet ? 50 : 44,
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    color: foregroundColor.withOpacity(0.7),
-                    size: isTablet ? 22 : 20,
-                  ),
-                  SizedBox(width: isTablet ? 16 : 12),
-                  Text(
-                    'Giới thiệu',
-                    style: TextStyle(
-                      color: foregroundColor,
-                      fontSize: isTablet ? 16 : 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
+      if (notificationCount > 0)
+        Positioned(
+          right: isTablet ? 10 : 8,
+          top: isTablet ? 10 : 8,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: isTablet ? 8 : 6,
+              vertical: isTablet ? 4 : 3,
             ),
-            PopupMenuItem<String>(
-              value: 'help',
-              height: isTablet ? 50 : 44,
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.help_outline_rounded,
-                    color: foregroundColor.withOpacity(0.7),
-                    size: isTablet ? 22 : 20,
-                  ),
-                  SizedBox(width: isTablet ? 16 : 12),
-                  Text(
-                    'Trợ giúp',
-                    style: TextStyle(
-                      color: foregroundColor,
-                      fontSize: isTablet ? 16 : 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-      onSelected: (String value) {
-        switch (value) {
-          case 'about':
-            context.pushNamed('about');
-            break;
-          case 'help':
-            context.pushNamed('help');
-            break;
-        }
-      },
-    );
-  }
-
-  Widget _buildNotificationButton(
-    BuildContext context,
-    Color foregroundColor,
-    bool isTablet,
-    bool isDark,
-  ) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        IconButton(
-          icon: Container(
-            padding: EdgeInsets.all(isTablet ? 10 : 8),
             decoration: BoxDecoration(
-              color:
-                  isDark
-                      ? Colors.white.withOpacity(0.1)
-                      : Colors.grey.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(50),
+              gradient: LinearGradient(
+                colors: [const Color(0xFFFF4757), const Color(0xFFFF6B7A)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFF4757).withOpacity(0.4),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+              border: Border.all(color: Colors.white, width: 1.5),
             ),
-            child: Icon(
-              Icons.notifications_none_rounded,
-              color: foregroundColor.withOpacity(0.8),
-              size: isTablet ? 22 : 20,
+            constraints: BoxConstraints(
+              minWidth: isTablet ? 24 : 20,
+              minHeight: isTablet ? 20 : 16,
+            ),
+            child: Text(
+              notificationCount > 99 ? '99+' : notificationCount.toString(),
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isTablet ? 11 : 9,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.2,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
-          onPressed:
-              widget.onNotificationTap ??
-              () => context.pushNamed('notifications'),
-          tooltip: 'Thông báo',
         ),
+    ],
+  );
+}
 
-        if (widget.notificationCount > 0)
-          Positioned(
-            right: isTablet ? 10 : 8,
-            top: isTablet ? 10 : 8,
-            child: Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 8 : 6,
-                vertical: isTablet ? 4 : 3,
-              ),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [const Color(0xFFFF4757), const Color(0xFFFF6B7A)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+Widget buildMoreOptionsMenu(
+  BuildContext context,
+  Color foregroundColor,
+  bool isTablet,
+  bool isDark,
+) {
+  return PopupMenuButton<String>(
+    offset: Offset(0, isTablet ? 60 : 50),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+    elevation: 8,
+    child: Container(
+      padding: EdgeInsets.all(isTablet ? 10 : 8),
+      decoration: BoxDecoration(
+        color:
+            isDark
+                ? Colors.white.withOpacity(0.1)
+                : Colors.grey.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(50),
+      ),
+      child: Icon(
+        Icons.more_vert_rounded,
+        color: foregroundColor.withOpacity(0.8),
+        size: isTablet ? 22 : 20,
+      ),
+    ),
+    itemBuilder:
+        (BuildContext context) => [
+          PopupMenuItem<String>(
+            value: 'about',
+            height: isTablet ? 50 : 44,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline_rounded,
+                  color: foregroundColor.withOpacity(0.7),
+                  size: isTablet ? 22 : 20,
                 ),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFFF4757).withOpacity(0.4),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
+                SizedBox(width: isTablet ? 16 : 12),
+                Text(
+                  'Giới thiệu',
+                  style: TextStyle(
+                    color: foregroundColor,
+                    fontSize: isTablet ? 16 : 14,
+                    fontWeight: FontWeight.w500,
                   ),
-                ],
-                border: Border.all(color: Colors.white, width: 1.5),
-              ),
-              constraints: BoxConstraints(
-                minWidth: isTablet ? 24 : 20,
-                minHeight: isTablet ? 20 : 16,
-              ),
-              child: Text(
-                widget.notificationCount > 99
-                    ? '99+'
-                    : widget.notificationCount.toString(),
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: isTablet ? 11 : 9,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.2,
                 ),
-                textAlign: TextAlign.center,
-              ),
+              ],
             ),
           ),
-      ],
-    );
-  }
+          PopupMenuItem<String>(
+            value: 'help',
+            height: isTablet ? 50 : 44,
+            child: Row(
+              children: [
+                Icon(
+                  Icons.help_outline_rounded,
+                  color: foregroundColor.withOpacity(0.7),
+                  size: isTablet ? 22 : 20,
+                ),
+                SizedBox(width: isTablet ? 16 : 12),
+                Text(
+                  'Trợ giúp',
+                  style: TextStyle(
+                    color: foregroundColor,
+                    fontSize: isTablet ? 16 : 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+    onSelected: (String value) {
+      switch (value) {
+        case 'about':
+          context.pushNamed('about');
+          break;
+        case 'help':
+          context.pushNamed('help');
+          break;
+      }
+    },
+  );
+}
+
+// Navigation helper functions
+void navigateToPostDetail(
+  BuildContext context,
+  dynamic post,
+  ValueNotifier<bool> isSearchMode,
+  AnimationController animationController,
+  WidgetRef ref,
+) {
+  context.pushNamed(
+    RouteNames.postDetail,
+    pathParameters: {'slug': post.slug.toString()},
+  );
+  // Toggle search mode
+  isSearchMode.value = false;
+  animationController.reverse();
+}
+
+void navigateToPostsWithSearch(
+  BuildContext context,
+  String searchQuery,
+  ValueNotifier<bool> isSearchMode,
+  AnimationController animationController,
+) {
+  if (searchQuery.trim().isEmpty) return;
+
+  context.pushNamed(
+    RouteNames.posts,
+    extra: {'search': searchQuery.trim(), 'autoFocus': false},
+  );
+
+  // Toggle search mode
+  isSearchMode.value = false;
+  animationController.reverse();
 }
