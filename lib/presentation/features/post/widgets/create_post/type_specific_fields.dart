@@ -123,14 +123,11 @@ class TypeSpecificFields extends HookConsumerWidget {
 
   // Helper getters to determine which fields are needed
   bool get _needsLocationField =>
-      selectedType != PostType.freePost && selectedType != PostType.giveAway;
+      selectedType == PostType.findLost || selectedType == PostType.foundItem;
   bool get _needsTimeField =>
-      selectedType != PostType.freePost && selectedType != PostType.giveAway;
+      selectedType == PostType.findLost || selectedType == PostType.foundItem;
   bool get _needsRewardField => selectedType == PostType.findLost;
-  bool get _needsGiveAwaySection =>
-      selectedType == PostType.giveAway ||
-      selectedType == PostType.foundItem ||
-      selectedType == PostType.findLost;
+  bool get _needsGiveAwaySection => selectedType != PostType.freePost;
 
   Widget _buildLocationField() {
     String hintText;
@@ -139,12 +136,12 @@ class TypeSpecificFields extends HookConsumerWidget {
 
     switch (selectedType) {
       case PostType.findLost:
-        hintText = 'Ví dụ: Công viên Tao Đàn, Quận 1...';
+        hintText = 'Ví dụ: Dãy nhà B, tầng 7 phòng F7...';
         iconData = Icons.location_off;
         iconColor = Colors.red.shade400;
         break;
       case PostType.foundItem:
-        hintText = 'Ví dụ: Trước cửa hàng Circle K, Đường Nguyễn Huệ...';
+        hintText = 'Ví dụ: Trước cửa hàng Ministop, Đường Pasteur...';
         iconData = Icons.location_on;
         iconColor = Colors.green.shade400;
         break;
@@ -455,11 +452,12 @@ class TypeSpecificFields extends HookConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  selectedType == PostType.foundItem
-                      ? Icons.search_rounded
-                      : selectedType == PostType.findLost
-                      ? Icons.help_outline_rounded
-                      : Icons.card_giftcard_rounded,
+                  switch (selectedType) {
+                    PostType.foundItem => Icons.search_rounded,
+                    PostType.findLost => Icons.help_outline_rounded,
+                    PostType.wantItem => Icons.shopping_bag_rounded,
+                    _ => Icons.card_giftcard_rounded,
+                  },
                   color: colorScheme.primary,
                   size: isTablet ? 24 : 22,
                 ),
@@ -470,11 +468,12 @@ class TypeSpecificFields extends HookConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      selectedType == PostType.foundItem
-                          ? 'Món đồ tìm thấy'
-                          : selectedType == PostType.findLost
-                          ? 'Tìm kiếm món đồ'
-                          : 'Danh sách món đồ',
+                      switch (selectedType) {
+                        PostType.foundItem => 'Món đồ tìm thấy',
+                        PostType.findLost => 'Tìm kiếm món đồ',
+                        PostType.wantItem => 'Muốn nhận đồ cũ',
+                        _ => 'Danh sách món đồ',
+                      },
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: colorScheme.onSurface,

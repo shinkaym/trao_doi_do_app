@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/home/mock_data/index.dart';
 import 'package:trao_doi_do_app/presentation/features/home/widgets/banner_carousel.dart';
 import 'package:trao_doi_do_app/presentation/features/home/widgets/features_list.dart';
 import 'package:trao_doi_do_app/presentation/features/home/widgets/full_width_images.dart';
@@ -10,12 +9,28 @@ import 'package:trao_doi_do_app/presentation/features/home/widgets/post_category
 import 'package:trao_doi_do_app/presentation/features/home/widgets/college_links_section.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
-final featuresProvider = Provider<List<FeatureType>>(
-  (ref) => FeatureType.allFeatures,
-);
-
-final homePostTypesProvider = Provider<List<PostType>>(
-  (ref) => PostType.allPostTypes,
+final bannerSlidesProvider = Provider<List<Map<String, dynamic>>>(
+  (ref) => [
+    {
+      'id': 1,
+      'image': 'https://caothang.edu.vn/tuyensinh/images/banner/banner_1.png',
+      'title': 'Thông tin tuyển sinh Cao Thắng',
+      'postId': 'post_1',
+    },
+    {
+      'id': 2,
+      'image': 'https://caothang.edu.vn/tuyensinh/images/banner/banner_2.png',
+      'title': 'Hướng dẫn quy trình xét tuyển',
+      'postId': 'post_2',
+    },
+    {
+      'id': 3,
+      'image':
+          'https://caothang.edu.vn/tuyensinh/images/banner/Ketqua_HB_2025.png',
+      'title': 'Kết quả học bổng năm 2025',
+      'postId': 'post_3',
+    },
+  ],
 );
 
 final fullWidthImagesProvider = Provider<List<String>>(
@@ -32,8 +47,8 @@ class HomeScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final bannerSlides = ref.watch(bannerSlidesProvider);
-    final features = ref.watch(featuresProvider);
-    final homePostTypes = ref.watch(homePostTypesProvider);
+    final features = FeatureType.allFeatures;
+    final homePostTypes = PostType.allPostTypesWithoutCampaign;
     final fullWidthImages = ref.watch(fullWidthImagesProvider);
 
     final isTablet = context.isTablet;

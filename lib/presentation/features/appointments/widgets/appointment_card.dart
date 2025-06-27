@@ -117,9 +117,12 @@ class AppointmentCard extends HookConsumerWidget {
   }
 
   Widget _buildTimeSection() {
-    // Parse appointment time để hiển thị với formatAbsolute
-    DateTime startDateTime = DateTime.parse(appointment.startTime);
-    DateTime endDateTime = DateTime.parse(appointment.endTime);
+    String startDateTime = TimeUtils.formatAbsolute(
+      DateTime.parse(appointment.startTime),
+    );
+    String endDateTime = TimeUtils.formatAbsolute(
+      DateTime.parse(appointment.endTime),
+    );
 
     return Padding(
       padding: EdgeInsets.all(isTablet ? 16 : 14),
@@ -168,7 +171,7 @@ class AppointmentCard extends HookConsumerWidget {
                           ),
                           SizedBox(height: 2),
                           Text(
-                            TimeUtils.formatAbsolute(startDateTime),
+                            startDateTime,
                             style: TextStyle(
                               fontSize: isTablet ? 14 : 12,
                               fontWeight: FontWeight.w600,
@@ -202,7 +205,7 @@ class AppointmentCard extends HookConsumerWidget {
                           ),
                           SizedBox(height: 2),
                           Text(
-                            TimeUtils.formatAbsolute(endDateTime),
+                            endDateTime,
                             style: TextStyle(
                               fontSize: isTablet ? 14 : 12,
                               fontWeight: FontWeight.w600,

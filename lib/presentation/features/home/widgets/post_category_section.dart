@@ -156,17 +156,18 @@ class _CategoryHeader extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Create button
-              _ActionButton(
-                onPressed: onCreatePost,
-                icon: Icons.add_circle_outline,
-                color: postType.color,
-                tooltip: 'Tạo ${postType.label}',
-                isTablet: isTablet,
-                isPrimary: true,
-              ),
-
-              SizedBox(width: isTablet ? 8 : 6),
+              // Create button - Chỉ hiển thị nếu không phải là Campaign
+              if (postType != PostType.campaign) ...[
+                _ActionButton(
+                  onPressed: onCreatePost,
+                  icon: Icons.add_circle_outline,
+                  color: postType.color,
+                  tooltip: 'Tạo ${postType.label}',
+                  isTablet: isTablet,
+                  isPrimary: true,
+                ),
+                SizedBox(width: isTablet ? 8 : 6),
+              ],
 
               // View all button
               _ActionButton(

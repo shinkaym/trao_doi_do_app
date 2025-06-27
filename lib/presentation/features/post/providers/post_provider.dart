@@ -5,13 +5,14 @@ import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_post_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/delete_post_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_post_usecase.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
 class PostState {
   final bool isLoading;
   final Failure? failure;
   final String? successMessage;
   final String title;
-  final int type; // 1: giveAway, 2: foundItem, 3: findLost, 4: freePost
+  final int type;
   final List<String> images;
   final List<NewItem> newItems;
   final List<OldItem> oldItems;
@@ -92,15 +93,16 @@ class PostState {
 
   // Helper method to generate info JSON string based on type
   String get infoJson {
-    switch (type) {
-      case 2: // foundItem
+    final postType = PostType.fromValue(type);
+    switch (postType) {
+      case PostType.foundItem:
         return jsonEncode(
           FoundItemInfo(
             foundLocation: foundLocation,
             foundDate: foundDate,
           ).toJson(),
         );
-      case 3: // findLost
+      case PostType.findLost:
         return jsonEncode(
           FindLostInfo(
             lostLocation: lostLocation,
@@ -203,9 +205,8 @@ class PostNotifier extends StateNotifier<PostState> {
     final post = Post(
       title: state.title,
       description: state.description,
-      info: state.infoJson, // Use the generated JSON string
+      info: state.infoJson,
       type: state.type,
-      categoryID: (state.type == 3) ? state.categoryID : null,
       images: state.images,
       newItems: state.newItems,
       oldItems: state.oldItems,
@@ -290,12 +291,12 @@ class PostNotifier extends StateNotifier<PostState> {
   Future<void> togglePostStatus(int postID, int currentStatus) async {
     state = state.copyWith(isLoading: true, failure: null);
 
-    // Chuyển đổi status: 3 <-> 4
-    final newStatus = currentStatus == 3 ? 4 : 3;
+    final newStatus =
+        currentStatus == PostStatus.approved.value
+            ? PostStatus.locked.value
+            : PostStatus.approved.value;
 
-    final updatePost = UpdatePost(
-      status: newStatus, // Chỉ gửi status
-    );
+    final updatePost = UpdatePost(status: newStatus);
 
     final result = await _updatePostUseCase(postID, updatePost);
 
@@ -306,7 +307,9 @@ class PostNotifier extends StateNotifier<PostState> {
           isLoading: false,
           status: newStatus,
           successMessage:
-              newStatus == 4 ? 'Đã khóa bài đăng!' : 'Đã mở khóa bài đăng!',
+              newStatus == PostStatus.locked.value
+                  ? 'Đã khóa bài đăng!'
+                  : 'Đã mở khóa bài đăng!',
         );
       },
     );
@@ -315,9 +318,7 @@ class PostNotifier extends StateNotifier<PostState> {
   Future<void> repostPost(int postID, DateTime createdAt) async {
     state = state.copyWith(isLoading: true, failure: null);
 
-    final updatePost = UpdatePost(
-      isRepost: true, // Chỉ gửi isRepost
-    );
+    final updatePost = UpdatePost(isRepost: true);
 
     final result = await _updatePostUseCase(postID, updatePost);
 

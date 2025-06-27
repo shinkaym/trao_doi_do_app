@@ -435,10 +435,7 @@ class _ItemWarehousesFilterBottomSheetState
                       _tempSelectedCategory = null;
                     });
                   },
-                  icon: Icon(
-                    Icons.clear,
-                    size: widget.isTablet ? 18 : 16,
-                  ),
+                  icon: Icon(Icons.clear, size: widget.isTablet ? 18 : 16),
                   label: Text(
                     'Bỏ chọn danh mục',
                     style: TextStyle(
@@ -484,17 +481,11 @@ class _ItemWarehousesFilterBottomSheetState
   }
 
   Widget _buildSortFilters() {
-    // Only show quantity-related sort options
-    final warehouseSortOptions = [
-      SortOrder.quantityAsc,
-      SortOrder.quantityDesc,
-    ];
-
     return Wrap(
       spacing: widget.isTablet ? 12 : 10,
       runSpacing: widget.isTablet ? 12 : 10,
       children:
-          warehouseSortOptions
+          SortOrder.quantitySortOptions
               .map(
                 (sort) => _buildFilterChip(
                   label: sort.label,
@@ -548,7 +539,9 @@ class _ItemWarehousesFilterBottomSheetState
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                isSelected
+                    ? Icons.radio_button_checked
+                    : Icons.radio_button_unchecked,
                 size: widget.isTablet ? 18 : 16,
                 color:
                     isSelected

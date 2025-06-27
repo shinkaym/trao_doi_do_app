@@ -9,7 +9,6 @@ class PostModel {
   final String description;
   final String info;
   final int type;
-  final int? categoryID;
   final String? slug;
   final int? status;
   final List<String> images;
@@ -30,7 +29,6 @@ class PostModel {
     required this.description,
     required this.info,
     required this.type,
-    this.categoryID,
     this.slug,
     this.status,
     this.images = const [],
@@ -53,7 +51,6 @@ class PostModel {
       description: post.description,
       info: post.info,
       type: post.type,
-      categoryID: post.categoryID,
       slug: post.slug,
       status: post.status,
       images: post.images,
@@ -79,7 +76,6 @@ class PostModel {
       description: json['description'] ?? '',
       info: json['info'] ?? '{}',
       type: json['type'] ?? 1,
-      categoryID: json['categoryID'],
       slug: json['slug'] ?? '',
       status: json['status'],
       images: json['images'] != null ? List<String>.from(json['images']) : [],
@@ -122,7 +118,6 @@ class PostModel {
       description: description,
       info: info,
       type: type,
-      categoryID: categoryID,
       slug: slug,
       status: status,
       images: images,
@@ -144,19 +139,16 @@ class PostModel {
       'info': info,
     };
 
-    if (type == 3 && categoryID != null) {
-      json['categoryID'] = categoryID;
-    }
-
     switch (type) {
       case 1:
       case 2:
       case 3:
+      case 4:
         json['newItems'] = newItems.map((item) => item.toJson()).toList();
         json['oldItems'] = oldItems.map((item) => item.toJson()).toList();
         json['images'] = images;
         break;
-      case 4:
+      case 6:
         json['images'] = images;
         break;
     }
@@ -174,7 +166,6 @@ class PostDetailModel {
   final String description;
   final String info;
   final int type;
-  final int? categoryID;
   final String? slug;
   final int? status;
   final List<String> images;
@@ -197,7 +188,6 @@ class PostDetailModel {
     required this.description,
     required this.info,
     required this.type,
-    this.categoryID,
     this.slug,
     this.status,
     this.images = const [],
@@ -222,7 +212,6 @@ class PostDetailModel {
       description: json['description'] ?? '',
       info: json['info'] ?? '{}',
       type: json['type'] ?? 1,
-      categoryID: json['categoryID'],
       slug: json['slug'] ?? '',
       status: json['status'],
       images: json['images'] != null ? List<String>.from(json['images']) : [],
@@ -268,7 +257,6 @@ class PostDetailModel {
       description: description,
       info: info,
       type: type,
-      categoryID: categoryID,
       slug: slug,
       status: status,
       images: images,
@@ -294,7 +282,6 @@ class PostDetailModel {
       'description': description,
       'info': info,
       'type': type,
-      'categoryID': categoryID,
       'slug': slug,
       'status': status,
       'images': images,

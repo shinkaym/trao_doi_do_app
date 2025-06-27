@@ -14,7 +14,9 @@ enum PostType {
   giveAway('Tặng đồ', Icons.volunteer_activism, 1),
   foundItem('Tôi nhặt được đồ', Icons.help_outline, 2),
   findLost('Tôi bị mất đồ', Icons.search, 3),
-  freePost('Bài viết', Icons.edit_note, 4);
+  wantItem('Muốn nhận đồ cũ', Icons.shopping_bag, 4),
+  campaign('Chiến dịch', Icons.campaign, 5),
+  freePost('Bài viết', Icons.edit_note, 6);
 
   const PostType(this.label, this.icon, this.value);
 
@@ -31,6 +33,10 @@ enum PostType {
         return Colors.green;
       case PostType.findLost:
         return Colors.red;
+      case PostType.wantItem:
+        return Colors.orange;
+      case PostType.campaign:
+        return Colors.teal;
       case PostType.freePost:
         return Colors.purple;
       case PostType.all:
@@ -49,6 +55,27 @@ enum PostType {
     PostType.giveAway,
     PostType.foundItem,
     PostType.findLost,
+    PostType.wantItem,
+    PostType.campaign,
+    PostType.freePost,
+  ];
+
+  /// Tất cả các loại post không bao gồm campaign
+  static List<PostType> get allPostTypesWithoutCampaign => [
+    PostType.giveAway,
+    PostType.foundItem,
+    PostType.findLost,
+    PostType.wantItem,
+    PostType.freePost,
+  ];
+
+  /// Tất cả các loại post với campaign ở đầu tiên
+  static List<PostType> get allPostTypesWithCampaignFirst => [
+    PostType.campaign,
+    PostType.giveAway,
+    PostType.foundItem,
+    PostType.findLost,
+    PostType.wantItem,
     PostType.freePost,
   ];
 }
@@ -114,6 +141,26 @@ enum SortOrder {
   final IconData icon;
   final String sort;
   final String order;
+
+  static List<SortOrder> get timeSortOptions => [
+    SortOrder.newest,
+    SortOrder.oldest,
+  ];
+
+  static List<SortOrder> get quantitySortOptions => [
+    SortOrder.quantityAsc,
+    SortOrder.quantityDesc,
+  ];
+
+  static List<SortOrder> get startTimeSortOptions => [
+    SortOrder.startTimeAsc,
+    SortOrder.startTimeDesc,
+  ];
+
+  static List<SortOrder> get allTimeSortOptions => [
+    ...timeSortOptions,
+    ...startTimeSortOptions,
+  ];
 }
 
 enum TransactionStatus {

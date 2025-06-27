@@ -175,7 +175,7 @@ final postProvider = StateNotifierProvider<PostNotifier, PostState>((ref) {
   final updatePostUseCase = ref.watch(updatePostUseCaseProvider);
   final deletePostUseCase = ref.watch(
     deletePostUseCaseProvider,
-  ); // Thêm dòng này
+  );
   return PostNotifier(createPostUseCase, updatePostUseCase, deletePostUseCase);
 });
 

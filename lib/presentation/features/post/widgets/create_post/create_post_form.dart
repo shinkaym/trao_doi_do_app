@@ -226,11 +226,11 @@ class CreatePostForm extends HookConsumerWidget {
 
       final info = <String, dynamic>{};
 
-      if (selectedType.value == PostType.findLost) {
+      if (typeValue == PostType.findLost.value) {
         info['lostLocation'] = locationController.text.trim();
         info['lostDate'] = selectedDateTime.value?.toIso8601String() ?? '';
         info['reward'] = rewardController.text.trim();
-      } else if (selectedType.value == PostType.foundItem) {
+      } else if (typeValue == PostType.foundItem.value) {
         info['foundLocation'] = locationController.text.trim();
         info['foundDate'] = selectedDateTime.value?.toIso8601String() ?? '';
       }

@@ -38,7 +38,9 @@ class CreatePostUseCase {
           return _validateFoundItem(post, infoJson);
         case 3: // findLost
           return _validateFindLost(post, infoJson);
-        case 4: // freePost
+        case 4: // wantItem (giống giveAway)
+          return _validateWantItem(post);
+        case 6: // freePost
           return _validateFreePost(post);
         default:
           return const ValidationFailure('Loại bài đăng không hợp lệ');
@@ -145,6 +147,44 @@ class CreatePostUseCase {
 
     if (lostDate == null || lostDate.trim().isEmpty) {
       return const ValidationFailure('Ngày thất lạc không được để trống');
+    }
+
+    if (post.newItems.isEmpty && post.oldItems.isEmpty) {
+      return const ValidationFailure('Phải có ít nhất một món đồ');
+    }
+
+    // Validate newItems
+    for (final item in post.newItems) {
+      if (item.name.trim().isEmpty) {
+        return const ValidationFailure('Tên món đồ mới không được để trống');
+      }
+      if (item.categoryID <= 0) {
+        return const ValidationFailure('Phải chọn danh mục cho món đồ mới');
+      }
+      if (item.quantity <= 0) {
+        return const ValidationFailure('Số lượng món đồ mới phải lớn hơn 0');
+      }
+    }
+
+    // Validate oldItems
+    for (final item in post.oldItems) {
+      if (item.itemID <= 0) {
+        return const ValidationFailure('ID món đồ cũ không hợp lệ');
+      }
+      if (item.quantity <= 0) {
+        return const ValidationFailure('Số lượng món đồ cũ phải lớn hơn 0');
+      }
+    }
+
+    return null;
+  }
+
+  ValidationFailure? _validateWantItem(Post post) {
+    // wantItem validation giống giveAway
+    if (post.images.isEmpty) {
+      return const ValidationFailure(
+        'Phải có ít nhất một hình ảnh cho món đồ muốn nhận',
+      );
     }
 
     if (post.newItems.isEmpty && post.oldItems.isEmpty) {

@@ -99,7 +99,7 @@ class AppointmentDetailDialog extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          
+
           // Store/App name
           Text(
             'TRAO ĐỔI ĐỒ',
@@ -111,7 +111,7 @@ class AppointmentDetailDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          
+
           // Receipt title
           Text(
             'HÓA ĐƠN CUỘC HẸN',
@@ -123,7 +123,7 @@ class AppointmentDetailDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Status badge
           Container(
             padding: EdgeInsets.symmetric(
@@ -161,8 +161,12 @@ class AppointmentDetailDialog extends StatelessWidget {
   }
 
   Widget _buildReceiptDetails() {
-    DateTime startDateTime = DateTime.parse(appointment.startTime);
-    DateTime endDateTime = DateTime.parse(appointment.endTime);
+    String startDateTime = TimeUtils.formatAbsolute(
+      DateTime.parse(appointment.startTime),
+    );
+    String endDateTime = TimeUtils.formatAbsolute(
+      DateTime.parse(appointment.endTime),
+    );
 
     return Container(
       width: double.infinity,
@@ -174,24 +178,16 @@ class AppointmentDetailDialog extends StatelessWidget {
         children: [
           _buildReceiptRow(
             'Mã cuộc hẹn:',
-            '#${appointment.id?.toString().padLeft(6, '0') ?? 'N/A'}',
+            '#${appointment.id.toString().padLeft(6, '0')}',
             isHeader: true,
           ),
           const SizedBox(height: 12),
-          _buildReceiptRow(
-            'Ngày bắt đầu:',
-            TimeUtils.formatAbsolute(startDateTime).split(' ')[0],
-          ),
+          _buildReceiptRow('Ngày bắt đầu:', startDateTime.split(' ')[0]),
           const SizedBox(height: 8),
-          _buildReceiptRow(
-            'Giờ bắt đầu:',
-            TimeUtils.formatAbsolute(startDateTime).split(' ')[1],
-          ),
+          _buildReceiptRow('Giờ bắt đầu:', startDateTime.split(' ')[1]),
+
           const SizedBox(height: 8),
-          _buildReceiptRow(
-            'Giờ kết thúc:',
-            TimeUtils.formatAbsolute(endDateTime).split(' ')[1],
-          ),
+          _buildReceiptRow('Giờ kết thúc:', endDateTime.split(' ')[1]),
         ],
       ),
     );
@@ -251,7 +247,7 @@ class AppointmentDetailDialog extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          
+
           // Items list
           if (appointment.appointmentItems.isEmpty)
             Center(
@@ -269,11 +265,12 @@ class AppointmentDetailDialog extends StatelessWidget {
             )
           else
             Column(
-              children: appointment.appointmentItems
-                  .asMap()
-                  .entries
-                  .map((entry) => _buildReceiptItem(entry.value, entry.key))
-                  .toList(),
+              children:
+                  appointment.appointmentItems
+                      .asMap()
+                      .entries
+                      .map((entry) => _buildReceiptItem(entry.value, entry.key))
+                      .toList(),
             ),
         ],
       ),
@@ -332,7 +329,10 @@ class AppointmentDetailDialog extends StatelessWidget {
                 style: TextStyle(
                   fontSize: isTablet ? 14 : 12,
                   fontWeight: FontWeight.w600,
-                  color: item.missingQuantity > 0 ? Colors.red[600] : Colors.grey[400],
+                  color:
+                      item.missingQuantity > 0
+                          ? Colors.red[600]
+                          : Colors.grey[400],
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -347,10 +347,14 @@ class AppointmentDetailDialog extends StatelessWidget {
 
   Widget _buildReceiptFooter() {
     final totalItems = appointment.appointmentItems.length;
-    final totalActual = appointment.appointmentItems
-        .fold(0, (sum, item) => sum + item.actualQuantity);
-    final totalMissing = appointment.appointmentItems
-        .fold(0, (sum, item) => sum + item.missingQuantity);
+    final totalActual = appointment.appointmentItems.fold(
+      0,
+      (sum, item) => sum + item.actualQuantity,
+    );
+    final totalMissing = appointment.appointmentItems.fold(
+      0,
+      (sum, item) => sum + item.missingQuantity,
+    );
 
     return Container(
       width: double.infinity,
@@ -376,7 +380,7 @@ class AppointmentDetailDialog extends StatelessWidget {
             valueColor: totalMissing > 0 ? Colors.red[600] : null,
           ),
           const SizedBox(height: 20),
-          
+
           // Thank you message
           Text(
             'CẢM ƠN BẠN ĐÃ SỬ DỤNG DỊCH VỤ!',
@@ -467,17 +471,14 @@ class DashedLinePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = strokeWidth;
+    final paint =
+        Paint()
+          ..color = color
+          ..strokeWidth = strokeWidth;
 
     double startX = 0;
     while (startX < size.width) {
-      canvas.drawLine(
-        Offset(startX, 0),
-        Offset(startX + dashWidth, 0),
-        paint,
-      );
+      canvas.drawLine(Offset(startX, 0), Offset(startX + dashWidth, 0), paint);
       startX += dashWidth + dashSpace;
     }
   }

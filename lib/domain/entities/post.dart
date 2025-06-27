@@ -9,7 +9,6 @@ class Post extends Equatable {
   final String description;
   final String info; // JSON string
   final int type; // 1: giveAway, 2: foundItem, 3: findLost, 4: freePost
-  final int? categoryID;
   final String? slug;
   final int? status; // 1: Pending, 2: Rejected, 3: Approved
   final List<String> images; // Base64 strings
@@ -30,7 +29,6 @@ class Post extends Equatable {
     required this.description,
     required this.info,
     required this.type,
-    this.categoryID,
     this.slug,
     this.status,
     this.images = const [],
@@ -53,7 +51,6 @@ class Post extends Equatable {
     description,
     info,
     type,
-    categoryID,
     slug,
     status,
     images,
@@ -80,7 +77,6 @@ class PostDetail extends Post {
     required super.description,
     required super.info,
     required super.type,
-    super.categoryID,
     super.slug,
     super.status,
     super.images = const [],

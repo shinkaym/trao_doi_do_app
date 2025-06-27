@@ -381,7 +381,7 @@ class _PostsFilterBottomSheetState extends State<PostsFilterBottomSheet>
       spacing: widget.isTablet ? 12 : 10,
       runSpacing: widget.isTablet ? 12 : 10,
       children:
-          SortOrder.values
+          SortOrder.timeSortOptions
               .map(
                 (sort) => _buildFilterChip(
                   label: sort.label,

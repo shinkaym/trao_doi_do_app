@@ -111,7 +111,7 @@ class _CollegeLinksSectionState extends State<CollegeLinksSection> {
         );
       },
       options: CarouselOptions(
-        height: widget.isTablet ? 180.0 : 140.0,
+        height: widget.isTablet ? 200.0 : 180.0,
         autoPlay: true,
         autoPlayInterval: const Duration(seconds: 5),
         autoPlayAnimationDuration: const Duration(milliseconds: 800),
