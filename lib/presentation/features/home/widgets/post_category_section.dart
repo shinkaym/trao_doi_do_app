@@ -245,25 +245,29 @@ class _ActionButton extends StatelessWidget {
       );
     }
 
-    // Icon button style for create button
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(isTablet ? 24 : 20),
+        borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
         child: Tooltip(
           message: tooltip,
           child: Container(
-            padding: EdgeInsets.all(isTablet ? 8 : 6),
-            decoration: BoxDecoration(
-              color: isPrimary ? color.withOpacity(0.12) : Colors.transparent,
-              shape: BoxShape.circle,
-              border:
-                  isPrimary
-                      ? Border.all(color: color.withOpacity(0.3), width: 1)
-                      : null,
+            padding: EdgeInsets.symmetric(
+              horizontal: isTablet ? 10 : 8,
+              vertical: isTablet ? 6 : 5,
             ),
-            child: Icon(icon, color: color, size: isTablet ? 20 : 18),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(isTablet ? 20 : 16),
+              border: Border.all(color: color.withOpacity(0.3), width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.edit, color: color, size: isTablet ? 16 : 14),
+              ],
+            ),
           ),
         ),
       ),

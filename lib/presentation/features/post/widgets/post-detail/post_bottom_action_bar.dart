@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/post/providers/post_provider.dart';
 
 class PostBottomActionBar extends ConsumerStatefulWidget {
@@ -59,7 +60,7 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
         }
 
         // Handle success message for delete action
-        if (current.successMessage != null && 
+        if (current.successMessage != null &&
             current.successMessage!.contains('Xóa bài đăng thành công')) {
           if (mounted) {
             context.showSuccessSnackBar(current.successMessage!);
@@ -109,7 +110,8 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
     }
 
     // UI cho chủ sở hữu bài đăng
-    if (widget.post == null || widget.post!.status == 1) {
+    if (widget.post == null ||
+        widget.post!.status == PostStatus.pending.value) {
       // Ẩn action bar nếu đang chờ duyệt
       return const SizedBox.shrink();
     }
@@ -147,7 +149,8 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
                 ),
 
                 // Nút ghim (hiển thị khi status = 3 hoặc 4)
-                if (postStatus == 3 || postStatus == 4) ...[
+                if (postStatus == PostStatus.approved.value ||
+                    postStatus == PostStatus.locked.value) ...[
                   SizedBox(width: isTablet ? 16 : 12),
                   Expanded(
                     child: _buildRepostButton(
@@ -260,7 +263,7 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
     ColorScheme colorScheme,
     int postStatus,
   ) {
-    final isLocked = postStatus == 4;
+    final isLocked = postStatus == PostStatus.locked.value;
     final buttonText = isLocked ? 'Mở khóa quan tâm' : 'Khóa quan tâm';
     final buttonColor = isLocked ? Colors.green : Colors.orange;
     final buttonIcon = isLocked ? Icons.lock_open : Icons.lock;
@@ -412,7 +415,7 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
   void _handleToggleStatus(BuildContext context) async {
     if (widget.post != null && !_isToggling) {
       final post = widget.post!;
-      final isLocked = post.status == 4;
+      final isLocked = post.status == PostStatus.locked.value;
       final actionText = isLocked ? 'mở khóa' : 'khóa';
 
       final confirmed = await context.showConfirmDialog(
@@ -533,7 +536,8 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
       // Hiển thị dialog xác nhận xóa với cảnh báo nghiêm trọng
       final confirmed = await context.showConfirmDialog(
         title: 'Xác nhận xóa bài đăng',
-        content: 'Bạn có chắc chắn muốn xóa bài đăng này?\n\n'
+        content:
+            'Bạn có chắc chắn muốn xóa bài đăng này?\n\n'
             '⚠️ Hành động này không thể hoàn tác!\n'
             '• Tất cả thông tin bài đăng sẽ bị xóa vĩnh viễn\n'
             '• Danh sách quan tâm sẽ bị xóa\n'
@@ -551,16 +555,14 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
             _isDeleting = true;
           });
 
-          await ref
-              .read(postProvider.notifier)
-              .deletePost(post.id!);
+          await ref.read(postProvider.notifier).deletePost(post.id!);
 
           // Success handling is done in the listener above
         } catch (e) {
           if (mounted) {
             context.dismissDialog();
             context.showErrorSnackBar('Có lỗi xảy ra khi xóa bài đăng!');
-            
+
             setState(() {
               _isDeleting = false;
             });

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
 class TransactionActionButtons extends StatelessWidget {
   final Transaction transaction;
@@ -92,7 +93,9 @@ class TransactionActionButtons extends StatelessWidget {
         SizedBox(height: isTablet ? 16 : 12),
 
         // Edit mode actions (chỉ cho pending transactions và postType != 3)
-        if (isEditing && transaction.status == 1 && postType != 3) ...[
+        if (isEditing &&
+            transaction.status == TransactionStatus.pending.value &&
+            postType != PostType.findLost.value) ...[
           Row(
             children: [
               Expanded(
@@ -118,7 +121,7 @@ class TransactionActionButtons extends StatelessWidget {
               ),
             ],
           ),
-        ] else if (transaction.status == 1) ...[
+        ] else if (transaction.status == TransactionStatus.pending.value) ...[
           // Normal actions for pending transactions
           Row(
             children: [
@@ -190,7 +193,8 @@ class TransactionActionButtons extends StatelessWidget {
               ),
             ],
           ),
-        ] else if (transaction.status == 2 && index == 0) ...[
+        ] else if (transaction.status == TransactionStatus.accepted.value &&
+            index == 0) ...[
           // Actions for completed transactions (allow undo to failed)
           Row(
             children: [

@@ -244,7 +244,7 @@ class PostDetailScreen extends HookConsumerWidget {
 
         if (!canCreateTransaction) {
           final waitMessage =
-              post.type == 3
+              post.type == PostType.findLost.value
                   ? 'Đợi phản hồi từ chủ bài viết'
                   : 'Đợi yêu cầu mới nhất được phản hồi';
 
@@ -323,6 +323,7 @@ class PostDetailScreen extends HookConsumerWidget {
                 (bottomSheetContext) => TransactionListBottomSheet(
                   transactions: updatedTransactionsState.transactions,
                   isPostOwner: false,
+                  postType: post.type,
                   items: interestDetail?.items ?? [],
                   onTransactionUpdated: (updatedTransaction) {
                     // Refresh transactions khi có update
@@ -473,7 +474,7 @@ class PostDetailScreen extends HookConsumerWidget {
                 ),
               ),
 
-            if (!isPostOwner && post.type < 4 && post.interests.isNotEmpty)
+            if (!isPostOwner && post.type < 5 && post.interests.isNotEmpty)
               SliverToBoxAdapter(
                 child: TransactionManagementSection(
                   isTablet: isTablet,
@@ -503,5 +504,5 @@ class PostDetailScreen extends HookConsumerWidget {
         postSlug: postSlug,
       ),
     );
-}
+  }
 }

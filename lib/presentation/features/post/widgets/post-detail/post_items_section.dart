@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
 class PostItemsSection extends StatelessWidget {
   final List<ItemDetail> items;
@@ -39,17 +40,16 @@ class PostItemsSection extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              
+
               // Compact transaction button
               if (showTransactionButton && onTransactionTap != null)
                 ElevatedButton.icon(
                   onPressed: onTransactionTap,
-                  icon: Icon(
-                    Icons.swap_horiz,
-                    size: 16,
-                  ),
+                  icon: Icon(Icons.swap_horiz, size: 16),
                   label: Text(
-                    postType == 3 ? 'Yêu cầu gửi' : 'Tạo giao dịch',
+                    postType == PostType.findLost.value
+                        ? 'Yêu cầu gửi'
+                        : 'Tạo giao dịch',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
@@ -59,8 +59,8 @@ class PostItemsSection extends StatelessWidget {
                     backgroundColor: colorScheme.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12, 
-                      vertical: 8
+                      horizontal: 12,
+                      vertical: 8,
                     ),
                     minimumSize: Size.zero,
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -71,9 +71,9 @@ class PostItemsSection extends StatelessWidget {
                 ),
             ],
           ),
-          
+
           SizedBox(height: isTablet ? 16 : 12),
-          
+
           // Items list
           ...items.map(
             (item) => _buildItemCard(item, isTablet, theme, colorScheme),
@@ -115,13 +115,14 @@ class PostItemsSection extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: item.image.isNotEmpty
-                  ? _buildBase64Image(item.image)
-                  : Icon(
-                      Icons.inventory_2,
-                      color: colorScheme.primary,
-                      size: 20,
-                    ),
+              child:
+                  item.image.isNotEmpty
+                      ? _buildBase64Image(item.image)
+                      : Icon(
+                        Icons.inventory_2,
+                        color: colorScheme.primary,
+                        size: 20,
+                      ),
             ),
           ),
 

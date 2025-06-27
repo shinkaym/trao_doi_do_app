@@ -35,7 +35,7 @@ class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
     final isTablet = context.isTablet;
 
     // Kiểm tra nếu là tìm đồ thất lạc
-    final isLostItemSearch = postType == 3;
+    final isLostItemSearch = postType == PostType.findLost.value;
 
     // Listen to transaction state
     final transactionState = ref.watch(transactionProvider);

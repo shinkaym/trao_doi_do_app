@@ -317,7 +317,8 @@ class TransactionTile extends HookConsumerWidget {
             }).toList(),
 
             // Delivery Method Selection - Using DeliveryMethodSelector widget
-            if (isPostOwner && transaction.status == 1) ...[
+            if (isPostOwner &&
+                transaction.status == TransactionStatus.pending.value) ...[
               SizedBox(height: isTablet ? 16 : 12),
               DeliveryMethodSelector(
                 selectedMethod: selectedDeliveryMethod.value,

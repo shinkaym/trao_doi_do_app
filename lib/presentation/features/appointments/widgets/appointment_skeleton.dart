@@ -1,318 +1,315 @@
 import 'package:flutter/material.dart';
 
-class AppointmentSkeleton extends StatefulWidget {
+// Giữ nguyên ShimmerEffect
+class ShimmerEffect extends StatefulWidget {
+  final Widget child;
+  final bool enabled;
+  final Duration period;
+  final Color? baseColor;
+  final Color? highlightColor;
+
+  const ShimmerEffect({
+    Key? key,
+    required this.child,
+    this.enabled = true,
+    this.period = const Duration(milliseconds: 1500),
+    this.baseColor,
+    this.highlightColor,
+  }) : super(key: key);
+
+  @override
+  State<ShimmerEffect> createState() => _ShimmerEffectState();
+}
+
+class _ShimmerEffectState extends State<ShimmerEffect>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(duration: widget.period, vsync: this);
+    _animation = Tween<double>(begin: -2.0, end: 2.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    );
+
+    if (widget.enabled) {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.enabled) {
+      return widget.child;
+    }
+
+    final brightness = Theme.of(context).brightness;
+    final baseColor =
+        widget.baseColor ??
+        (brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[300]!);
+    final highlightColor =
+        widget.highlightColor ??
+        (brightness == Brightness.dark ? Colors.grey[700]! : Colors.grey[100]!);
+
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return ShaderMask(
+          blendMode: BlendMode.srcATop,
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                baseColor,
+                baseColor,
+                highlightColor,
+                baseColor,
+                baseColor,
+              ],
+              stops: const [0.0, 0.35, 0.5, 0.65, 1.0],
+              transform: GradientRotation(_animation.value),
+            ).createShader(bounds);
+          },
+          child: widget.child,
+        );
+      },
+    );
+  }
+}
+
+// Container skeleton đơn giản
+class SkeletonContainer extends StatelessWidget {
+  final double? width;
+  final double? height;
+  final double borderRadius;
+  final EdgeInsetsGeometry? margin;
+  final bool shimmer;
+
+  const SkeletonContainer({
+    Key? key,
+    this.width,
+    this.height,
+    this.borderRadius = 4,
+    this.margin,
+    this.shimmer = true,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness = Theme.of(context).brightness;
+    final color =
+        brightness == Brightness.dark ? Colors.grey[800]! : Colors.grey[300]!;
+
+    final container = Container(
+      width: width,
+      height: height,
+      margin: margin,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(borderRadius),
+      ),
+    );
+
+    return shimmer ? ShimmerEffect(child: container) : container;
+  }
+}
+
+// Skeleton đơn giản hóa cho AppointmentCard
+class AppointmentSkeleton extends StatelessWidget {
   final bool isTablet;
   final ColorScheme colorScheme;
   final bool showAction;
+  final bool shimmerEnabled;
+  final EdgeInsetsGeometry? margin;
 
   const AppointmentSkeleton({
     super.key,
     required this.isTablet,
     required this.colorScheme,
     this.showAction = true,
+    this.shimmerEnabled = true,
+    this.margin,
   });
 
   @override
-  State<AppointmentSkeleton> createState() => _AppointmentSkeletonState();
-}
-
-class _AppointmentSkeletonState extends State<AppointmentSkeleton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
-    _animation = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    _animationController.repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  Widget _buildShimmerContainer({
-    required double width,
-    required double height,
-    BorderRadius? borderRadius,
-    double? opacity,
-  }) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: widget.colorScheme.surfaceVariant.withOpacity(
-          (opacity ?? _animation.value) * 0.7,
-        ),
-        borderRadius: borderRadius ?? BorderRadius.circular(4),
-      ),
-    );
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(widget.isTablet ? 16 : 12),
-            side: BorderSide(
-              color: widget.colorScheme.outline.withOpacity(0.2),
-            ),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(widget.isTablet ? 20 : 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Row - Status Badge and ID
-                _buildHeaderSection(),
-                SizedBox(height: widget.isTablet ? 12 : 8),
-
-                // User Section
-                _buildUserSection(),
-                SizedBox(height: widget.isTablet ? 16 : 12),
-
-                // Time Section
-                _buildTimeSection(),
-                SizedBox(height: widget.isTablet ? 16 : 12),
-
-                // Items Section
-                _buildItemsSection(),
-
-                // Action Section (conditionally shown)
-                if (widget.showAction) _buildActionSection(),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildHeaderSection() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _buildShimmerContainer(
-          width: widget.isTablet ? 90 : 80,
-          height: widget.isTablet ? 28 : 24,
-          borderRadius: BorderRadius.circular(8),
-          opacity: _animation.value * 0.8,
+    return Container(
+      margin: margin,
+      child: Card(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
+          side: BorderSide(color: colorScheme.outline.withOpacity(0.2)),
         ),
-        _buildShimmerContainer(
-          width: widget.isTablet ? 60 : 50,
-          height: widget.isTablet ? 12 : 10,
-          opacity: _animation.value * 0.6,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildUserSection() {
-    return Row(
-      children: [
-        // Avatar
-        _buildShimmerContainer(
-          width: widget.isTablet ? 32 : 28,
-          height: widget.isTablet ? 32 : 28,
-          borderRadius: BorderRadius.circular(widget.isTablet ? 16 : 14),
-        ),
-        SizedBox(width: widget.isTablet ? 12 : 10),
-
-        // User info
-        Expanded(
+        child: Padding(
+          padding: EdgeInsets.all(isTablet ? 20 : 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // User name
-              _buildShimmerContainer(
-                width: widget.isTablet ? 140 : 120,
-                height: widget.isTablet ? 15 : 13,
+              // Header đơn giản
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  SkeletonContainer(
+                    width: isTablet ? 100 : 80,
+                    height: isTablet ? 24 : 20,
+                    borderRadius: 8,
+                    shimmer: shimmerEnabled,
+                  ),
+                  SkeletonContainer(
+                    width: isTablet ? 60 : 50,
+                    height: isTablet ? 14 : 12,
+                    shimmer: shimmerEnabled,
+                  ),
+                ],
               ),
-              SizedBox(height: 2),
-              // Created time
-              _buildShimmerContainer(
-                width: widget.isTablet ? 100 : 90,
-                height: widget.isTablet ? 12 : 10,
-                opacity: _animation.value * 0.6,
+
+              SizedBox(height: isTablet ? 16 : 12),
+
+              // Content area đơn giản
+              Container(
+                padding: EdgeInsets.all(isTablet ? 16 : 12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceVariant.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    // Time section - đơn giản hóa
+                    Row(
+                      children: [
+                        SkeletonContainer(
+                          width: isTablet ? 32 : 28,
+                          height: isTablet ? 32 : 28,
+                          borderRadius: 6,
+                          shimmer: shimmerEnabled,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SkeletonContainer(
+                                width: 60,
+                                height: 12,
+                                shimmer: shimmerEnabled,
+                              ),
+                              SizedBox(height: 8),
+                              SkeletonContainer(
+                                height: 16,
+                                shimmer: shimmerEnabled,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: 12),
+                    Divider(
+                      height: 1,
+                      color: colorScheme.outline.withOpacity(0.1),
+                    ),
+                    SizedBox(height: 12),
+
+                    // Items section - đơn giản hóa
+                    Row(
+                      children: [
+                        SkeletonContainer(
+                          width: isTablet ? 32 : 28,
+                          height: isTablet ? 32 : 28,
+                          borderRadius: 6,
+                          shimmer: shimmerEnabled,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SkeletonContainer(
+                                width: 80,
+                                height: 12,
+                                shimmer: shimmerEnabled,
+                              ),
+                              SizedBox(height: 8),
+                              // Chỉ hiển thị 2 item thay vì 3
+                              ...List.generate(
+                                2,
+                                (index) => Padding(
+                                  padding: EdgeInsets.only(bottom: 6),
+                                  child: SkeletonContainer(
+                                    height: 14,
+                                    shimmer: shimmerEnabled,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
+
+              // Action button
+              if (showAction) ...[
+                SizedBox(height: isTablet ? 16 : 12),
+                SkeletonContainer(
+                  width: double.infinity,
+                  height: isTablet ? 44 : 40,
+                  borderRadius: 8,
+                  shimmer: shimmerEnabled,
+                ),
+              ],
             ],
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildTimeSection() {
-    return Container(
-      padding: EdgeInsets.all(widget.isTablet ? 16 : 12),
-      decoration: BoxDecoration(
-        color: widget.colorScheme.surfaceVariant.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(8),
       ),
-      child: Row(
-        children: [
-          // Time icon placeholder
-          _buildShimmerContainer(
-            width: widget.isTablet ? 20 : 18,
-            height: widget.isTablet ? 20 : 18,
-            borderRadius: BorderRadius.circular(4),
-            opacity: _animation.value * 0.6,
-          ),
-          SizedBox(width: widget.isTablet ? 12 : 8),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Time label
-                _buildShimmerContainer(
-                  width: widget.isTablet ? 80 : 70,
-                  height: widget.isTablet ? 12 : 10,
-                  opacity: _animation.value * 0.6,
-                ),
-                SizedBox(height: 2),
-                // Time range
-                _buildShimmerContainer(
-                  width: widget.isTablet ? 160 : 140,
-                  height: widget.isTablet ? 15 : 13,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildItemsSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Items header
-        Row(
-          children: [
-            _buildShimmerContainer(
-              width: widget.isTablet ? 16 : 14,
-              height: widget.isTablet ? 16 : 14,
-              borderRadius: BorderRadius.circular(4),
-              opacity: _animation.value * 0.6,
-            ),
-            SizedBox(width: widget.isTablet ? 6 : 4),
-            _buildShimmerContainer(
-              width: widget.isTablet ? 120 : 100,
-              height: widget.isTablet ? 14 : 12,
-            ),
-          ],
-        ),
-        SizedBox(height: widget.isTablet ? 12 : 8),
-
-        // Item rows
-        ...List.generate(3, (index) => _buildItemRowSkeleton()),
-
-        // More items text
-        Padding(
-          padding: EdgeInsets.only(top: widget.isTablet ? 8 : 6),
-          child: _buildShimmerContainer(
-            width: widget.isTablet ? 100 : 80,
-            height: widget.isTablet ? 12 : 10,
-            opacity: _animation.value * 0.5,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildItemRowSkeleton() {
-    return Padding(
-      padding: EdgeInsets.only(bottom: widget.isTablet ? 6 : 4),
-      child: Row(
-        children: [
-          // Bullet point
-          _buildShimmerContainer(
-            width: widget.isTablet ? 6 : 4,
-            height: widget.isTablet ? 6 : 4,
-            borderRadius: BorderRadius.circular(widget.isTablet ? 3 : 2),
-          ),
-          SizedBox(width: widget.isTablet ? 8 : 6),
-
-          // Item name
-          Expanded(
-            child: _buildShimmerContainer(
-              width: double.infinity,
-              height: widget.isTablet ? 13 : 11,
-              opacity: _animation.value * 0.7,
-            ),
-          ),
-
-          // Quantity badge (sometimes shown)
-          if ((DateTime.now().millisecond % 3) == 0) ...[
-            SizedBox(width: widget.isTablet ? 8 : 6),
-            _buildShimmerContainer(
-              width: widget.isTablet ? 24 : 20,
-              height: widget.isTablet ? 16 : 14,
-              borderRadius: BorderRadius.circular(4),
-              opacity: _animation.value * 0.8,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionSection() {
-    return Column(
-      children: [
-        SizedBox(height: widget.isTablet ? 16 : 12),
-        _buildShimmerContainer(
-          width: double.infinity,
-          height: widget.isTablet ? 44 : 40,
-          borderRadius: BorderRadius.circular(8),
-          opacity: _animation.value * 0.8,
-        ),
-      ],
     );
   }
 }
 
-// Skeleton list để hiển thị nhiều skeleton cùng lúc
+// List skeleton
 class AppointmentSkeletonList extends StatelessWidget {
   final bool isTablet;
   final ColorScheme colorScheme;
   final int itemCount;
+  final bool shimmerEnabled;
+  final EdgeInsetsGeometry? padding;
 
   const AppointmentSkeletonList({
     super.key,
     required this.isTablet,
     required this.colorScheme,
-    this.itemCount = 5,
+    this.itemCount = 3, // Giảm từ 5 xuống 3
+    this.shimmerEnabled = true,
+    this.padding,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
+      padding: padding ?? EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
       child: Column(
         children: List.generate(
           itemCount,
-          (index) => Padding(
-            padding: EdgeInsets.only(bottom: isTablet ? 8 : 6),
-            child: AppointmentSkeleton(
-              isTablet: isTablet,
-              colorScheme: colorScheme,
-              showAction: index % 2 == 0, // Show action randomly
+          (index) => AppointmentSkeleton(
+            isTablet: isTablet,
+            colorScheme: colorScheme,
+            showAction: index == 0, // Chỉ item đầu tiên có action
+            shimmerEnabled: shimmerEnabled,
+            margin: EdgeInsets.only(
+              bottom: index < itemCount - 1 ? (isTablet ? 12 : 8) : 0,
             ),
           ),
         ),

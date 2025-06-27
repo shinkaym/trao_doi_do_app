@@ -64,16 +64,15 @@ class CustomBottomNavigation extends HookConsumerWidget {
             next.lastResponse?.event == 'send_message_response' &&
             next.lastResponse?.isSuccess == true &&
             next.lastResponse?.data != null) {
-          
           print('📨 New message received, increasing unread count');
-          
+
           // Tăng unread count thêm 1
           unreadCountNotifier.updateCount(unreadCountState.count + 1);
-          
+
           // Có thể thêm haptic feedback để thông báo cho user
           HapticFeedback.lightImpact();
         }
-        
+
         // Xử lý các event khác nếu cần
         if (previous?.lastResponse != next.lastResponse &&
             next.lastResponse != null) {
@@ -83,7 +82,7 @@ class CustomBottomNavigation extends HookConsumerWidget {
               print('📢 New chat notification received');
               unreadCountNotifier.updateCount(unreadCountState.count + 1);
               break;
-              
+
             case 'mark_as_read_response':
               // Có thể reset unread count nếu server báo đã đọc
               if (next.lastResponse!.isSuccess) {
@@ -91,7 +90,7 @@ class CustomBottomNavigation extends HookConsumerWidget {
                 // Không cần làm gì vì user sẽ tự decrease count khi vào chat
               }
               break;
-              
+
             default:
               // Xử lý các event khác
               break;
@@ -227,11 +226,11 @@ class CustomBottomNavigation extends HookConsumerWidget {
     final colorScheme = context.colorScheme;
     final isSelected = currentIndex == index;
 
-    final isInterestsTab = index == 2;
+    final isInterestsTab = index == 3;
 
     // Tổng unread count từ unread count provider và chat notification counts
     final totalUnreadCount = unreadCountState.count;
-    
+
     final hasUnreadMessages = isInterestsTab && totalUnreadCount > 0;
 
     if (item.isSpecial) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
 class MessageInputWidget extends StatelessWidget {
   final TextEditingController messageController;
@@ -29,8 +30,10 @@ class MessageInputWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
 
-    // Check if post type is not freePost (4)
-    final shouldShowTransactionButton = !isPostOwner && postType != 4;
+    final shouldShowTransactionButton =
+        !isPostOwner &&
+        postType != PostType.freePost.value &&
+        postType != PostType.campaign.value;
 
     return Container(
       padding: EdgeInsets.all(isTablet ? 16 : 12),

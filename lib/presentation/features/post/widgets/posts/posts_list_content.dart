@@ -152,7 +152,7 @@ class PostsListContent extends HookConsumerWidget {
         final info = jsonDecode(post.info);
 
         // For FindLost type, get reward from info
-        if (post.type == 3) {
+        if (post.type == PostType.findLost.value) {
           final findLostInfo = FindLostInfo.fromJson(info);
           return findLostInfo.reward.isNotEmpty ? findLostInfo.reward : null;
         }
@@ -169,7 +169,7 @@ class PostsListContent extends HookConsumerWidget {
         final info = jsonDecode(post.info);
 
         // For FoundItem type
-        if (post.type == 2) {
+        if (post.type == PostType.foundItem.value) {
           final foundItemInfo = FoundItemInfo.fromJson(info);
           return foundItemInfo.foundLocation.isNotEmpty
               ? foundItemInfo.foundLocation
@@ -177,7 +177,7 @@ class PostsListContent extends HookConsumerWidget {
         }
 
         // For FindLost type
-        if (post.type == 3) {
+        if (post.type == PostType.findLost.value) {
           final findLostInfo = FindLostInfo.fromJson(info);
           return findLostInfo.lostLocation.isNotEmpty
               ? findLostInfo.lostLocation

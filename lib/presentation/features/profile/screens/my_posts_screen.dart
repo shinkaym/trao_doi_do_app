@@ -18,7 +18,7 @@ class MyPostsScreen extends HookConsumerWidget {
 
   void _onToggleStatus(BuildContext context, WidgetRef ref, Post post) async {
     final postNotifier = ref.read(postProvider.notifier);
-    final isLocked = post.status == 4;
+    final isLocked = post.status == PostStatus.locked.value;
     final actionText = isLocked ? 'mở khóa' : 'khóa';
 
     final confirmed = await context.showConfirmDialog(
@@ -38,7 +38,9 @@ class MyPostsScreen extends HookConsumerWidget {
 
         ref.read(myPostsListProvider.notifier).refresh();
 
-        context.showSuccessSnackBar('Đã $actionText quan tâm của bài đăng thành công!');
+        context.showSuccessSnackBar(
+          'Đã $actionText quan tâm của bài đăng thành công!',
+        );
       } catch (e) {
         context.dismissDialog();
 
@@ -102,7 +104,8 @@ class MyPostsScreen extends HookConsumerWidget {
 
     final confirmed = await context.showConfirmDialog(
       title: 'Xác nhận xóa',
-      content: 'Bạn có chắc chắn muốn xóa bài đăng này? Hành động này không thể hoàn tác.',
+      content:
+          'Bạn có chắc chắn muốn xóa bài đăng này? Hành động này không thể hoàn tác.',
       confirmText: 'Xóa',
       cancelText: 'Hủy',
     );

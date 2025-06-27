@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
 class EditableTransactionItem extends StatelessWidget {
   final TransactionItem transactionItem;
@@ -85,7 +86,8 @@ class EditableTransactionItem extends StatelessWidget {
                     SizedBox(height: isTablet ? 6 : 4),
 
                     // Quantity info
-                    if (transactionStatus == 2) ...[
+                    if (transactionStatus ==
+                        TransactionStatus.accepted.value) ...[
                       Row(
                         children: [
                           Text(
@@ -165,7 +167,9 @@ class EditableTransactionItem extends StatelessWidget {
           ),
 
           // Quantity controls (only when editing)
-          if (isEditing && isPostOwner && transactionStatus == 1) ...[
+          if (isEditing &&
+              isPostOwner &&
+              transactionStatus == TransactionStatus.pending.value) ...[
             SizedBox(height: isTablet ? 16 : 12),
             Row(
               children: [

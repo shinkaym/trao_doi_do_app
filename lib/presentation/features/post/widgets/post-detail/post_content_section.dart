@@ -246,7 +246,7 @@ class PostContentSection extends HookConsumerWidget {
       child: Column(
         children: [
           // Type-specific details
-          if (post.type == 2) ...[
+          if (post.type == PostType.foundItem.value) ...[
             // Found Item - show found location and date
             if (info['foundLocation'] != null)
               _buildDetailRow(
@@ -264,7 +264,7 @@ class PostContentSection extends HookConsumerWidget {
                 theme,
               ),
             ],
-          ] else if (post.type == 3) ...[
+          ] else if (post.type == PostType.findLost.value) ...[
             // Find Lost - show lost location, date, reward, category
             if (info['lostLocation'] != null)
               _buildDetailRow(
@@ -304,7 +304,9 @@ class PostContentSection extends HookConsumerWidget {
 
           // Common details
           if (post.createdAt != null) ...[
-            if (post.type == 2 || post.type == 3) const SizedBox(height: 12),
+            if (post.type == PostType.foundItem.value ||
+                post.type == PostType.findLost.value)
+              const SizedBox(height: 12),
             _buildDetailRow(
               Icons.schedule,
               'Thời gian đăng',

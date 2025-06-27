@@ -2,6 +2,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/appointment.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_appointment_detail_usecase.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
 class AppointmentDetailState {
   final bool isLoading;
@@ -110,33 +111,7 @@ class AppointmentDetailNotifier extends StateNotifier<AppointmentDetailState> {
   bool canBeCancelled() {
     if (state.appointmentDetail == null) return false;
 
-    // Có thể hủy nếu trạng thái là chờ xác nhận hoặc đã xác nhận
-    return state.appointmentDetail!.status == 0 ||
-        state.appointmentDetail!.status == 1;
-  }
-
-  // Helper method to check if appointment can be confirmed
-  bool canBeConfirmed() {
-    if (state.appointmentDetail == null) return false;
-
-    // Có thể xác nhận nếu trạng thái là chờ xác nhận
-    return state.appointmentDetail!.status == 0;
-  }
-
-  // Helper method to check if appointment can be started
-  bool canBeStarted() {
-    if (state.appointmentDetail == null) return false;
-
-    // Có thể bắt đầu nếu trạng thái là đã xác nhận
-    return state.appointmentDetail!.status == 1;
-  }
-
-  // Helper method to check if appointment can be completed
-  bool canBeCompleted() {
-    if (state.appointmentDetail == null) return false;
-
-    // Có thể hoàn thành nếu trạng thái là đang thực hiện
-    return state.appointmentDetail!.status == 2;
+    return state.appointmentDetail!.status == AppointmentStatus.scheduled.value;
   }
 
   // Helper method to get total items count

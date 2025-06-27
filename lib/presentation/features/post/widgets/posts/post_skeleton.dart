@@ -4,12 +4,16 @@ class PostSkeleton extends StatefulWidget {
   final bool isTablet;
   final ColorScheme colorScheme;
   final bool showImage;
+  final bool showAuthor;
+  final bool showReward;
 
   const PostSkeleton({
     super.key,
     required this.isTablet,
     required this.colorScheme,
     this.showImage = true,
+    this.showAuthor = true,
+    this.showReward = true,
   });
 
   @override
@@ -28,7 +32,7 @@ class _PostSkeletonState extends State<PostSkeleton>
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-    _animation = Tween<double>(begin: 0.3, end: 1.0).animate(
+    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
     _animationController.repeat(reverse: true);
@@ -40,63 +44,36 @@ class _PostSkeletonState extends State<PostSkeleton>
     super.dispose();
   }
 
+  Color _getBaseColor() {
+    return Theme.of(context).brightness == Brightness.light
+        ? Colors.grey[300]!
+        : Colors.grey[700]!;
+  }
+
+  Color _getHighlightColor() {
+    return Theme.of(context).brightness == Brightness.light
+        ? Colors.grey[100]!
+        : Colors.grey[600]!;
+  }
+
   Widget _buildShimmerContainer({
     required double width,
     required double height,
     BorderRadius? borderRadius,
-    double? opacity,
   }) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: widget.colorScheme.surfaceVariant.withOpacity(
-          (opacity ?? _animation.value) * 0.7,
-        ),
-        borderRadius: borderRadius ?? BorderRadius.circular(4),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _animation,
       builder: (context, child) {
-        return Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(widget.isTablet ? 16 : 12),
-            side: BorderSide(
-              color: widget.colorScheme.outline.withOpacity(0.2),
-            ),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(widget.isTablet ? 20 : 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header Row - Type Badge
-                _buildHeaderSection(),
-                SizedBox(height: widget.isTablet ? 12 : 8),
-
-                // Author Section
-                _buildAuthorSection(),
-                SizedBox(height: widget.isTablet ? 16 : 12),
-
-                // Title and Description
-                _buildTitleAndDescriptionSection(),
-
-                // Images Section (conditionally shown)
-                if (widget.showImage) _buildImagesSection(),
-                SizedBox(height: widget.isTablet ? 16 : 12),
-
-                // Location and Reward Section
-                _buildLocationAndRewardSection(),
-
-                // Stats Section
-                _buildStatsSection(),
-              ],
+        return Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            borderRadius: borderRadius ?? BorderRadius.circular(4),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [_getBaseColor(), _getHighlightColor(), _getBaseColor()],
+              stops: [0.0, _animation.value, 1.0],
             ),
           ),
         );
@@ -104,186 +81,117 @@ class _PostSkeletonState extends State<PostSkeleton>
     );
   }
 
-  Widget _buildHeaderSection() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        _buildShimmerContainer(
-          width: widget.isTablet ? 80 : 70,
-          height: widget.isTablet ? 28 : 24,
-          borderRadius: BorderRadius.circular(8),
-          opacity: _animation.value * 0.8,
-        ),
-      ],
-    );
-  }
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(widget.isTablet ? 16 : 12),
+        side: BorderSide(color: widget.colorScheme.outline.withOpacity(0.2)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(widget.isTablet ? 20 : 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header - Type badge only
+            _buildShimmerContainer(
+              width: widget.isTablet ? 80 : 70,
+              height: widget.isTablet ? 24 : 20,
+              borderRadius: BorderRadius.circular(6),
+            ),
 
-  Widget _buildAuthorSection() {
-    return Row(
-      children: [
-        // Avatar
-        _buildShimmerContainer(
-          width: widget.isTablet ? 32 : 28,
-          height: widget.isTablet ? 32 : 28,
-          borderRadius: BorderRadius.circular(widget.isTablet ? 16 : 14),
-        ),
-        SizedBox(width: widget.isTablet ? 12 : 10),
+            SizedBox(height: widget.isTablet ? 16 : 12),
 
-        // Author info
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Author name
-              _buildShimmerContainer(
-                width: widget.isTablet ? 120 : 100,
-                height: widget.isTablet ? 15 : 13,
+            // Author Section (simplified)
+            if (widget.showAuthor) ...[
+              Row(
+                children: [
+                  _buildShimmerContainer(
+                    width: widget.isTablet ? 28 : 24,
+                    height: widget.isTablet ? 28 : 24,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  SizedBox(width: widget.isTablet ? 10 : 8),
+                  _buildShimmerContainer(
+                    width: widget.isTablet ? 120 : 100,
+                    height: widget.isTablet ? 14 : 12,
+                  ),
+                ],
               ),
-              SizedBox(height: 2),
-              // Time
-              _buildShimmerContainer(
-                width: widget.isTablet ? 80 : 70,
-                height: widget.isTablet ? 12 : 10,
-                opacity: _animation.value * 0.6,
+              SizedBox(height: widget.isTablet ? 16 : 12),
+            ],
+
+            // Title - 2 lines only
+            _buildShimmerContainer(
+              width: double.infinity,
+              height: widget.isTablet ? 18 : 16,
+            ),
+            SizedBox(height: widget.isTablet ? 8 : 6),
+            _buildShimmerContainer(
+              width: MediaQuery.of(context).size.width * 0.6,
+              height: widget.isTablet ? 18 : 16,
+            ),
+
+            SizedBox(height: widget.isTablet ? 12 : 10),
+
+            // Description - 2 lines only
+            _buildShimmerContainer(
+              width: double.infinity,
+              height: widget.isTablet ? 14 : 12,
+            ),
+            SizedBox(height: widget.isTablet ? 6 : 4),
+            _buildShimmerContainer(
+              width: MediaQuery.of(context).size.width * 0.8,
+              height: widget.isTablet ? 14 : 12,
+            ),
+
+            // Images Section (simplified)
+            if (widget.showImage) ...[
+              SizedBox(height: widget.isTablet ? 16 : 12),
+              Row(
+                children: [
+                  _buildShimmerContainer(
+                    width: widget.isTablet ? 60 : 50,
+                    height: widget.isTablet ? 60 : 50,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  SizedBox(width: widget.isTablet ? 8 : 6),
+                  _buildShimmerContainer(
+                    width: widget.isTablet ? 60 : 50,
+                    height: widget.isTablet ? 60 : 50,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                ],
               ),
             ],
-          ),
-        ),
-      ],
-    );
-  }
 
-  Widget _buildTitleAndDescriptionSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Title - 2 lines maximum
-        _buildShimmerContainer(
-          width: double.infinity,
-          height: widget.isTablet ? 18 : 16,
-        ),
-        SizedBox(height: widget.isTablet ? 6 : 4),
-        _buildShimmerContainer(
-          width: widget.isTablet ? 240 : 200,
-          height: widget.isTablet ? 18 : 16,
-        ),
-        
-        SizedBox(height: widget.isTablet ? 12 : 8),
+            SizedBox(height: widget.isTablet ? 16 : 12),
 
-        // Description - 3 lines maximum
-        _buildShimmerContainer(
-          width: double.infinity,
-          height: widget.isTablet ? 15 : 13,
-          opacity: _animation.value * 0.7,
-        ),
-        SizedBox(height: widget.isTablet ? 6 : 4),
-        _buildShimmerContainer(
-          width: double.infinity,
-          height: widget.isTablet ? 15 : 13,
-          opacity: _animation.value * 0.7,
-        ),
-        SizedBox(height: widget.isTablet ? 6 : 4),
-        _buildShimmerContainer(
-          width: widget.isTablet ? 180 : 150,
-          height: widget.isTablet ? 15 : 13,
-          opacity: _animation.value * 0.7,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildImagesSection() {
-    return Column(
-      children: [
-        SizedBox(height: widget.isTablet ? 16 : 12),
-        SizedBox(
-          height: widget.isTablet ? 80 : 60,
-          child: Row(
-            children: List.generate(
-              3, // Show 3 image placeholders
-              (index) => Container(
-                margin: EdgeInsets.only(
-                  right: index < 2 ? (widget.isTablet ? 12 : 8) : 0,
+            // Bottom row - Location and reward
+            Row(
+              children: [
+                _buildShimmerContainer(
+                  width: widget.isTablet ? 100 : 80,
+                  height: widget.isTablet ? 12 : 10,
                 ),
-                child: _buildShimmerContainer(
-                  width: widget.isTablet ? 80 : 60,
-                  height: widget.isTablet ? 80 : 60,
-                  borderRadius: BorderRadius.circular(8),
-                  opacity: _animation.value * 0.6,
-                ),
-              ),
+                const Spacer(),
+                if (widget.showReward)
+                  _buildShimmerContainer(
+                    width: widget.isTablet ? 60 : 50,
+                    height: widget.isTablet ? 20 : 18,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+              ],
             ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLocationAndRewardSection() {
-    return Column(
-      children: [
-        Row(
-          children: [
-            // Location icon placeholder
-            _buildShimmerContainer(
-              width: widget.isTablet ? 16 : 14,
-              height: widget.isTablet ? 16 : 14,
-              borderRadius: BorderRadius.circular(4),
-              opacity: _animation.value * 0.6,
-            ),
-            SizedBox(width: widget.isTablet ? 6 : 4),
-
-            // Location text placeholder
-            Expanded(
-              child: _buildShimmerContainer(
-                width: double.infinity,
-                height: widget.isTablet ? 13 : 11,
-                opacity: _animation.value * 0.6,
-              ),
-            ),
-
-            SizedBox(width: widget.isTablet ? 12 : 8),
-
-            // Reward placeholder (sometimes shown)
-            if (widget.showImage) // Use showImage as a random condition
-              _buildShimmerContainer(
-                width: widget.isTablet ? 60 : 50,
-                height: widget.isTablet ? 24 : 20,
-                borderRadius: BorderRadius.circular(6),
-                opacity: _animation.value * 0.8,
-              ),
           ],
         ),
-        SizedBox(height: widget.isTablet ? 12 : 8),
-      ],
-    );
-  }
-
-  Widget _buildStatsSection() {
-    return Row(
-      children: [
-        // First stat (like interest count)
-        _buildShimmerContainer(
-          width: widget.isTablet ? 50 : 40,
-          height: widget.isTablet ? 24 : 20,
-          borderRadius: BorderRadius.circular(6),
-          opacity: _animation.value * 0.8,
-        ),
-        SizedBox(width: widget.isTablet ? 16 : 12),
-
-        // Second stat (like item count)
-        _buildShimmerContainer(
-          width: widget.isTablet ? 45 : 35,
-          height: widget.isTablet ? 24 : 20,
-          borderRadius: BorderRadius.circular(6),
-          opacity: _animation.value * 0.8,
-        ),
-      ],
+      ),
     );
   }
 }
 
-// Skeleton list để hiển thị nhiều skeleton cùng lúc
+// Simplified skeleton list
 class PostSkeletonList extends StatelessWidget {
   final bool isTablet;
   final ColorScheme colorScheme;
@@ -304,11 +212,13 @@ class PostSkeletonList extends StatelessWidget {
         children: List.generate(
           itemCount,
           (index) => Padding(
-            padding: EdgeInsets.only(bottom: isTablet ? 8 : 6),
+            padding: EdgeInsets.only(bottom: isTablet ? 12 : 8),
             child: PostSkeleton(
               isTablet: isTablet,
               colorScheme: colorScheme,
-              showImage: index % 3 == 0, // Show images randomly
+              showImage: index % 2 == 0, // Show images every other item
+              showAuthor: index % 3 != 0, // Hide author every 3rd item
+              showReward: index % 4 == 0, // Show reward every 4th item
             ),
           ),
         ),
