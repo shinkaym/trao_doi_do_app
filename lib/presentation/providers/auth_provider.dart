@@ -16,6 +16,7 @@ class AuthState {
   final Failure? failure;
   final String? successMessage;
   final bool isInitialized;
+  final bool forceLogout; // Thêm flag để force logout
 
   const AuthState({
     this.isLoading = false,
@@ -24,6 +25,7 @@ class AuthState {
     this.failure,
     this.successMessage,
     this.isInitialized = false,
+    this.forceLogout = false,
   });
 
   AuthState copyWith({
@@ -33,6 +35,7 @@ class AuthState {
     Failure? failure,
     String? successMessage,
     bool? isInitialized,
+    bool? forceLogout,
     bool clearUser = false,
     bool clearFailure = false,
     bool clearSuccessMessage = false,
@@ -45,8 +48,32 @@ class AuthState {
       successMessage:
           clearSuccessMessage ? null : (successMessage ?? this.successMessage),
       isInitialized: isInitialized ?? this.isInitialized,
+      forceLogout: forceLogout ?? this.forceLogout,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AuthState &&
+          runtimeType == other.runtimeType &&
+          isLoading == other.isLoading &&
+          isLoggedIn == other.isLoggedIn &&
+          user == other.user &&
+          failure == other.failure &&
+          successMessage == other.successMessage &&
+          isInitialized == other.isInitialized &&
+          forceLogout == other.forceLogout;
+
+  @override
+  int get hashCode =>
+      isLoading.hashCode ^
+      isLoggedIn.hashCode ^
+      user.hashCode ^
+      failure.hashCode ^
+      successMessage.hashCode ^
+      isInitialized.hashCode ^
+      forceLogout.hashCode;
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
@@ -87,7 +114,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         },
         (isLoggedIn) async {
           if (isLoggedIn) {
-            await _loadUserFromLocal();
+            // Đã đăng nhập, load user và verify token
+            await _loadAndVerifyUser();
           } else {
             state = state.copyWith(
               isLoading: false,
@@ -109,53 +137,83 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<void> _loadUserFromLocal() async {
-    final result = await _getCurrentUserUseCase();
+  /// Load user từ local và verify bằng cách gọi API getMe
+  Future<void> _loadAndVerifyUser() async {
+    final localUserResult = await _getCurrentUserUseCase();
 
-    result.fold(
-      (failure) {
-        state = state.copyWith(
-          isLoading: false,
-          isLoggedIn: false,
-          isInitialized: true,
-          clearUser: true,
-        );
+    await localUserResult.fold(
+      (failure) async {
+        // Không có user local hoặc lỗi, logout
+        await _clearAuthState();
       },
-      (user) {
+      (localUser) async {
+        if (localUser == null) {
+          await _clearAuthState();
+          return;
+        }
+
+        // Set user local trước, sau đó verify với server
         state = state.copyWith(
           isLoading: false,
-          isLoggedIn: user != null,
-          user: user,
+          isLoggedIn: true,
+          user: localUser,
           isInitialized: true,
         );
 
-        // Nếu có user, refresh thông tin từ server (background)
-        if (user != null) {
-          _refreshUserFromServer();
-        }
+        // Verify token bằng cách gọi getMe (background)
+        _verifyTokenInBackground();
       },
     );
   }
 
-  Future<void> _refreshUserFromServer() async {
+  /// Verify token trong background, không ảnh hưởng UI loading
+  Future<void> _verifyTokenInBackground() async {
     try {
       final result = await _getMeUseCase();
 
       result.fold(
         (failure) {
-          // Silent fail - log only, don't affect UX
+          // Token không hợp lệ, logout user
+          _clearAuthState();
         },
-        (user) {
-          // Chỉ update nếu có thay đổi
-          if (state.user?.id != user.id ||
-              state.user?.email != user.email ||
-              state.user?.fullName != user.fullName ||
-              state.user?.avatar != user.avatar) {
-            state = state.copyWith(user: user);
+        (serverUser) {
+          // Token hợp lệ, update user info nếu có thay đổi
+          if (_shouldUpdateUser(state.user, serverUser)) {
+            state = state.copyWith(user: serverUser);
           }
         },
       );
-    } catch (e) {}
+    } catch (e) {
+      // Network error hoặc lỗi khác, giữ nguyên state hiện tại
+      // Log error nhưng không logout user
+    }
+  }
+
+  bool _shouldUpdateUser(User? currentUser, User serverUser) {
+    if (currentUser == null) return true;
+
+    return currentUser.id != serverUser.id ||
+        currentUser.email != serverUser.email ||
+        currentUser.fullName != serverUser.fullName ||
+        currentUser.avatar != serverUser.avatar ||
+        currentUser.goodPoint != serverUser.goodPoint ||
+        currentUser.status != serverUser.status;
+  }
+
+  Future<void> _clearAuthState() async {
+    state = state.copyWith(
+      isLoading: false,
+      isLoggedIn: false,
+      isInitialized: true,
+      clearUser: true,
+      forceLogout: true, // Set force logout
+    );
+
+    // Reset force logout sau một frame để tránh infinite loop
+    await Future.delayed(Duration.zero);
+    if (mounted) {
+      state = state.copyWith(forceLogout: false);
+    }
   }
 
   Future<void> getMe({bool showLoading = true}) async {
@@ -182,19 +240,31 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
+  /// Refresh user info từ server (cho pull-to-refresh)
   Future<void> refreshUserInfo() async {
     await getMe(showLoading: false);
   }
 
+  /// Handle khi token expired từ interceptor - QUAN TRỌNG
   void handleTokenExpired() {
-    // Reset auth state when token expires
-    state = const AuthState(
+    print('🚨 AuthNotifier: handleTokenExpired called');
+
+    state = state.copyWith(
       isInitialized: true,
       isLoggedIn: false,
+      clearUser: true,
+      forceLogout: true,
       failure: ServerFailure(
         'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
       ),
     );
+
+    // Reset force logout sau một frame
+    Future.delayed(Duration.zero).then((_) {
+      if (mounted) {
+        state = state.copyWith(forceLogout: false);
+      }
+    });
   }
 
   Future<void> login({
@@ -235,8 +305,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     result.fold(
       (failure) {
-        // Log error but still clear local state
-        print('Logout API failed: ${failure.message}');
+        // Log error nhưng vẫn clear local state
         state = const AuthState(
           isInitialized: true,
           successMessage: 'Đăng xuất thành công!',
@@ -251,21 +320,39 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
+  /// IMPROVED: Better refresh token handling
   Future<void> refreshToken() async {
+    print('🔄 AuthNotifier: refreshToken called');
+
     final result = await _refreshTokenUseCase();
 
     result.fold(
       (failure) {
-        // Token refresh failed, logout user
-        state = const AuthState(
+        print('❌ AuthNotifier: Token refresh failed - ${failure.message}');
+
+        // Token refresh failed, clear auth state và force logout
+        state = state.copyWith(
           isInitialized: true,
           isLoggedIn: false,
+          clearUser: true,
+          forceLogout: true,
           failure: ServerFailure('Phiên đăng nhập đã hết hạn'),
         );
+
+        // Reset force logout sau một frame
+        Future.delayed(Duration.zero).then((_) {
+          if (mounted) {
+            state = state.copyWith(forceLogout: false);
+          }
+        });
       },
       (user) {
-        // Refresh thành công
-        state = state.copyWith(user: user, isLoggedIn: user != null);
+        print('✅ AuthNotifier: Token refresh successful');
+        state = state.copyWith(
+          user: user,
+          isLoggedIn: user != null,
+          clearFailure: true,
+        );
       },
     );
   }

@@ -282,3 +282,26 @@ enum AppointmentStatus {
   /// Lấy tất cả appointment statuses
   static List<AppointmentStatus> get allStatuses => AppointmentStatus.values;
 }
+
+enum GoodDeedType {
+  giveOldItems('Tặng đồ cũ', Icons.volunteer_activism, Colors.blue, 1),
+  returnLostItems('Trả đồ thất lạc', Icons.restore, Colors.green, 2),
+  joinCampaign('Tham gia chiến dịch', Icons.campaign, Colors.teal, 3);
+
+  const GoodDeedType(this.label, this.icon, this.color, this.value);
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final int value;
+
+  static GoodDeedType fromValue(int value) {
+    return GoodDeedType.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => GoodDeedType.giveOldItems,
+    );
+  }
+
+  /// Lấy tất cả good deed types
+  static List<GoodDeedType> get allTypes => GoodDeedType.values;
+}

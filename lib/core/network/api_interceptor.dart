@@ -350,7 +350,9 @@ class ApiInterceptor extends Interceptor {
       return await tokenRefreshService.refreshToken(authDataSource);
     } catch (e) {
       final logger = ref.read(loggerProvider);
+
       logger.e('Token refresh failed: $e');
+      _clearAuthDataAndNotify();
       return null;
     }
   }

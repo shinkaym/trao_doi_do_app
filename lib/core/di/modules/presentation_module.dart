@@ -12,6 +12,8 @@ import 'package:trao_doi_do_app/presentation/features/post/providers/post_provid
 import 'package:trao_doi_do_app/presentation/features/post/providers/posts_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/post/providers/post_detail_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/providers/my_posts_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/ranking/providers/my_good_deeds_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/ranking/providers/ranking_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/splash/providers/splash_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/onboarding/providers/onboarding_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/item_warehouse/providers/claim_request_provider.dart';
@@ -308,3 +310,17 @@ final appointmentUpdatingProvider = Provider.family<bool, int>((
 ) {
   return ref.watch(appointmentProvider).isAppointmentUpdating(appointmentID);
 });
+
+final rankingProvider =
+    StateNotifierProvider.autoDispose<RankingNotifier, RankingState>((ref) {
+      final getUserRanksUseCase = ref.watch(getUserRanksUseCaseProvider);
+      return RankingNotifier(getUserRanksUseCase);
+    });
+
+final myGoodDeedsProvider =
+    StateNotifierProvider.autoDispose<MyGoodDeedsNotifier, MyGoodDeedsState>((
+      ref,
+    ) {
+      final getMyGoodDeedsUseCase = ref.watch(getMyGoodDeedsUseCaseProvider);
+      return MyGoodDeedsNotifier(getMyGoodDeedsUseCase);
+    });

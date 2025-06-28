@@ -25,7 +25,6 @@ import 'package:trao_doi_do_app/presentation/features/profile/screens/edit_profi
 import 'package:trao_doi_do_app/presentation/features/profile/screens/profile_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/ranking/screens/ranking_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/screens/appointments_screen.dart';
-// import 'package:trao_doi_do_app/presentation/features/appointments/screens/appointment_detail_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/splash/screens/splash_screen.dart';
 import 'package:trao_doi_do_app/presentation/widgets/scaffold_with_navbar.dart';
 
@@ -101,7 +100,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         return null;
       }
 
-      // Protected routes - TẤT CẢ các màn hình chính đều yêu cầu đăng nhập
       if (RouteUtils.isProtectedRoute(currentPath)) {
         if (!routerState.isLoggedIn) {
           return RouteConstants.login;
@@ -121,7 +119,6 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-// Custom RouterNotifier to handle state changes properly
 class RouterNotifier extends ChangeNotifier {
   final Ref _ref;
   RouterState? _lastState;
@@ -191,11 +188,11 @@ ShellRoute _buildShellRoute() {
       );
     },
     routes: [
-      _buildHomeRoute(), // Thêm home route
+      _buildHomeRoute(),
       _buildPostsRoute(),
       _buildWarehouseRoute(),
       _buildInterestsRoute(),
-      _buildProfileRoute(), // Profile sẽ chứa ranking và appointments
+      _buildProfileRoute(),
       _buildNotificationRoute(),
     ],
   );

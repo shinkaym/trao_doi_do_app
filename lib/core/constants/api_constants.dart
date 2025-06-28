@@ -4,23 +4,27 @@ class ApiConstants {
   static String get baseUrl => AppConfig.apiUrl;
 
   // Endpoints
+  static const String client = '/client';
   static const String categories = '/categories';
   static const String items = '/items';
   static const String posts = '/posts';
-  static const String clientLogin = '/client/login';
-  static const String clientLogout = '/client/logout';
-  static const String clientPosts = '/client/posts';
-  static const String clientGetMe = '/client/get-me';
+  static const String clientLogin = '$client/login';
+  static const String clientLogout = '$client/logout';
+  static const String clientPosts = '$client/posts';
+  static const String clientGetMe = '$client/get-me';
   static const String interests = '/interests';
   static const String transactions = '/transactions';
   static const String refreshToken = '/refresh-token';
   static const String messages = '/messages';
-  static const String clientItemWarehouses = '/client/item-warehouses';
+  static const String clientItemWarehouses = '$client/item-warehouses';
   static const String claimRequest = '$clientItemWarehouses/claim-request';
   static const String oldStock = '$clientItemWarehouses/old-stock';
   static const String myPosts = '$posts/my-post';
-  static const String clientAppointments = '/client/appointments';
+  static const String clientAppointments = '$client/appointments';
   static const String appointments = '/appointments';
+  static const String users = '/users';
+  static const String ranks = '$client$users/ranks';
+  static const String myRanks = '$client$users/my-good-dees';
 
   // Headers
   static const String contentType = 'Content-Type';
