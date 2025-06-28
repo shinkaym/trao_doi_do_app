@@ -4,16 +4,15 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
-import 'package:trao_doi_do_app/domain/entities/post.dart';
-import 'package:trao_doi_do_app/domain/entities/user.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/transaction_query.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/transaction_list_bottom_sheet.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/post-detail/post_bottom_action_bar.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/post-detail/post_content_section.dart';
+import 'package:trao_doi_do_app/presentation/features/post/widgets/post-detail/post_detail_helpers.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/post-detail/post_detail_states.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/post-detail/post_image_gallery.dart';
-import 'package:trao_doi_do_app/presentation/features/post/widgets/post-detail/post_interests_section.dart';
+import 'package:trao_doi_do_app/presentation/features/post/widgets/post-detail/post_interests_disolay.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/post-detail/post_items_section.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/transaction_item_selection_bottom_sheet.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/post-detail/transaction_management_section.dart';
@@ -23,14 +22,10 @@ class PostDetailScreen extends HookConsumerWidget {
 
   const PostDetailScreen({super.key, required this.postSlug});
 
-  bool isPostAuthor(PostDetail post, User? currentUser) {
-    if (currentUser == null) return false;
-    return post.authorID == currentUser.id;
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userInterestId = useState<int?>(null);
+
     // Hooks
     final pageController = usePageController();
     final animationController = useAnimationController(
@@ -55,30 +50,15 @@ class PostDetailScreen extends HookConsumerWidget {
     final transactionsNotifier = ref.read(transactionsListProvider.notifier);
     ref.watch(transactionsListProvider);
 
-    // Helper functions to check interest status
-    bool isUserInterested(List<PostInterest> interests, int? userID) {
-      if (userID == null) return false;
-      return interests.any((interest) => interest.userID == userID);
-    }
-
-    int? getUserInterestId(List<PostInterest> interests, int? userID) {
-      if (userID == null) return null;
-      try {
-        final userInterest = interests.firstWhere(
-          (interest) => interest.userID == userID,
-        );
-        return userInterest.id;
-      } catch (e) {
-        return null;
-      }
-    }
-
     // Tính currentUserInterestId từ post data
     final post = postDetailState.post;
     final currentUser = authState.user;
     final currentUserInterestId =
         post != null && currentUser != null
-            ? getUserInterestId(post.interests, currentUser.id)
+            ? PostDetailHelpers.getUserInterestId(
+              post.interests,
+              currentUser.id,
+            )
             : null;
 
     // Watch interestDetailProvider nếu có currentUserInterestId
@@ -164,7 +144,10 @@ class PostDetailScreen extends HookConsumerWidget {
       }
 
       if (!interestState.isLoading) {
-        final userInterested = isUserInterested(post.interests, currentUser.id);
+        final userInterested = PostDetailHelpers.isUserInterested(
+          post.interests,
+          currentUser.id,
+        );
         final action =
             userInterested ? InterestAction.cancel : InterestAction.create;
 
@@ -192,7 +175,7 @@ class PostDetailScreen extends HookConsumerWidget {
       }
     }
 
-    // Handle item transaction - Fixed version
+    // Handle item transaction
     void handleItemTransactionTap() async {
       final post = postDetailState.post;
       final currentUser = authState.user;
@@ -205,14 +188,11 @@ class PostDetailScreen extends HookConsumerWidget {
       }
 
       // Check if user is post owner
-      final isPostOwner = isPostAuthor(post, currentUser);
+      final isPostOwner = PostDetailHelpers.isPostAuthor(post, currentUser);
       if (isPostOwner) {
         context.showInfoSnackBar('Chủ bài viết không thể tạo giao dịch');
         return;
       }
-
-      // Show loading indicator
-      // You can add a loading state here if needed
 
       try {
         // Load transactions for this interest
@@ -304,7 +284,7 @@ class PostDetailScreen extends HookConsumerWidget {
           searchValue: currentUserInterestId.toString(),
         );
 
-        // Wait for transactions to load - KHÔNG show loading dialog
+        // Wait for transactions to load
         await transactionsNotifier.loadTransactions(
           newQuery: query,
           refresh: true,
@@ -313,7 +293,7 @@ class PostDetailScreen extends HookConsumerWidget {
         // Lấy transactions state sau khi load xong
         final updatedTransactionsState = ref.read(transactionsListProvider);
 
-        // Show transactions bottom sheet - chỉ show khi context vẫn mounted
+        // Show transactions bottom sheet
         if (context.mounted) {
           showModalBottomSheet(
             context: context,
@@ -368,18 +348,29 @@ class PostDetailScreen extends HookConsumerWidget {
       return PostDetailStates.buildNotFoundState(colorScheme, context);
     }
 
-    final userInterested = isUserInterested(
+    final userInterested = PostDetailHelpers.isUserInterested(
       post!.interests,
       authState.user?.id,
     );
     final interestCount = post.interests.length;
-    final isPostOwner = isPostAuthor(post, authState.user);
+    final isPostOwner = PostDetailHelpers.isPostAuthor(post, authState.user);
 
     final images = post.images.isNotEmpty ? post.images : [''];
 
+    void handleShowAllUsers() {
+      final post = postDetailState.post;
+      if (post == null || post.interests.isEmpty) return;
+
+      PostDetailHelpers.showAllUsersBottomSheet(
+        context,
+        post.interests,
+        isPostOwner,
+      );
+    }
+
     useEffect(() {
       if (authState.user != null) {
-        userInterestId.value = getUserInterestId(
+        userInterestId.value = PostDetailHelpers.getUserInterestId(
           post.interests,
           authState.user!.id,
         );
@@ -449,6 +440,7 @@ class PostDetailScreen extends HookConsumerWidget {
                 ),
               ),
             ),
+
             // Post Content
             SliverToBoxAdapter(
               child: PostContentSection(
@@ -460,7 +452,7 @@ class PostDetailScreen extends HookConsumerWidget {
               ),
             ),
 
-            // Items section (if available) - sử dụng interestDetail nếu có, fallback về post
+            // Items section (if available)
             if ((interestDetail?.items ?? post.items).isNotEmpty)
               SliverToBoxAdapter(
                 child: PostItemsSection(
@@ -482,9 +474,15 @@ class PostDetailScreen extends HookConsumerWidget {
                   onViewTransactionsTap: handleViewTransactionsTap,
                 ),
               ),
-            if (!isPostOwner && post.interests.isNotEmpty)
+
+            if (post.interests.isNotEmpty)
               SliverToBoxAdapter(
-                child: PostInterestsSection(interests: post.interests),
+                child: PostInterestsDisplay(
+                  interests: post.interests,
+                  isPostOwner: isPostOwner,
+                  onShowAllUsers: handleShowAllUsers,
+                  userID: currentUser!.id,
+                ),
               ),
 
             // Bottom padding

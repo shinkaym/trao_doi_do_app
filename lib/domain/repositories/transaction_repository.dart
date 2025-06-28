@@ -11,7 +11,10 @@ abstract class TransactionRepository {
     TransactionsQuery query,
   );
 
-  // ✅ Sử dụng Domain entities
+  Future<Either<Failure, Transaction>> getTransactionByInterestId(
+    int interestID,
+  );
+
   Future<Either<Failure, Transaction>> createTransaction(
     CreateTransactionRequest request,
   );

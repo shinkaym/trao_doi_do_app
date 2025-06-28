@@ -4,6 +4,7 @@ import 'package:trao_doi_do_app/presentation/features/appointments/providers/app
 import 'package:trao_doi_do_app/presentation/features/appointments/providers/appointment_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/providers/appointments_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/interest_detail_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/providers/transaction_by_interest_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/transaction_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/transactions_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/providers/interests_provider.dart';
@@ -111,9 +112,13 @@ final transactionProvider = StateNotifierProvider.autoDispose<
 >((ref) {
   final createTransactionUseCase = ref.watch(createTransactionUseCaseProvider);
   final updateTransactionUseCase = ref.watch(updateTransactionUseCaseProvider);
+  final getTransactionByInterestUseCase = ref.watch(
+    getTransactionByInterestUseCaseProvider,
+  );
   return TransactionNotifier(
     createTransactionUseCase,
     updateTransactionUseCase,
+    getTransactionByInterestUseCase,
   );
 });
 
@@ -138,6 +143,20 @@ final interestedPostsProvider = StateNotifierProvider.autoDispose<
 >((ref) {
   final getInterestsUseCase = ref.watch(getInterestsUseCaseProvider);
   return InterestsListNotifier(getInterestsUseCase);
+});
+
+final transactionByInterestProvider = StateNotifierProvider.family<
+  TransactionByInterestNotifier,
+  TransactionByInterestState,
+  int
+>((ref, interestId) {
+  final getTransactionByInterestUseCase = ref.watch(
+    getTransactionByInterestUseCaseProvider,
+  );
+  return TransactionByInterestNotifier(
+    getTransactionByInterestUseCase,
+    interestId,
+  );
 });
 
 final postsWithInterestsProvider = StateNotifierProvider.autoDispose<
@@ -173,9 +192,7 @@ final unreadCountProvider =
 final postProvider = StateNotifierProvider<PostNotifier, PostState>((ref) {
   final createPostUseCase = ref.watch(createPostUseCaseProvider);
   final updatePostUseCase = ref.watch(updatePostUseCaseProvider);
-  final deletePostUseCase = ref.watch(
-    deletePostUseCaseProvider,
-  );
+  final deletePostUseCase = ref.watch(deletePostUseCaseProvider);
   return PostNotifier(createPostUseCase, updatePostUseCase, deletePostUseCase);
 });
 

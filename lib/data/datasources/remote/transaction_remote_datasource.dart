@@ -7,6 +7,7 @@ import 'package:trao_doi_do_app/domain/usecases/params/transaction_query.dart';
 
 abstract class TransactionRemoteDataSource {
   Future<TransactionsResponseModel> getTransactions(TransactionsQuery query);
+  Future<TransactionModel> getTransactionByInterestId(int interestID);
   Future<TransactionModel> createTransaction(
     CreateTransactionRequestModel transaction,
   );
@@ -39,6 +40,20 @@ class TransactionRemoteDataSourceImpl implements TransactionRemoteDataSource {
       (json) =>
           TransactionsResponseModel.fromJson(json as Map<String, dynamic>),
     );
+
+    return result.data!;
+  }
+
+  @override
+  Future<TransactionModel> getTransactionByInterestId(int interestID) async {
+    final response = await _dioClient.get(
+      '${ApiConstants.transactions}/$interestID',
+    );
+
+    final result = ApiResponseModel.fromJson(response.data, (json) {
+      final map = json as Map<String, dynamic>;
+      return TransactionModel.fromJson(map['transaction'] ?? map);
+    });
 
     return result.data!;
   }

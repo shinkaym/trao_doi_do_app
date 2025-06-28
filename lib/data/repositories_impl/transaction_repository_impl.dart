@@ -26,8 +26,20 @@ class TransactionRepositoryImpl implements TransactionRepository {
   }
 
   @override
+  Future<Either<Failure, Transaction>> getTransactionByInterestId(
+    int interestID,
+  ) async {
+    return handleRepositoryCall<Transaction>(() async {
+      final remoteResponse = await _remoteDataSource.getTransactionByInterestId(
+        interestID,
+      );
+      return remoteResponse.toEntity();
+    }, 'Lỗi khi tải giao dịch theo Interest ID');
+  }
+
+  @override
   Future<Either<Failure, Transaction>> createTransaction(
-    CreateTransactionRequest request, // ✅ Domain entity
+    CreateTransactionRequest request,
   ) async {
     return handleRepositoryCall<Transaction>(() async {
       final dataModel = _mapToCreateTransactionModel(request);

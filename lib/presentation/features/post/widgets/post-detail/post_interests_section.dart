@@ -383,7 +383,6 @@ class PostInterestsSection extends StatelessWidget {
     );
   }
 
-  // Helper methods
   String _getInterestText(int count) {
     if (count == 1) return '1 người đã quan tâm';
     return '$count người đã quan tâm';

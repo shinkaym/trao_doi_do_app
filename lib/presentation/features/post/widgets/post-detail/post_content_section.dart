@@ -300,12 +300,49 @@ class PostContentSection extends HookConsumerWidget {
                 theme,
               ),
             ],
+          ] else if (post.type == PostType.campaign.value) ...[
+            // Campaign - show campaign details
+            if (info['organizer'] != null)
+              _buildDetailRow(
+                Icons.business,
+                'Tổ chức',
+                info['organizer'],
+                theme,
+              ),
+            if (info['location'] != null) ...[
+              const SizedBox(height: 12),
+              _buildDetailRow(
+                Icons.location_on,
+                'Địa điểm',
+                info['location'],
+                theme,
+              ),
+            ],
+            if (info['startDate'] != null) ...[
+              const SizedBox(height: 12),
+              _buildDetailRow(
+                Icons.calendar_today,
+                'Thời điểm bắt đầu',
+                _formatDate2(info['startDate']),
+                theme,
+              ),
+            ],
+            if (info['endDate'] != null) ...[
+              const SizedBox(height: 12),
+              _buildDetailRow(
+                Icons.calendar_today,
+                'Thời điểm kết thúc kết thúc',
+                _formatDate2(info['endDate']),
+                theme,
+              ),
+            ],
           ],
 
           // Common details
           if (post.createdAt != null) ...[
             if (post.type == PostType.foundItem.value ||
-                post.type == PostType.findLost.value)
+                post.type == PostType.findLost.value ||
+                post.type == PostType.campaign.value)
               const SizedBox(height: 12),
             _buildDetailRow(
               Icons.schedule,
@@ -404,6 +441,17 @@ class PostContentSection extends HookConsumerWidget {
     try {
       final date = DateTime.parse(dateString);
       return TimeUtils.formatTimeAgo(date);
+    } catch (e) {
+      return dateString; // Return original string if parsing fails
+    }
+  }
+
+  String _formatDate2(String? dateString) {
+    if (dateString == null || dateString.isEmpty) return 'Không rõ';
+
+    try {
+      final date = DateTime.parse(dateString);
+      return TimeUtils.formatAbsolute(date);
     } catch (e) {
       return dateString; // Return original string if parsing fails
     }

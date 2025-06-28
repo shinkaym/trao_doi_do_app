@@ -28,6 +28,7 @@ import 'package:trao_doi_do_app/domain/usecases/get_claim_requests_usecase.dart'
 import 'package:trao_doi_do_app/domain/usecases/get_interest_detail_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_items_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_old_stock_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/get_transaction_by_interest_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_transactions_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_unread_count_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/mark_all_messages_read_usecase.dart';
@@ -137,6 +138,12 @@ final getTransactionsUseCaseProvider =
     Provider.autoDispose<GetTransactionsUseCase>((ref) {
       final repository = ref.watch(transactionRepositoryProvider);
       return GetTransactionsUseCase(repository);
+    });
+
+final getTransactionByInterestUseCaseProvider =
+    Provider.autoDispose<GetTransactionByInterestUseCase>((ref) {
+      final repository = ref.watch(transactionRepositoryProvider);
+      return GetTransactionByInterestUseCase(repository);
     });
 
 final createTransactionUseCaseProvider =

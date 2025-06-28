@@ -8,7 +8,8 @@ class Post extends Equatable {
   final String title;
   final String description;
   final String info; // JSON string
-  final int type; // 1: giveAway, 2: foundItem, 3: findLost, 4: freePost
+  final int
+  type; // 1: giveAway, 2: foundItem, 3: findLost, 4: wantItem, 5: campaign, 6: freePost
   final String? slug;
   final int? status; // 1: Pending, 2: Rejected, 3: Approved
   final List<String> images; // Base64 strings
@@ -211,6 +212,34 @@ class FindLostInfo {
     lostLocation: json['lostLocation'] ?? '',
     lostDate: json['lostDate'] ?? '',
     reward: json['reward'] ?? '',
+  );
+}
+
+class CampaignInfo {
+  final String startDate;
+  final String endDate;
+  final String location;
+  final String organizer;
+
+  CampaignInfo({
+    required this.startDate,
+    required this.endDate,
+    required this.location,
+    required this.organizer,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'startDate': startDate,
+    'endDate': endDate,
+    'location': location,
+    'organizer': organizer,
+  };
+
+  factory CampaignInfo.fromJson(Map<String, dynamic> json) => CampaignInfo(
+    startDate: json['startDate'] ?? '',
+    endDate: json['endDate'] ?? '',
+    location: json['location'] ?? '',
+    organizer: json['organizer'] ?? '',
   );
 }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
@@ -58,7 +59,10 @@ class PostCard extends StatelessWidget {
               _buildTitleAndDescription(),
               if (hasImages(post)) _buildImagesSection(),
               SizedBox(height: isTablet ? 16 : 12),
-              if (location.isNotEmpty)
+              // Hiển thị thông tin đặc biệt theo loại post
+              if (postType == PostType.campaign)
+                _buildCampaignInfo()
+              else if (location.isNotEmpty)
                 _buildLocationAndReward(location, reward),
               _buildStatsSection(),
             ],
@@ -189,6 +193,111 @@ class PostCard extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  // Widget mới để hiển thị thông tin campaign
+  Widget _buildCampaignInfo() {
+    try {
+      final campaignInfo = CampaignInfo.fromJson(jsonDecode(post.info));
+
+      return Column(
+        children: [
+          // Thời gian campaign
+          if (campaignInfo.startDate.isNotEmpty ||
+              campaignInfo.endDate.isNotEmpty)
+            _buildCampaignInfoRow(
+              Icons.calendar_today_outlined,
+              _formatCampaignDates(
+                campaignInfo.startDate,
+                campaignInfo.endDate,
+              ),
+              Colors.blue.shade600,
+            ),
+
+          // Địa điểm
+          if (campaignInfo.location.isNotEmpty)
+            _buildCampaignInfoRow(
+              Icons.location_on_outlined,
+              campaignInfo.location,
+              Colors.green.shade600,
+            ),
+
+          // Tổ chức
+          if (campaignInfo.organizer.isNotEmpty)
+            _buildCampaignInfoRow(
+              Icons.group_outlined,
+              'Tổ chức bởi: ${campaignInfo.organizer}',
+              Colors.orange.shade600,
+            ),
+
+          SizedBox(height: isTablet ? 12 : 8),
+        ],
+      );
+    } catch (e) {
+      // Nếu không parse được info, hiển thị location thông thường
+      final location = getLocationFromPost(post);
+      if (location.isNotEmpty) {
+        return _buildLocationAndReward(location, null);
+      }
+      return const SizedBox.shrink();
+    }
+  }
+
+  Widget _buildCampaignInfoRow(IconData icon, String text, Color color) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: isTablet ? 8 : 6),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(isTablet ? 6 : 4),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Icon(icon, size: isTablet ? 16 : 14, color: color),
+          ),
+          SizedBox(width: isTablet ? 12 : 8),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: isTablet ? 13 : 11,
+                color: colorScheme.onSurface.withOpacity(0.8),
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatCampaignDates(String startDate, String endDate) {
+    try {
+      DateTime? start = startDate.isNotEmpty ? DateTime.parse(startDate) : null;
+      DateTime? end = endDate.isNotEmpty ? DateTime.parse(endDate) : null;
+
+      if (start != null && end != null) {
+        return '${TimeUtils.formatAbsolute(start)} - ${TimeUtils.formatAbsolute(end)}';
+      } else if (start != null) {
+        return 'Từ: ${TimeUtils.formatAbsolute(start)}';
+      } else if (end != null) {
+        return 'Đến: ${TimeUtils.formatAbsolute(end)}';
+      }
+      return '';
+    } catch (e) {
+      // Fallback nếu không parse được DateTime
+      if (startDate.isNotEmpty && endDate.isNotEmpty) {
+        return '$startDate - $endDate';
+      } else if (startDate.isNotEmpty) {
+        return 'Từ: $startDate';
+      } else if (endDate.isNotEmpty) {
+        return 'Đến: $endDate';
+      }
+      return '';
+    }
   }
 
   Widget _buildLocationAndReward(String location, String? reward) {
