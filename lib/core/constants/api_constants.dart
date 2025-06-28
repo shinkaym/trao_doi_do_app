@@ -12,6 +12,11 @@ class ApiConstants {
   static const String clientLogout = '$client/logout';
   static const String clientPosts = '$client/posts';
   static const String clientGetMe = '$client/get-me';
+  static const String clients = '/clients';
+  static const String clientSendOtp = '/client/send-otp';
+  static const String clientVerifyOtp = '/client/verify-otp';
+  static const String clientSignup = '/client/signup';
+  static const String clientResetPassword = '/client/reset-password';
   static const String interests = '/interests';
   static const String transactions = '/transactions';
   static const String refreshToken = '/refresh-token';

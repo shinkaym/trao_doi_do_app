@@ -118,6 +118,64 @@ class AuthRepositoryImpl implements AuthRepository {
     }, "Lỗi khi lấy access token");
   }
 
+  // NEW: Update profile implementation
+  @override
+  Future<Either<Failure, User>> updateProfile(
+    int userId,
+    UpdateProfileRequest request,
+  ) {
+    return handleRepositoryCall(() async {
+      final requestModel = UpdateProfileRequestModel.fromEntity(request);
+      final responseModel = await _remoteDataSource.updateProfile(
+        userId,
+        requestModel,
+      );
+      final updatedUser = responseModel.toEntity().client;
+
+      // Update local user info
+      await _saveUserInfo(updatedUser);
+
+      return updatedUser;
+    }, "Lỗi khi cập nhật thông tin cá nhân");
+  }
+
+  // NEW: Send OTP implementation
+  @override
+  Future<Either<Failure, void>> sendOtp(SendOtpRequest request) {
+    return handleRepositoryCall(() async {
+      final requestModel = SendOtpRequestModel.fromEntity(request);
+      await _remoteDataSource.sendOtp(requestModel);
+    }, "Lỗi khi gửi mã OTP");
+  }
+
+  // NEW: Verify OTP implementation
+  @override
+  Future<Either<Failure, String>> verifyOtp(VerifyOtpRequest request) {
+    return handleRepositoryCall(() async {
+      final requestModel = VerifyOtpRequestModel.fromEntity(request);
+      final responseModel = await _remoteDataSource.verifyOtp(requestModel);
+      return responseModel.toEntity().verifyToken;
+    }, "Lỗi khi xác thực mã OTP");
+  }
+
+  // NEW: Signup implementation
+  @override
+  Future<Either<Failure, void>> signup(SignupRequest request) {
+    return handleRepositoryCall(() async {
+      final requestModel = SignupRequestModel.fromEntity(request);
+      await _remoteDataSource.signup(requestModel);
+    }, "Lỗi khi đăng ký tài khoản");
+  }
+
+  // NEW: Reset password implementation
+  @override
+  Future<Either<Failure, void>> resetPassword(ResetPasswordRequest request) {
+    return handleRepositoryCall(() async {
+      final requestModel = ResetPasswordRequestModel.fromEntity(request);
+      await _remoteDataSource.resetPassword(requestModel);
+    }, "Lỗi khi đặt lại mật khẩu");
+  }
+
   /// Helper method để get user từ local storage
   Future<User?> _getCurrentUserFromLocal() async {
     final userJson = await _localDataSource.getUserInfo();

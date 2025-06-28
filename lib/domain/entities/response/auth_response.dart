@@ -15,3 +15,21 @@ class LoginResponse extends Equatable {
   @override
   List<Object?> get props => [jwt, refreshToken, user];
 }
+
+class UpdateProfileResponse extends Equatable {
+  final User client;
+
+  const UpdateProfileResponse({required this.client});
+
+  @override
+  List<Object?> get props => [client];
+}
+
+class VerifyOtpResponse extends Equatable {
+  final String verifyToken;
+
+  const VerifyOtpResponse({required this.verifyToken});
+
+  @override
+  List<Object?> get props => [verifyToken];
+}

@@ -12,4 +12,15 @@ abstract class AuthRepository {
   Future<Either<Failure, bool>> isLoggedIn();
   Future<Either<Failure, User>> getMe();
   Future<Either<Failure, String?>> getAccessToken();
+
+  Future<Either<Failure, User>> updateProfile(
+    int userId,
+    UpdateProfileRequest request,
+  );
+
+  Future<Either<Failure, void>> sendOtp(SendOtpRequest request);
+  Future<Either<Failure, String>> verifyOtp(VerifyOtpRequest request);
+
+  Future<Either<Failure, void>> signup(SignupRequest request);
+  Future<Either<Failure, void>> resetPassword(ResetPasswordRequest request);
 }

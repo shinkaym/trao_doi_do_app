@@ -8,6 +8,11 @@ import 'package:trao_doi_do_app/domain/usecases/is_logged_in_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/login_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/logout_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/refresh_token_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/reset_password_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/send_otp_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/signup_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/update_profile_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/verify_otp_usecase.dart';
 
 class AuthState {
   final bool isLoading;
@@ -17,6 +22,10 @@ class AuthState {
   final String? successMessage;
   final bool isInitialized;
   final bool forceLogout; // Thêm flag để force logout
+  // NEW: OTP related states
+  final String? verifyToken;
+  final bool isOtpSent;
+  final bool isOtpVerified;
 
   const AuthState({
     this.isLoading = false,
@@ -26,6 +35,9 @@ class AuthState {
     this.successMessage,
     this.isInitialized = false,
     this.forceLogout = false,
+    this.verifyToken,
+    this.isOtpSent = false,
+    this.isOtpVerified = false,
   });
 
   AuthState copyWith({
@@ -36,9 +48,13 @@ class AuthState {
     String? successMessage,
     bool? isInitialized,
     bool? forceLogout,
+    String? verifyToken,
+    bool? isOtpSent,
+    bool? isOtpVerified,
     bool clearUser = false,
     bool clearFailure = false,
     bool clearSuccessMessage = false,
+    bool clearVerifyToken = false,
   }) {
     return AuthState(
       isLoading: isLoading ?? this.isLoading,
@@ -49,6 +65,9 @@ class AuthState {
           clearSuccessMessage ? null : (successMessage ?? this.successMessage),
       isInitialized: isInitialized ?? this.isInitialized,
       forceLogout: forceLogout ?? this.forceLogout,
+      verifyToken: clearVerifyToken ? null : (verifyToken ?? this.verifyToken),
+      isOtpSent: isOtpSent ?? this.isOtpSent,
+      isOtpVerified: isOtpVerified ?? this.isOtpVerified,
     );
   }
 
@@ -63,7 +82,10 @@ class AuthState {
           failure == other.failure &&
           successMessage == other.successMessage &&
           isInitialized == other.isInitialized &&
-          forceLogout == other.forceLogout;
+          forceLogout == other.forceLogout &&
+          verifyToken == other.verifyToken &&
+          isOtpSent == other.isOtpSent &&
+          isOtpVerified == other.isOtpVerified;
 
   @override
   int get hashCode =>
@@ -73,7 +95,10 @@ class AuthState {
       failure.hashCode ^
       successMessage.hashCode ^
       isInitialized.hashCode ^
-      forceLogout.hashCode;
+      forceLogout.hashCode ^
+      verifyToken.hashCode ^
+      isOtpSent.hashCode ^
+      isOtpVerified.hashCode;
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
@@ -83,6 +108,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final IsLoggedInUseCase _isLoggedInUseCase;
   final RefreshTokenUseCase _refreshTokenUseCase;
   final GetMeUseCase _getMeUseCase;
+  // NEW: Additional use cases
+  final UpdateProfileUseCase _updateProfileUseCase;
+  final SendOtpUseCase _sendOtpUseCase;
+  final VerifyOtpUseCase _verifyOtpUseCase;
+  final SignupUseCase _signupUseCase;
+  final ResetPasswordUseCase _resetPasswordUseCase;
 
   AuthNotifier(
     this._loginUseCase,
@@ -91,6 +122,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     this._isLoggedInUseCase,
     this._refreshTokenUseCase,
     this._getMeUseCase,
+    this._updateProfileUseCase,
+    this._sendOtpUseCase,
+    this._verifyOtpUseCase,
+    this._signupUseCase,
+    this._resetPasswordUseCase,
   ) : super(const AuthState()) {
     _initializeAuth();
   }
@@ -354,6 +390,195 @@ class AuthNotifier extends StateNotifier<AuthState> {
           clearFailure: true,
         );
       },
+    );
+  }
+
+  // NEW: Update profile method
+  Future<void> updateProfile({
+    required int userId,
+    String? address,
+    String? avatar,
+    required String fullName,
+    required String major,
+    required String phoneNumber,
+  }) async {
+    state = state.copyWith(isLoading: true, clearFailure: true);
+
+    final request = UpdateProfileRequest(
+      address: address,
+      avatar: avatar,
+      fullName: fullName,
+      major: major,
+      phoneNumber: phoneNumber,
+    );
+
+    final result = await _updateProfileUseCase.execute(userId, request);
+
+    result.fold(
+      (failure) {
+        state = state.copyWith(isLoading: false, failure: failure);
+      },
+      (updatedUser) {
+        state = state.copyWith(
+          isLoading: false,
+          user: updatedUser,
+          successMessage: 'Cập nhật thông tin thành công!',
+        );
+      },
+    );
+  }
+
+  // NEW: Send OTP method
+  Future<void> sendOtp({
+    required String email,
+    required String purpose, // "activeAccount" or "resetPassword"
+  }) async {
+    state = state.copyWith(
+      isLoading: true,
+      clearFailure: true,
+      isOtpSent: false,
+    );
+
+    final request = SendOtpRequest(email: email, purpose: purpose);
+
+    final result = await _sendOtpUseCase.execute(request);
+
+    result.fold(
+      (failure) {
+        state = state.copyWith(
+          isLoading: false,
+          failure: failure,
+          isOtpSent: false,
+        );
+      },
+      (_) {
+        state = state.copyWith(
+          isLoading: false,
+          isOtpSent: true,
+          successMessage: 'Mã OTP đã được gửi đến email của bạn!',
+        );
+      },
+    );
+  }
+
+  // NEW: Verify OTP method
+  Future<void> verifyOtp({
+    required String email,
+    required String otp,
+    required String purpose,
+  }) async {
+    state = state.copyWith(
+      isLoading: true,
+      clearFailure: true,
+      isOtpVerified: false,
+      clearVerifyToken: true,
+    );
+
+    final request = VerifyOtpRequest(email: email, otp: otp, purpose: purpose);
+
+    final result = await _verifyOtpUseCase.execute(request);
+
+    result.fold(
+      (failure) {
+        state = state.copyWith(
+          isLoading: false,
+          failure: failure,
+          isOtpVerified: false,
+        );
+      },
+      (verifyToken) {
+        state = state.copyWith(
+          isLoading: false,
+          isOtpVerified: true,
+          verifyToken: verifyToken,
+          successMessage: 'Xác thực OTP thành công!',
+        );
+      },
+    );
+  }
+
+  // NEW: Signup method
+  Future<void> signup({
+    required String email,
+    required String fullName,
+    required String password,
+    required String phoneNumber,
+    required String rePassword,
+    required String verifyToken,
+  }) async {
+    state = state.copyWith(isLoading: true, clearFailure: true);
+
+    final request = SignupRequest(
+      email: email,
+      fullName: fullName,
+      password: password,
+      phoneNumber: phoneNumber,
+      rePassword: rePassword,
+      verifyToken: verifyToken,
+    );
+
+    final result = await _signupUseCase.execute(request);
+
+    result.fold(
+      (failure) {
+        state = state.copyWith(isLoading: false, failure: failure);
+      },
+      (_) {
+        state = state.copyWith(
+          isLoading: false,
+          successMessage: 'Đăng ký tài khoản thành công!',
+          // Reset OTP states after successful signup
+          isOtpSent: false,
+          isOtpVerified: false,
+          clearVerifyToken: true,
+        );
+      },
+    );
+  }
+
+  // NEW: Reset password method
+  Future<void> resetPassword({
+    required String email,
+    required String password,
+    required String rePassword,
+    required String verifyToken,
+  }) async {
+    state = state.copyWith(isLoading: true, clearFailure: true);
+
+    final request = ResetPasswordRequest(
+      email: email,
+      password: password,
+      rePassword: rePassword,
+      verifyToken: verifyToken,
+    );
+
+    final result = await _resetPasswordUseCase.execute(request);
+
+    result.fold(
+      (failure) {
+        state = state.copyWith(isLoading: false, failure: failure);
+      },
+      (_) {
+        state = state.copyWith(
+          isLoading: false,
+          successMessage: 'Đặt lại mật khẩu thành công!',
+          // Reset OTP states after successful password reset
+          isOtpSent: false,
+          isOtpVerified: false,
+          clearVerifyToken: true,
+        );
+      },
+    );
+  }
+
+  // NEW: Reset OTP states (useful for resetting forms)
+  void resetOtpStates() {
+    state = state.copyWith(
+      isOtpSent: false,
+      isOtpVerified: false,
+      clearVerifyToken: true,
+      clearFailure: true,
+      clearSuccessMessage: true,
     );
   }
 

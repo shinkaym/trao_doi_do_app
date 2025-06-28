@@ -10,6 +10,11 @@ import 'package:trao_doi_do_app/domain/usecases/is_logged_in_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/login_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/logout_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/refresh_token_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/reset_password_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/send_otp_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/signup_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/update_profile_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/verify_otp_usecase.dart';
 import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 import '../modules/core_module.dart';
 import '../modules/network_module.dart';
@@ -86,6 +91,34 @@ final getAccessTokenUseCaseProvider = Provider<GetAccessTokenUseCase>((ref) {
   return GetAccessTokenUseCase(repository);
 });
 
+// NEW: Profile update use case provider
+final updateProfileUseCaseProvider = Provider<UpdateProfileUseCase>((ref) {
+  final repository = ref.watch(authRepositoryProvider);
+  return UpdateProfileUseCase(repository);
+});
+
+// NEW: OTP operation use case providers
+final sendOtpUseCaseProvider = Provider<SendOtpUseCase>((ref) {
+  final repository = ref.watch(authRepositoryProvider);
+  return SendOtpUseCase(repository);
+});
+
+final verifyOtpUseCaseProvider = Provider<VerifyOtpUseCase>((ref) {
+  final repository = ref.watch(authRepositoryProvider);
+  return VerifyOtpUseCase(repository);
+});
+
+// NEW: Account operation use case providers
+final signupUseCaseProvider = Provider<SignupUseCase>((ref) {
+  final repository = ref.watch(authRepositoryProvider);
+  return SignupUseCase(repository);
+});
+
+final resetPasswordUseCaseProvider = Provider<ResetPasswordUseCase>((ref) {
+  final repository = ref.watch(authRepositoryProvider);
+  return ResetPasswordUseCase(repository);
+});
+
 // =============================================================================
 // AUTH PRESENTATION LAYER PROVIDER
 // =============================================================================
@@ -97,6 +130,11 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final isLoggedInUseCase = ref.watch(isLoggedInUseCaseProvider);
   final refreshTokenUseCase = ref.watch(refreshTokenUseCaseProvider);
   final getMeUseCase = ref.watch(getMeUseCaseProvider);
+  final updateProfileUseCase = ref.watch(updateProfileUseCaseProvider);
+  final sendOtpUseCase = ref.watch(sendOtpUseCaseProvider);
+  final verifyOtpUseCase = ref.watch(verifyOtpUseCaseProvider);
+  final signupUseCase = ref.watch(signupUseCaseProvider);
+  final resetPasswordUseCase = ref.watch(resetPasswordUseCaseProvider);
 
   return AuthNotifier(
     loginUseCase,
@@ -105,5 +143,10 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
     isLoggedInUseCase,
     refreshTokenUseCase,
     getMeUseCase,
+    updateProfileUseCase,
+    sendOtpUseCase,
+    verifyOtpUseCase,
+    signupUseCase,
+    resetPasswordUseCase,
   );
 });
