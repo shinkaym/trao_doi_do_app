@@ -6,6 +6,7 @@ import 'package:trao_doi_do_app/data/datasources/remote/category_remote_datasour
 import 'package:trao_doi_do_app/data/datasources/remote/item_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/item_warehouse_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/ranking_remote_datasource.dart';
+import 'package:trao_doi_do_app/data/datasources/remote/settings_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/transaction_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/interest_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/post_remote_datasource.dart';
@@ -95,4 +96,10 @@ final rankingRemoteDataSourceProvider =
     Provider.autoDispose<RankingRemoteDataSource>((ref) {
       final dioClient = ref.watch(dioClientProvider);
       return RankingRemoteDataSourceImpl(dioClient);
+    });
+
+final settingsRemoteDataSourceProvider =
+    Provider.autoDispose<SettingsRemoteDataSource>((ref) {
+      final dioClient = ref.watch(dioClientProvider);
+      return SettingsRemoteDataSourceImpl(dioClient);
     });

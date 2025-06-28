@@ -4,6 +4,7 @@ import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/home/widgets/banner_carousel.dart';
 import 'package:trao_doi_do_app/presentation/features/home/widgets/campaign_posts_slide_show.dart';
+import 'package:trao_doi_do_app/presentation/features/home/widgets/contact_info_widget.dart';
 import 'package:trao_doi_do_app/presentation/features/home/widgets/features_list.dart';
 import 'package:trao_doi_do_app/presentation/features/home/widgets/full_width_images.dart';
 import 'package:trao_doi_do_app/presentation/features/home/widgets/post_category_section.dart';
@@ -102,6 +103,13 @@ class HomeScreen extends HookConsumerWidget {
                     ),
                   ),
 
+                  SizedBox(height: isTablet ? 32 : 24),
+
+                  ContactInfoSection(
+                    isTablet: isTablet,
+                    colorScheme: colorScheme,
+                    theme: theme,
+                  ),
                   SizedBox(height: isTablet ? 32 : 24),
 
                   FullWidthImages(images: fullWidthImages, isTablet: isTablet),

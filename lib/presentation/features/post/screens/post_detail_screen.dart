@@ -40,7 +40,6 @@ class PostDetailScreen extends HookConsumerWidget {
 
     // State
     final currentImageIndex = useState(0);
-    final isBookmarked = useState(false);
     final showFullContent = useState(false);
 
     // Provider state
@@ -48,6 +47,7 @@ class PostDetailScreen extends HookConsumerWidget {
     final authState = ref.watch(authProvider);
     final interestState = ref.watch(interestProvider);
     final transactionsNotifier = ref.read(transactionsListProvider.notifier);
+    ref.watch(settingsProvider);
     ref.watch(transactionsListProvider);
 
     // Tính currentUserInterestId từ post data
@@ -83,6 +83,15 @@ class PostDetailScreen extends HookConsumerWidget {
       };
     }, [postSlug]);
 
+    useEffect(() {
+      Future.microtask(() {
+        if (context.mounted) {
+          ref.read(settingsProvider.notifier).loadSettings();
+        }
+      });
+      return null;
+    }, []);
+
     // Load interest detail khi có currentUserInterestId
     useEffect(() {
       if (currentUserInterestId != null &&
@@ -107,20 +116,29 @@ class PostDetailScreen extends HookConsumerWidget {
       return null;
     }, [postDetailState.post, postDetailState.isLoading]);
 
-    void handleBookmark() {
+    void handleShare() async {
       if (!context.mounted) return;
 
-      isBookmarked.value = !isBookmarked.value;
-      if (isBookmarked.value) {
-        context.showSuccessSnackBar('Đã lưu bài đăng');
+      // Lấy domain từ settings
+      final domainSetting = ref
+          .read(settingsProvider.notifier)
+          .findSettingByKey('domain');
+
+      if (domainSetting != null) {
+        final domain = domainSetting.value;
+        final postLink = '$domain/bai-dang/$postSlug';
+
+        // Copy link vào clipboard
+        await Clipboard.setData(ClipboardData(text: postLink));
+
+        if (context.mounted) {
+          context.showSuccessSnackBar('Đã sao chép link bài đăng');
+        }
       } else {
-        context.showWarningSnackBar('Đã bỏ lưu bài đăng');
+        if (context.mounted) {
+          context.showErrorSnackBar('Không thể lấy thông tin domain');
+        }
       }
-    }
-
-    void handleShare() {
-      if (!context.mounted) return;
-      context.showInfoSnackBar('Đã sao chép link bài đăng');
     }
 
     void handleChatTap(int interestId) {
@@ -413,22 +431,6 @@ class PostDetailScreen extends HookConsumerWidget {
                   child: IconButton(
                     onPressed: handleShare,
                     icon: const Icon(Icons.share, color: Colors.white),
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    onPressed: handleBookmark,
-                    icon: Icon(
-                      isBookmarked.value
-                          ? Icons.bookmark
-                          : Icons.bookmark_border,
-                      color: isBookmarked.value ? Colors.amber : Colors.white,
-                    ),
                   ),
                 ),
               ],

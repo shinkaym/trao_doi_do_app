@@ -296,49 +296,72 @@ class _PostsSlideshow extends StatefulWidget {
 
 class _PostsSlideshowState extends State<_PostsSlideshow> {
   int _currentIndex = 0;
+  late CarouselSliderController _carouselController;
+
+  @override
+  void initState() {
+    super.initState();
+    _carouselController = CarouselSliderController();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Carousel
-        CarouselSlider.builder(
-          itemCount: widget.posts.length,
-          itemBuilder: (context, index, realIndex) {
-            final post = widget.posts[index];
-            return Container(
-              width: MediaQuery.of(context).size.width,
-              child: PostCard(
-                post: post,
-                postType: widget.postType,
-                isTablet: widget.isTablet,
-                colorScheme: widget.colorScheme,
-                theme: widget.theme,
-                onTap: (post) {
-                  context.pushNamed(
-                    'post-detail',
-                    pathParameters: {'slug': post.slug.toString()},
-                  );
+        // Carousel with enhanced styling (blur effect)
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: CarouselSlider.builder(
+              carouselController: _carouselController,
+              itemCount: widget.posts.length,
+              itemBuilder: (context, index, realIndex) {
+                final post = widget.posts[index];
+                return Container(
+                  width: MediaQuery.of(context).size.width,
+                  child: PostCard(
+                    post: post,
+                    postType: widget.postType,
+                    isTablet: widget.isTablet,
+                    colorScheme: widget.colorScheme,
+                    theme: widget.theme,
+                    onTap: (post) {
+                      context.pushNamed(
+                        'post-detail',
+                        pathParameters: {'slug': post.slug.toString()},
+                      );
+                    },
+                  ),
+                );
+              },
+              options: CarouselOptions(
+                height: widget.isTablet ? 180 : 150,
+                autoPlay: true,
+                autoPlayInterval: const Duration(seconds: 4),
+                autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                autoPlayCurve: Curves.fastOutSlowIn,
+                enlargeCenterPage: false,
+                viewportFraction: 1.0,
+                enableInfiniteScroll: widget.posts.length > 1,
+                pauseAutoPlayOnTouch: true,
+                pauseAutoPlayOnManualNavigate: true,
+                onPageChanged: (index, reason) {
+                  setState(() {
+                    _currentIndex = index;
+                  });
                 },
               ),
-            );
-          },
-          options: CarouselOptions(
-            height: widget.isTablet ? 180 : 150,
-            autoPlay: true,
-            autoPlayInterval: const Duration(seconds: 4),
-            autoPlayAnimationDuration: const Duration(milliseconds: 800),
-            autoPlayCurve: Curves.fastOutSlowIn,
-            enlargeCenterPage: false,
-            viewportFraction: 1.0,
-            enableInfiniteScroll: widget.posts.length > 1,
-            pauseAutoPlayOnTouch: true,
-            pauseAutoPlayOnManualNavigate: true,
-            onPageChanged: (index, reason) {
-              setState(() {
-                _currentIndex = index;
-              });
-            },
+            ),
           ),
         ),
 
@@ -358,7 +381,7 @@ class _PostsSlideshowState extends State<_PostsSlideshow> {
           widget.posts.asMap().entries.map((entry) {
             return GestureDetector(
               onTap: () {
-                // Có thể thêm controller để jump to page nếu cần
+                _carouselController.animateToPage(entry.key);
               },
               child: Container(
                 width: 6,

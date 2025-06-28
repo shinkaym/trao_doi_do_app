@@ -5,6 +5,7 @@ import 'package:trao_doi_do_app/data/repositories_impl/item_repository_impl.dart
 import 'package:trao_doi_do_app/data/repositories_impl/item_warehouse_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/onboarding_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/ranking_repository_impl.dart';
+import 'package:trao_doi_do_app/data/repositories_impl/settings_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/transaction_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/interest_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/post_repository_impl.dart';
@@ -18,6 +19,7 @@ import 'package:trao_doi_do_app/domain/repositories/interest_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/post_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/message_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/ranking_repository.dart';
+import 'package:trao_doi_do_app/domain/repositories/settings_repository.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_claim_request_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/create_transaction_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/delete_all_claim_requests_usecase.dart';
@@ -31,6 +33,8 @@ import 'package:trao_doi_do_app/domain/usecases/get_interest_detail_usecase.dart
 import 'package:trao_doi_do_app/domain/usecases/get_items_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_my_good_deeds_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_old_stock_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/get_setting_by_key_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/get_settings_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_transaction_by_interest_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_transactions_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_unread_count_usecase.dart';
@@ -122,6 +126,13 @@ final rankingRepositoryProvider = Provider.autoDispose<RankingRepository>((
 ) {
   final remoteDataSource = ref.watch(rankingRemoteDataSourceProvider);
   return RankingRepositoryImpl(remoteDataSource);
+});
+
+final settingsRepositoryProvider = Provider.autoDispose<SettingsRepository>((
+  ref,
+) {
+  final remoteDataSource = ref.watch(settingsRemoteDataSourceProvider);
+  return SettingsRepositoryImpl(remoteDataSource);
 });
 
 // =============================================================================
@@ -319,4 +330,17 @@ final getMyGoodDeedsUseCaseProvider =
     Provider.autoDispose<GetMyGoodDeedsUseCase>((ref) {
       final repository = ref.watch(rankingRepositoryProvider);
       return GetMyGoodDeedsUseCase(repository);
+    });
+
+final getSettingsUseCaseProvider = Provider.autoDispose<GetSettingsUseCase>((
+  ref,
+) {
+  final repository = ref.watch(settingsRepositoryProvider);
+  return GetSettingsUseCase(repository);
+});
+
+final getSettingByKeyUseCaseProvider =
+    Provider.autoDispose<GetSettingByKeyUseCase>((ref) {
+      final repository = ref.watch(settingsRepositoryProvider);
+      return GetSettingByKeyUseCase(repository);
     });

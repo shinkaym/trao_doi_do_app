@@ -276,7 +276,7 @@ class _CampaignSlideshowState extends State<_CampaignSlideshow> {
         // Carousel with enhanced styling for campaigns
         Container(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
@@ -286,7 +286,7 @@ class _CampaignSlideshowState extends State<_CampaignSlideshow> {
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(8),
             child: CarouselSlider.builder(
               carouselController: _carouselController,
               itemCount: widget.campaigns.length,
@@ -399,7 +399,7 @@ class CampaignPostCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: InkWell(
         onTap: onTap != null ? () => onTap!(post) : null,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         child: Container(
           height: isTablet ? 250 : 200,
           child: Row(
