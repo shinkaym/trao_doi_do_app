@@ -112,13 +112,9 @@ final transactionProvider = StateNotifierProvider.autoDispose<
 >((ref) {
   final createTransactionUseCase = ref.watch(createTransactionUseCaseProvider);
   final updateTransactionUseCase = ref.watch(updateTransactionUseCaseProvider);
-  final getTransactionByInterestUseCase = ref.watch(
-    getTransactionByInterestUseCaseProvider,
-  );
   return TransactionNotifier(
     createTransactionUseCase,
     updateTransactionUseCase,
-    getTransactionByInterestUseCase,
   );
 });
 

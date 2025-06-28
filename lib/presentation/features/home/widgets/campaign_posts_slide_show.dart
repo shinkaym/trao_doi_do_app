@@ -12,7 +12,6 @@ import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/post_query.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/home/widgets/post_card.dart';
 import 'package:trao_doi_do_app/presentation/features/home/widgets/skeleton_posts_slideshow.dart';
 
 class CampaignPostsSlideshow extends HookConsumerWidget {
