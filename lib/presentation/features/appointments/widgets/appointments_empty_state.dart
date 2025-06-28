@@ -60,7 +60,7 @@ class AppointmentsEmptyState extends StatelessWidget {
             child: Text(
               hasActiveFilters
                   ? 'Không tìm thấy cuộc hẹn nào phù hợp với bộ lọc hiện tại'
-                  : 'Chưa có cuộc hẹn nào được tạo.\nHãy đợi người dùng đặt lịch hẹn với bạn.',
+                  : 'Chưa có cuộc hẹn nào được tạo.\nHãy đợi người quản lý đặt lịch hẹn với bạn.',
               style: TextStyle(
                 fontSize: isTablet ? 15 : 13,
                 color: colorScheme.onSurfaceVariant,

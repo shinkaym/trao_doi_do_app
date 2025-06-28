@@ -152,7 +152,11 @@ List<GoRoute> _buildStandaloneRoutes() {
     GoRoute(
       path: RouteConstants.login,
       name: RouteNames.login,
-      builder: (context, state) => const LoginScreen(),
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        return LoginScreen(extra: extra);
+      },
+      
     ),
     GoRoute(
       path: RouteConstants.register,

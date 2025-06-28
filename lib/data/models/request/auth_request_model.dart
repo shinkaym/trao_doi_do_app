@@ -179,21 +179,27 @@ class ResetPasswordRequestModel {
   final String password;
   final String rePassword;
   final String verifyToken;
+  final String? currentPassword;
 
   const ResetPasswordRequestModel({
     required this.email,
     required this.password,
     required this.rePassword,
     required this.verifyToken,
+    this.currentPassword,
   });
 
   Map<String, dynamic> toJson() {
-    return {
+    final Map<String, dynamic> data = {
       'email': email,
       'password': password,
       'rePassword': rePassword,
       'verifyToken': verifyToken,
     };
+
+    if (currentPassword != null) data['currentPassword'] = currentPassword;
+
+    return data;
   }
 
   ResetPasswordRequest toEntity() {

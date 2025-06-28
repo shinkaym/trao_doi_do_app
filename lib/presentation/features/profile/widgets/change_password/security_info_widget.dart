@@ -43,7 +43,6 @@ class SecurityInfoWidget extends StatelessWidget {
           ),
           SizedBox(height: isTablet ? 12 : 8),
           Text(
-            '• Mật khẩu mới phải khác mật khẩu hiện tại\n'
             '• Không chia sẻ mật khẩu với người khác\n'
             '• Sử dụng mật khẩu mạnh để bảo vệ tài khoản',
             style: TextStyle(
