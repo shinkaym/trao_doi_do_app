@@ -10,17 +10,17 @@ abstract class AuthRemoteDataSource {
   Future<String> logout();
   Future<RefreshTokenResponse> refreshToken(String refreshToken);
   Future<GetMeResponseModel> getMe();
-  
+
   // NEW: Profile update
   Future<UpdateProfileResponseModel> updateProfile(
-    int userId, 
+    int userId,
     UpdateProfileRequestModel request,
   );
-  
+
   // NEW: OTP operations
   Future<void> sendOtp(SendOtpRequestModel request);
   Future<VerifyOtpResponseModel> verifyOtp(VerifyOtpRequestModel request);
-  
+
   // NEW: Account operations
   Future<void> signup(SignupRequestModel request);
   Future<void> resetPassword(ResetPasswordRequestModel request);
@@ -100,7 +100,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
     final result = ApiResponseModel.fromJson(
       response.data,
-      (data) => UpdateProfileResponseModel.fromJson(data as Map<String, dynamic>),
+      (data) =>
+          UpdateProfileResponseModel.fromJson(data as Map<String, dynamic>),
     );
 
     return result.data!;
@@ -115,7 +116,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       options: Options(extra: {'requiresAuth': false}),
     );
 
-    final result = ApiResponseModel.fromJson(
+    ApiResponseModel.fromJson(
       response.data,
       (data) => BaseResponseModel.fromJson(data as Map<String, dynamic>),
     );
@@ -125,7 +126,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
   // NEW: Verify OTP implementation
   @override
-  Future<VerifyOtpResponseModel> verifyOtp(VerifyOtpRequestModel request) async {
+  Future<VerifyOtpResponseModel> verifyOtp(
+    VerifyOtpRequestModel request,
+  ) async {
     final response = await _dioClient.post(
       ApiConstants.clientVerifyOtp,
       data: request.toJson(),
@@ -149,7 +152,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       options: Options(extra: {'requiresAuth': false}),
     );
 
-    final result = ApiResponseModel.fromJson(
+    ApiResponseModel.fromJson(
       response.data,
       (data) => BaseResponseModel.fromJson(data as Map<String, dynamic>),
     );
@@ -166,7 +169,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       options: Options(extra: {'requiresAuth': false}),
     );
 
-    final result = ApiResponseModel.fromJson(
+    ApiResponseModel.fromJson(
       response.data,
       (data) => BaseResponseModel.fromJson(data as Map<String, dynamic>),
     );

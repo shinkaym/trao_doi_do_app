@@ -31,25 +31,24 @@ class LoginRequestModel {
 class UpdateProfileRequestModel {
   final String? address;
   final String? avatar;
-  final String fullName;
-  final String major;
-  final String phoneNumber;
+  final String? fullName;
+  final String? major;
+  final String? phoneNumber;
 
   const UpdateProfileRequestModel({
     this.address,
     this.avatar,
-    required this.fullName,
-    required this.major,
-    required this.phoneNumber,
+    this.fullName,
+    this.major,
+    this.phoneNumber,
   });
 
   Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = {
-      'fullName': fullName,
-      'major': major,
-      'phoneNumber': phoneNumber,
-    };
+    final Map<String, dynamic> data = {};
 
+    if (fullName != null) data['fullName'] = fullName;
+    if (major != null) data['major'] = major;
+    if (phoneNumber != null) data['phoneNumber'] = phoneNumber;
     if (address != null) data['address'] = address;
     if (avatar != null) data['avatar'] = avatar;
 

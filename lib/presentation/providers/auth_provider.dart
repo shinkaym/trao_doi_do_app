@@ -22,7 +22,6 @@ class AuthState {
   final String? successMessage;
   final bool isInitialized;
   final bool forceLogout; // Thêm flag để force logout
-  // NEW: OTP related states
   final String? verifyToken;
   final bool isOtpSent;
   final bool isOtpVerified;
@@ -108,7 +107,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final IsLoggedInUseCase _isLoggedInUseCase;
   final RefreshTokenUseCase _refreshTokenUseCase;
   final GetMeUseCase _getMeUseCase;
-  // NEW: Additional use cases
   final UpdateProfileUseCase _updateProfileUseCase;
   final SendOtpUseCase _sendOtpUseCase;
   final VerifyOtpUseCase _verifyOtpUseCase;
@@ -393,14 +391,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  // NEW: Update profile method
   Future<void> updateProfile({
     required int userId,
     String? address,
     String? avatar,
-    required String fullName,
-    required String major,
-    required String phoneNumber,
+    String? fullName,
+    String? major,
+    String? phoneNumber,
   }) async {
     state = state.copyWith(isLoading: true, clearFailure: true);
 
@@ -419,16 +416,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = state.copyWith(isLoading: false, failure: failure);
       },
       (updatedUser) {
+        final mergedUser = state.user?.mergeWith(updatedUser) ?? updatedUser;
         state = state.copyWith(
           isLoading: false,
-          user: updatedUser,
+          user: mergedUser,
           successMessage: 'Cập nhật thông tin thành công!',
         );
       },
     );
   }
 
-  // NEW: Send OTP method
   Future<void> sendOtp({
     required String email,
     required String purpose, // "activeAccount" or "resetPassword"
@@ -461,7 +458,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  // NEW: Verify OTP method
   Future<void> verifyOtp({
     required String email,
     required String otp,
@@ -497,7 +493,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  // NEW: Signup method
   Future<void> signup({
     required String email,
     required String fullName,
@@ -536,7 +531,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  // NEW: Reset password method
   Future<void> resetPassword({
     required String email,
     required String password,
@@ -571,7 +565,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  // NEW: Reset OTP states (useful for resetting forms)
   void resetOtpStates() {
     state = state.copyWith(
       isOtpSent: false,

@@ -18,16 +18,16 @@ class LoginRequest extends Equatable {
 class UpdateProfileRequest extends Equatable {
   final String? address;
   final String? avatar;
-  final String fullName;
-  final String major;
-  final String phoneNumber;
+  final String? fullName;
+  final String? major;
+  final String? phoneNumber;
 
   const UpdateProfileRequest({
     this.address,
     this.avatar,
-    required this.fullName,
-    required this.major,
-    required this.phoneNumber,
+    this.fullName,
+    this.major,
+    this.phoneNumber,
   });
 
   @override

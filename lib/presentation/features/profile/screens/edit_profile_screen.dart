@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
+import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/edit_profile/avatar_section.dart';
 import 'package:trao_doi_do_app/presentation/widgets/image_picker_bottom_sheet.dart';
@@ -19,8 +20,8 @@ class EditProfileScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Hooks for form controllers
-    final nameController = useTextEditingController();
-    final phoneController = useTextEditingController();
+    final fullNameController = useTextEditingController();
+    final addressController = useTextEditingController();
     final majorController = useTextEditingController();
 
     // Hooks for state management
@@ -35,8 +36,8 @@ class EditProfileScreen extends HookConsumerWidget {
     // Initialize controllers with user data
     useEffect(() {
       if (authState.user != null) {
-        nameController.text = authState.user!.fullName;
-        phoneController.text = authState.user!.phoneNumber;
+        fullNameController.text = authState.user!.fullName;
+        addressController.text = authState.user!.address;
         majorController.text = authState.user!.major;
       }
       return null;
@@ -81,13 +82,72 @@ class EditProfileScreen extends HookConsumerWidget {
         isLoading.value = true;
 
         try {
-          // Call the auth provider to update profile
-          // await ref.read(authProvider.notifier).updateProfile(
-          //   fullName: nameController.text.trim(),
-          //   phoneNumber: phoneController.text.trim(),
-          //   major: majorController.text.trim(),
-          //   avatarFile: selectedImage.value,
-          // );
+          // Track which fields have actually changed
+          String? updatedFullName;
+          String? updatedAddress;
+          String? updatedMajor;
+          String? updatedAvatar;
+
+          final currentUser = authState.user;
+          if (currentUser == null) {
+            context.showErrorSnackBar('Không tìm thấy thông tin người dùng');
+            return;
+          }
+
+          // Check each field for changes
+          final newFullName = fullNameController.text.trim();
+          if (newFullName != currentUser.fullName) {
+            updatedFullName = newFullName;
+          }
+
+          final newAddress = addressController.text.trim();
+          if (newAddress != currentUser.address) {
+            updatedAddress = newAddress;
+          }
+
+          final newMajor = majorController.text.trim();
+          if (newMajor != currentUser.major) {
+            updatedMajor = newMajor;
+          }
+
+          // Handle avatar update
+          if (selectedImage.value != null) {
+            final bytes = await selectedImage.value!.readAsBytes();
+            updatedAvatar = Base64Utils.encodeImageToDataUri(bytes);
+          }
+
+          // Check if any field has changed
+          final hasChanges =
+              updatedFullName != null ||
+              updatedAddress != null ||
+              updatedMajor != null ||
+              updatedAvatar != null;
+
+          if (!hasChanges) {
+            context.showInfoSnackBar('Không có thay đổi nào để cập nhật');
+            return;
+          }
+
+          // Build change summary for user feedback
+          final List<String> changedFields = [];
+          if (updatedFullName != null) changedFields.add('Họ tên');
+          if (updatedAddress != null) changedFields.add('Địa chỉ');
+          if (updatedMajor != null) changedFields.add('Ngành học');
+          if (updatedAvatar != null) changedFields.add('Ảnh đại diện');
+
+          print('🔄 Updating fields: ${changedFields.join(', ')}');
+
+          // Call update with only changed fields
+          await ref
+              .read(authProvider.notifier)
+              .updateProfile(
+                userId: currentUser.id,
+                fullName: updatedFullName,
+                address: updatedAddress,
+                major: updatedMajor,
+                avatar: updatedAvatar,
+                // phoneNumber is not included since it's read-only in your UI
+              );
         } catch (e) {
           context.showErrorSnackBar('Lỗi khi cập nhật: $e');
         } finally {
@@ -101,6 +161,7 @@ class EditProfileScreen extends HookConsumerWidget {
 
     return SmartScaffold(
       appBarType: AppBarType.standard,
+      title: 'Chỉnh sửa thông tin',
       showBackButton: true,
       body: SafeArea(
         top: false,
@@ -123,7 +184,103 @@ class EditProfileScreen extends HookConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        // Display-only fields
+                        _buildInfoSection(context, 'Thông tin cơ bản', [
+                          _buildDisplayField(
+                            context,
+                            'Email',
+                            authState.user?.email ?? '',
+                            Icons.email_outlined,
+                          ),
+                          SizedBox(height: isTablet ? 16 : 12),
+                          _buildDisplayField(
+                            context,
+                            'Số điện thoại',
+                            authState.user?.phoneNumber ?? '',
+                            Icons.phone_outlined,
+                          ),
+                          SizedBox(height: isTablet ? 16 : 12),
+                          _buildDisplayField(
+                            context,
+                            'Điểm tốt',
+                            '${authState.user?.goodPoint ?? 0} điểm',
+                            Icons.star_outline,
+                          ),
+                        ]),
+
                         SizedBox(height: isTablet ? 32 : 24),
+
+                        // Editable fields
+                        _buildInfoSection(
+                          context,
+                          'Thông tin có thể chỉnh sửa',
+                          [
+                            TextFormField(
+                              controller: fullNameController,
+                              enabled: !authState.isLoading && !isLoading.value,
+                              decoration: CustomInputDecoration.build(
+                                context,
+                                label: 'Họ và tên',
+                                hint: 'Nhập họ và tên của bạn',
+                                icon: Icons.person_outline,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Vui lòng nhập họ và tên';
+                                }
+                                if (value.trim().length < 2) {
+                                  return 'Họ và tên phải có ít nhất 2 ký tự';
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: isTablet ? 20 : 16),
+
+                            TextFormField(
+                              controller: addressController,
+                              enabled: !authState.isLoading && !isLoading.value,
+                              maxLines: 2,
+                              decoration: CustomInputDecoration.build(
+                                context,
+                                label: 'Địa chỉ',
+                                hint: 'Nhập địa chỉ của bạn',
+                                icon: Icons.location_on_outlined,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Vui lòng nhập địa chỉ';
+                                }
+                                if (value.trim().length < 5) {
+                                  return 'Địa chỉ phải có ít nhất 5 ký tự';
+                                }
+                                return null;
+                              },
+                            ),
+                            SizedBox(height: isTablet ? 20 : 16),
+
+                            TextFormField(
+                              controller: majorController,
+                              enabled: !authState.isLoading && !isLoading.value,
+                              decoration: CustomInputDecoration.build(
+                                context,
+                                label: 'Ngành học',
+                                hint: 'Nhập ngành học của bạn',
+                                icon: Icons.school_outlined,
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Vui lòng nhập ngành học';
+                                }
+                                if (value.trim().length < 2) {
+                                  return 'Ngành học phải có ít nhất 2 ký tự';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+
+                        SizedBox(height: isTablet ? 40 : 32),
 
                         // Show loading indicator if auth operation is in progress
                         if (authState.isLoading) ...[
@@ -136,85 +293,6 @@ class EditProfileScreen extends HookConsumerWidget {
                           ),
                           SizedBox(height: isTablet ? 24 : 16),
                         ],
-
-                        TextFormField(
-                          controller: nameController,
-                          enabled: !authState.isLoading && !isLoading.value,
-                          decoration: CustomInputDecoration.build(
-                            context,
-                            label: 'Họ và tên',
-                            hint: 'Nhập họ và tên của bạn',
-                            icon: Icons.person_outline,
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Vui lòng nhập họ và tên';
-                            }
-                            if (value.trim().length < 2) {
-                              return 'Họ và tên phải có ít nhất 2 ký tự';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: isTablet ? 24 : 20),
-
-                        TextFormField(
-                          initialValue: authState.user?.email ?? '',
-                          enabled: false,
-                          decoration: CustomInputDecoration.buildDisabled(
-                            context,
-                            label: 'Email',
-                            hint: 'Email không thể thay đổi',
-                            icon: Icons.email_outlined,
-                            suffix: const Icon(Icons.lock_outline, size: 20),
-                          ),
-                        ),
-                        SizedBox(height: isTablet ? 24 : 20),
-
-                        TextFormField(
-                          controller: phoneController,
-                          enabled: !authState.isLoading && !isLoading.value,
-                          keyboardType: TextInputType.phone,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                          decoration: CustomInputDecoration.build(
-                            context,
-                            label: 'Số điện thoại',
-                            hint: 'Nhập số điện thoại của bạn',
-                            icon: Icons.phone_outlined,
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Vui lòng nhập số điện thoại';
-                            }
-                            if (!RegExp(
-                              r'^0[0-9]{9,10}$',
-                            ).hasMatch(value.trim())) {
-                              return 'Số điện thoại không hợp lệ';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: isTablet ? 24 : 20),
-
-                        TextFormField(
-                          controller: majorController,
-                          enabled: !authState.isLoading && !isLoading.value,
-                          decoration: CustomInputDecoration.build(
-                            context,
-                            label: 'Ngành học',
-                            hint: 'Nhập ngành học của bạn',
-                            icon: Icons.school_outlined,
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Vui lòng nhập ngành học';
-                            }
-                            return null;
-                          },
-                        ),
-                        SizedBox(height: isTablet ? 40 : 32),
 
                         SizedBox(
                           height: isTablet ? 56 : 50,
@@ -229,6 +307,7 @@ class EditProfileScreen extends HookConsumerWidget {
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
+                              elevation: 2,
                             ),
                             icon:
                                 (authState.isLoading || isLoading.value)
@@ -264,6 +343,90 @@ class EditProfileScreen extends HookConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildInfoSection(
+    BuildContext context,
+    String title,
+    List<Widget> children,
+  ) {
+    final isTablet = context.isTablet;
+    final colorScheme = context.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: isTablet ? 20 : 18,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.onSurface,
+          ),
+        ),
+        SizedBox(height: isTablet ? 16 : 12),
+        ...children,
+      ],
+    );
+  }
+
+  Widget _buildDisplayField(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+  ) {
+    final colorScheme = context.colorScheme;
+    final isTablet = context.isTablet;
+
+    return Container(
+      padding: EdgeInsets.all(isTablet ? 16 : 14),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: isTablet ? 24 : 20,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          SizedBox(width: isTablet ? 16 : 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: isTablet ? 14 : 12,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  value.isEmpty ? 'Chưa có thông tin' : value,
+                  style: TextStyle(
+                    fontSize: isTablet ? 16 : 14,
+                    fontWeight: FontWeight.w400,
+                    color:
+                        value.isEmpty
+                            ? colorScheme.onSurfaceVariant.withOpacity(0.6)
+                            : colorScheme.onSurface,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
