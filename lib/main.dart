@@ -35,9 +35,7 @@ class _ProviderLogger extends ProviderObserver {
     Object? previousValue,
     Object? newValue,
     ProviderContainer container,
-  ) {
-    print('🔄 Provider Updated: ${provider.name ?? provider.runtimeType}');
-  }
+  ) {}
 
   @override
   void providerDidFail(
@@ -45,11 +43,7 @@ class _ProviderLogger extends ProviderObserver {
     Object error,
     StackTrace stackTrace,
     ProviderContainer container,
-  ) {
-    print(
-      '❌ Provider Failed: ${provider.name ?? provider.runtimeType} - $error',
-    );
-  }
+  ) {}
 }
 
 /// Optimized initialization

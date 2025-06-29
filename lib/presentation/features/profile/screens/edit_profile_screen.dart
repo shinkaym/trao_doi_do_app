@@ -136,8 +136,6 @@ class EditProfileScreen extends HookConsumerWidget {
           if (updatedMajor != null) changedFields.add('Ngành học');
           if (updatedAvatar != null) changedFields.add('Ảnh đại diện');
 
-          print('🔄 Updating fields: ${changedFields.join(', ')}');
-
           // Call update with only changed fields
           await ref
               .read(authProvider.notifier)

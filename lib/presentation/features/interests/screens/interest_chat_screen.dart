@@ -101,9 +101,7 @@ class InterestChatScreen extends HookConsumerWidget {
             if (!webSocketState.isConnected && !webSocketState.isConnecting) {
               final result = await getAccessTokenUseCase.execute();
               result.fold(
-                (failure) => {
-                  print('Failed to get access token: ${failure.message}'),
-                },
+                (failure) => {},
                 (token) => webSocketNotifier.connectToChat(token),
               );
             }
@@ -137,7 +135,6 @@ class InterestChatScreen extends HookConsumerWidget {
               _scrollToBottom(scrollController);
             });
           } catch (e) {
-            print('Error initializing chat: $e');
             isLoading.value = false;
           }
         }
@@ -155,9 +152,7 @@ class InterestChatScreen extends HookConsumerWidget {
           try {
             await messagesNotifier.markAllAsRead();
             hasMarkedAsRead.value = true;
-          } catch (e) {
-            print('❌ Lỗi khi đánh dấu đã đọc: $e');
-          }
+          } catch (e) {}
         });
       }
       return null;
@@ -255,10 +250,7 @@ class InterestChatScreen extends HookConsumerWidget {
                 }
               });
             }
-          } catch (e) {
-            print('❌ Error processing message: $e');
-            print('❌ Message data: $messageData');
-          }
+          } catch (e) {}
         }
       }
     }

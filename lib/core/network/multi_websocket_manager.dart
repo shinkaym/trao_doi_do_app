@@ -66,12 +66,12 @@ class MultiWebSocketManager {
     _messageSubscriptions[channel] = client.messageStream.listen((data) {
       final response = WebSocketResponse.fromJson(data);
       _responseController.add(response);
-    }, onError: (error) => print('❌ ${channel.name} message error: $error'));
+    }, onError: (error) => {});
 
     // Connection subscription
     _connectionSubscriptions[channel] = client.connectionStream.listen((state) {
       _connectionController.add(state);
-    }, onError: (error) => print('❌ ${channel.name} connection error: $error'));
+    }, onError: (error) => {});
   }
 
   void sendChatEvent(String event, Map<String, dynamic> data) {
@@ -128,7 +128,8 @@ class MultiWebSocketManager {
 
   bool _isChatNotificationEvent(String event) {
     const chatNotificationEvents = [
-      'join_noti_room_response', 'send_message_response',
+      'join_noti_room_response',
+      'send_message_response',
     ];
     return chatNotificationEvents.contains(event);
   }

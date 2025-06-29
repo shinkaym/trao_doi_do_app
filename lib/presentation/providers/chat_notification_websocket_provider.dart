@@ -125,7 +125,6 @@ class ChatNotificationWebSocketNotifier
 
   void _handleNewChatNotification(Map<String, dynamic> data) {
     try {
-      print('📥 Received notification data: $data');
       final notification = ChatNotification.fromJson(data);
       final updatedNotifications = [notification, ...state.notifications];
       state = state.copyWith(notifications: updatedNotifications);

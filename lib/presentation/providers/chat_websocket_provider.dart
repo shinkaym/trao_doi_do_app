@@ -76,7 +76,6 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
         }
       },
       onError: (error) {
-        print('❌ Chat connection stream error: $error');
         state = state.copyWith(
           connectionState: WebSocketConnectionState.error,
           error: 'Connection stream error: $error',

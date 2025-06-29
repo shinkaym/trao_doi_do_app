@@ -42,10 +42,7 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
     try {
       state = mode;
       await _secureStorage.write(key: _key, value: mode.index.toString());
-    } catch (e) {
-      // Handle error if needed
-      debugPrint('Error saving theme mode: $e');
-    }
+    } catch (e) {}
   }
 
   bool get isDarkMode => state == ThemeMode.dark;

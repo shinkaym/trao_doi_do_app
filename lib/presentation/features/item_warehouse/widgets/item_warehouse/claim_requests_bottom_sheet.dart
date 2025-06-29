@@ -74,7 +74,6 @@ class _ClaimRequestsBottomSheetState
         _originalClaimRequests = Map.from(_localClaimRequests);
       }
     } catch (e) {
-      debugPrint('Provider error in _initializeData: $e');
       _localClaimRequests = {};
       _originalClaimRequests = {};
     }

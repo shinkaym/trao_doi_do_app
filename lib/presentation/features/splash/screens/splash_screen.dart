@@ -96,7 +96,6 @@ class SplashScreen extends HookConsumerWidget {
         // Complete splash
         ref.read(splashProvider.notifier).completeSplash();
       } catch (e) {
-        debugPrint('Error in splash sequence: $e');
         ref.read(splashProvider.notifier).completeSplash();
       }
     }, [ref, logoController, textController, progressController]);

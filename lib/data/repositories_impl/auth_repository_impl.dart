@@ -47,10 +47,7 @@ class AuthRepositoryImpl implements AuthRepository {
       // Try logout API, nhưng không block nếu fail
       try {
         await _remoteDataSource.logout();
-      } catch (e) {
-        // Log error nhưng không throw để không ảnh hưởng logout flow
-        print('Logout API failed: $e');
-      }
+      } catch (e) {}
     }, "Lỗi khi đăng xuất");
   }
 
@@ -197,10 +194,7 @@ class AuthRepositoryImpl implements AuthRepository {
       final userModel = UserModel.fromEntity(user);
       final userJson = jsonEncode(userModel.toJson());
       await _localDataSource.saveUserInfo(userJson);
-    } catch (e) {
-      // Log error nhưng không throw để không block main flow
-      print('Failed to save user info: $e');
-    }
+    } catch (e) {}
   }
 
   /// Helper method để clear tất cả auth data

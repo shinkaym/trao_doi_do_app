@@ -109,19 +109,6 @@ class RouteUtils {
     return false;
   }
 
-  /// Debug helper to log route matching
-  static void debugRouteMatching(String route) {
-    print('🔍 Debug route matching for: $route');
-    print('  - Clean route: ${getCleanRoutePath(route)}');
-    print('  - Is protected: ${isProtectedRoute(route)}');
-    print('  - Is auth route: ${isAuthRoute(route)}');
-    print('  - Should show navbar: ${shouldShowNavBar(route)}');
-    print('  - Navigation index: ${calculateNavigationIndex(route)}');
-    print('  - Is main navigation: ${isMainNavigationRoute(route)}');
-    print('  - Main navigation route: ${getMainNavigationRoute(route)}');
-    print('  - Requires authentication: ${requiresAuthentication(route)}');
-  }
-
   /// Get route hierarchy (useful for breadcrumbs)
   static List<String> getRouteHierarchy(String route) {
     final cleanRoute = getCleanRoutePath(route);

@@ -64,8 +64,6 @@ class CustomBottomNavigation extends HookConsumerWidget {
             next.lastResponse?.event == 'send_message_response' &&
             next.lastResponse?.isSuccess == true &&
             next.lastResponse?.data != null) {
-          print('📨 New message received, increasing unread count');
-
           // Tăng unread count thêm 1
           unreadCountNotifier.updateCount(unreadCountState.count + 1);
 
@@ -79,14 +77,12 @@ class CustomBottomNavigation extends HookConsumerWidget {
           switch (next.lastResponse!.event) {
             case 'new_chat_notification':
               // Xử lý notification chat khác
-              print('📢 New chat notification received');
               unreadCountNotifier.updateCount(unreadCountState.count + 1);
               break;
 
             case 'mark_as_read_response':
               // Có thể reset unread count nếu server báo đã đọc
               if (next.lastResponse!.isSuccess) {
-                print('✅ Messages marked as read');
                 // Không cần làm gì vì user sẽ tự decrease count khi vào chat
               }
               break;
@@ -106,15 +102,9 @@ class CustomBottomNavigation extends HookConsumerWidget {
             authState.user != null &&
             !chatNotificationState.isConnected &&
             !chatNotificationState.isConnecting) {
-          print('🔌 Connecting to chat notification WebSocket...');
-
           final result = await getAccessTokenUseCase.execute();
           result.fold(
-            (failure) => {
-              print(
-                '❌ Failed to get access token for chat notification: ${failure.message}',
-              ),
-            },
+            (failure) => {},
             (token) =>
                 chatNotificationNotifier.connectToChatNotification(token),
           );
@@ -122,7 +112,6 @@ class CustomBottomNavigation extends HookConsumerWidget {
 
         // Ngắt kết nối khi đăng xuất
         if (!authState.isLoggedIn && chatNotificationState.isConnected) {
-          print('🔌 Disconnecting from chat notification WebSocket...');
           chatNotificationNotifier.disconnect();
         }
       });
@@ -132,21 +121,14 @@ class CustomBottomNavigation extends HookConsumerWidget {
     // Xử lý WebSocket connection state changes
     useEffect(() {
       if (chatNotificationState.isConnected) {
-        print('✅ Chat notification WebSocket connected');
-      } else if (chatNotificationState.hasError) {
-        print(
-          '❌ Chat notification WebSocket error: ${chatNotificationState.error}',
-        );
-      }
+      } else if (chatNotificationState.hasError) {}
       return null;
     }, [chatNotificationState.connectionState]);
 
     // Xử lý lỗi WebSocket
     useEffect(() {
       if (chatNotificationState.error != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          print('❌ Chat notification error: ${chatNotificationState.error}');
-        });
+        WidgetsBinding.instance.addPostFrameCallback((_) {});
       }
       return null;
     }, [chatNotificationState.error]);

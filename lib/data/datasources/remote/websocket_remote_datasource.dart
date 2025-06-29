@@ -45,25 +45,20 @@ class WebSocketRemoteDataSourceImpl implements WebSocketRemoteDataSource {
 
   @override
   Future<void> connectToChat(String? token) async {
-    print('🔄 Switching to chat client...');
     await _switchActiveClient(_chatClient);
     await _chatClient.connect(token, '/chat');
   }
 
   @override
   Future<void> connectToChatNotification(String? token) async {
-    print('🔄 Switching to chatNotification client...');
     await _switchActiveClient(_chatNotificationClient);
     await _chatNotificationClient.connect(token, '/chat-noti');
   }
 
   Future<void> _switchActiveClient(WebSocketClient newClient) async {
     if (_activeClient == newClient) {
-      print('✅ Already using the same client, no switch needed');
       return;
     }
-
-    print('🔄 Switching active client...');
 
     // Cancel existing subscriptions
     await _messageSubscription?.cancel();
@@ -73,35 +68,18 @@ class WebSocketRemoteDataSourceImpl implements WebSocketRemoteDataSource {
     _activeClient = newClient;
 
     // Subscribe to new client's streams
-    _messageSubscription = newClient.messageStream.listen(
-      (data) {
-        print('📨 Forwarding message from active client: ${data['event']}');
-        final response = WebSocketResponse.fromJson(data);
-        _responseController.add(response);
-      },
-      onError: (error) {
-        print('❌ Message stream error: $error');
-      },
-    );
+    _messageSubscription = newClient.messageStream.listen((data) {
+      final response = WebSocketResponse.fromJson(data);
+      _responseController.add(response);
+    }, onError: (error) {});
 
-    _connectionSubscription = newClient.connectionStream.listen(
-      (state) {
-        print(
-          '📡 Forwarding connection state from active client: ${state.toString()}',
-        );
-        _connectionController.add(state);
-      },
-      onError: (error) {
-        print('❌ Connection stream error: $error');
-      },
-    );
-
-    print('✅ Active client switched successfully');
+    _connectionSubscription = newClient.connectionStream.listen((state) {
+      _connectionController.add(state);
+    }, onError: (error) {});
   }
 
   @override
   void disconnect() {
-    print('🔌 Disconnecting active client...');
     if (_activeClient != null) {
       _activeClient!.disconnect();
       // Don't set _activeClient to null here, let it be handled by connection state
@@ -111,17 +89,12 @@ class WebSocketRemoteDataSourceImpl implements WebSocketRemoteDataSource {
   @override
   void sendEvent(WebSocketEvent event) {
     if (_activeClient != null) {
-      print('📤 Sending event through active client: ${event.event.value}');
       _activeClient!.sendEvent(event.event.value, event.data);
-    } else {
-      print('❌ Cannot send event: no active client');
-    }
+    } else {}
   }
 
   @override
   void dispose() {
-    print('🗑️ Disposing WebSocket remote data source...');
-
     // Cancel subscriptions
     _messageSubscription?.cancel();
     _connectionSubscription?.cancel();

@@ -18,10 +18,7 @@ class BannerCarousel extends StatelessWidget {
     final Uri uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
-    } else {
-      // Có thể hiển thị snackbar hoặc dialog thông báo lỗi
-      debugPrint('Không thể mở URL: $url');
-    }
+    } else {}
   }
 
   @override

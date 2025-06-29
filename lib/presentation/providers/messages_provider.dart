@@ -68,7 +68,7 @@ class MessagesListState {
 class MessagesListNotifier extends StateNotifier<MessagesListState> {
   final GetMessagesUseCase _getMessagesUseCase;
   final MarkAllMessagesReadUseCase _markAllMessagesReadUseCase;
-  
+
   // Debouncing and optimization
   Timer? _loadMoreTimer;
   static const Duration _loadMoreDebounce = Duration(milliseconds: 300);
@@ -102,9 +102,12 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
           state = state.copyWith(isMarkingAllRead: false, failure: failure),
       (resultMessage) {
         // Efficiently update all messages to read status
-        final updatedMessages = state.messages.map((message) {
-          return message.isRead == 0 ? message.copyWith(isRead: 1) : message;
-        }).toList();
+        final updatedMessages =
+            state.messages.map((message) {
+              return message.isRead == 0
+                  ? message.copyWith(isRead: 1)
+                  : message;
+            }).toList();
 
         state = state.copyWith(
           isMarkingAllRead: false,
@@ -124,7 +127,7 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
     // Prevent multiple simultaneous loads
     if (!refresh && !isLoadMore && state.isLoading) return;
     if (isLoadMore && !state.canLoadMore) return;
-    
+
     // Debounce load more requests
     if (isLoadMore && _shouldDebounceLoadMore()) return;
 
@@ -150,10 +153,11 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
     }
 
     try {
-      final queryToUse = isLoadMore 
-          ? state.query.copyWith(page: nextPage)
-          : state.query.copyWith(page: 1);
-          
+      final queryToUse =
+          isLoadMore
+              ? state.query.copyWith(page: nextPage)
+              : state.query.copyWith(page: 1);
+
       final result = await _getMessagesUseCase(queryToUse);
 
       await result.fold(
@@ -166,7 +170,12 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
           );
         },
         (messagesResult) async {
-          await _handleLoadSuccess(messagesResult, isFirstLoad, isLoadMore, nextPage);
+          await _handleLoadSuccess(
+            messagesResult,
+            isFirstLoad,
+            isLoadMore,
+            nextPage,
+          );
         },
       );
     } catch (e) {
@@ -181,7 +190,7 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
   bool _shouldDebounceLoadMore() {
     final lastLoad = state.lastLoadTime;
     if (lastLoad == null) return false;
-    
+
     final timeSinceLastLoad = DateTime.now().difference(lastLoad);
     return timeSinceLastLoad < _minTimeBetweenLoads;
   }
@@ -231,14 +240,14 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
   List<Message> _removeDuplicateMessages(List<Message> messages) {
     final seen = <int>{};
     final uniqueMessages = <Message>[];
-    
+
     for (final message in messages) {
       if (!seen.contains(message.id)) {
         seen.add(message.id);
         uniqueMessages.add(message);
       }
     }
-    
+
     return uniqueMessages;
   }
 
@@ -250,7 +259,7 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
   Future<void> loadMore() async {
     // Cancel any pending load more timer
     _loadMoreTimer?.cancel();
-    
+
     // Debounce load more requests
     _loadMoreTimer = Timer(_loadMoreDebounce, () {
       if (mounted && state.canLoadMore) {
@@ -265,11 +274,11 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
 
   void addNewMessage(Message message) {
     if (message.interestID != state.query.interestID) return;
-    
+
     // Check if message already exists to prevent duplicates
     final messageExists = state.messages.any((m) => m.id == message.id);
     if (messageExists) return;
-    
+
     // Add new message at the end (most recent)
     final updatedMessages = [...state.messages, message];
     state = state.copyWith(messages: updatedMessages);
@@ -277,59 +286,66 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
 
   void addNewMessages(List<Message> newMessages) {
     if (newMessages.isEmpty) return;
-    
+
     // Filter messages for this interest and remove duplicates
-    final relevantMessages = newMessages
-        .where((msg) => msg.interestID == state.query.interestID)
-        .where((msg) => !state.messages.any((existing) => existing.id == msg.id))
-        .toList();
-    
+    final relevantMessages =
+        newMessages
+            .where((msg) => msg.interestID == state.query.interestID)
+            .where(
+              (msg) => !state.messages.any((existing) => existing.id == msg.id),
+            )
+            .toList();
+
     if (relevantMessages.isEmpty) return;
-    
+
     final updatedMessages = [...state.messages, ...relevantMessages];
     state = state.copyWith(messages: updatedMessages);
   }
 
   void updateMessage(Message updatedMessage) {
     if (updatedMessage.interestID != state.query.interestID) return;
-    
-    final messageIndex = state.messages.indexWhere((m) => m.id == updatedMessage.id);
+
+    final messageIndex = state.messages.indexWhere(
+      (m) => m.id == updatedMessage.id,
+    );
     if (messageIndex == -1) return;
-    
+
     final updatedMessages = [...state.messages];
     updatedMessages[messageIndex] = updatedMessage;
-    
+
     state = state.copyWith(messages: updatedMessages);
   }
 
   void removeMessage(int messageId) {
-    final updatedMessages = state.messages.where((m) => m.id != messageId).toList();
+    final updatedMessages =
+        state.messages.where((m) => m.id != messageId).toList();
     state = state.copyWith(messages: updatedMessages);
   }
 
   void markMessageAsRead(int messageId) {
     final messageIndex = state.messages.indexWhere((m) => m.id == messageId);
     if (messageIndex == -1) return;
-    
+
     final message = state.messages[messageIndex];
     if (message.isRead == 1) return; // Already read
-    
+
     final updatedMessages = [...state.messages];
     updatedMessages[messageIndex] = message.copyWith(isRead: 1);
-    
+
     state = state.copyWith(messages: updatedMessages);
   }
 
   void markMessagesAsRead(List<int> messageIds) {
     bool hasChanges = false;
-    final updatedMessages = state.messages.map((message) {
-      if (messageIds.contains(message.id) && message.isRead == 0) {
-        hasChanges = true;
-        return message.copyWith(isRead: 1);
-      }
-      return message;
-    }).toList();
-    
+    final updatedMessages =
+        state.messages.map((message) {
+          if (messageIds.contains(message.id) && message.isRead == 0) {
+            hasChanges = true;
+            return message.copyWith(isRead: 1);
+          }
+          return message;
+        }).toList();
+
     if (hasChanges) {
       state = state.copyWith(messages: updatedMessages);
     }
@@ -352,65 +368,62 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
 
   // Utility methods
   bool get hasMessages => state.messages.isNotEmpty;
-  
+
   bool get hasUnreadMessages => state.messages.any((m) => m.isRead == 0);
-  
+
   int get unreadCount {
     return state.messages.where((message) => message.isRead == 0).length;
   }
-  
+
   int get totalMessageCount => state.messages.length;
-  
-  Message? get lastMessage => state.messages.isNotEmpty ? state.messages.last : null;
-  
-  Message? get firstMessage => state.messages.isNotEmpty ? state.messages.first : null;
-  
-  List<Message> get unreadMessages => state.messages.where((m) => m.isRead == 0).toList();
-  
-  // Performance monitoring
-  void logPerformanceMetrics() {
-    print('Messages count: ${state.messages.length}');
-    print('Current page: ${state.currentPage}');
-    print('Has more data: ${state.hasMoreData}');
-    print('Loading pages: ${state.loadingPages}');
-    print('Last load time: ${state.lastLoadTime}');
-  }
-  
+
+  Message? get lastMessage =>
+      state.messages.isNotEmpty ? state.messages.last : null;
+
+  Message? get firstMessage =>
+      state.messages.isNotEmpty ? state.messages.first : null;
+
+  List<Message> get unreadMessages =>
+      state.messages.where((m) => m.isRead == 0).toList();
+
   // Batch operations for better performance
   void batchUpdateMessages(List<Message> updatedMessages) {
     if (updatedMessages.isEmpty) return;
-    
+
     final Map<int, Message> updateMap = {
-      for (var msg in updatedMessages) msg.id: msg
+      for (var msg in updatedMessages) msg.id: msg,
     };
-    
-    final updatedList = state.messages.map((message) {
-      return updateMap[message.id] ?? message;
-    }).toList();
-    
+
+    final updatedList =
+        state.messages.map((message) {
+          return updateMap[message.id] ?? message;
+        }).toList();
+
     state = state.copyWith(messages: updatedList);
   }
-  
+
   void batchRemoveMessages(List<int> messageIds) {
     if (messageIds.isEmpty) return;
-    
+
     final idsToRemove = messageIds.toSet();
-    final filteredMessages = state.messages
-        .where((message) => !idsToRemove.contains(message.id))
-        .toList();
-    
+    final filteredMessages =
+        state.messages
+            .where((message) => !idsToRemove.contains(message.id))
+            .toList();
+
     state = state.copyWith(messages: filteredMessages);
   }
-  
+
   // Real-time updates optimization
   void optimizeForRealTime() {
     // Limit memory usage by keeping only recent messages if list gets too large
     const maxMessages = 1000;
-    
+
     if (state.messages.length > maxMessages) {
       // Keep the most recent messages
-      final recentMessages = state.messages.skip(state.messages.length - maxMessages).toList();
-      
+      final recentMessages =
+          state.messages.skip(state.messages.length - maxMessages).toList();
+
       state = state.copyWith(
         messages: recentMessages,
         // Reset pagination since we've trimmed old messages
@@ -419,7 +432,7 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
       );
     }
   }
-  
+
   // Error recovery
   void retryLastOperation() {
     if (state.failure != null) {
@@ -430,19 +443,20 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
       }
     }
   }
-  
+
   void clearError() {
     if (state.failure != null) {
       state = state.copyWith(failure: null);
     }
   }
-  
+
   // Preload optimization
   void preloadNextPage() {
-    if (state.canLoadMore && !state.loadingPages.contains(state.currentPage + 1)) {
+    if (state.canLoadMore &&
+        !state.loadingPages.contains(state.currentPage + 1)) {
       // Preload next page in background without updating UI loading state
       final nextPageQuery = state.query.copyWith(page: state.currentPage + 1);
-      
+
       _getMessagesUseCase(nextPageQuery).then((result) {
         result.fold(
           (failure) {
