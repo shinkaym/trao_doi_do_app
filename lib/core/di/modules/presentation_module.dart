@@ -319,7 +319,7 @@ final rankingProvider =
     });
 
 final myGoodDeedsProvider =
-    StateNotifierProvider.autoDispose<MyGoodDeedsNotifier, MyGoodDeedsState>((
+    StateNotifierProvider<MyGoodDeedsNotifier, MyGoodDeedsState>((
       ref,
     ) {
       final getMyGoodDeedsUseCase = ref.watch(getMyGoodDeedsUseCaseProvider);

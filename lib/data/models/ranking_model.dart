@@ -191,7 +191,7 @@ class MyGoodDeedModel {
                     GoodDeedItemModel.fromJson(item as Map<String, dynamic>),
               )
               .toList(),
-      transactionID: json['transactionID'] as int,
+      transactionID: json['transactionID'] as int? ?? 0,
       userID: json['userID'] as int,
       userName: json['userName'] as String? ?? '',
     );

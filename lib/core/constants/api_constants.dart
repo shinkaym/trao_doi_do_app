@@ -29,7 +29,7 @@ class ApiConstants {
   static const String appointments = '/appointments';
   static const String users = '/users';
   static const String ranks = '$client$users/ranks';
-  static const String myRanks = '$client$users/my-good-dees';
+  static const String myRanks = '$client$users/my-good-deeds';
   static const String settings = '/settings';
 
   // Headers

@@ -110,7 +110,7 @@ class GoodDeedItem extends Equatable {
     required this.itemImage,
     required this.itemName,
     required this.postItemID,
-    required this.quantity,
+    required this.quantity,           
   });
 
   @override
