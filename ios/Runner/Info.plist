@@ -45,5 +45,19 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập camera để chụp ảnh sản phẩm khi đăng bài.</string>
+
+	<!-- Photo library permission (nếu cần) -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập thư viện ảnh để chọn ảnh sản phẩm.</string>
+
+	<!-- Notification permission -->
+	<key>NSUserNotificationUsageDescription</key>
+	<string>Ứng dụng cần quyền gửi thông báo để cập nhật tin tức và tin nhắn mới.</string>
+
+	<!-- Location permission (nếu cần) -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Ứng dụng cần quyền truy cập vị trí để tìm kiếm sản phẩm xung quanh.</string>
 </dict>
 </plist>

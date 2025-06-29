@@ -500,7 +500,7 @@ class CampaignPostCard extends StatelessWidget {
             color: colorScheme.onSurface.withOpacity(0.7),
             height: 1.3,
           ),
-          maxLines: 2,
+          maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         SizedBox(height: isTablet ? 8 : 6),
