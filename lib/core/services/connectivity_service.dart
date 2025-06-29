@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:trao_doi_do_app/core/utils/logger_utils.dart';
 
@@ -8,6 +7,7 @@ class ConnectivityService {
   final Connectivity _connectivity;
   final ILogger _logger;
 
+  // Sửa lỗi: Thay đổi type từ ConnectivityResult thành List<ConnectivityResult>
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   final StreamController<ConnectivityStatus> _statusController =
       StreamController<ConnectivityStatus>.broadcast();
@@ -17,7 +17,7 @@ class ConnectivityService {
   /// Stream of connectivity status changes
   Stream<ConnectivityStatus> get statusStream => _statusController.stream;
 
-/// Initialize connectivity monitoring
+  /// Initialize connectivity monitoring
   Future<void> initialize() async {
     try {
       // Check initial connectivity
@@ -25,6 +25,7 @@ class ConnectivityService {
       _statusController.add(initialStatus);
 
       // Listen for connectivity changes
+      // Sửa lỗi: Thay đổi callback để nhận List<ConnectivityResult>
       _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
         (List<ConnectivityResult> results) async {
           _logger.i('Connectivity changed: $results');
@@ -45,12 +46,6 @@ class ConnectivityService {
 
   /// Check current connectivity status
   Future<ConnectivityStatus> checkConnectivity() async {
-    // Nếu đang ở debug mode, luôn trả về connected
-    if (kDebugMode) {
-      _logger.i('Debug mode: Force connected status');
-      return ConnectivityStatus.connected;
-    }
-
     try {
       // Sửa lỗi: checkConnectivity() giờ trả về List<ConnectivityResult>
       final results = await _connectivity.checkConnectivity();
@@ -63,36 +58,18 @@ class ConnectivityService {
 
   /// Check if device is connected to internet
   Future<bool> isConnected() async {
-    // Nếu đang ở debug mode, luôn trả về true
-    if (kDebugMode) {
-      _logger.i('Debug mode: Force connected = true');
-      return true;
-    }
-
     final status = await checkConnectivity();
     return status == ConnectivityStatus.connected;
   }
 
   /// Check if device has no internet connection
   Future<bool> isDisconnected() async {
-    // Nếu đang ở debug mode, luôn trả về false
-    if (kDebugMode) {
-      _logger.i('Debug mode: Force disconnected = false');
-      return false;
-    }
-
     final status = await checkConnectivity();
     return status == ConnectivityStatus.disconnected;
   }
 
   /// Test internet connectivity by pinging a reliable server
   Future<bool> hasInternetAccess() async {
-    // Nếu đang ở debug mode, luôn trả về true
-    if (kDebugMode) {
-      _logger.i('Debug mode: Force internet access = true');
-      return true;
-    }
-
     try {
       // First check basic connectivity
       final basicConnectivity = await isConnected();
@@ -111,11 +88,6 @@ class ConnectivityService {
 
   /// Get current connection type
   Future<String> getConnectionType() async {
-    // Nếu đang ở debug mode, trả về WiFi (Debug Mode)
-    if (kDebugMode) {
-      return 'WiFi (Debug Mode)';
-    }
-
     try {
       final results = await _connectivity.checkConnectivity();
       return _getConnectionTypeName(results);
@@ -127,16 +99,6 @@ class ConnectivityService {
 
   /// Get detailed connectivity information
   Future<ConnectivityInfo> getConnectivityInfo() async {
-    // Nếu đang ở debug mode, trả về thông tin mock
-    if (kDebugMode) {
-      return ConnectivityInfo(
-        status: ConnectivityStatus.connected,
-        connectionType: 'WiFi (Debug Mode)',
-        hasInternetAccess: true,
-        timestamp: DateTime.now(),
-      );
-    }
-
     try {
       final results = await _connectivity.checkConnectivity();
       final status = await _mapConnectivityResults(results);
@@ -171,23 +133,16 @@ class ConnectivityService {
   Future<ConnectivityStatus> _mapConnectivityResults(
     List<ConnectivityResult> results,
   ) async {
-    // Nếu đang ở debug mode, luôn trả về connected
-    if (kDebugMode) {
-      return ConnectivityStatus.connected;
-    }
-
     // Nếu không có kết nối nào
     if (results.isEmpty || results.contains(ConnectivityResult.none)) {
       return ConnectivityStatus.disconnected;
     }
 
     // Kiểm tra xem có kết nối WiFi, Mobile hoặc Ethernet không
-    final hasValidConnection = results.any(
-      (result) =>
-          result == ConnectivityResult.wifi ||
-          result == ConnectivityResult.mobile ||
-          result == ConnectivityResult.ethernet,
-    );
+    final hasValidConnection = results.any((result) =>
+        result == ConnectivityResult.wifi ||
+        result == ConnectivityResult.mobile ||
+        result == ConnectivityResult.ethernet);
 
     if (hasValidConnection) {
       // Verify internet access for connected states
@@ -244,6 +199,8 @@ class ConnectivityService {
         return 'Other';
       case ConnectivityResult.none:
         return 'No Connection';
+      default:
+        return 'Unknown';
     }
   }
 }
