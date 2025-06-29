@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/utils/route_utils.dart';
-import 'package:trao_doi_do_app/presentation/common/screens/no_connection_screen.dart';
 import 'package:trao_doi_do_app/presentation/common/screens/not_found_screen.dart';
 import 'package:trao_doi_do_app/presentation/common/screens/permission_request_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/screens/forgot_password_screen.dart';
@@ -37,7 +36,6 @@ final _routerStateProvider = Provider<RouterState>((ref) {
   final isOnboardingCompleted = ref.watch(isOnboardingCompletedProvider);
   final isSplashCompleted = ref.watch(isSplashCompletedProvider);
   final allPermissionsGranted = ref.watch(allPermissionsGrantedProvider);
-  final isConnected = ref.watch(isConnectedProvider);
 
   return RouterState(
     isLoggedIn: authState.isLoggedIn,
@@ -45,7 +43,6 @@ final _routerStateProvider = Provider<RouterState>((ref) {
     isOnboardingCompleted: isOnboardingCompleted,
     isSplashCompleted: isSplashCompleted,
     allPermissionsGranted: allPermissionsGranted,
-    isConnected: isConnected,
   );
 });
 
@@ -55,7 +52,6 @@ class RouterState {
   final bool isOnboardingCompleted;
   final bool isSplashCompleted;
   final bool allPermissionsGranted;
-  final bool isConnected;
 
   const RouterState({
     required this.isLoggedIn,
@@ -63,7 +59,6 @@ class RouterState {
     required this.isOnboardingCompleted,
     required this.isSplashCompleted,
     required this.allPermissionsGranted,
-    required this.isConnected,
   });
 
   @override
@@ -75,8 +70,7 @@ class RouterState {
           isLoading == other.isLoading &&
           isOnboardingCompleted == other.isOnboardingCompleted &&
           isSplashCompleted == other.isSplashCompleted &&
-          allPermissionsGranted == other.allPermissionsGranted &&
-          isConnected == other.isConnected;
+          allPermissionsGranted == other.allPermissionsGranted;
 
   @override
   int get hashCode =>
@@ -84,8 +78,7 @@ class RouterState {
       isLoading.hashCode ^
       isOnboardingCompleted.hashCode ^
       isSplashCompleted.hashCode ^
-      allPermissionsGranted.hashCode ^
-      isConnected.hashCode;
+      allPermissionsGranted.hashCode;
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -110,10 +103,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (!routerState.allPermissionsGranted) {
           return '/permission-request';
         }
-        // Then check connectivity before going to main app
-        if (!routerState.isConnected) {
-          return '/no-connection';
-        }
         return RouteConstants.home;
       }
 
@@ -128,23 +117,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (!routerState.allPermissionsGranted) {
           return '/permission-request';
         }
-        if (!routerState.isConnected) {
-          return '/no-connection';
-        }
         return RouteConstants.home;
       }
 
       // Handle permission request completion
       if (currentPath == '/permission-request' &&
           routerState.allPermissionsGranted) {
-        if (!routerState.isConnected) {
-          return '/no-connection';
-        }
-        return RouteConstants.home;
-      }
-
-      // Handle connectivity restoration
-      if (currentPath == '/no-connection' && routerState.isConnected) {
         return RouteConstants.home;
       }
 
@@ -159,18 +137,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             !RouteUtils.isAuthRoute(currentPath)) {
           return '/permission-request';
         }
-
-        // Finally check connectivity
-        if (!routerState.isConnected) {
-          return '/no-connection';
-        }
       }
 
       // Auth routes - redirect to home if already logged in and setup complete
       if (RouteUtils.isAuthRoute(currentPath)) {
-        if (routerState.isLoggedIn &&
-            routerState.allPermissionsGranted &&
-            routerState.isConnected) {
+        if (routerState.isLoggedIn && routerState.allPermissionsGranted) {
           return RouteConstants.home;
         }
       }
@@ -249,11 +220,6 @@ List<GoRoute> _buildSystemRoutes() {
       path: '/permission-request',
       name: 'permission-request',
       builder: (context, state) => const PermissionRequestScreen(),
-    ),
-    GoRoute(
-      path: '/no-connection',
-      name: 'no-connection',
-      builder: (context, state) => const NoConnectionScreen(),
     ),
   ];
 }
