@@ -11,7 +11,6 @@ import 'package:trao_doi_do_app/presentation/features/profile/widgets/edit_profi
 import 'package:trao_doi_do_app/presentation/widgets/image_picker_bottom_sheet.dart';
 import 'dart:io';
 import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
-import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
 class EditProfileScreen extends HookConsumerWidget {
@@ -44,22 +43,24 @@ class EditProfileScreen extends HookConsumerWidget {
     }, [authState.user]);
 
     // Listen for auth state changes
-    ref.listen<AuthState>(authProvider, (previous, next) {
-      if (next.successMessage != null) {
-        context.showSuccessSnackBar(next.successMessage!);
-        // Clear success message and navigate back
-        Future.microtask(() {
+    useEffect(() {
+      if (authState.successMessage != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          context.showSuccessSnackBar(authState.successMessage!);
           ref.read(authProvider.notifier).clearSuccess();
           context.pop();
         });
       }
 
-      if (next.failure != null) {
-        context.showErrorSnackBar(next.failure!.message);
-        // Clear error after showing
-        Future.microtask(() => ref.read(authProvider.notifier).clearError());
+      if (authState.failure != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          context.showErrorSnackBar(authState.failure!.message);
+          ref.read(authProvider.notifier).clearError();
+        });
       }
-    });
+
+      return null;
+    }, [authState.successMessage, authState.failure]);
 
     Future<void> pickImage() async {
       try {
@@ -217,7 +218,7 @@ class EditProfileScreen extends HookConsumerWidget {
                           [
                             TextFormField(
                               controller: fullNameController,
-                              enabled: !authState.isLoading && !isLoading.value,
+                              enabled: !isLoading.value,
                               decoration: CustomInputDecoration.build(
                                 context,
                                 label: 'Họ và tên',
@@ -238,7 +239,7 @@ class EditProfileScreen extends HookConsumerWidget {
 
                             TextFormField(
                               controller: addressController,
-                              enabled: !authState.isLoading && !isLoading.value,
+                              enabled: !isLoading.value,
                               maxLines: 2,
                               decoration: CustomInputDecoration.build(
                                 context,
@@ -260,7 +261,7 @@ class EditProfileScreen extends HookConsumerWidget {
 
                             TextFormField(
                               controller: majorController,
-                              enabled: !authState.isLoading && !isLoading.value,
+                              enabled: !isLoading.value,
                               decoration: CustomInputDecoration.build(
                                 context,
                                 label: 'Ngành học',
@@ -282,25 +283,11 @@ class EditProfileScreen extends HookConsumerWidget {
 
                         SizedBox(height: isTablet ? 40 : 32),
 
-                        // Show loading indicator if auth operation is in progress
-                        if (authState.isLoading) ...[
-                          Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                colorScheme.primary,
-                              ),
-                            ),
-                          ),
-                          SizedBox(height: isTablet ? 24 : 16),
-                        ],
-
+                        // Save button with loading state
                         SizedBox(
                           height: isTablet ? 56 : 50,
                           child: ElevatedButton.icon(
-                            onPressed:
-                                (authState.isLoading || isLoading.value)
-                                    ? null
-                                    : handleSave,
+                            onPressed: isLoading.value ? null : handleSave,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: colorScheme.primary,
                               foregroundColor: colorScheme.onPrimary,
@@ -310,7 +297,7 @@ class EditProfileScreen extends HookConsumerWidget {
                               elevation: 2,
                             ),
                             icon:
-                                (authState.isLoading || isLoading.value)
+                                isLoading.value
                                     ? const SizedBox(
                                       width: 20,
                                       height: 20,
@@ -324,9 +311,7 @@ class EditProfileScreen extends HookConsumerWidget {
                                     )
                                     : const Icon(Icons.save),
                             label: Text(
-                              (authState.isLoading || isLoading.value)
-                                  ? 'Đang lưu...'
-                                  : 'Lưu thay đổi',
+                              isLoading.value ? 'Đang lưu...' : 'Lưu thay đổi',
                               style: TextStyle(
                                 fontSize: isTablet ? 18 : 16,
                                 fontWeight: FontWeight.w600,

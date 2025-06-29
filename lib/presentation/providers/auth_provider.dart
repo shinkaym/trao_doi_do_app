@@ -268,7 +268,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isLoading: showLoading ? false : state.isLoading,
           user: user,
           isLoggedIn: true,
-          successMessage: showLoading ? 'Cập nhật thông tin thành công!' : null,
         );
       },
     );
@@ -281,8 +280,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// Handle khi token expired từ interceptor - QUAN TRỌNG
   void handleTokenExpired() {
-    print('🚨 AuthNotifier: handleTokenExpired called');
-
     state = state.copyWith(
       isInitialized: true,
       isLoggedIn: false,
@@ -342,13 +339,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         // Log error nhưng vẫn clear local state
         state = const AuthState(
           isInitialized: true,
-          successMessage: 'Đăng xuất thành công!',
+          // successMessage: 'Đăng xuất thành công!',
         );
       },
       (_) {
         state = const AuthState(
           isInitialized: true,
-          successMessage: 'Đăng xuất thành công!',
+          // successMessage: 'Đăng xuất thành công!',
         );
       },
     );
@@ -356,14 +353,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   /// IMPROVED: Better refresh token handling
   Future<void> refreshToken() async {
-    print('🔄 AuthNotifier: refreshToken called');
-
     final result = await _refreshTokenUseCase();
 
     result.fold(
       (failure) {
-        print('❌ AuthNotifier: Token refresh failed - ${failure.message}');
-
         // Token refresh failed, clear auth state và force logout
         state = state.copyWith(
           isInitialized: true,
@@ -381,7 +374,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
         });
       },
       (user) {
-        print('✅ AuthNotifier: Token refresh successful');
         state = state.copyWith(
           user: user,
           isLoggedIn: user != null,
@@ -452,7 +444,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = state.copyWith(
           isLoading: false,
           isOtpSent: true,
-          successMessage: 'Mã OTP đã được gửi đến email của bạn!',
+          // successMessage: 'Mã OTP đã được gửi đến email của bạn!',
         );
       },
     );
@@ -487,7 +479,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isLoading: false,
           isOtpVerified: true,
           verifyToken: verifyToken,
-          successMessage: 'Xác thực OTP thành công!',
+          // successMessage: 'Xác thực OTP thành công!',
         );
       },
     );
@@ -555,7 +547,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       (_) {
         state = state.copyWith(
           isLoading: false,
-          successMessage: 'Đặt lại mật khẩu thành công!',
+          // successMessage: 'Đặt lại mật khẩu thành công!',
           // Reset OTP states after successful password reset
           isOtpSent: false,
           isOtpVerified: false,

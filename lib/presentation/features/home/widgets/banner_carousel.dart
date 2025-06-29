@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class BannerCarousel extends StatelessWidget {
   final List<Map<String, dynamic>> bannerSlides;
@@ -11,6 +12,18 @@ class BannerCarousel extends StatelessWidget {
     required this.isTablet,
   });
 
+  Future<void> _launchUrl(String url) async {
+    if (url.isEmpty) return;
+
+    final Uri uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      // Có thể hiển thị snackbar hoặc dialog thông báo lỗi
+      debugPrint('Không thể mở URL: $url');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -20,14 +33,15 @@ class BannerCarousel extends StatelessWidget {
         itemBuilder: (context, index, realIndex) {
           final slide = bannerSlides[index];
           return GestureDetector(
-            onTap: () {},
+            onTap: () {
+              if (slide['url'] != null && slide['url'].toString().isNotEmpty) {
+                _launchUrl(slide['url'].toString());
+              }
+            },
             child: Container(
               width: MediaQuery.of(context).size.width,
-              // Loại bỏ margin horizontal để full width
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(
-                  0,
-                ), // Có thể để 0 hoặc giá trị nhỏ
+                borderRadius: BorderRadius.circular(0),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
@@ -37,9 +51,7 @@ class BannerCarousel extends StatelessWidget {
                 ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(
-                  0,
-                ), // Có thể để 0 hoặc giá trị nhỏ
+                borderRadius: BorderRadius.circular(0),
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
@@ -156,8 +168,8 @@ class BannerCarousel extends StatelessWidget {
           autoPlayInterval: const Duration(seconds: 5),
           autoPlayAnimationDuration: const Duration(milliseconds: 800),
           autoPlayCurve: Curves.fastOutSlowIn,
-          enlargeCenterPage: false, // Tắt việc phóng to slide ở giữa
-          viewportFraction: 1.0, // Đặt thành 1.0 để full width
+          enlargeCenterPage: false,
+          viewportFraction: 1.0,
           enableInfiniteScroll: true,
           pauseAutoPlayOnTouch: true,
           pauseAutoPlayOnManualNavigate: true,

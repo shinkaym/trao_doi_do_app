@@ -163,30 +163,41 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
             top: offset.dy + size.height,
             left: 0,
             right: 0,
-            child: Material(
-              color: Colors.transparent,
-              child: Consumer(
-                builder: (context, ref, child) {
-                  final searchState = ref.watch(searchSuggestionsProvider);
+            bottom: 5, // Thêm bottom: 0 để kéo dài xuống hết màn hình
+            child: Container(
+              color: Colors.black.withOpacity(0.1), // Thêm background color nhẹ
+              child: Material(
+                color: Colors.transparent,
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final searchState = ref.watch(searchSuggestionsProvider);
 
-                  if (searchState.query.isEmpty) {
-                    return const SizedBox.shrink();
-                  }
+                    if (searchState.query.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
 
-                  return SearchSuggestionsOverlay(
-                    suggestions: searchState.suggestions,
-                    isLoading: searchState.isLoading,
-                    searchQuery: searchState.query,
-                    onPostTap: (post) {
-                      _hideOverlay();
-                      _navigateToPostDetail(context, post);
-                    },
-                    onViewAll: () {
-                      _hideOverlay();
-                      _navigateToPostsWithSearch(context, searchState.query);
-                    },
-                  );
-                },
+                    return Container(
+                      width: double.infinity, // Đảm bảo chiếm hết chiều rộng
+                      height: double.infinity, // Đảm bảo chiếm hết chiều cao
+                      child: SearchSuggestionsOverlay(
+                        suggestions: searchState.suggestions,
+                        isLoading: searchState.isLoading,
+                        searchQuery: searchState.query,
+                        onPostTap: (post) {
+                          _hideOverlay();
+                          _navigateToPostDetail(context, post);
+                        },
+                        onViewAll: () {
+                          _hideOverlay();
+                          _navigateToPostsWithSearch(
+                            context,
+                            searchState.query,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),

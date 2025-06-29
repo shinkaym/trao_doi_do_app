@@ -406,7 +406,7 @@ class PostDetailScreen extends HookConsumerWidget {
             SliverAppBar(
               expandedHeight: isTablet ? 450 : 350,
               pinned: true,
-              backgroundColor: Colors.white,
+              backgroundColor: colorScheme.background,
               leading: Container(
                 margin: const EdgeInsets.all(8),
                 decoration: BoxDecoration(

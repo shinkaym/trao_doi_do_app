@@ -1,6 +1,5 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/material.dart';
-import 'package:trao_doi_do_app/presentation/features/home/widgets/post_category_section.dart';
 
 class SkeletonPostsSlideshow extends StatelessWidget {
   final bool isTablet;
@@ -228,6 +227,129 @@ class SkeletonPostCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
             ),
       ],
+    );
+  }
+}
+
+mixin SkeletonAnimation on TickerProvider {
+  late AnimationController _shimmerController;
+  late Animation<double> _shimmerAnimation;
+
+  void initializeShimmerAnimation() {
+    _shimmerController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _shimmerAnimation = Tween<double>(begin: -1.0, end: 1.0).animate(
+      CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut),
+    );
+    _shimmerController.repeat();
+  }
+
+  void disposeShimmerAnimation() {
+    _shimmerController.dispose();
+  }
+
+  Animation<double> get shimmerAnimation => _shimmerAnimation;
+}
+
+// Skeleton container widget
+class SkeletonContainer extends StatelessWidget {
+  final double? width;
+  final double? height;
+  final BorderRadius? borderRadius;
+  final Color? baseColor;
+  final Color? highlightColor;
+
+  const SkeletonContainer({
+    Key? key,
+    this.width,
+    this.height,
+    this.borderRadius,
+    this.baseColor,
+    this.highlightColor,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: baseColor ?? (isDark ? Colors.grey[800] : Colors.grey[300]),
+        borderRadius: borderRadius ?? BorderRadius.circular(4),
+      ),
+    );
+  }
+}
+
+// Animated skeleton container
+class AnimatedSkeletonContainer extends StatefulWidget {
+  final double? width;
+  final double? height;
+  final BorderRadius? borderRadius;
+  final Color? baseColor;
+  final Color? highlightColor;
+
+  const AnimatedSkeletonContainer({
+    Key? key,
+    this.width,
+    this.height,
+    this.borderRadius,
+    this.baseColor,
+    this.highlightColor,
+  }) : super(key: key);
+
+  @override
+  State<AnimatedSkeletonContainer> createState() =>
+      _AnimatedSkeletonContainerState();
+}
+
+class _AnimatedSkeletonContainerState extends State<AnimatedSkeletonContainer>
+    with TickerProviderStateMixin, SkeletonAnimation {
+  @override
+  void initState() {
+    super.initState();
+    initializeShimmerAnimation();
+  }
+
+  @override
+  void dispose() {
+    disposeShimmerAnimation();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final baseColor =
+        widget.baseColor ?? (isDark ? Colors.grey[800]! : Colors.grey[300]!);
+    final highlightColor =
+        widget.highlightColor ??
+        (isDark ? Colors.grey[700]! : Colors.grey[100]!);
+
+    return AnimatedBuilder(
+      animation: shimmerAnimation,
+      builder: (context, child) {
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            borderRadius: widget.borderRadius ?? BorderRadius.circular(4),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [baseColor, highlightColor, baseColor],
+              stops: [0.0, 0.5 + shimmerAnimation.value * 0.3, 1.0],
+            ),
+          ),
+        );
+      },
     );
   }
 }

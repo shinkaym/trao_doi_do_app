@@ -22,7 +22,9 @@ class ProfileScreen extends HookConsumerWidget {
     final authState = ref.watch(authProvider);
     final currentThemeMode = ref.watch(themeModeProvider);
 
-    // Tối ưu: Sử dụng useMemoized để tránh rebuild không cần thiết
+    // State để track logout loading riêng biệt
+    final isLoggingOut = useState(false);
+
     final avatarWidget = useMemoized(
       () => _buildAvatarWidget(
         authState: authState,
@@ -33,17 +35,30 @@ class ProfileScreen extends HookConsumerWidget {
     );
 
     // Listen for auth state changes để show snackbar
-    ref.listen<AuthState>(authProvider, (previous, next) {
-      if (next.successMessage != null) {
-        context.showSuccessSnackBar(next.successMessage!);
-        Future.microtask(() => ref.read(authProvider.notifier).clearSuccess());
+    useEffect(() {
+      if (authState.successMessage != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ref.read(authProvider.notifier).clearSuccess();
+        });
       }
 
-      if (next.failure != null) {
-        context.showErrorSnackBar(next.failure!.message);
-        Future.microtask(() => ref.read(authProvider.notifier).clearError());
+      if (authState.failure != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          context.showErrorSnackBar(authState.failure!.message);
+          ref.read(authProvider.notifier).clearError();
+        });
       }
-    });
+
+      return null;
+    }, [authState.successMessage, authState.failure]);
+
+    // Listen for logout completion
+    useEffect(() {
+      if (isLoggingOut.value && !authState.isLoading) {
+        isLoggingOut.value = false;
+      }
+      return null;
+    }, [authState.isLoading]);
 
     return SmartScaffold(
       body: SafeArea(
@@ -76,6 +91,10 @@ class ProfileScreen extends HookConsumerWidget {
                     authState: authState,
                     context: context,
                     ref: ref,
+                    isLoggingOut: isLoggingOut.value,
+                    onLogoutStateChanged: (bool loading) {
+                      isLoggingOut.value = loading;
+                    },
                   ),
                 ),
               ),
@@ -254,21 +273,13 @@ class ProfileScreen extends HookConsumerWidget {
     required AuthState authState,
     required BuildContext context,
     required WidgetRef ref,
+    required bool isLoggingOut,
+    required Function(bool) onLogoutStateChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         SizedBox(height: isTablet ? 24 : 16),
-
-        // Loading indicator khi có auth operation
-        if (authState.isLoading) ...[
-          Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
-            ),
-          ),
-          SizedBox(height: isTablet ? 24 : 16),
-        ],
 
         // Menu Items
         _buildMenuItem(
@@ -337,7 +348,9 @@ class ProfileScreen extends HookConsumerWidget {
           height: isTablet ? 56 : 50,
           child: ElevatedButton.icon(
             onPressed:
-                authState.isLoading ? null : () => _handleLogout(context, ref),
+                isLoggingOut
+                    ? null
+                    : () => _handleLogout(context, ref, onLogoutStateChanged),
             style: ElevatedButton.styleFrom(
               backgroundColor: colorScheme.error,
               foregroundColor: colorScheme.onError,
@@ -346,7 +359,7 @@ class ProfileScreen extends HookConsumerWidget {
               ),
             ),
             icon:
-                authState.isLoading
+                isLoggingOut
                     ? SizedBox(
                       width: 20,
                       height: 20,
@@ -359,7 +372,7 @@ class ProfileScreen extends HookConsumerWidget {
                     )
                     : const Icon(Icons.logout),
             label: Text(
-              authState.isLoading ? 'Đang đăng xuất...' : 'Đăng xuất',
+              isLoggingOut ? 'Đang đăng xuất...' : 'Đăng xuất',
               style: TextStyle(
                 fontSize: isTablet ? 18 : 16,
                 fontWeight: FontWeight.w600,
@@ -504,7 +517,11 @@ class ProfileScreen extends HookConsumerWidget {
     );
   }
 
-  void _handleLogout(BuildContext context, WidgetRef ref) async {
+  void _handleLogout(
+    BuildContext context,
+    WidgetRef ref,
+    Function(bool) onLogoutStateChanged,
+  ) async {
     final confirmed = await context.showConfirmDialog(
       title: 'Đăng xuất',
       content: 'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?',
@@ -515,6 +532,7 @@ class ProfileScreen extends HookConsumerWidget {
 
     if (confirmed == true) {
       HapticFeedback.mediumImpact();
+      onLogoutStateChanged(true); // Bật loading cho button
       ref.read(authProvider.notifier).logout();
     }
   }

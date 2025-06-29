@@ -245,7 +245,7 @@ class _ContactInfoCard extends StatelessWidget {
             contactInfo['description']!,
             style: TextStyle(
               fontSize: isTablet ? 14 : 13,
-              color: colorScheme.onSurface.withOpacity(0.8),
+              color: Colors.black, // Đổi thành màu đen cố định
               height: 1.4,
             ),
           ),
@@ -519,7 +519,7 @@ class _WorkingTimeItem extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: isTablet ? 13 : 12,
-                    color: colorScheme.onSurface.withOpacity(0.7),
+                    color: Colors.black, // Đổi thành màu đen cố định
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -527,7 +527,7 @@ class _WorkingTimeItem extends StatelessWidget {
                   value,
                   style: TextStyle(
                     fontSize: isTablet ? 13 : 12,
-                    color: colorScheme.onSurface,
+                    color: Colors.black, // Đổi thành màu đen cố định
                     fontWeight: FontWeight.w600,
                   ),
                 ),

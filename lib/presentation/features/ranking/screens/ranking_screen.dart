@@ -7,6 +7,7 @@ import 'package:trao_doi_do_app/presentation/features/ranking/widgets/ranking/en
 import 'package:trao_doi_do_app/presentation/features/ranking/widgets/ranking/leaderboard_item.dart';
 import 'package:trao_doi_do_app/presentation/features/ranking/widgets/ranking/current_user_section.dart';
 import 'package:trao_doi_do_app/presentation/features/ranking/widgets/ranking/loading_item.dart';
+import 'package:trao_doi_do_app/presentation/features/ranking/widgets/ranking/skeleton_loading.dart';
 import 'package:trao_doi_do_app/presentation/features/ranking/widgets/ranking/user_details_bottom_sheet.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
@@ -142,13 +143,9 @@ class RankingScreen extends HookConsumerWidget {
               // Loading state for initial load
               if (rankingState.isLoading && rankingState.userRanks.isEmpty)
                 SliverToBoxAdapter(
-                  child: Container(
-                    height: 200,
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: colorScheme.primary,
-                      ),
-                    ),
+                  child: RankingScreenSkeleton(
+                    isTablet: isTablet,
+                    colorScheme: colorScheme,
                   ),
                 ),
 

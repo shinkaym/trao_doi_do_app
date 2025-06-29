@@ -161,7 +161,6 @@ class ChangePasswordStateNotifier extends StateNotifier<ChangePasswordState> {
     }
   }
 
-  // Hoàn tất đổi mật khẩu
   Future<void> _completePasswordChange(
     String verifyToken,
     BuildContext context,
@@ -181,9 +180,15 @@ class ChangePasswordStateNotifier extends StateNotifier<ChangePasswordState> {
 
     if (authState.failure == null) {
       if (context.mounted) {
-        await Future.delayed(const Duration(seconds: 1));
+        context.showSuccessSnackBar(
+          'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.',
+        );
+
+        await Future.delayed(const Duration(seconds: 2));
+
         if (context.mounted) {
-          // Quay lại màn hình trước đó
+          await ref.read(authProvider.notifier).logout();
+
           context.pop();
         }
       }
