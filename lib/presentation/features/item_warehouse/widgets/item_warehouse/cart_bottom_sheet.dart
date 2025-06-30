@@ -38,6 +38,11 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
     _localSelectedItems = Map<String, int>.from(widget.selectedItems);
   }
 
+  // Helper function để tính số lượng có thể nhận
+  int getAvailableForClaim(OldStockItem item) {
+    return item.quantity < item.maxClaim ? item.quantity : item.maxClaim;
+  }
+
   void _updateItemQuantity(String itemKey, int newQuantity) {
     setState(() {
       if (newQuantity <= 0) {
@@ -49,11 +54,20 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
         if (itemId != null) {
           final item = widget.getItemById(itemId);
           if (item != null) {
-            if (newQuantity > item.quantity) {
+            final availableForClaim = getAvailableForClaim(item);
+            
+            if (newQuantity > availableForClaim) {
               final itemName = itemKey.split('_').skip(1).join('_');
-              context.showErrorSnackBar(
-                'Chỉ còn ${item.quantity} "$itemName" trong kho',
-              );
+              
+              // Xác định thông báo lỗi phù hợp
+              String errorMessage;
+              if (item.quantity < item.maxClaim) {
+                errorMessage = 'Chỉ còn ${item.quantity} "$itemName" trong kho';
+              } else {
+                errorMessage = 'Chỉ được phép nhận tối đa ${item.maxClaim} "$itemName"';
+              }
+              
+              context.showErrorSnackBar(errorMessage);
               return;
             }
           }
@@ -79,10 +93,14 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
 
       if (itemId != null) {
         final item = widget.getItemById(itemId);
-        if (item != null && quantity > item.quantity) {
-          hasInvalidQuantity = true;
-          final itemName = itemKey.split('_').skip(1).join('_');
-          invalidItems.add(itemName);
+        if (item != null) {
+          final availableForClaim = getAvailableForClaim(item);
+          
+          if (quantity > availableForClaim) {
+            hasInvalidQuantity = true;
+            final itemName = itemKey.split('_').skip(1).join('_');
+            invalidItems.add(itemName);
+          }
         }
       }
     }
@@ -244,7 +262,17 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
 
                   final item =
                       itemId != null ? widget.getItemById(itemId) : null;
-                  final maxQuantity = item?.quantity ?? 0;
+                  final availableForClaim = item != null ? getAvailableForClaim(item) : 0;
+                  
+                  // Xác định loại giới hạn để hiển thị thông tin phù hợp
+                  String limitInfo = '';
+                  if (item != null) {
+                    if (item.quantity < item.maxClaim) {
+                      limitInfo = 'Còn lại: ${item.quantity} (trong kho)';
+                    } else {
+                      limitInfo = 'Tối đa: ${item.maxClaim} (quy định)';
+                    }
+                  }
 
                   return AnimatedContainer(
                     duration: Duration(milliseconds: 300),
@@ -276,7 +304,7 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
                                   ),
                                   if (item != null)
                                     Text(
-                                      'Còn lại: $maxQuantity',
+                                      limitInfo,
                                       style: widget.theme.textTheme.bodySmall
                                           ?.copyWith(
                                             color: widget.colorScheme.onSurface
@@ -344,10 +372,14 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
                                           ? null
                                           : () {
                                             if (item != null &&
-                                                quantity >= maxQuantity) {
-                                              context.showErrorSnackBar(
-                                                'Chỉ còn $maxQuantity "$itemName" trong kho',
-                                              );
+                                                quantity >= availableForClaim) {
+                                              String errorMessage;
+                                              if (item.quantity < item.maxClaim) {
+                                                errorMessage = 'Chỉ còn ${item.quantity} "$itemName" trong kho';
+                                              } else {
+                                                errorMessage = 'Chỉ được phép nhận tối đa ${item.maxClaim} "$itemName"';
+                                              }
+                                              context.showErrorSnackBar(errorMessage);
                                               return;
                                             }
                                             _updateItemQuantity(
@@ -362,7 +394,7 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
                                     decoration: BoxDecoration(
                                       color:
                                           (item != null &&
-                                                  quantity >= maxQuantity)
+                                                  quantity >= availableForClaim)
                                               ? widget.colorScheme.outline
                                                   .withOpacity(0.3)
                                               : widget.colorScheme.primary
@@ -373,7 +405,7 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
                                       Icons.add,
                                       color:
                                           (item != null &&
-                                                  quantity >= maxQuantity)
+                                                  quantity >= availableForClaim)
                                               ? widget.colorScheme.outline
                                               : widget.colorScheme.primary,
                                       size: widget.isTablet ? 20 : 16,
@@ -386,7 +418,7 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
                         ),
 
                         // Warning for exceeded quantity
-                        if (item != null && quantity > maxQuantity)
+                        if (item != null && quantity > availableForClaim)
                           AnimatedContainer(
                             duration: Duration(milliseconds: 300),
                             margin: EdgeInsets.only(top: 8),
@@ -408,7 +440,9 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
                                 SizedBox(width: widget.isTablet ? 8 : 6),
                                 Expanded(
                                   child: Text(
-                                    'Số lượng vượt quá hàng có sẵn',
+                                    item.quantity < item.maxClaim 
+                                        ? 'Số lượng vượt quá hàng có sẵn trong kho'
+                                        : 'Số lượng vượt quá giới hạn cho phép nhận',
                                     style: widget.theme.textTheme.bodySmall
                                         ?.copyWith(
                                           color:

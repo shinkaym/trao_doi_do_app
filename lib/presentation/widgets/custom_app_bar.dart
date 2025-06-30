@@ -213,7 +213,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
 
   void _navigateToPostDetail(BuildContext context, post) {
     context.pushNamed(
-      'post-detail',
+      RouteNames.postDetail,
       pathParameters: {'slug': post.slug.toString()},
     );
     _toggleSearch();
@@ -223,7 +223,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
     if (searchQuery.trim().isEmpty) return;
 
     context.pushNamed(
-      'posts',
+      RouteNames.posts,
       extra: {'search': searchQuery.trim(), 'autoFocus': false},
     );
 
@@ -768,7 +768,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
           ),
           onPressed:
               widget.onNotificationTap ??
-              () => context.pushNamed('notifications'),
+              () => context.pushNamed(RouteNames.notifications),
           tooltip: 'Thông báo',
         ),
 

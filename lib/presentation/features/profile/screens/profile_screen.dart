@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:trao_doi_do_app/core/config/theme_mode_provider.dart';
+import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
@@ -288,7 +289,7 @@ class ProfileScreen extends HookConsumerWidget {
           colorScheme: colorScheme,
           icon: Icons.edit_outlined,
           title: 'Chỉnh sửa thông tin',
-          onTap: () => context.pushNamed('edit-profile'),
+          onTap: () => context.pushNamed(RouteNames.editProfile),
         ),
         SizedBox(height: isTablet ? 16 : 12),
 
@@ -298,7 +299,7 @@ class ProfileScreen extends HookConsumerWidget {
           colorScheme: colorScheme,
           icon: Icons.lock_outline,
           title: 'Đổi mật khẩu',
-          onTap: () => context.pushNamed('change-password'),
+          onTap: () => context.pushNamed(RouteNames.changePassword),
         ),
         SizedBox(height: isTablet ? 16 : 12),
 
@@ -308,7 +309,7 @@ class ProfileScreen extends HookConsumerWidget {
           colorScheme: colorScheme,
           icon: Icons.leaderboard_outlined,
           title: 'Bảng xếp hạng',
-          onTap: () => context.pushNamed('ranking'),
+          onTap: () => context.pushNamed(RouteNames.ranking),
         ),
         SizedBox(height: isTablet ? 16 : 12),
 
@@ -318,7 +319,7 @@ class ProfileScreen extends HookConsumerWidget {
           colorScheme: colorScheme,
           icon: Icons.history,
           title: 'Lịch sử bài đăng',
-          onTap: () => context.pushNamed('my-posts'),
+          onTap: () => context.pushNamed(RouteNames.myPosts),
         ),
         SizedBox(height: isTablet ? 16 : 12),
 
@@ -328,7 +329,7 @@ class ProfileScreen extends HookConsumerWidget {
           colorScheme: colorScheme,
           icon: Icons.calendar_today_outlined,
           title: 'Danh sách cuộc hẹn',
-          onTap: () => context.pushNamed('appointments'),
+          onTap: () => context.pushNamed(RouteNames.appointments),
         ),
         SizedBox(height: isTablet ? 16 : 12),
 

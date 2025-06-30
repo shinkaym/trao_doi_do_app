@@ -42,6 +42,7 @@ class OldStockItem extends Equatable {
   final String itemImage;
   final String itemName;
   final int quantity;
+  final int maxClaim;
 
   const OldStockItem({
     required this.categoryName,
@@ -51,6 +52,7 @@ class OldStockItem extends Equatable {
     required this.itemImage,
     required this.itemName,
     required this.quantity,
+    required this.maxClaim,
   });
 
   @override
@@ -62,6 +64,7 @@ class OldStockItem extends Equatable {
     itemImage,
     itemName,
     quantity,
+    maxClaim,
   ];
 }
 
@@ -82,10 +85,10 @@ class ClaimRequestItem extends Equatable {
 
   @override
   List<Object?> get props => [
-        categoryName,
-        itemID,
-        itemImage,
-        itemName,
-        quantity,
-      ];
+    categoryName,
+    itemID,
+    itemImage,
+    itemName,
+    quantity,
+  ];
 }

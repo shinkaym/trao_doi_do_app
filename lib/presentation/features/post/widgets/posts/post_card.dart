@@ -171,14 +171,14 @@ class PostCard extends StatelessWidget {
       children: [
         SizedBox(height: isTablet ? 16 : 12),
         SizedBox(
-          height: isTablet ? 80 : 60,
+          height: isTablet ? 120 : 100,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: post.images.length,
             itemBuilder: (context, imageIndex) {
               return Container(
                 margin: EdgeInsets.only(right: isTablet ? 12 : 8),
-                width: isTablet ? 80 : 60,
+                width: isTablet ? 120 : 100,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   color: colorScheme.surfaceVariant,

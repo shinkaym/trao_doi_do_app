@@ -95,7 +95,8 @@ class TransactionActionButtons extends StatelessWidget {
         // Edit mode actions (chỉ cho pending transactions và postType != 3)
         if (isEditing &&
             transaction.status == TransactionStatus.pending.value &&
-            postType != PostType.findLost.value) ...[
+            postType != PostType.findLost.value &&
+            postType != PostType.wantItem.value) ...[
           Row(
             children: [
               Expanded(
@@ -143,8 +144,9 @@ class TransactionActionButtons extends StatelessWidget {
                 ),
               ),
 
-              // Chỉ hiện nút chỉnh sửa nếu postType != 3
-              if (postType != 3) ...[
+              // Chỉ hiện nút chỉnh sửa nếu postType != 3 và != 4
+              if (postType != PostType.findLost.value &&
+                  postType != PostType.wantItem.value) ...[
                 SizedBox(width: isTablet ? 12 : 8),
                 Expanded(
                   child: ElevatedButton(

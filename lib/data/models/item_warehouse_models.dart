@@ -82,6 +82,7 @@ class OldStockItemModel {
   final String itemImage;
   final String itemName;
   final int quantity;
+  final int maxClaim;
 
   const OldStockItemModel({
     required this.categoryName,
@@ -91,6 +92,7 @@ class OldStockItemModel {
     required this.itemImage,
     required this.itemName,
     required this.quantity,
+    required this.maxClaim,
   });
 
   factory OldStockItemModel.fromJson(Map<String, dynamic> json) {
@@ -102,6 +104,7 @@ class OldStockItemModel {
       itemImage: json['itemImage'] as String,
       itemName: json['itemName'] as String,
       quantity: json['quantity'] as int,
+      maxClaim: json['maxClaim'] as int,
     );
   }
 
@@ -114,6 +117,7 @@ class OldStockItemModel {
       'itemImage': itemImage,
       'itemName': itemName,
       'quantity': quantity,
+      'maxClaim': maxClaim,
     };
   }
 
@@ -126,6 +130,7 @@ class OldStockItemModel {
       itemImage: itemImage,
       itemName: itemName,
       quantity: quantity,
+      maxClaim: maxClaim,
     );
   }
 
@@ -138,6 +143,7 @@ class OldStockItemModel {
       itemImage: entity.itemImage,
       itemName: entity.itemName,
       quantity: entity.quantity,
+      maxClaim: entity.maxClaim,
     );
   }
 }

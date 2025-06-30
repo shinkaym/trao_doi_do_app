@@ -4,7 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
-import 'package:trao_doi_do_app/presentation/providers/permission_notifier.dart';
+import 'package:trao_doi_do_app/presentation/providers/permission_provider.dart';
 
 class PermissionRequestScreen extends HookConsumerWidget {
   const PermissionRequestScreen({super.key});

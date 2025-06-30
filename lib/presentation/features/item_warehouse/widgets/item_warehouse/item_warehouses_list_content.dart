@@ -40,6 +40,11 @@ class ItemWarehousesListContent extends HookConsumerWidget {
     this.onAddToCart,
   });
 
+  // Helper function để tính số lượng có thể nhận
+  int getAvailableForClaim(OldStockItem item) {
+    return item.quantity < item.maxClaim ? item.quantity : item.maxClaim;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (oldStockState.isLoading && oldStockState.items.isEmpty) {
@@ -107,13 +112,16 @@ class ItemWarehousesListContent extends HookConsumerWidget {
               itemCount: oldStockState.items.length,
               itemBuilder: (context, index) {
                 final item = oldStockState.items[index];
+                final availableForClaim = getAvailableForClaim(item);
+                
                 return ItemWarehouseCard(
                   item: item,
                   isTablet: isTablet,
                   theme: theme,
                   colorScheme: colorScheme,
                   onTap: onItemTap,
-                  onAddToCart: onAddToCart,
+                  // Chỉ hiển thị nút "Thêm" nếu có thể nhận (availableForClaim > 0)
+                  onAddToCart: availableForClaim > 0 ? onAddToCart : null,
                 );
               },
               separatorBuilder: (context, index) {

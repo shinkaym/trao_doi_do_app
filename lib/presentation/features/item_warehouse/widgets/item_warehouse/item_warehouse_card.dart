@@ -22,6 +22,10 @@ class ItemWarehouseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Tính số lượng có thể nhận (minimum của quantity và maxClaim)
+    final int availableForClaim =
+        item.quantity < item.maxClaim ? item.quantity : item.maxClaim;
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(
@@ -49,13 +53,13 @@ class ItemWarehouseCard extends StatelessWidget {
                     SizedBox(height: isTablet ? 8 : 6),
                     _buildItemDescription(),
                     SizedBox(height: isTablet ? 12 : 8),
-                    _buildItemStats(),
+                    _buildItemStats(availableForClaim),
                   ],
                 ),
               ),
 
               // Add to Cart Button
-              if (onAddToCart != null && item.quantity > 0)
+              if (onAddToCart != null && availableForClaim > 0)
                 _buildAddToCartButton(),
             ],
           ),
@@ -172,25 +176,40 @@ class ItemWarehouseCard extends StatelessWidget {
     );
   }
 
-  Widget _buildItemStats() {
-    return Row(
+  Widget _buildItemStats(int availableForClaim) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Quantity
-        _buildStatItem(
-          Icons.inventory_outlined,
-          'SL: ${item.quantity}',
-          item.quantity > 0 ? Colors.green.shade600 : Colors.orange.shade600,
+        Row(
+          children: [
+            // Quantity in stock
+            _buildStatItem(
+              Icons.inventory_outlined,
+              'Kho: ${item.quantity}',
+              item.quantity > 0
+                  ? Colors.green.shade600
+                  : Colors.orange.shade600,
+            ),
+
+            SizedBox(width: isTablet ? 12 : 8),
+
+            // Claim Requests
+            if (item.claimItemRequests > 0)
+              _buildStatItem(
+                Icons.person_outline,
+                '${item.claimItemRequests} yêu cầu',
+                Colors.blue.shade600,
+              ),
+          ],
         ),
 
-        SizedBox(width: isTablet ? 12 : 8),
-
-        // Claim Requests
-        if (item.claimItemRequests > 0)
-          _buildStatItem(
-            Icons.person_outline,
-            '${item.claimItemRequests} yêu cầu',
-            Colors.blue.shade600,
-          ),
+        // Available for claim (new feature)
+        SizedBox(height: isTablet ? 8 : 6),
+        _buildStatItem(
+          Icons.add_shopping_cart_outlined,
+          'Có thể nhận: $availableForClaim',
+          availableForClaim > 0 ? Colors.teal.shade600 : Colors.red.shade600,
+        ),
       ],
     );
   }

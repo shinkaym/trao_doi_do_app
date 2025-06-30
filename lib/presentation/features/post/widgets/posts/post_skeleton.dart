@@ -152,14 +152,14 @@ class _PostSkeletonState extends State<PostSkeleton>
               Row(
                 children: [
                   _buildShimmerContainer(
-                    width: widget.isTablet ? 60 : 50,
-                    height: widget.isTablet ? 60 : 50,
+                    width: widget.isTablet ? 120 : 100,
+                    height: widget.isTablet ? 120 : 100,
                     borderRadius: BorderRadius.circular(6),
                   ),
                   SizedBox(width: widget.isTablet ? 8 : 6),
                   _buildShimmerContainer(
-                    width: widget.isTablet ? 60 : 50,
-                    height: widget.isTablet ? 60 : 50,
+                    width: widget.isTablet ? 120 : 100,
+                    height: widget.isTablet ? 120 : 100,
                     borderRadius: BorderRadius.circular(6),
                   ),
                 ],

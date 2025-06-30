@@ -25,6 +25,7 @@ class TypeSpecificFields extends HookConsumerWidget {
   final AutovalidateMode rewardAutovalidateMode;
   final VoidCallback? onLocationChanged;
   final VoidCallback? onRewardChanged;
+  final String? itemValidationError;
 
   const TypeSpecificFields({
     super.key,
@@ -48,6 +49,7 @@ class TypeSpecificFields extends HookConsumerWidget {
     required this.rewardAutovalidateMode,
     this.onLocationChanged,
     this.onRewardChanged,
+    this.itemValidationError,
   });
 
   @override
@@ -499,6 +501,18 @@ class TypeSpecificFields extends HookConsumerWidget {
             _buildEmptyItemsState()
           else
             _buildItemsList(),
+
+          // Item Validation Error
+          if (itemValidationError != null) ...[
+            SizedBox(height: isTablet ? 12 : 8),
+            Text(
+              itemValidationError!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.error,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ],
       ),
     );

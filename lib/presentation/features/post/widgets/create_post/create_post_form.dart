@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
@@ -58,6 +59,10 @@ class CreatePostForm extends HookConsumerWidget {
     final timeAutovalidateMode = useState(AutovalidateMode.disabled);
     final rewardAutovalidateMode = useState(AutovalidateMode.disabled);
 
+    // Thêm state để theo dõi lỗi validation cho images và items
+    final imageValidationError = useState<String?>(null);
+    final itemValidationError = useState<String?>(null);
+
     // Image picker
     final picker = useMemoized(() => ImagePicker());
 
@@ -96,6 +101,34 @@ class CreatePostForm extends HookConsumerWidget {
       );
     }
 
+    // Helper function để kiểm tra validation cho images
+    String? validateImages() {
+      if (images.value.isEmpty) {
+        return 'Vui lòng thêm ít nhất 1 ảnh cho bài đăng';
+      }
+      return null;
+    }
+
+    // Helper function để kiểm tra validation cho items
+    String? validateItems() {
+      // Chỉ kiểm tra items cho các loại bài cần món đồ (trừ freePost)
+      if (selectedType.value != PostType.freePost && giveAwayItems.value.isEmpty) {
+        switch (selectedType.value) {
+          case PostType.giveAway:
+            return 'Vui lòng thêm ít nhất 1 món đồ để tặng';
+          case PostType.foundItem:
+            return 'Vui lòng thêm thông tin về món đồ tìm thấy';
+          case PostType.findLost:
+            return 'Vui lòng thêm thông tin về món đồ bị mất';
+          case PostType.wantItem:
+            return 'Vui lòng thêm thông tin về món đồ muốn nhận';
+          default:
+            return 'Vui lòng thêm thông tin về món đồ';
+        }
+      }
+      return null;
+    }
+
     // Helper functions
     Future<void> pickImages() async {
       if (images.value.length >= 4) {
@@ -120,6 +153,11 @@ class CreatePostForm extends HookConsumerWidget {
           );
 
           images.value = [...images.value, newImage];
+          
+          // Xóa lỗi validation khi thêm ảnh thành công
+          if (imageValidationError.value != null) {
+            imageValidationError.value = null;
+          }
         },
       );
     }
@@ -143,10 +181,19 @@ class CreatePostForm extends HookConsumerWidget {
       categoryAutovalidateMode.value = AutovalidateMode.disabled;
       timeAutovalidateMode.value = AutovalidateMode.disabled;
       rewardAutovalidateMode.value = AutovalidateMode.disabled;
+      
+      // Reset validation errors
+      imageValidationError.value = null;
+      itemValidationError.value = null;
     }
 
     void removeImage(String imageId) {
       images.value = images.value.where((img) => img.id != imageId).toList();
+      
+      // Kiểm tra lại validation sau khi xóa ảnh
+      if (images.value.isEmpty && imageValidationError.value == null) {
+        imageValidationError.value = validateImages();
+      }
     }
 
     Future<void> selectDateTime() async {
@@ -206,6 +253,11 @@ class CreatePostForm extends HookConsumerWidget {
         ref: ref,
         onItemAdded: (item) {
           giveAwayItems.value = [...giveAwayItems.value, item];
+          
+          // Xóa lỗi validation khi thêm item thành công
+          if (itemValidationError.value != null) {
+            itemValidationError.value = null;
+          }
         },
       );
     }
@@ -213,6 +265,11 @@ class CreatePostForm extends HookConsumerWidget {
     void removeGiveAwayItem(String itemId) {
       giveAwayItems.value =
           giveAwayItems.value.where((item) => item.id != itemId).toList();
+          
+      // Kiểm tra lại validation sau khi xóa item
+      if (selectedType.value != PostType.freePost && giveAwayItems.value.isEmpty && itemValidationError.value == null) {
+        itemValidationError.value = validateItems();
+      }
     }
 
     Post buildPost() {
@@ -248,20 +305,90 @@ class CreatePostForm extends HookConsumerWidget {
       );
     }
 
-    Future<void> submitPost() async {
-      // Validate form và bật auto validation nếu có lỗi
-      final isValid = formKey.currentState!.validate();
+    // Updated submit function with validation
+    Future<void> submitPostWithDetailedConfirmation() async {
+      // Reset validation errors
+      imageValidationError.value = null;
+      itemValidationError.value = null;
+      
+      // Validate form fields
+      final isFormValid = formKey.currentState!.validate();
+      
+      // Validate images
+      final imageError = validateImages();
+      if (imageError != null) {
+        imageValidationError.value = imageError;
+      }
+      
+      // Validate items
+      final itemError = validateItems();
+      if (itemError != null) {
+        itemValidationError.value = itemError;
+      }
 
-      if (!isValid) {
-        // Bật auto validation cho các field có lỗi
+      // Nếu form không hợp lệ, bật auto validation
+      if (!isFormValid) {
         titleAutovalidateMode.value = AutovalidateMode.onUserInteraction;
         descriptionAutovalidateMode.value = AutovalidateMode.onUserInteraction;
         locationAutovalidateMode.value = AutovalidateMode.onUserInteraction;
         categoryAutovalidateMode.value = AutovalidateMode.onUserInteraction;
         timeAutovalidateMode.value = AutovalidateMode.onUserInteraction;
         rewardAutovalidateMode.value = AutovalidateMode.onUserInteraction;
+      }
+
+      // Nếu có bất kỳ lỗi nào, dừng lại và scroll đến lỗi đầu tiên
+      if (!isFormValid || imageError != null || itemError != null) {
+        // Scroll to first error (có thể implement scroll behavior ở đây)
         return;
       }
+
+      // Build detailed confirmation content
+      final typeDisplayName = selectedType.value.label;
+      final title = titleController.text.trim();
+      final description = descriptionController.text.trim();
+      final imageCount = images.value.length;
+      final itemCount = giveAwayItems.value.length;
+
+      String confirmationContent =
+          'Thông tin bài đăng:\n\n'
+          '• Loại bài: $typeDisplayName\n'
+          '• Tiêu đề: $title\n'
+          '• Mô tả: ${description.length > 50 ? '${description.substring(0, 50)}...' : description}\n'
+          '• Số ảnh: $imageCount\n';
+
+      if (selectedType.value != PostType.freePost && itemCount > 0) {
+        confirmationContent += '• Số món đồ: $itemCount\n';
+      }
+
+      if (selectedType.value == PostType.findLost ||
+          selectedType.value == PostType.foundItem) {
+        final location = locationController.text.trim();
+        if (location.isNotEmpty) {
+          confirmationContent += '• Địa điểm: $location\n';
+        }
+        if (selectedDateTime.value != null) {
+          confirmationContent +=
+              '• Thời gian: ${TimeUtils.formatAbsolute(selectedDateTime.value!)}\n';
+        }
+        if (selectedType.value == PostType.findLost &&
+            rewardController.text.trim().isNotEmpty) {
+          confirmationContent +=
+              '• Phần thưởng: ${rewardController.text.trim()}\n';
+        }
+      }
+
+      confirmationContent +=
+          '\nBài đăng sẽ được gửi đi kiểm duyệt trước khi hiển thị công khai.';
+
+      // Show detailed confirmation dialog
+      final confirmed = await context.showConfirmDialog(
+        title: 'Xác nhận đăng bài',
+        content: confirmationContent,
+        confirmText: 'Đăng bài',
+        cancelText: 'Kiểm tra lại',
+      );
+
+      if (confirmed != true) return;
 
       final useCase = ref.read(createPostUseCaseProvider);
       final post = buildPost();
@@ -276,6 +403,7 @@ class CreatePostForm extends HookConsumerWidget {
           'Tạo bài thành công, vui lòng đợi kiểm duyệt!',
         );
         context.pop();
+        context.pushNamed(RouteNames.myPosts);
       });
 
       isSubmitting.value = false;
@@ -323,6 +451,8 @@ class CreatePostForm extends HookConsumerWidget {
               colorScheme: colorScheme,
               titleAutovalidateMode: titleAutovalidateMode.value,
               descriptionAutovalidateMode: descriptionAutovalidateMode.value,
+              // Thêm validation error cho images
+              imageValidationError: imageValidationError.value,
             ),
 
             // Type-specific Fields
@@ -336,18 +466,20 @@ class CreatePostForm extends HookConsumerWidget {
               onAddGiveAwayItem: addGiveAwayItem,
               onRemoveGiveAwayItem: removeGiveAwayItem,
               isSubmitting: isSubmitting.value,
-              onSubmit: submitPost,
+              onSubmit: submitPostWithDetailedConfirmation,
               isTablet: isTablet,
               theme: theme,
               colorScheme: colorScheme,
-              // Thêm auto validation modes cho type-specific fields
+              // Auto validation modes cho type-specific fields
               locationAutovalidateMode: locationAutovalidateMode.value,
               categoryAutovalidateMode: categoryAutovalidateMode.value,
               timeAutovalidateMode: timeAutovalidateMode.value,
               rewardAutovalidateMode: rewardAutovalidateMode.value,
-              // Thêm callback functions cho real-time validation
+              // Callback functions cho real-time validation
               onLocationChanged: onLocationChanged,
               onRewardChanged: onRewardChanged,
+              // Thêm validation error cho items
+              itemValidationError: itemValidationError.value,
             ),
 
             SizedBox(height: isTablet ? 32 : 24),

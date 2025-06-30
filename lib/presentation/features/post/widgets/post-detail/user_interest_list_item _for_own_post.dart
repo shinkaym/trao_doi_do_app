@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
@@ -29,7 +30,9 @@ class UserInterestListItemForOwnPost extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Sử dụng provider riêng cho từng interest
-    final transactionState = ref.watch(transactionByInterestProvider(interest.id));
+    final transactionState = ref.watch(
+      transactionByInterestProvider(interest.id),
+    );
     final messagesState = ref.watch(messagesListProvider(interest.id));
 
     // Load data on mount
@@ -96,8 +99,8 @@ class UserInterestListItemForOwnPost extends HookConsumerWidget {
     final hasUnreadMessage = latestMessage?.isRead == 0;
 
     // Kiểm tra lỗi riêng cho interest này
-    final hasTransactionError = transactionState.failure != null && 
-                               !transactionState.isLoading;
+    final hasTransactionError =
+        transactionState.failure != null && !transactionState.isLoading;
 
     return Container(
       margin: EdgeInsets.only(bottom: isTablet ? 12 : 8),
@@ -203,9 +206,7 @@ class UserInterestListItemForOwnPost extends HookConsumerWidget {
       decoration: BoxDecoration(
         color: colorScheme.surfaceVariant.withOpacity(0.3),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.1),
-        ),
+        border: Border.all(color: colorScheme.outline.withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -502,7 +503,7 @@ class UserInterestListItemForOwnPost extends HookConsumerWidget {
           child: InkWell(
             onTap: () {
               context.pushNamed(
-                'interest-chat',
+                RouteNames.interestChat,
                 pathParameters: {'interestId': interest.id.toString()},
               );
             },

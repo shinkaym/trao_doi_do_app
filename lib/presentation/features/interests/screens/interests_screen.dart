@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
@@ -236,7 +237,7 @@ class InterestsScreen extends HookConsumerWidget {
 
     // Handle post tap
     void handlePostTap(String slug) {
-      context.pushNamed('post-detail', pathParameters: {'slug': slug});
+      context.pushNamed(RouteNames.postDetail, pathParameters: {'slug': slug});
     }
 
     // Handle chat tap
@@ -305,7 +306,7 @@ class InterestsScreen extends HookConsumerWidget {
       }
 
       context.pushNamed(
-        'interest-chat',
+        RouteNames.interestChat,
         pathParameters: {'interestId': interestId.toString()},
       );
     }

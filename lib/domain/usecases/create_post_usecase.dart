@@ -138,6 +138,12 @@ class CreatePostUseCase {
     Post post,
     Map<String, dynamic> infoJson,
   ) {
+    if (post.images.isEmpty) {
+      return const ValidationFailure(
+        'Phải có ít nhất một hình ảnh cho món đồ muốn nhận',
+      );
+    }
+
     final lostLocation = infoJson['lostLocation'] as String?;
     final lostDate = infoJson['lostDate'] as String?;
 
@@ -219,6 +225,11 @@ class CreatePostUseCase {
 
   ValidationFailure? _validateFreePost(Post post) {
     // FreePost chỉ cần description, không bắt buộc images
+    if (post.images.isEmpty) {
+      return const ValidationFailure(
+        'Phải có ít nhất một hình ảnh cho món đồ muốn nhận',
+      );
+    }
     return null;
   }
 }

@@ -14,6 +14,8 @@ class CommonFields extends StatelessWidget {
   // Thêm parameters để kiểm soát auto validation
   final AutovalidateMode titleAutovalidateMode;
   final AutovalidateMode descriptionAutovalidateMode;
+  // Thêm parameter cho image validation error
+  final String? imageValidationError;
 
   const CommonFields({
     super.key,
@@ -27,6 +29,7 @@ class CommonFields extends StatelessWidget {
     required this.colorScheme,
     this.titleAutovalidateMode = AutovalidateMode.disabled,
     this.descriptionAutovalidateMode = AutovalidateMode.disabled,
+    this.imageValidationError,
   });
 
   @override
@@ -42,7 +45,17 @@ class CommonFields extends StatelessWidget {
         _buildDescriptionField(),
         SizedBox(height: isTablet ? 20 : 16),
 
-        // Images Section
+        // Images Section với validation error
+        _buildImageSectionWithValidation(),
+        SizedBox(height: isTablet ? 20 : 16),
+      ],
+    );
+  }
+
+  Widget _buildImageSectionWithValidation() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         ImageSection(
           images: images,
           onPickImages: onPickImages,
@@ -51,7 +64,16 @@ class CommonFields extends StatelessWidget {
           theme: theme,
           colorScheme: colorScheme,
         ),
-        SizedBox(height: isTablet ? 20 : 16),
+        if (imageValidationError != null) ...[
+          SizedBox(height: isTablet ? 8 : 6),
+          Text(
+            imageValidationError!,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.error,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ],
     );
   }

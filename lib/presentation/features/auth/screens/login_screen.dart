@@ -116,12 +116,12 @@ class LoginScreen extends HookConsumerWidget {
 
     // Handle forgot password
     void handleForgotPassword() {
-      context.pushNamed('forgot-password');
+      context.pushNamed(RouteNames.forgotPassword);
     }
 
     // Handle sign up
     void handleSignUp() {
-      context.pushNamed('register');
+      context.pushNamed(RouteNames.register);
     }
 
     return AnnotatedRegion<SystemUiOverlayStyle>(

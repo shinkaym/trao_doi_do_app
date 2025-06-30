@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/domain/entities/message.dart';
@@ -377,7 +378,7 @@ class InterestChatScreen extends HookConsumerWidget {
     void handlePostTap() {
       if (interestDetail != null) {
         context.pushNamed(
-          'post-detail',
+          RouteNames.postDetail,
           pathParameters: {'slug': interestDetail.slug},
         );
       }
