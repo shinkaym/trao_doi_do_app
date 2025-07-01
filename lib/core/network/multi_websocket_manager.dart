@@ -18,12 +18,12 @@ class MultiWebSocketManager {
   Stream<WebSocketConnectionState> get connectionStream =>
       _connectionController.stream;
 
-  // Filtered streams cho từng channel
-  Stream<WebSocketResponse> get chatResponseStream =>
-      responseStream.where((response) => _isChatEvent(response.event));
+  // ✅ Updated filtered streams với channel source
+  Stream<WebSocketResponse> get chatResponseStream => responseStream
+      .where((response) => response.sourceChannel == 'chat');
 
   Stream<WebSocketResponse> get chatNotificationResponseStream => responseStream
-      .where((response) => _isChatNotificationEvent(response.event));
+      .where((response) => response.sourceChannel == 'chat-noti');
 
   MultiWebSocketManager() {
     _clients[WebSocketChannel.chat] = WebSocketClient();
@@ -62,10 +62,16 @@ class MultiWebSocketManager {
     _messageSubscriptions[channel]?.cancel();
     _connectionSubscriptions[channel]?.cancel();
 
-    // Message subscription
+    // ✅ Message subscription với channel tagging
     _messageSubscriptions[channel] = client.messageStream.listen((data) {
       final response = WebSocketResponse.fromJson(data);
-      _responseController.add(response);
+      
+      // ✅ Tag response với source channel
+      final taggedResponse = response.copyWithSourceChannel(
+        sourceChannel: channel == WebSocketChannel.chat ? 'chat' : 'chat-noti'
+      );
+      
+      _responseController.add(taggedResponse);
     }, onError: (error) => {});
 
     // Connection subscription
@@ -110,27 +116,5 @@ class MultiWebSocketManager {
     _clients.values.forEach((client) => client.dispose());
     _responseController.close();
     _connectionController.close();
-  }
-
-  bool _isChatEvent(String event) {
-    const chatEvents = [
-      'send_message',
-      'send_transaction',
-      'join_room',
-      'left_room',
-      'send_message_response',
-      'send_transaction_response',
-      'join_room_response',
-      'left_room_response',
-    ];
-    return chatEvents.contains(event);
-  }
-
-  bool _isChatNotificationEvent(String event) {
-    const chatNotificationEvents = [
-      'join_noti_room_response',
-      'send_message_response',
-    ];
-    return chatNotificationEvents.contains(event);
   }
 }

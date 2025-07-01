@@ -58,16 +58,19 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
     _listenToChatResponses();
   }
 
+  // ✅ Expose chat response stream directly
+  Stream<WebSocketResponse> get chatResponseStream => 
+      _repository.chatResponseStream;
+
   void _listenToConnectionState() {
     _connectionSubscription = _repository.connectionStream.listen(
       (connectionState) {
         state = state.copyWith(
           connectionState: connectionState,
           isConnecting: connectionState == WebSocketConnectionState.connecting,
-          error:
-              connectionState == WebSocketConnectionState.error
-                  ? 'Connection error'
-                  : null,
+          error: connectionState == WebSocketConnectionState.error
+              ? 'Connection error'
+              : null,
         );
 
         // Clear messages when disconnected
@@ -86,15 +89,20 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
   }
 
   void _listenToChatResponses() {
+    // ✅ Listen to chat-specific responses only
     _responseSubscription = _repository.chatResponseStream.listen(
       (response) {
         state = state.copyWith(lastResponse: response);
+
+        // ✅ Debug logging
+        print('🎯 Chat Provider - Received response: ${response.event} from ${response.sourceChannel}');
 
         switch (response.event) {
           case 'join_room_response':
             if (response.isSuccess && response.data != null) {
               final roomID = response.data!['roomID'] as String?;
               state = state.copyWith(currentRoomID: roomID);
+              print('✅ Joined chat room: $roomID');
             } else {
               state = state.copyWith(
                 error: response.error ?? 'Failed to join chat room',
@@ -104,6 +112,7 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
 
           case 'send_message_response':
             if (response.isSuccess && response.data != null) {
+              print('✅ Chat message response received: ${response.data}');
               _handleNewChatMessage(response.data!);
             } else {
               state = state.copyWith(
@@ -113,8 +122,8 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
             break;
 
           case 'send_transaction_response':
-            // Xử lý response từ transaction
             if (response.isSuccess) {
+              print('✅ Transaction response received');
               // Transaction thành công - UI sẽ handle refresh
             } else {
               state = state.copyWith(
@@ -126,17 +135,21 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
           case 'left_room_response':
             if (response.isSuccess) {
               state = state.copyWith(messages: [], currentRoomID: null);
+              print('✅ Left chat room');
             }
             break;
 
           case 'pong':
+            // Handle ping/pong
             break;
 
           default:
+            print('🔍 Unhandled chat event: ${response.event}');
         }
       },
       onError: (error) {
         state = state.copyWith(error: 'Response stream error: $error');
+        print('❌ Chat response stream error: $error');
       },
     );
   }
@@ -151,10 +164,12 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
     }
 
     if (state.isConnecting) {
+      print('⚠️ Already connecting to chat...');
       return;
     }
 
     if (state.isConnected) {
+      print('✅ Already connected to chat');
       return;
     }
 
@@ -165,11 +180,14 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
       connectionState: WebSocketConnectionState.connecting,
     );
 
+    print('🔌 Connecting to chat WebSocket...');
+
     try {
       await _repository.connectToChat(token);
-
+      print('✅ Chat connection initiated');
       // Connection state sẽ được cập nhật qua stream listener
     } catch (e) {
+      print('❌ Chat connection failed: $e');
       state = state.copyWith(
         isConnecting: false,
         connectionState: WebSocketConnectionState.error,
@@ -183,13 +201,16 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
       final message = MessageSocket.fromJson(data);
       final updatedMessages = [message, ...state.messages];
       state = state.copyWith(messages: updatedMessages);
+      print('✅ Added new chat message to state');
     } catch (e) {
+      print('❌ Error parsing chat message: $e');
       state = state.copyWith(error: 'Error parsing chat message: $e');
     }
   }
 
-  // ✅ THÊM METHOD ĐỂ FORCE RECONNECT
+  // ✅ Method để force reconnect
   Future<void> reconnect(String? token) async {
+    print('🔄 Reconnecting chat WebSocket...');
     // Disconnect first
     disconnect();
 
@@ -214,17 +235,21 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
 
   void joinRoom(int interestID) {
     if (!state.isConnected) {
+      print('⚠️ Cannot join room: not connected to chat');
       return;
     }
 
+    print('🚪 Joining chat room: $interestID');
     _repository.joinRoom(interestID: interestID);
   }
 
   void leftRoom(int interestID) {
     if (!state.isConnected) {
+      print('⚠️ Cannot leave room: not connected to chat');
       return;
     }
 
+    print('🚪 Leaving chat room: $interestID');
     _repository.leftRoom(interestID: interestID);
   }
 
@@ -236,9 +261,11 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
   }) {
     if (!state.isConnected) {
       state = state.copyWith(error: 'Cannot send message: not connected');
+      print('❌ Cannot send message: not connected to chat');
       return;
     }
 
+    print('📤 Sending chat message to room $interestID');
     _repository.sendMessage(
       interestID: interestID,
       isOwner: isOwner,
@@ -253,6 +280,7 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
       return;
     }
 
+    print('💰 Sending transaction to room $interestID');
     _repository.sendTransaction(interestID: interestID, receiverID: receiverID);
   }
 
@@ -265,6 +293,7 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
   }
 
   void disconnect() {
+    print('🔌 Disconnecting from chat WebSocket...');
     _repository.disconnectChat();
 
     state = state.copyWith(
@@ -277,6 +306,7 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
 
   @override
   void dispose() {
+    print('🗑️ Disposing Chat WebSocket Provider');
     _connectionSubscription?.cancel();
     _responseSubscription?.cancel();
     disconnect();

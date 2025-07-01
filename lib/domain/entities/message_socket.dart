@@ -23,7 +23,7 @@ class MessageSocket {
       interestID: json['interestID'] as int,
       roomID: json['roomID'] as String,
       senderID: json['senderID'] as int,
-      message: json['message'] as String,
+      message: json['message'] as String? ?? '',
       timestamp: DateTime.parse(json['timestamp'] as String),
       isOwner: json['isOwner'] as bool?,
     );

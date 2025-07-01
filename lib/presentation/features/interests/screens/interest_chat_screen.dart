@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -199,9 +201,93 @@ class InterestChatScreen extends HookConsumerWidget {
     }, [authState.user]);
 
     // Handle new WebSocket messages
+
+    void _handleChatMessageResponse(Map<String, dynamic> messageData) {
+      final interestID = messageData['interestID'] as int?;
+
+      if (interestID == int.parse(interestId)) {
+        try {
+          if (messageData['senderID'] == null || authState.user?.id == null) {
+            return;
+          }
+
+          final message = Message.fromWebSocket(
+            messageData,
+            interestID: int.parse(interestId),
+            currentUserId: authState.user!.id,
+            otherUserId: displayUserId.value,
+          );
+
+          // Check for duplicates
+          final existingMessage =
+              messagesState.messages.where((m) {
+                if (messageData['id'] != null && m.id == messageData['id']) {
+                  return true;
+                }
+                return m.message == message.message &&
+                    m.senderID == message.senderID &&
+                    m.createdAt != null &&
+                    message.createdAt != null &&
+                    m.createdAt!
+                            .difference(message.createdAt!)
+                            .abs()
+                            .inSeconds <
+                        3;
+              }).firstOrNull;
+
+          if (existingMessage == null) {
+            messagesNotifier.addNewMessage(message);
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (scrollController.hasClients) {
+                _scrollToBottom(scrollController);
+              }
+            });
+          }
+        } catch (e) {
+          print('❌ Error in _handleChatMessageResponse: $e');
+        }
+      }
+    }
+
+    useEffect(() {
+      StreamSubscription? chatResponseSubscription;
+
+      if (webSocketState.isConnected) {
+        // ✅ Listen directly to chat-specific stream
+        chatResponseSubscription = webSocketNotifier.chatResponseStream.listen(
+          (response) {
+            print('📨 Direct chat response: ${response.event}');
+
+            if (response.event == 'send_message_response' &&
+                response.isSuccess &&
+                response.data != null) {
+              _handleChatMessageResponse(response.data!);
+            }
+          },
+          onError: (error) {
+            print('❌ Chat response stream error: $error');
+          },
+        );
+      }
+
+      return () {
+        chatResponseSubscription?.cancel();
+      };
+    }, [webSocketState.isConnected]);
+
     void _handleNewWebSocketMessage() {
       final response = webSocketState.lastResponse;
       if (response == null) return;
+
+      // ✅ CRITICAL: Only process messages from chat channel
+      if (!response.isFromChat) {
+        // Log for debugging
+        print(
+          '🔍 Ignoring message from ${response.sourceChannel}: ${response.event}',
+        );
+        return;
+      }
 
       if (response.event == 'send_message_response' &&
           response.isSuccess &&
@@ -209,10 +295,16 @@ class InterestChatScreen extends HookConsumerWidget {
         final messageData = response.data!;
         final interestID = messageData['interestID'] as int?;
 
+        // ✅ Debug logging
+        print(
+          '📨 Processing chat message: interestID=$interestID, current=${interestId}',
+        );
+
         if (interestID == int.parse(interestId)) {
           try {
             // Validate required fields
             if (messageData['senderID'] == null || authState.user?.id == null) {
+              print('❌ Missing required fields: senderID or userID');
               return;
             }
 
@@ -242,6 +334,7 @@ class InterestChatScreen extends HookConsumerWidget {
                 }).firstOrNull;
 
             if (existingMessage == null) {
+              print('✅ Adding new message from chat channel');
               messagesNotifier.addNewMessage(message);
 
               // Scroll to bottom after adding message
@@ -250,8 +343,12 @@ class InterestChatScreen extends HookConsumerWidget {
                   _scrollToBottom(scrollController);
                 }
               });
+            } else {
+              print('⚠️ Duplicate message detected, skipping');
             }
-          } catch (e) {}
+          } catch (e) {
+            print('❌ Error processing chat message: $e');
+          }
         }
       }
     }

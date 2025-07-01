@@ -12,7 +12,6 @@ class WebSocketClient {
   final StreamController<WebSocketConnectionState> _connectionController =
       StreamController<WebSocketConnectionState>.broadcast();
 
-  Timer? _heartbeatTimer;
   Timer? _reconnectTimer;
   bool _isManualDisconnect = false;
   int _reconnectAttempts = 0;
@@ -20,7 +19,6 @@ class WebSocketClient {
   String? _currentChannel;
 
   static const int _maxReconnectAttempts = 5;
-  static const Duration _heartbeatInterval = Duration(seconds: 30);
   static const Duration _reconnectDelay = Duration(seconds: 3);
 
   final LoggerUtils _logger = LoggerUtils();
@@ -116,12 +114,10 @@ class WebSocketClient {
       _messagesReceived = 0;
 
       // Start listening and heartbeat AFTER state update
-      _startHeartbeat();
       _listenToMessages();
 
       _logger.i('🎯 Connection setup complete', {
         'currentState': _currentState.toString(),
-        'heartbeatInterval': '${_heartbeatInterval.inSeconds}s',
         'maxReconnectAttempts': _maxReconnectAttempts,
       });
     } catch (e, stackTrace) {
@@ -268,51 +264,11 @@ class WebSocketClient {
         });
 
         _updateConnectionState(WebSocketConnectionState.disconnected);
-        _stopHeartbeat();
         if (!_isManualDisconnect) {
           _scheduleReconnect();
         }
       },
     );
-  }
-
-  void _startHeartbeat() {
-    _stopHeartbeat(); // Stop existing timer if any
-
-    _logger.i('💓 Starting heartbeat timer', {
-      'interval': '${_heartbeatInterval.inSeconds}s',
-      'timestamp': DateTime.now().toIso8601String(),
-    });
-
-    _heartbeatTimer = Timer.periodic(_heartbeatInterval, (timer) {
-      if (_currentState == WebSocketConnectionState.connected) {
-        final heartbeatTime = DateTime.now();
-
-        _logger.d('💓 Sending heartbeat', {
-          'timestamp': heartbeatTime.toIso8601String(),
-          'connectionDuration': _getConnectionDuration(),
-          'messagesSentSoFar': _messagesSent,
-        });
-
-        sendEvent('ping', {
-          'timestamp': heartbeatTime.millisecondsSinceEpoch,
-          'connectionDuration': _getConnectionDuration(),
-        });
-      } else {
-        _logger.w('💔 Skipping heartbeat - not connected', {
-          'currentState': _currentState.toString(),
-          'timestamp': DateTime.now().toIso8601String(),
-        });
-      }
-    });
-  }
-
-  void _stopHeartbeat() {
-    if (_heartbeatTimer != null) {
-      _logger.d('💔 Stopping heartbeat timer');
-      _heartbeatTimer?.cancel();
-      _heartbeatTimer = null;
-    }
   }
 
   void _scheduleReconnect() {
@@ -432,7 +388,6 @@ class WebSocketClient {
       },
     });
 
-    _stopHeartbeat();
     _reconnectTimer?.cancel();
 
     if (_channel != null) {
@@ -530,7 +485,6 @@ class WebSocketClient {
       },
       'configuration': {
         'maxReconnectAttempts': _maxReconnectAttempts,
-        'heartbeatInterval': '${_heartbeatInterval.inSeconds}s',
         'reconnectDelay': '${_reconnectDelay.inSeconds}s',
       },
     };
