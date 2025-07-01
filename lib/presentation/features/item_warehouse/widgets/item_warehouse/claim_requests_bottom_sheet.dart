@@ -79,6 +79,10 @@ class _ClaimRequestsBottomSheetState
     }
   }
 
+  int _getAvailableForClaim(OldStockItem item) {
+    return item.quantity < item.maxClaim ? item.quantity : item.maxClaim;
+  }
+
   Future<void> _loadClaimRequests() async {
     if (_isDisposed || !mounted) return;
 
@@ -114,16 +118,30 @@ class _ClaimRequestsBottomSheetState
         _deletedItems.add(itemID);
       } else {
         final item = widget.getItemById(itemID);
-        if (item != null && newQuantity > item.quantity) {
-          // Schedule the snackbar for the next frame
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!_isDisposed && mounted) {
-              context.showErrorSnackBar(
-                'Chỉ còn ${item.quantity} "${item.itemName}" trong kho',
-              );
+        if (item != null) {
+          final availableForClaim = _getAvailableForClaim(item);
+
+          if (newQuantity > availableForClaim) {
+            // Xác định lý do giới hạn
+            String reason =
+                item.quantity < item.maxClaim ? 'quantity' : 'maxClaim';
+            String message;
+            if (reason == 'maxClaim') {
+              message =
+                  'Chỉ được phép nhận tối đa $availableForClaim "${item.itemName}"';
+            } else {
+              message =
+                  'Chỉ còn $availableForClaim "${item.itemName}" trong kho';
             }
-          });
-          return;
+
+            // Schedule the snackbar for the next frame
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!_isDisposed && mounted) {
+                context.showErrorSnackBar(message);
+              }
+            });
+            return;
+          }
         }
         _localClaimRequests[itemID] = newQuantity;
       }
@@ -407,7 +425,8 @@ class _ClaimRequestsBottomSheetState
                   final claimRequestItem = claimRequestsListState.claimRequests
                       .firstWhere((item) => item.itemID == itemID);
                   final item = widget.getItemById(itemID);
-                  final maxQuantity = item?.quantity ?? 0;
+                  final availableForClaim =
+                      item != null ? _getAvailableForClaim(item) : 0;
                   final originalQuantity = _originalClaimRequests[itemID] ?? 0;
                   final hasChanged = quantity != originalQuantity;
 
@@ -464,11 +483,11 @@ class _ClaimRequestsBottomSheetState
                                   ),
                                   if (item != null)
                                     Text(
-                                      'Còn lại: $maxQuantity',
+                                      'Còn lại: ${item.quantity} | Tối đa: ${item.maxClaim}',
                                       style: widget.theme.textTheme.bodySmall
                                           ?.copyWith(
                                             color:
-                                                maxQuantity > 0
+                                                availableForClaim > 0
                                                     ? widget.colorScheme.primary
                                                     : widget.colorScheme.error,
                                             fontSize: widget.isTablet ? 12 : 10,
@@ -574,18 +593,37 @@ class _ClaimRequestsBottomSheetState
                                               _isDisposed)
                                           ? null
                                           : () {
-                                            if (item != null &&
-                                                quantity >= maxQuantity) {
-                                              WidgetsBinding.instance
-                                                  .addPostFrameCallback((_) {
-                                                    if (!_isDisposed &&
-                                                        mounted) {
-                                                      context.showErrorSnackBar(
-                                                        'Chỉ còn $maxQuantity "${claimRequestItem.itemName}" trong kho',
-                                                      );
-                                                    }
-                                                  });
-                                              return;
+                                            if (item != null) {
+                                              final availableForClaim =
+                                                  _getAvailableForClaim(item);
+                                              if (quantity >=
+                                                  availableForClaim) {
+                                                String reason =
+                                                    item.quantity <
+                                                            item.maxClaim
+                                                        ? 'quantity'
+                                                        : 'maxClaim';
+                                                String message;
+                                                if (reason == 'maxClaim') {
+                                                  message =
+                                                      'Chỉ được phép nhận tối đa $availableForClaim "${claimRequestItem.itemName}"';
+                                                } else {
+                                                  message =
+                                                      'Chỉ còn $availableForClaim "${claimRequestItem.itemName}" trong kho';
+                                                }
+
+                                                WidgetsBinding.instance
+                                                    .addPostFrameCallback((_) {
+                                                      if (!_isDisposed &&
+                                                          mounted) {
+                                                        context
+                                                            .showErrorSnackBar(
+                                                              message,
+                                                            );
+                                                      }
+                                                    });
+                                                return;
+                                              }
                                             }
                                             _updateItemQuantity(
                                               itemID,
@@ -599,7 +637,10 @@ class _ClaimRequestsBottomSheetState
                                     decoration: BoxDecoration(
                                       color:
                                           (item != null &&
-                                                  quantity >= maxQuantity)
+                                                  quantity >=
+                                                      _getAvailableForClaim(
+                                                        item,
+                                                      ))
                                               ? widget.colorScheme.outline
                                                   .withOpacity(0.3)
                                               : widget.colorScheme.primary
@@ -610,7 +651,10 @@ class _ClaimRequestsBottomSheetState
                                       Icons.add,
                                       color:
                                           (item != null &&
-                                                  quantity >= maxQuantity)
+                                                  quantity >=
+                                                      _getAvailableForClaim(
+                                                        item,
+                                                      ))
                                               ? widget.colorScheme.outline
                                               : widget.colorScheme.primary,
                                       size: widget.isTablet ? 20 : 16,
@@ -623,7 +667,8 @@ class _ClaimRequestsBottomSheetState
                         ),
 
                         // Warning for exceeded quantity
-                        if (item != null && quantity > maxQuantity)
+                        if (item != null &&
+                            quantity > _getAvailableForClaim(item))
                           AnimatedContainer(
                             duration: Duration(milliseconds: 300),
                             margin: EdgeInsets.only(top: 8),

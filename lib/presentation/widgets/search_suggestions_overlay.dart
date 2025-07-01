@@ -92,6 +92,7 @@ class SearchSuggestionsOverlay extends StatelessWidget {
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 12),
+      height: double.infinity, // Chiếm đầy đủ chiều cao
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF2A2A2A) : Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -104,7 +105,7 @@ class SearchSuggestionsOverlay extends StatelessWidget {
         ],
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: MainAxisSize.max, // Thay đổi từ min thành max
         children: [
           // Header
           Container(
@@ -153,10 +154,9 @@ class SearchSuggestionsOverlay extends StatelessWidget {
           ),
 
           // Suggestions List
-          Container(
-            constraints: BoxConstraints(maxHeight: isTablet ? 400 : 300),
+          Expanded(
+            // Thay đổi Container thành Expanded để chiếm hết không gian còn lại
             child: ListView.builder(
-              shrinkWrap: true,
               padding: EdgeInsets.zero,
               itemCount: suggestions.length,
               itemBuilder: (context, index) {
