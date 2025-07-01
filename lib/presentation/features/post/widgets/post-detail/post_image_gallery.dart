@@ -103,7 +103,7 @@ class PostImageGallery extends HookWidget {
         return InteractiveViewer(
           child: Image.memory(
             imageBytes,
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
               return Container(
                 color: Colors.grey.shade300,

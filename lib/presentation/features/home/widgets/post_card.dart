@@ -287,7 +287,7 @@ class _PostImage extends StatelessWidget {
             bytes,
             width: double.infinity,
             height: double.infinity,
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
           );
         }
@@ -300,7 +300,7 @@ class _PostImage extends StatelessWidget {
       imageData,
       width: double.infinity,
       height: double.infinity,
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
       errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
     );
   }
