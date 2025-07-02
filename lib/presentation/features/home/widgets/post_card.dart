@@ -27,14 +27,10 @@ class PostCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 0,
-      margin: EdgeInsets.symmetric(
-        // horizontal: isTablet ? 0 : 16, // Add horizontal margin for mobile
-        vertical: 0,
-      ),
+      margin: EdgeInsets.symmetric(vertical: 0),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: InkWell(
         onTap: onTap != null ? () => onTap!(post) : null,
-        // borderRadius: BorderRadius.circular(isTablet ? 16 : 12),
         child: Container(
           height: isTablet ? 160 : 140,
           child: Row(
@@ -52,20 +48,7 @@ class PostCard extends StatelessWidget {
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.all(isTablet ? 16 : 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // Title and description (ở trên)
-                      _buildTitleAndDescription(),
-
-                      // Location and reward info (ở giữa)
-                      _buildLocationAndReward(),
-
-                      // Time (ở dưới)
-                      _buildTimeAtBottom(),
-                    ],
-                  ),
+                  child: _buildContentLayout(),
                 ),
               ),
             ],
@@ -73,6 +56,82 @@ class PostCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildContentLayout() {
+    final location = _getLocationFromPost();
+    final reward = _getRewardFromPost();
+    final hasInfo =
+        location.isNotEmpty || (reward != null && reward.isNotEmpty);
+
+    if (hasInfo) {
+      // Layout có thông tin info - giữ nguyên layout cũ
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _buildTitleAndDescription(),
+          _buildLocationAndReward(),
+          _buildTimeAtBottom(),
+        ],
+      );
+    } else {
+      // Layout không có info - phân bố đều không gian
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Title và description chiếm không gian chính
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  post.title,
+                  style: TextStyle(
+                    fontSize: isTablet ? 15 : 13,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                    height: 1.2,
+                  ),
+                  maxLines: 2, // Tăng số dòng cho title khi không có info
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: isTablet ? 8 : 6),
+                Text(
+                  post.description,
+                  style: TextStyle(
+                    fontSize: isTablet ? 12 : 11,
+                    color: colorScheme.onSurface.withOpacity(0.7),
+                    height: 1.3,
+                  ),
+                  maxLines: 3, // Tăng số dòng cho description
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+
+          // Time ở dưới cùng
+          if (post.createdAt != null)
+            Padding(
+              padding: EdgeInsets.only(top: isTablet ? 8 : 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    TimeUtils.formatTimeAgo(post.createdAt!),
+                    style: TextStyle(
+                      fontSize: isTablet ? 10 : 9,
+                      color: theme.hintColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      );
+    }
   }
 
   Widget _buildTitleAndDescription() {
@@ -245,7 +304,9 @@ class _PostImage extends StatelessWidget {
             ),
 
           // Item count overlay (bottom)
-          if (post.itemCount != null && post.currentItemCount != null)
+          if (postType != PostType.freePost &&
+              post.itemCount != null &&
+              post.currentItemCount != null)
             Positioned(
               bottom: 8,
               left: 8,

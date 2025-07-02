@@ -439,40 +439,7 @@ class CampaignPostCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Campaign badge
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: isTablet ? 10 : 8,
-            vertical: isTablet ? 4 : 3,
-          ),
-          decoration: BoxDecoration(
-            color: PostType.campaign.color.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: PostType.campaign.color.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                PostType.campaign.icon,
-                size: isTablet ? 12 : 10,
-                color: PostType.campaign.color,
-              ),
-              SizedBox(width: isTablet ? 4 : 3),
-              Text(
-                'CHIẾN DỊCH',
-                style: TextStyle(
-                  fontSize: isTablet ? 10 : 9,
-                  fontWeight: FontWeight.bold,
-                  color: PostType.campaign.color,
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: isTablet ? 8 : 6),
+
         // Title
         Text(
           post.title,
@@ -539,37 +506,8 @@ class CampaignPostCard extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        // Interest count
-        if (post.interestCount != null && post.interestCount! > 0)
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: isTablet ? 8 : 6,
-              vertical: isTablet ? 4 : 3,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.favorite,
-                  color: Colors.red,
-                  size: isTablet ? 12 : 10,
-                ),
-                SizedBox(width: isTablet ? 4 : 3),
-                Text(
-                  '${post.interestCount} quan tâm',
-                  style: TextStyle(
-                    fontSize: isTablet ? 11 : 10,
-                    color: Colors.red,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
+        // Bỏ phần interest count ở đây vì đã chuyển lên ảnh
+        Container(),
 
         // Time
         if (post.createdAt != null)
@@ -617,6 +555,8 @@ class _CampaignImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final campaignStatus = _getCampaignStatus();
+
     return Container(
       width: isTablet ? 160 : 140,
       child: Stack(
@@ -656,7 +596,7 @@ class _CampaignImage extends StatelessWidget {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: PostType.campaign.color,
+                color: campaignStatus.color,
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [
                   BoxShadow(
@@ -667,7 +607,7 @@ class _CampaignImage extends StatelessWidget {
                 ],
               ),
               child: Text(
-                'ĐANG DIỄN RA',
+                campaignStatus.statusText,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: isTablet ? 9 : 8,
@@ -676,9 +616,89 @@ class _CampaignImage extends StatelessWidget {
               ),
             ),
           ),
+
+          // Interest count on image
+          if (post.interestCount != null && post.interestCount! > 0)
+            Positioned(
+              top: 12,
+              right: 12,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.favorite, color: Colors.red, size: 10),
+                    SizedBox(width: 2),
+                    Text(
+                      '${post.interestCount}',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: isTablet ? 10 : 9,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
+  }
+
+  CampaignStatus _getCampaignStatus() {
+    try {
+      final campaignInfo = CampaignInfo.fromJson(jsonDecode(post.info));
+      final now = DateTime.now();
+
+      DateTime? startDate;
+      DateTime? endDate;
+
+      if (campaignInfo.startDate.isNotEmpty) {
+        startDate = DateTime.parse(campaignInfo.startDate);
+      }
+
+      if (campaignInfo.endDate.isNotEmpty) {
+        endDate = DateTime.parse(campaignInfo.endDate);
+      }
+
+      // Nếu có cả start và end date
+      if (startDate != null && endDate != null) {
+        if (now.isBefore(startDate)) {
+          return CampaignStatus.upcoming;
+        } else if (now.isAfter(endDate)) {
+          return CampaignStatus.ended;
+        } else {
+          return CampaignStatus.ongoing;
+        }
+      }
+      // Nếu chỉ có start date
+      else if (startDate != null) {
+        if (now.isBefore(startDate)) {
+          return CampaignStatus.upcoming;
+        } else {
+          return CampaignStatus.ongoing;
+        }
+      }
+      // Nếu chỉ có end date
+      else if (endDate != null) {
+        if (now.isAfter(endDate)) {
+          return CampaignStatus.ended;
+        } else {
+          return CampaignStatus.ongoing;
+        }
+      }
+
+      // Mặc định nếu không có thông tin về ngày tháng
+      return CampaignStatus.ongoing;
+    } catch (e) {
+      // Trường hợp lỗi parse, trả về trạng thái mặc định
+      return CampaignStatus.ongoing;
+    }
   }
 
   Widget _buildImage(String imageData) {

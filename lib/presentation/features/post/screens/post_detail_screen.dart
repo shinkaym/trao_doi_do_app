@@ -469,7 +469,7 @@ class PostDetailScreen extends HookConsumerWidget {
                 ),
               ),
 
-            if (!isPostOwner && post.type < 5 && post.interests.isNotEmpty)
+            if (!isPostOwner && userInterested && post.type < 5 && post.interests.isNotEmpty)
               SliverToBoxAdapter(
                 child: TransactionManagementSection(
                   isTablet: isTablet,

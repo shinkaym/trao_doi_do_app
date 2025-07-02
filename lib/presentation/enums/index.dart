@@ -305,3 +305,43 @@ enum GoodDeedType {
   /// Lấy tất cả good deed types
   static List<GoodDeedType> get allTypes => GoodDeedType.values;
 }
+
+enum CampaignStatus {
+  upcoming('Sắp diễn ra', 1),
+  ongoing('Đang diễn ra', 2),
+  ended('Đã kết thúc', 3);
+
+  const CampaignStatus(this.label, this.value);
+
+  final String label;
+  final int value;
+
+  static CampaignStatus fromValue(int value) {
+    return CampaignStatus.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => CampaignStatus.upcoming,
+    );
+  }
+
+  Color get color {
+    switch (this) {
+      case CampaignStatus.upcoming:
+        return Colors.blue.shade600;
+      case CampaignStatus.ongoing:
+        return Colors.green.shade600;
+      case CampaignStatus.ended:
+        return Colors.grey.shade600;
+    }
+  }
+
+  String get statusText {
+    switch (this) {
+      case CampaignStatus.upcoming:
+        return 'SẮP DIỄN RA';
+      case CampaignStatus.ongoing:
+        return 'ĐANG DIỄN RA';
+      case CampaignStatus.ended:
+        return 'ĐÃ KẾT THÚC';
+    }
+  }
+}

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
-import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
 class PostItemsSection extends StatelessWidget {
   final List<ItemDetail> items;
@@ -47,9 +46,7 @@ class PostItemsSection extends StatelessWidget {
                   onPressed: onTransactionTap,
                   icon: Icon(Icons.swap_horiz, size: 16),
                   label: Text(
-                    postType == PostType.findLost.value
-                        ? 'Yêu cầu gửi'
-                        : 'Tạo giao dịch',
+                    'Tạo giao dịch',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,

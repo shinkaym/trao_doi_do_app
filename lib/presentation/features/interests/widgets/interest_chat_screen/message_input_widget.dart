@@ -32,8 +32,7 @@ class MessageInputWidget extends StatelessWidget {
 
     final shouldShowTransactionButton =
         !isPostOwner &&
-        postType != PostType.freePost.value &&
-        postType != PostType.campaign.value;
+        postType != PostType.freePost.value;
 
     return Container(
       padding: EdgeInsets.all(isTablet ? 16 : 12),

@@ -73,31 +73,127 @@ class PostCard extends StatelessWidget {
   }
 
   Widget _buildHeaderRow(PostType postType) {
+    // Kiểm tra trạng thái campaign nếu là bài đăng campaign
+    CampaignStatus? campaignStatus;
+    if (postType == PostType.campaign) {
+      campaignStatus = _getCampaignStatus();
+    }
+
+    return Row(
+      children: [
+        Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: isTablet ? 12 : 8,
+            vertical: isTablet ? 6 : 4,
+          ),
+          decoration: BoxDecoration(
+            color: postType.color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                postType.icon,
+                size: isTablet ? 16 : 14,
+                color: postType.color,
+              ),
+              SizedBox(width: isTablet ? 6 : 4),
+              Text(
+                postType.label,
+                style: TextStyle(
+                  fontSize: isTablet ? 13 : 11,
+                  fontWeight: FontWeight.w600,
+                  color: postType.color,
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Hiển thị trạng thái campaign với style mới
+        if (campaignStatus != null) ...[
+          SizedBox(width: isTablet ? 8 : 6),
+          _buildCampaignStatusBadge(campaignStatus),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildCampaignStatusBadge(CampaignStatus status) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isTablet ? 12 : 8,
-        vertical: isTablet ? 6 : 4,
+        horizontal: isTablet ? 8 : 6,
+        vertical: isTablet ? 4 : 3,
       ),
       decoration: BoxDecoration(
-        color: postType.color.withOpacity(0.1),
+        color: status.color,
         borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(postType.icon, size: isTablet ? 16 : 14, color: postType.color),
-          SizedBox(width: isTablet ? 6 : 4),
-          Text(
-            postType.label,
-            style: TextStyle(
-              fontSize: isTablet ? 13 : 11,
-              fontWeight: FontWeight.w600,
-              color: postType.color,
-            ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
+      child: Text(
+        status.statusText,
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: isTablet ? 13 : 11,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
     );
+  }
+
+  CampaignStatus? _getCampaignStatus() {
+    try {
+      final campaignInfo = CampaignInfo.fromJson(jsonDecode(post.info));
+      final now = DateTime.now();
+
+      DateTime? startDate;
+      DateTime? endDate;
+
+      if (campaignInfo.startDate.isNotEmpty) {
+        startDate = DateTime.parse(campaignInfo.startDate);
+      }
+
+      if (campaignInfo.endDate.isNotEmpty) {
+        endDate = DateTime.parse(campaignInfo.endDate);
+      }
+
+      // Nếu có cả start và end date
+      if (startDate != null && endDate != null) {
+        if (now.isBefore(startDate)) {
+          return CampaignStatus.upcoming;
+        } else if (now.isAfter(endDate)) {
+          return CampaignStatus.ended;
+        } else {
+          return CampaignStatus.ongoing;
+        }
+      }
+      // Nếu chỉ có start date
+      else if (startDate != null) {
+        if (now.isBefore(startDate)) {
+          return CampaignStatus.upcoming;
+        } else {
+          return CampaignStatus.ongoing;
+        }
+      }
+      // Nếu chỉ có end date
+      else if (endDate != null) {
+        if (now.isAfter(endDate)) {
+          return CampaignStatus.ended;
+        } else {
+          return CampaignStatus.ongoing;
+        }
+      }
+
+      return null;
+    } catch (e) {
+      return null;
+    }
   }
 
   Widget _buildAuthorSection() {
