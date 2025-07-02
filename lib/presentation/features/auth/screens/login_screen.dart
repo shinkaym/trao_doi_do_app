@@ -109,6 +109,19 @@ class LoginScreen extends HookConsumerWidget {
       final email = emailController.text.trim();
       final password = passwordController.text;
 
+      // Kiểm tra định dạng email
+      if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+        context.showErrorSnackBar('Thông tin đăng nhập sai');
+        return;
+      }
+
+      // Kiểm tra mật khẩu: ít nhất 8 ký tự, có chữ hoa, chữ thường và số
+      if (password.length < 8 ||
+          !RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)').hasMatch(password)) {
+        context.showErrorSnackBar('Thông tin đăng nhập sai');
+        return;
+      }
+
       await ref
           .read(authProvider.notifier)
           .login(email: email, password: password, device: 'mobile');

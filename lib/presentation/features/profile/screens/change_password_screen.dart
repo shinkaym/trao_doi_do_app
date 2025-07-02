@@ -511,6 +511,7 @@ class _PasswordInputStepContent extends HookConsumerWidget {
             focusNode: newPasswordFocusNode,
             enabled: !changePasswordState.isLoading,
             obscureText: !isNewPasswordVisible.value,
+            // autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: CustomInputDecoration.build(
               context,
               label: 'Mật khẩu mới',
@@ -560,6 +561,7 @@ class _PasswordInputStepContent extends HookConsumerWidget {
             focusNode: confirmPasswordFocusNode,
             enabled: !changePasswordState.isLoading,
             obscureText: !isConfirmPasswordVisible.value,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: CustomInputDecoration.build(
               context,
               label: 'Xác nhận mật khẩu mới',

@@ -9,6 +9,33 @@ import 'package:trao_doi_do_app/domain/entities/user.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 
+CampaignStatus _getCampaignStatus(Map<String, dynamic> info) {
+  try {
+    final now = DateTime.now();
+    final startDateStr = info['startDate'];
+    final endDateStr = info['endDate'];
+
+    if (startDateStr != null && endDateStr != null) {
+      final startDate = DateTime.parse(startDateStr);
+      final endDate = DateTime.parse(endDateStr);
+
+      if (now.isBefore(startDate)) {
+        return CampaignStatus.upcoming;
+      } else if (now.isAfter(endDate)) {
+        return CampaignStatus.ended;
+      } else {
+        return CampaignStatus.ongoing;
+      }
+    }
+    
+    // Nếu không có thông tin về ngày, mặc định là upcoming
+    return CampaignStatus.upcoming;
+  } catch (e) {
+    // Nếu có lỗi parse ngày, mặc định là upcoming
+    return CampaignStatus.upcoming;
+  }
+}
+
 class PostContentSection extends HookConsumerWidget {
   final PostDetail post;
   final ValueNotifier<bool> showFullContent;
@@ -84,6 +111,16 @@ class PostContentSection extends HookConsumerWidget {
     ColorScheme colorScheme,
     User? currentUser,
   ) {
+    // Parse info JSON để lấy campaign status nếu cần
+    Map<String, dynamic> info = {};
+    try {
+      if (post.info.isNotEmpty && post.info != '{}') {
+        info = jsonDecode(post.info);
+      }
+    } catch (e) {
+      // Handle JSON parse error
+    }
+
     return Row(
       children: [
         // Author Avatar
@@ -141,6 +178,33 @@ class PostContentSection extends HookConsumerWidget {
               ],
             ),
           ),
+
+        // Campaign Status Badge (chỉ hiển thị cho campaign)
+        if (post.type == PostType.campaign.value) ...[
+          Container(
+            margin: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: _getCampaignStatus(info).color,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Text(
+              _getCampaignStatus(info).statusText,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: isTablet ? 13 : 11,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
 
         // Post Type Badge
         Container(
@@ -301,7 +365,7 @@ class PostContentSection extends HookConsumerWidget {
               ),
             ],
           ] else if (post.type == PostType.campaign.value) ...[
-            // Campaign - show campaign details
+            // Campaign - show campaign details và status
             if (info['organizer'] != null)
               _buildDetailRow(
                 Icons.business,
@@ -331,11 +395,20 @@ class PostContentSection extends HookConsumerWidget {
               const SizedBox(height: 12),
               _buildDetailRow(
                 Icons.calendar_today,
-                'Thời điểm kết thúc kết thúc',
+                'Thời điểm kết thúc',
                 _formatDate2(info['endDate']),
                 theme,
               ),
             ],
+            // Hiển thị trạng thái campaign
+            const SizedBox(height: 12),
+            _buildDetailRow(
+              Icons.info,
+              'Trạng thái',
+              _getCampaignStatus(info).label,
+              theme,
+              statusColor: _getCampaignStatus(info).color,
+            ),
           ],
 
           // Common details
@@ -360,8 +433,9 @@ class PostContentSection extends HookConsumerWidget {
     IconData icon,
     String label,
     String value,
-    ThemeData theme,
-  ) {
+    ThemeData theme, {
+    Color? statusColor,
+  }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -379,7 +453,13 @@ class PostContentSection extends HookConsumerWidget {
                 ),
               ),
               const SizedBox(height: 2),
-              Text(value, style: theme.textTheme.bodyMedium),
+              Text(
+                value,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: statusColor ?? theme.textTheme.bodyMedium?.color,
+                  fontWeight: statusColor != null ? FontWeight.w600 : null,
+                ),
+              ),
             ],
           ),
         ),
@@ -406,30 +486,29 @@ class PostContentSection extends HookConsumerWidget {
         Wrap(
           spacing: 8,
           runSpacing: 8,
-          children:
-              tags.map((tag) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: colorScheme.primary.withOpacity(0.3),
-                    ),
-                  ),
-                  child: Text(
-                    '#$tag',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: colorScheme.primary,
-                    ),
-                  ),
-                );
-              }).toList(),
+          children: tags.map((tag) {
+            return Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 6,
+              ),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: colorScheme.primary.withOpacity(0.3),
+                ),
+              ),
+              child: Text(
+                '#$tag',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: colorScheme.primary,
+                ),
+              ),
+            );
+          }).toList(),
         ),
       ],
     );

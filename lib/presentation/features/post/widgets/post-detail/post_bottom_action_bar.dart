@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'dart:convert';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
@@ -173,26 +174,82 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
     );
   }
 
+  /// Kiểm tra xem chiến dịch có đang diễn ra không
+  bool _isCampaignOngoing() {
+    if (widget.post == null) return true;
+
+    final postType = PostType.values.firstWhere(
+      (type) => type.value == widget.post!.type,
+      orElse: () => PostType.all,
+    );
+
+    // Nếu không phải bài đăng chiến dịch, luôn cho phép quan tâm
+    if (postType != PostType.campaign) return true;
+
+    try {
+      final campaignInfo = CampaignInfo.fromJson(jsonDecode(widget.post!.info));
+      final now = DateTime.now();
+
+      DateTime? startDate;
+      DateTime? endDate;
+
+      if (campaignInfo.startDate.isNotEmpty) {
+        startDate = DateTime.parse(campaignInfo.startDate);
+      }
+
+      if (campaignInfo.endDate.isNotEmpty) {
+        endDate = DateTime.parse(campaignInfo.endDate);
+      }
+
+      // Nếu có cả start và end date
+      if (startDate != null && endDate != null) {
+        return now.isAfter(startDate) && now.isBefore(endDate);
+      }
+      // Nếu chỉ có start date
+      else if (startDate != null) {
+        return now.isAfter(startDate);
+      }
+      // Nếu chỉ có end date
+      else if (endDate != null) {
+        return now.isBefore(endDate);
+      }
+
+      // Nếu không có ngày nào được thiết lập, cho phép quan tâm
+      return true;
+    } catch (e) {
+      // Nếu có lỗi parse, cho phép quan tâm
+      return true;
+    }
+  }
+
   Widget _buildInterestButton(
     bool isTablet,
     ThemeData theme,
     ColorScheme colorScheme,
     dynamic interestState,
   ) {
+    final canInterest = _isCampaignOngoing();
+    final isDisabled = !canInterest || interestState.isLoading;
+
     return ElevatedButton(
-      onPressed: interestState.isLoading ? null : widget.onInterest,
+      onPressed: isDisabled ? null : widget.onInterest,
       style: ElevatedButton.styleFrom(
         padding: EdgeInsets.symmetric(vertical: isTablet ? 14 : 12),
         backgroundColor:
-            widget.userInterested ? Colors.red : colorScheme.primary,
-        disabledBackgroundColor: colorScheme.primary.withOpacity(0.6),
-        elevation: widget.userInterested ? 2 : 1,
-        shadowColor: widget.userInterested ? Colors.red.withOpacity(0.3) : null,
+            canInterest
+                ? (widget.userInterested ? Colors.red : colorScheme.primary)
+                : Colors.grey.shade400,
+        disabledBackgroundColor: Colors.grey.shade400,
+        elevation: widget.userInterested && canInterest ? 2 : 1,
+        shadowColor:
+            widget.userInterested && canInterest
+                ? Colors.red.withOpacity(0.3)
+                : null,
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          if (interestState.isLoading)
+          if (interestState.isLoading && canInterest)
             SizedBox(
               width: isTablet ? 16 : 14,
               height: isTablet ? 16 : 14,
@@ -203,17 +260,24 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
             )
           else
             Icon(
-              widget.userInterested ? Icons.favorite : Icons.favorite_border,
+              canInterest
+                  ? (widget.userInterested
+                      ? Icons.favorite
+                      : Icons.favorite_border)
+                  : Icons.block,
               size: isTablet ? 18 : 16,
               color: Colors.white,
             ),
           SizedBox(width: isTablet ? 8 : 6),
-          Text(
-            _getInterestButtonText(interestState.isLoading),
-            style: TextStyle(
-              fontSize: isTablet ? 14 : 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
+          Flexible(
+            child: Text(
+              _getInterestButtonText(interestState.isLoading, canInterest),
+              style: TextStyle(
+                fontSize: isTablet ? 14 : 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
         ],
@@ -400,7 +464,8 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
     );
   }
 
-  String _getInterestButtonText(bool isLoading) {
+  String _getInterestButtonText(bool isLoading, bool canInterest) {
+    if (!canInterest) return 'Không thể quan tâm';
     if (isLoading) return 'Đang xử lý...';
     if (widget.userInterested) return 'Đã quan tâm (${widget.interestCount})';
     return 'Quan tâm (${widget.interestCount})';

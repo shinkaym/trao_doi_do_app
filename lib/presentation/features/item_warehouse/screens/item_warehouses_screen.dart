@@ -59,25 +59,19 @@ class ItemWarehousesScreen extends HookConsumerWidget {
       return item.quantity < item.maxClaim ? item.quantity : item.maxClaim;
     }
 
-    void showQuantityExceededSnackBar(String itemName, int availableQuantity, String reason) {
+    void showQuantityExceededSnackBar(
+      String itemName,
+      int availableQuantity,
+      String reason,
+    ) {
       String message;
       if (reason == 'maxClaim') {
         message = 'Chỉ được phép nhận tối đa $availableQuantity "$itemName"';
       } else {
         message = 'Chỉ còn $availableQuantity "$itemName" trong kho';
       }
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            message,
-            style: TextStyle(color: Colors.white),
-          ),
-          backgroundColor: colorScheme.error,
-          behavior: SnackBarBehavior.floating,
-          duration: Duration(seconds: 3),
-        ),
-      );
+
+      context.showInfoSnackBar(message);
     }
 
     void addToCart(OldStockItem item) {
@@ -114,12 +108,17 @@ class ItemWarehousesScreen extends HookConsumerWidget {
         final item = getItemById(itemId);
         if (item != null) {
           final availableForClaim = getAvailableForClaim(item);
-          
+
           // Kiểm tra nếu quantity yêu cầu vượt quá số lượng có thể nhận
           if (quantity > availableForClaim) {
             // Xác định lý do giới hạn
-            String reason = item.quantity < item.maxClaim ? 'quantity' : 'maxClaim';
-            showQuantityExceededSnackBar(item.itemName, availableForClaim, reason);
+            String reason =
+                item.quantity < item.maxClaim ? 'quantity' : 'maxClaim';
+            showQuantityExceededSnackBar(
+              item.itemName,
+              availableForClaim,
+              reason,
+            );
             return;
           }
         }

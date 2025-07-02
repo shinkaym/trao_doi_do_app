@@ -8,6 +8,7 @@ import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/edit_profile/avatar_section.dart';
+import 'package:trao_doi_do_app/presentation/widgets/custom_select.dart';
 import 'package:trao_doi_do_app/presentation/widgets/image_picker_bottom_sheet.dart';
 import 'dart:io';
 import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
@@ -16,18 +17,40 @@ import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 class EditProfileScreen extends HookConsumerWidget {
   const EditProfileScreen({super.key});
 
+  static const List<String> majorOptions = [
+    'Công nghệ Kỹ thuật Điện',
+    'Công nghệ Kỹ thuật Điện tử - Viễn thông',
+    'Công nghệ Kỹ thuật Cơ khí',
+    'Công nghệ Kỹ thuật Ô tô',
+    'Công nghệ Thông tin',
+    'Công nghệ Kỹ thuật Nhiệt',
+    'Công nghệ Kỹ thuật Điều khiển và Tự động hóa',
+    'Công nghệ Kỹ thuật Cơ điện tử',
+    'Kế toán tin học',
+    'Cơ khí chế tạo',
+    'Sửa chữa cơ khí',
+    'Hàn',
+    'Kỹ thuật máy lạnh và điều hòa không khí',
+    'Bảo trì, sửa chữa Ô tô',
+    'Điện công nghiệp',
+    'Điện tử công nghiệp',
+    'Quản trị mạng máy tính',
+    'Kỹ thuật sửa chữa, lắp ráp máy tính',
+  ];
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Hooks for form controllers
     final fullNameController = useTextEditingController();
     final addressController = useTextEditingController();
-    final majorController = useTextEditingController();
 
     // Hooks for state management
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final isLoading = useState(false);
     final selectedImage = useState<File?>(null);
     final picker = useMemoized(() => ImagePicker());
+    final autovalidateMode = useState(AutovalidateMode.disabled);
+    final selectedMajor = useState<String?>(null);
 
     // Watch auth state to get user data
     final authState = ref.watch(authProvider);
@@ -37,7 +60,8 @@ class EditProfileScreen extends HookConsumerWidget {
       if (authState.user != null) {
         fullNameController.text = authState.user!.fullName;
         addressController.text = authState.user!.address;
-        majorController.text = authState.user!.major;
+        selectedMajor.value =
+            authState.user!.major.isEmpty ? null : authState.user!.major;
       }
       return null;
     }, [authState.user]);
@@ -79,6 +103,9 @@ class EditProfileScreen extends HookConsumerWidget {
     }
 
     Future<void> handleSave() async {
+      // Enable autovalidate mode after first validation attempt
+      autovalidateMode.value = AutovalidateMode.onUserInteraction;
+
       if (formKey.currentState!.validate()) {
         isLoading.value = true;
 
@@ -106,7 +133,7 @@ class EditProfileScreen extends HookConsumerWidget {
             updatedAddress = newAddress;
           }
 
-          final newMajor = majorController.text.trim();
+          final newMajor = selectedMajor.value ?? '';
           if (newMajor != currentUser.major) {
             updatedMajor = newMajor;
           }
@@ -145,7 +172,6 @@ class EditProfileScreen extends HookConsumerWidget {
                 address: updatedAddress,
                 major: updatedMajor,
                 avatar: updatedAvatar,
-                // phoneNumber is not included since it's read-only in your UI
               );
         } catch (e) {
           context.showErrorSnackBar('Lỗi khi cập nhật: $e');
@@ -180,6 +206,7 @@ class EditProfileScreen extends HookConsumerWidget {
                   ),
                   child: Form(
                     key: formKey,
+                    autovalidateMode: autovalidateMode.value,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -257,21 +284,19 @@ class EditProfileScreen extends HookConsumerWidget {
                             ),
                             SizedBox(height: isTablet ? 20 : 16),
 
-                            TextFormField(
-                              controller: majorController,
+                            CustomSelect(
+                              label: 'Ngành học',
+                              hint: 'Chọn ngành học của bạn',
+                              icon: Icons.school_outlined,
+                              value: selectedMajor.value,
+                              items: majorOptions,
                               enabled: !isLoading.value,
-                              decoration: CustomInputDecoration.build(
-                                context,
-                                label: 'Ngành học',
-                                hint: 'Nhập ngành học của bạn',
-                                icon: Icons.school_outlined,
-                              ),
+                              onChanged: (String? value) {
+                                selectedMajor.value = value;
+                              },
                               validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Vui lòng nhập ngành học';
-                                }
-                                if (value.trim().length < 2) {
-                                  return 'Ngành học phải có ít nhất 2 ký tự';
+                                if (value == null || value.isEmpty) {
+                                  return 'Vui lòng chọn ngành học';
                                 }
                                 return null;
                               },

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:trao_doi_do_app/core/extensions/context_extensions.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
 class AppointmentsEmptyState extends StatelessWidget {
@@ -149,14 +150,7 @@ class AppointmentsEmptyState extends StatelessWidget {
             SizedBox(height: isTablet ? 32 : 24),
             OutlinedButton.icon(
               onPressed: () {
-                // Có thể thêm hành động như mở hướng dẫn hoặc làm mới dữ liệu
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Text('Đang làm mới danh sách cuộc hẹn...'),
-                    backgroundColor: colorScheme.primary,
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
+                context.showInfoSnackBar('Đang làm mới danh sách cuộc hẹn...');
               },
               icon: Icon(Icons.refresh, size: isTablet ? 18 : 16),
               label: Text(

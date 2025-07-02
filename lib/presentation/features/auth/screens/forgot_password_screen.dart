@@ -439,6 +439,7 @@ class _EmailStepContent extends HookConsumerWidget {
           TextFormField(
             controller: emailController,
             keyboardType: TextInputType.emailAddress,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: CustomInputDecoration.build(
               context,
               label: 'Email',
@@ -777,6 +778,7 @@ class _NewPasswordStepContent extends HookConsumerWidget {
           TextFormField(
             controller: passwordController,
             obscureText: !isPasswordVisible.value,
+            // autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: CustomInputDecoration.build(
               context,
               label: 'Mật khẩu mới',
@@ -822,6 +824,7 @@ class _NewPasswordStepContent extends HookConsumerWidget {
           TextFormField(
             controller: confirmPasswordController,
             obscureText: !isConfirmPasswordVisible.value,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: CustomInputDecoration.build(
               context,
               label: 'Xác nhận mật khẩu mới',

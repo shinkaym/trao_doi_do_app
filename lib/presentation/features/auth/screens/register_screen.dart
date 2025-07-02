@@ -433,6 +433,7 @@ class _EmailStepContent extends HookConsumerWidget {
 
     return Form(
       key: formKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -770,6 +771,7 @@ class _DetailsStepContent extends HookConsumerWidget {
 
     return Form(
       key: formKey,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -788,6 +790,7 @@ class _DetailsStepContent extends HookConsumerWidget {
           TextFormField(
             controller: fullNameController,
             textCapitalization: TextCapitalization.words,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: CustomInputDecoration.build(
               context,
               label: 'Họ và tên',
@@ -810,6 +813,7 @@ class _DetailsStepContent extends HookConsumerWidget {
           TextFormField(
             controller: phoneController,
             keyboardType: TextInputType.phone,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
             decoration: CustomInputDecoration.build(
               context,
@@ -879,6 +883,7 @@ class _DetailsStepContent extends HookConsumerWidget {
           TextFormField(
             controller: confirmPasswordController,
             obscureText: !isConfirmPasswordVisible.value,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: CustomInputDecoration.build(
               context,
               label: 'Xác nhận mật khẩu',
