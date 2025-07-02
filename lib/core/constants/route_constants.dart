@@ -8,6 +8,7 @@ class RouteConstants {
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
   static const String resetPassword = '/reset-password';
+  static const String permissionRequest = '/permission-request';
 
   // ========== MAIN NAVIGATION ROUTES ==========
   static const String home = '/home'; // Màn hình chính
@@ -28,6 +29,7 @@ class RouteConstants {
   static const String ranking = 'ranking'; // Ranking là con của profile
   static const String appointments =
       'appointments'; // Appointments là con của profile
+  static const String help = 'help';
 
   // ========== FULL ROUTE PATHS (để kiểm tra navigation) ==========
   static const String fullPostDetail = '/posts/post-detail';
@@ -39,6 +41,7 @@ class RouteConstants {
   static const String fullMyPosts = '/profile/my-posts';
   static const String fullRanking = '/profile/ranking';
   static const String fullAppointments = '/profile/appointments';
+  static const String fullHelp = '/home/help';
 
   // ========== ROUTE PARAMETERS ==========
   static const String slugParam = 'slug';
@@ -61,6 +64,7 @@ class RouteConstants {
     interests,
     profile,
     notifications,
+    fullHelp,
     fullPostDetail,
     fullCreatePost,
     fullItemDetail,
@@ -92,6 +96,7 @@ class RouteConstants {
     fullRanking,
     fullAppointments,
     notifications,
+    fullHelp,
   };
 
   // Navigation routes với home làm mặc định
@@ -104,6 +109,7 @@ class RouteConstants {
   };
 
   static const Map<String, int> subRouteMapping = {
+    fullHelp: 0,
     fullPostDetail: 1,
     fullCreatePost: 1,
     fullItemDetail: 2,
@@ -128,6 +134,7 @@ class RouteNames {
   static const String register = 'register';
   static const String forgotPassword = 'forgot-password';
   static const String resetPassword = 'reset-password';
+  static const String permissionRequest = 'permission-request';
 
   // Main navigation routes
   static const String home = 'home';
@@ -147,4 +154,5 @@ class RouteNames {
   static const String myPosts = 'my-posts';
   static const String ranking = 'ranking';
   static const String appointments = 'appointments';
+  static const String help = 'help';
 }

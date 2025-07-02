@@ -34,7 +34,7 @@ class _FullWidthImageItem extends StatelessWidget {
       height: isTablet ? 200 : 250,
       child: ClipRRect(
         child: Image.asset(
-          'assets/images/$imageUrl',
+          'assets/images/fact/$imageUrl',
           width: double.infinity,
           height: double.infinity,
           fit: BoxFit.cover,

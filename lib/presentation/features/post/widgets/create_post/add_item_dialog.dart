@@ -369,6 +369,7 @@ class AddItemDialog extends HookConsumerWidget {
           ),
           child: TextFormField(
             controller: nameController,
+            autovalidateMode: AutovalidateMode.onUserInteraction,
             style: theme.textTheme.bodyLarge,
             decoration: InputDecoration(
               hintText: 'Nhập hoặc tìm kiếm món đồ...',
@@ -692,6 +693,7 @@ class AddItemDialog extends HookConsumerWidget {
                     onChanged: (val) {
                       selectedCategoryID.value = val;
                     },
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -1230,7 +1232,7 @@ class AddItemDialog extends HookConsumerWidget {
                   );
                   final base64Image = base64Encode(item.imageData!);
                   final postNotifier = ref.read(postProvider.notifier);
-                  
+
                   if (item.isFromPreset) {
                     postNotifier.addOldItem(
                       OldItem(

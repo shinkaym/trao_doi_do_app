@@ -188,15 +188,21 @@ final unreadCountProvider =
       return UnreadCountNotifier(getUnreadCountUseCase);
     });
 
-final postProvider = StateNotifierProvider<PostNotifier, PostState>((ref) {
-  final createPostUseCase = ref.watch(createPostUseCaseProvider);
-  final updatePostUseCase = ref.watch(updatePostUseCaseProvider);
-  final deletePostUseCase = ref.watch(deletePostUseCaseProvider);
-  return PostNotifier(createPostUseCase, updatePostUseCase, deletePostUseCase);
-});
+final postProvider = StateNotifierProvider.autoDispose<PostNotifier, PostState>(
+  (ref) {
+    final createPostUseCase = ref.watch(createPostUseCaseProvider);
+    final updatePostUseCase = ref.watch(updatePostUseCaseProvider);
+    final deletePostUseCase = ref.watch(deletePostUseCaseProvider);
+    return PostNotifier(
+      createPostUseCase,
+      updatePostUseCase,
+      deletePostUseCase,
+    );
+  },
+);
 
 final postsListProvider =
-    StateNotifierProvider.autoDispose<PostsListNotifier, PostsListState>((ref) {
+    StateNotifierProvider<PostsListNotifier, PostsListState>((ref) {
       final getPostsUseCase = ref.watch(getPostsUseCaseProvider);
       return PostsListNotifier(getPostsUseCase);
     });
@@ -262,11 +268,12 @@ final claimRequestProvider =
       );
     });
 
-final oldStockProvider =
-    StateNotifierProvider.autoDispose<OldStockNotifier, OldStockState>((ref) {
-      final getOldStockUseCase = ref.watch(getOldStockUseCaseProvider);
-      return OldStockNotifier(getOldStockUseCase);
-    });
+final oldStockProvider = StateNotifierProvider<OldStockNotifier, OldStockState>(
+  (ref) {
+    final getOldStockUseCase = ref.watch(getOldStockUseCaseProvider);
+    return OldStockNotifier(getOldStockUseCase);
+  },
+);
 
 final claimRequestsListProvider = StateNotifierProvider<
   ClaimRequestsListNotifier,
@@ -281,13 +288,13 @@ final searchSuggestionsProvider =
       (ref) => SearchSuggestionsNotifier(ref.read(getPostsUseCaseProvider)),
     );
 
-final appointmentsListProvider = StateNotifierProvider.autoDispose<
-  AppointmentsListNotifier,
-  AppointmentsListState
->((ref) {
-  final getAppointmentsUseCase = ref.watch(getAppointmentsUseCaseProvider);
-  return AppointmentsListNotifier(getAppointmentsUseCase);
-});
+final appointmentsListProvider =
+    StateNotifierProvider<AppointmentsListNotifier, AppointmentsListState>((
+      ref,
+    ) {
+      final getAppointmentsUseCase = ref.watch(getAppointmentsUseCaseProvider);
+      return AppointmentsListNotifier(getAppointmentsUseCase);
+    });
 
 final appointmentDetailProvider = StateNotifierProvider.autoDispose
     .family<AppointmentDetailNotifier, AppointmentDetailState, int>((
@@ -312,23 +319,23 @@ final appointmentUpdatingProvider = Provider.family<bool, int>((
   return ref.watch(appointmentProvider).isAppointmentUpdating(appointmentID);
 });
 
-final rankingProvider =
-    StateNotifierProvider.autoDispose<RankingNotifier, RankingState>((ref) {
-      final getUserRanksUseCase = ref.watch(getUserRanksUseCaseProvider);
-      return RankingNotifier(getUserRanksUseCase);
-    });
+final rankingProvider = StateNotifierProvider<RankingNotifier, RankingState>((
+  ref,
+) {
+  final getUserRanksUseCase = ref.watch(getUserRanksUseCaseProvider);
+  return RankingNotifier(getUserRanksUseCase);
+});
 
 final myGoodDeedsProvider =
-    StateNotifierProvider<MyGoodDeedsNotifier, MyGoodDeedsState>((
-      ref,
-    ) {
+    StateNotifierProvider<MyGoodDeedsNotifier, MyGoodDeedsState>((ref) {
       final getMyGoodDeedsUseCase = ref.watch(getMyGoodDeedsUseCaseProvider);
       return MyGoodDeedsNotifier(getMyGoodDeedsUseCase);
     });
 
-final settingsProvider =
-    StateNotifierProvider.autoDispose<SettingsNotifier, SettingsState>((ref) {
-      final getSettingsUseCase = ref.watch(getSettingsUseCaseProvider);
-      final getSettingByKeyUseCase = ref.watch(getSettingByKeyUseCaseProvider);
-      return SettingsNotifier(getSettingsUseCase, getSettingByKeyUseCase);
-    });
+final settingsProvider = StateNotifierProvider<SettingsNotifier, SettingsState>(
+  (ref) {
+    final getSettingsUseCase = ref.watch(getSettingsUseCaseProvider);
+    final getSettingByKeyUseCase = ref.watch(getSettingByKeyUseCaseProvider);
+    return SettingsNotifier(getSettingsUseCase, getSettingByKeyUseCase);
+  },
+);

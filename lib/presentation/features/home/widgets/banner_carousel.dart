@@ -52,8 +52,8 @@ class BannerCarousel extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.network(
-                      slide['image'],
+                    Image.asset(
+                      'assets/images/banner/${slide['image']}',
                       width: double.infinity,
                       height: double.infinity,
                       fit: BoxFit.cover,

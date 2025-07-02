@@ -11,6 +11,7 @@ import 'package:trao_doi_do_app/presentation/features/auth/screens/forgot_passwo
 import 'package:trao_doi_do_app/presentation/features/auth/screens/login_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/screens/register_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/screens/reset_password_screen.dart';
+import 'package:trao_doi_do_app/presentation/features/help/screens/help_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/home/screens/home_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/screens/interest_chat_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/screens/interests_screen.dart';
@@ -101,7 +102,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         }
         // After onboarding, check permissions
         if (!routerState.allPermissionsGranted) {
-          return '/permission-request';
+          return RouteConstants.permissionRequest;
         }
         return RouteConstants.home;
       }
@@ -115,13 +116,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (currentPath == RouteConstants.onboarding &&
           routerState.isOnboardingCompleted) {
         if (!routerState.allPermissionsGranted) {
-          return '/permission-request';
+          return RouteConstants.permissionRequest;
         }
         return RouteConstants.home;
       }
 
       // Handle permission request completion
-      if (currentPath == '/permission-request' &&
+      if (currentPath == RouteConstants.permissionRequest &&
           routerState.allPermissionsGranted) {
         return RouteConstants.home;
       }
@@ -135,7 +136,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         // Then check permissions (skip for auth-related routes)
         if (!routerState.allPermissionsGranted &&
             !RouteUtils.isAuthRoute(currentPath)) {
-          return '/permission-request';
+          return RouteConstants.permissionRequest;
         }
       }
 
@@ -217,8 +218,8 @@ List<GoRoute> _buildStandaloneRoutes() {
 List<GoRoute> _buildSystemRoutes() {
   return [
     GoRoute(
-      path: '/permission-request',
-      name: 'permission-request',
+      path: RouteConstants.permissionRequest,
+      name: RouteNames.permissionRequest,
       builder: (context, state) => const PermissionRequestScreen(),
     ),
   ];
@@ -254,6 +255,13 @@ GoRoute _buildHomeRoute() {
     path: RouteConstants.home,
     name: RouteNames.home,
     builder: (context, state) => const HomeScreen(),
+    routes: [
+      GoRoute(
+        path: RouteConstants.help,
+        name: RouteNames.help,
+        builder: (context, state) => const HelpScreen(),
+      ),
+    ],
   );
 }
 

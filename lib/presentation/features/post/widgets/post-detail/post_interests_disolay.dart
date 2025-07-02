@@ -138,11 +138,11 @@ class PostInterestsDisplay extends StatelessWidget {
 
   Widget _buildUsersList(ThemeData theme, ColorScheme colorScheme) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(
         children: [
           if (interests.length > 3) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 5),
             _buildSummarySection(theme, colorScheme),
           ],
           ListView.separated(

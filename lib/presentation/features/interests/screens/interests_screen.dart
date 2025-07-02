@@ -235,6 +235,14 @@ class InterestsScreen extends HookConsumerWidget {
       }
     }
 
+    void handleRefreshPostsWithInterests() {
+      ref.read(postsWithInterestsProvider.notifier).refresh();
+    }
+
+    void handleRefreshInterestedPosts() {
+      ref.read(interestedPostsProvider.notifier).refresh();
+    }
+
     // Handle post tap
     void handlePostTap(String slug) {
       context.pushNamed(RouteNames.postDetail, pathParameters: {'slug': slug});
@@ -408,6 +416,7 @@ class InterestsScreen extends HookConsumerWidget {
                           handlePostTap: handlePostTap,
                           handleChatTap: handleChatTap,
                           handleLikeTap: handleLikeTap,
+                          onRefresh: handleRefreshInterestedPosts,
                           searchController: sharedSearchController,
                           resetFilters: resetAll,
                           scrollController: scrollController,
@@ -418,6 +427,7 @@ class InterestsScreen extends HookConsumerWidget {
                           colorScheme: colorScheme,
                           handlePostTap: handlePostTap,
                           handleChatTap: handleChatTap,
+                          onRefresh: handleRefreshPostsWithInterests,
                           searchController: sharedSearchController,
                           resetFilters: resetAll,
                           scrollController: scrollController,

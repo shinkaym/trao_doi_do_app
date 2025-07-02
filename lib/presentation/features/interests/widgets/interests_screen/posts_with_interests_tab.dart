@@ -16,6 +16,7 @@ class PostsWithInterestsTab extends ConsumerWidget {
   final TextEditingController searchController;
   final VoidCallback resetFilters;
   final ScrollController scrollController;
+  final VoidCallback onRefresh;
 
   const PostsWithInterestsTab({
     super.key,
@@ -26,6 +27,7 @@ class PostsWithInterestsTab extends ConsumerWidget {
     required this.handleChatTap,
     required this.searchController,
     required this.resetFilters,
+    required this.onRefresh,
     required this.scrollController,
   });
 
@@ -74,62 +76,79 @@ class PostsWithInterestsTab extends ConsumerWidget {
       );
     }
 
-    if (state.interests.isEmpty) {
-      return EmptyState(
-        isTablet: isTablet,
-        theme: theme,
-        colorScheme: colorScheme,
-        title: 'Chưa có bài đăng được quan tâm',
-        subtitle: 'Tạo bài đăng để nhận được sự quan tâm từ cộng đồng',
-        icon: Icons.post_add,
-        sharedSearchController: searchController,
-        resetFilters: resetFilters,
+    if (state.interests.isEmpty && !state.isLoading) {
+      return RefreshIndicator(
+        onRefresh: () async => onRefresh(),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              controller: scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                child: EmptyState(
+                  isTablet: isTablet,
+                  theme: theme,
+                  colorScheme: colorScheme,
+                  title: 'Chưa có bài đăng quan tâm',
+                  subtitle: 'Khám phá và quan tâm các bài đăng thú vị',
+                  icon: Icons.favorite_border,
+                  sharedSearchController: searchController,
+                  resetFilters: resetFilters,
+                ),
+              ),
+            );
+          },
+        ),
       );
     }
 
-    return CustomScrollView(
-      controller: scrollController,
-      slivers: [
-        SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
-        SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
-          sliver: SliverList.separated(
-            separatorBuilder:
-                (context, index) => SizedBox(height: isTablet ? 8 : 6),
-            itemCount: state.interests.length,
-            itemBuilder: (context, index) {
-              final post = state.interests[index];
-              final postType = PostType.fromValue(post.type);
-              final authState = ref.read(authProvider);
+    return RefreshIndicator(
+      onRefresh: () async => onRefresh(),
+      child: CustomScrollView(
+        controller: scrollController,
+        slivers: [
+          SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
+          SliverPadding(
+            padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
+            sliver: SliverList.separated(
+              separatorBuilder:
+                  (context, index) => SizedBox(height: isTablet ? 8 : 6),
+              itemCount: state.interests.length,
+              itemBuilder: (context, index) {
+                final post = state.interests[index];
+                final postType = PostType.fromValue(post.type);
+                final authState = ref.read(authProvider);
 
-              return UnifiedInterestPostCard.postWithInterests(
-                post: post,
-                postType: postType,
-                isTablet: isTablet,
-                theme: theme,
-                colorScheme: colorScheme,
-                handlePostTap: handlePostTap,
-                handleChatTap: handleChatTap,
-                authUserId: authState.user?.id,
-              );
-            },
-          ),
-        ),
-        // Pagination được thêm vào cuối danh sách
-        if (state.totalPage > 1)
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.all(isTablet ? 12 : 6),
-              child: Pagination(
-                state: state,
-                isTablet: isTablet,
-                theme: theme,
-                colorScheme: colorScheme,
-                currentTabIndex: 1,
-              ),
+                return UnifiedInterestPostCard.postWithInterests(
+                  post: post,
+                  postType: postType,
+                  isTablet: isTablet,
+                  theme: theme,
+                  colorScheme: colorScheme,
+                  handlePostTap: handlePostTap,
+                  handleChatTap: handleChatTap,
+                  authUserId: authState.user?.id,
+                );
+              },
             ),
           ),
-      ],
+          // Pagination được thêm vào cuối danh sách
+          if (state.totalPage > 1)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(isTablet ? 12 : 6),
+                child: Pagination(
+                  state: state,
+                  isTablet: isTablet,
+                  theme: theme,
+                  colorScheme: colorScheme,
+                  currentTabIndex: 1,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

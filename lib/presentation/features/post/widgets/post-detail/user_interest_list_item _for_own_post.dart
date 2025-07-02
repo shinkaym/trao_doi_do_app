@@ -173,7 +173,9 @@ class UserInterestListItemForOwnPost extends HookConsumerWidget {
                       ),
 
                       // Transaction status badge - chỉ hiển thị nếu có transaction và không có lỗi
-                      if (transaction != null && !hasTransactionError) ...[
+                      if (transaction != null &&
+                          !hasTransactionError &&
+                          transactionStatus != TransactionStatus.unknown) ...[
                         SizedBox(width: isTablet ? 8 : 6),
                         _buildStatusBadge(transactionStatus),
                       ],
@@ -186,7 +188,9 @@ class UserInterestListItemForOwnPost extends HookConsumerWidget {
                   ),
 
                   // Items section - chỉ hiển thị nếu không có lỗi transaction cho interest này
-                  if (!hasTransactionError) ...[
+                  if (!hasTransactionError &&
+                      transaction != null &&
+                      transaction.items.isNotEmpty) ...[
                     SizedBox(height: isTablet ? 12 : 10),
                     _buildItemsSection(itemsText, hasTransactionError),
                   ],

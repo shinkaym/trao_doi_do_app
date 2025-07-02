@@ -41,9 +41,6 @@ class RankingScreen extends HookConsumerWidget {
     // Handle refresh
     Future<void> handleRefresh() async {
       ref.read(rankingProvider.notifier).refresh();
-      if (rankingState.failure == null) {
-        context.showSuccessSnackBar('Đã cập nhật bảng xếp hạng');
-      }
     }
 
     // Show user details bottom sheet

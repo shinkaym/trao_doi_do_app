@@ -32,10 +32,7 @@ class ContactInfoSection extends HookConsumerWidget {
     }, []); // Empty dependency array = chỉ chạy 1 lần
 
     if (settingsState.isLoading) {
-      return Container(
-        margin: EdgeInsets.symmetric(horizontal: isTablet ? 24 : 16),
-        child: Center(child: CircularProgressIndicator()),
-      );
+      return ContactInfoSkeleton(isTablet: isTablet, colorScheme: colorScheme);
     }
 
     if (settingsState.settings.isEmpty) {
@@ -536,6 +533,311 @@ class _WorkingTimeItem extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// Thêm class ContactInfoSkeleton vào cuối file ContactInfoSection
+
+class ContactInfoSkeleton extends StatefulWidget {
+  final bool isTablet;
+  final ColorScheme colorScheme;
+
+  const ContactInfoSkeleton({
+    super.key,
+    required this.isTablet,
+    required this.colorScheme,
+  });
+
+  @override
+  State<ContactInfoSkeleton> createState() => _ContactInfoSkeletonState();
+}
+
+class _ContactInfoSkeletonState extends State<ContactInfoSkeleton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    );
+    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
+    );
+    _animationController.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
+
+  Color _getBaseColor() {
+    return Theme.of(context).brightness == Brightness.light
+        ? Colors.grey[300]!
+        : Colors.grey[700]!;
+  }
+
+  Color _getHighlightColor() {
+    return Theme.of(context).brightness == Brightness.light
+        ? Colors.grey[100]!
+        : Colors.grey[600]!;
+  }
+
+  Widget _buildShimmerContainer({
+    required double width,
+    required double height,
+    BorderRadius? borderRadius,
+  }) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            borderRadius: borderRadius ?? BorderRadius.circular(4),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [_getBaseColor(), _getHighlightColor(), _getBaseColor()],
+              stops: [0.0, _animation.value, 1.0],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: widget.isTablet ? 24 : 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header skeleton
+          Row(
+            children: [
+              _buildShimmerContainer(
+                width: widget.isTablet ? 44 : 38,
+                height: widget.isTablet ? 44 : 38,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              SizedBox(width: widget.isTablet ? 16 : 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildShimmerContainer(
+                      width: widget.isTablet ? 160 : 140,
+                      height: widget.isTablet ? 20 : 18,
+                    ),
+                    SizedBox(height: 4),
+                    _buildShimmerContainer(
+                      width: widget.isTablet ? 180 : 160,
+                      height: widget.isTablet ? 12 : 11,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          SizedBox(height: widget.isTablet ? 16 : 12),
+
+          // Card skeleton
+          Container(
+            padding: EdgeInsets.all(widget.isTablet ? 20 : 16),
+            decoration: BoxDecoration(
+              color: widget.colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: widget.colorScheme.shadow.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Description section skeleton
+                Row(
+                  children: [
+                    _buildShimmerContainer(
+                      width: widget.isTablet ? 18 : 16,
+                      height: widget.isTablet ? 18 : 16,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                    SizedBox(width: widget.isTablet ? 8 : 6),
+                    _buildShimmerContainer(
+                      width: widget.isTablet ? 100 : 90,
+                      height: widget.isTablet ? 16 : 14,
+                    ),
+                  ],
+                ),
+                SizedBox(height: widget.isTablet ? 12 : 10),
+                Container(
+                  padding: EdgeInsets.all(widget.isTablet ? 16 : 12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blue.shade100, width: 1),
+                  ),
+                  child: Column(
+                    children: [
+                      _buildShimmerContainer(
+                        width: double.infinity,
+                        height: widget.isTablet ? 14 : 13,
+                      ),
+                      SizedBox(height: 8),
+                      _buildShimmerContainer(
+                        width: double.infinity,
+                        height: widget.isTablet ? 14 : 13,
+                      ),
+                      SizedBox(height: 8),
+                      _buildShimmerContainer(
+                        width: MediaQuery.of(context).size.width * 0.7,
+                        height: widget.isTablet ? 14 : 13,
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: widget.isTablet ? 20 : 16),
+
+                // Contact section skeleton
+                _buildShimmerContainer(
+                  width: widget.isTablet ? 80 : 70,
+                  height: widget.isTablet ? 16 : 14,
+                ),
+                SizedBox(height: widget.isTablet ? 12 : 10),
+                Container(
+                  padding: EdgeInsets.all(widget.isTablet ? 16 : 12),
+                  decoration: BoxDecoration(
+                    color: widget.colorScheme.surfaceVariant.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: widget.colorScheme.outline.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      // Phone skeleton
+                      _buildContactItemSkeleton(),
+                      SizedBox(height: widget.isTablet ? 8 : 6),
+                      // Email skeleton
+                      _buildContactItemSkeleton(),
+                      SizedBox(height: widget.isTablet ? 8 : 6),
+                      // Location skeleton
+                      _buildContactItemSkeleton(),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: widget.isTablet ? 20 : 16),
+
+                // Working hours section skeleton
+                Row(
+                  children: [
+                    _buildShimmerContainer(
+                      width: widget.isTablet ? 18 : 16,
+                      height: widget.isTablet ? 18 : 16,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                    SizedBox(width: widget.isTablet ? 8 : 6),
+                    _buildShimmerContainer(
+                      width: widget.isTablet ? 100 : 90,
+                      height: widget.isTablet ? 16 : 14,
+                    ),
+                  ],
+                ),
+                SizedBox(height: widget.isTablet ? 12 : 10),
+                Container(
+                  padding: EdgeInsets.all(widget.isTablet ? 16 : 12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.orange.shade100, width: 1),
+                  ),
+                  child: Column(
+                    children: [
+                      // Work day skeleton
+                      _buildWorkingTimeSkeleton(),
+                      SizedBox(height: widget.isTablet ? 8 : 6),
+                      // Morning time skeleton
+                      _buildWorkingTimeSkeleton(),
+                      SizedBox(height: widget.isTablet ? 8 : 6),
+                      // Afternoon time skeleton
+                      _buildWorkingTimeSkeleton(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactItemSkeleton() {
+    return Row(
+      children: [
+        _buildShimmerContainer(
+          width: widget.isTablet ? 16 : 14,
+          height: widget.isTablet ? 16 : 14,
+          borderRadius: BorderRadius.circular(2),
+        ),
+        SizedBox(width: widget.isTablet ? 12 : 10),
+        _buildShimmerContainer(
+          width: widget.isTablet ? 80 : 70,
+          height: widget.isTablet ? 13 : 12,
+        ),
+        SizedBox(width: widget.isTablet ? 8 : 6),
+        Expanded(
+          child: _buildShimmerContainer(
+            width: double.infinity,
+            height: widget.isTablet ? 13 : 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWorkingTimeSkeleton() {
+    return Row(
+      children: [
+        _buildShimmerContainer(
+          width: widget.isTablet ? 16 : 14,
+          height: widget.isTablet ? 16 : 14,
+          borderRadius: BorderRadius.circular(2),
+        ),
+        SizedBox(width: widget.isTablet ? 12 : 10),
+        Expanded(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildShimmerContainer(
+                width: widget.isTablet ? 90 : 80,
+                height: widget.isTablet ? 13 : 12,
+              ),
+              _buildShimmerContainer(
+                width: widget.isTablet ? 100 : 90,
+                height: widget.isTablet ? 13 : 12,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

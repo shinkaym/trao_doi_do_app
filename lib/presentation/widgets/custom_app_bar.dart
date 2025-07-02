@@ -684,29 +684,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
       itemBuilder:
           (BuildContext context) => [
             PopupMenuItem<String>(
-              value: 'about',
-              height: isTablet ? 50 : 44,
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.info_outline_rounded,
-                    color: foregroundColor.withOpacity(0.7),
-                    size: isTablet ? 22 : 20,
-                  ),
-                  SizedBox(width: isTablet ? 16 : 12),
-                  Text(
-                    'Giới thiệu',
-                    style: TextStyle(
-                      color: foregroundColor,
-                      fontSize: isTablet ? 16 : 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            PopupMenuItem<String>(
-              value: 'help',
+              value: RouteNames.help,
               height: isTablet ? 50 : 44,
               child: Row(
                 children: [
@@ -729,14 +707,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
             ),
           ],
       onSelected: (String value) {
-        switch (value) {
-          case 'about':
-            context.pushNamed('about');
-            break;
-          case 'help':
-            context.pushNamed('help');
-            break;
-        }
+        context.pushNamed(value);
       },
     );
   }

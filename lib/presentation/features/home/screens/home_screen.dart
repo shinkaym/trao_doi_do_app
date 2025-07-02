@@ -15,20 +15,19 @@ final bannerSlidesProvider = Provider<List<Map<String, dynamic>>>(
   (ref) => [
     {
       'id': 1,
-      'image': 'https://caothang.edu.vn/tuyensinh/images/banner/banner_1.png',
+      'image': 'banner_1.png',
       'title': 'Trường Cao đẳng Kỹ thuật Cao Thắng',
       'url': 'https://caothang.edu.vn/',
     },
     {
       'id': 2,
-      'image': 'https://caothang.edu.vn/tuyensinh/images/banner/banner_2.png',
+      'image': 'banner_2.png',
       'title': 'Tìm hiểu về trường',
       'url': 'https://caothang.edu.vn/bai_viet/Gioi-thieu-1',
     },
     {
       'id': 3,
-      'image':
-          'https://caothang.edu.vn/tuyensinh/images/banner/Ketqua_HB_2025.png',
+      'image': 'banner_3.png',
       'title': 'Thông tin tuyển sinh',
       'url': 'https://caothang.edu.vn/tuyensinh/',
     },
@@ -36,11 +35,7 @@ final bannerSlidesProvider = Provider<List<Map<String, dynamic>>>(
 );
 
 final fullWidthImagesProvider = Provider<List<String>>(
-  (ref) => [
-    '1.jpg',
-    '2.jpg',
-    '3.jpg',
-  ],
+  (ref) => ['1.jpg', '2.jpg', '3.jpg'],
 );
 
 class HomeScreen extends HookConsumerWidget {
