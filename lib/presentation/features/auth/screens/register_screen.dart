@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
@@ -71,7 +72,7 @@ final registerStateProvider =
 
 class RegisterStateNotifier extends StateNotifier<RegisterState> {
   final Ref ref;
-  Timer? _countdownTimer;
+  final Debouncer _countdownDebouncer = Debouncer();
 
   RegisterStateNotifier(this.ref) : super(const RegisterState());
 
@@ -93,16 +94,8 @@ class RegisterStateNotifier extends StateNotifier<RegisterState> {
         canResend: false,
       );
       _startCountdown();
-
-      if (context.mounted) {
-        context.showSuccessSnackBar('OTP đã được gửi đến $email');
-      }
     } else {
       state = state.copyWith(isLoading: false);
-
-      if (context.mounted) {
-        context.showErrorSnackBar(authState.failure!.message);
-      }
     }
   }
 
@@ -122,17 +115,9 @@ class RegisterStateNotifier extends StateNotifier<RegisterState> {
           isLoading: false,
           currentStep: RegisterStep.enterDetails,
         );
-
-        if (context.mounted) {
-          context.showSuccessSnackBar('OTP xác thực thành công!');
-        }
       } else {
         state = state.copyWith(isLoading: false);
         updateOtp('');
-
-        if (context.mounted) {
-          context.showErrorSnackBar(authState.failure!.message);
-        }
       }
     }
   }
@@ -152,9 +137,6 @@ class RegisterStateNotifier extends StateNotifier<RegisterState> {
 
     if (verifyToken == null) {
       state = state.copyWith(isLoading: false);
-      if (context.mounted) {
-        context.showErrorSnackBar('Token xác thực không hợp lệ');
-      }
       return;
     }
 
@@ -175,7 +157,6 @@ class RegisterStateNotifier extends StateNotifier<RegisterState> {
 
     if (newAuthState.failure == null) {
       if (context.mounted) {
-        context.showSuccessSnackBar('Đăng ký thành công!');
         await Future.delayed(const Duration(seconds: 1));
         if (context.mounted) {
           context.goNamed(
@@ -184,26 +165,36 @@ class RegisterStateNotifier extends StateNotifier<RegisterState> {
           );
         }
       }
-    } else {
-      if (context.mounted) {
-        context.showErrorSnackBar(newAuthState.failure!.message);
-      }
     }
   }
 
   void _startCountdown() {
-    // Hủy timer cũ nếu có
-    _countdownTimer?.cancel();
+    // Hủy debouncer cũ nếu có
+    _countdownDebouncer.cancel();
 
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (state.remainingTime > 0) {
-        state = state.copyWith(remainingTime: state.remainingTime - 1);
-      } else {
-        state = state.copyWith(canResend: true);
-        timer.cancel();
-        _countdownTimer = null;
-      }
-    });
+    _countdownDebouncer.debounce(
+      duration: const Duration(seconds: 1),
+      onDebounce: () {
+        _runCountdown();
+      },
+    );
+  }
+
+  void _runCountdown() {
+    if (state.remainingTime > 0) {
+      state = state.copyWith(remainingTime: state.remainingTime - 1);
+
+      // Tiếp tục countdown
+      _countdownDebouncer.debounce(
+        duration: const Duration(seconds: 1),
+        onDebounce: () {
+          _runCountdown();
+        },
+      );
+    } else {
+      state = state.copyWith(canResend: true);
+      _countdownDebouncer.cancel();
+    }
   }
 
   void updateOtp(String otp) {
@@ -212,16 +203,15 @@ class RegisterStateNotifier extends StateNotifier<RegisterState> {
 
   void resendOtp(BuildContext context) {
     if (state.canResend) {
-      // Reset timer khi gửi lại
-      _countdownTimer?.cancel();
+      // Reset debouncer khi gửi lại
+      _countdownDebouncer.cancel();
       sendOtp(state.email, context);
     }
   }
 
   void goBackToEmail() {
-    // Hủy timer khi quay lại
-    _countdownTimer?.cancel();
-    _countdownTimer = null;
+    // Hủy debouncer khi quay lại
+    _countdownDebouncer.cancel();
 
     state = state.copyWith(
       currentStep: RegisterStep.enterEmail,
@@ -235,9 +225,8 @@ class RegisterStateNotifier extends StateNotifier<RegisterState> {
   }
 
   void reset() {
-    // Hủy timer khi reset
-    _countdownTimer?.cancel();
-    _countdownTimer = null;
+    // Hủy debouncer khi reset
+    _countdownDebouncer.cancel();
 
     state = const RegisterState();
     ref.read(authProvider.notifier).resetOtpStates();
@@ -245,8 +234,8 @@ class RegisterStateNotifier extends StateNotifier<RegisterState> {
 
   @override
   void dispose() {
-    // Hủy timer khi dispose
-    _countdownTimer?.cancel();
+    // Hủy debouncer khi dispose
+    _countdownDebouncer.cancel();
     super.dispose();
   }
 
@@ -288,14 +277,17 @@ class RegisterScreen extends HookConsumerWidget {
     useEffect(() {
       if (authState.failure != null) {
         Future.microtask(() {
+          context.showErrorSnackBar(authState.failure!.message);
           ref.read(authProvider.notifier).clearError();
         });
       }
-      // if (authState.successMessage != null) {
-      //   Future.microtask(() {
-      //     ref.read(authProvider.notifier).clearSuccess();
-      //   });
-      // }
+
+      if (authState.successMessage != null) {
+        Future.microtask(() {
+          context.showSuccessSnackBar(authState.successMessage!);
+          ref.read(authProvider.notifier).clearSuccess();
+        });
+      }
       return null;
     }, [authState.failure, authState.successMessage]);
 
@@ -883,7 +875,6 @@ class _DetailsStepContent extends HookConsumerWidget {
           TextFormField(
             controller: confirmPasswordController,
             obscureText: !isConfirmPasswordVisible.value,
-            autovalidateMode: AutovalidateMode.onUserInteraction,
             decoration: CustomInputDecoration.build(
               context,
               label: 'Xác nhận mật khẩu',

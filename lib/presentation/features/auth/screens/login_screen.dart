@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/route_constants.dart';
@@ -10,7 +11,6 @@ import 'package:trao_doi_do_app/presentation/features/auth/widgets/app_header.da
 import 'package:trao_doi_do_app/presentation/widgets/auth_divider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/auth_link.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dart';
-import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
 class LoginScreen extends HookConsumerWidget {
@@ -26,11 +26,19 @@ class LoginScreen extends HookConsumerWidget {
     final isPasswordVisible = useState(false);
     final hasAutoLoginAttempted = useState(false);
 
+    final debouncer = useMemoized(() => Debouncer());
+
     final authState = ref.watch(authProvider);
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
     final isDark = context.isDarkMode;
+
+    useEffect(() {
+      return () {
+        debouncer.cancel();
+      };
+    }, []);
 
     // Auto-fill and attempt login if extra contains email and password
     useEffect(() {
@@ -69,33 +77,23 @@ class LoginScreen extends HookConsumerWidget {
       return null;
     }, [extra]);
     // Listen to auth state changes
-    ref.listen<AuthState>(authProvider, (previous, current) {
-      // Show error message
-      if (current.failure != null &&
-          previous?.failure != current.failure &&
-          !current.isLoading) {
-        context.showErrorSnackBar(current.failure!.message);
-        ref.read(authProvider.notifier).clearError();
-      }
 
-      // Show success message
-      if (current.successMessage != null &&
-          previous?.successMessage != current.successMessage) {
-        ref.read(authProvider.notifier).clearSuccess();
-      }
-
-      // Navigate after login success
-      if (current.isLoggedIn &&
-          previous?.isLoggedIn != true &&
-          current.user != null &&
-          !current.isLoading) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (context.mounted) {
-            context.goNamed(RouteNames.home);
-          }
+    useEffect(() {
+      if (authState.failure != null) {
+        Future.microtask(() {
+          context.showErrorSnackBar(authState.failure!.message);
+          ref.read(authProvider.notifier).clearError();
         });
       }
-    });
+
+      if (authState.successMessage != null) {
+        Future.microtask(() {
+          context.showSuccessSnackBar(authState.successMessage!);
+          ref.read(authProvider.notifier).clearSuccess();
+        });
+      }
+      return null;
+    }, [authState.failure, authState.successMessage]);
 
     // Handle login action
     Future<void> handleLogin() async {
@@ -125,6 +123,17 @@ class LoginScreen extends HookConsumerWidget {
       await ref
           .read(authProvider.notifier)
           .login(email: email, password: password, device: 'mobile');
+    }
+
+    Future<void> handleLoginDebounced() async {
+      const duration = Duration(milliseconds: 800);
+
+      debouncer.debounce(
+        duration: duration,
+        onDebounce: () async {
+          await handleLogin();
+        },
+      );
     }
 
     // Handle forgot password
@@ -173,6 +182,8 @@ class LoginScreen extends HookConsumerWidget {
                             controller: emailController,
                             enabled: !authState.isLoading,
                             keyboardType: TextInputType.emailAddress,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             textInputAction: TextInputAction.next,
                             autocorrect: false,
                             decoration: CustomInputDecoration.build(
@@ -185,11 +196,6 @@ class LoginScreen extends HookConsumerWidget {
                               if (value == null || value.trim().isEmpty) {
                                 return 'Vui lòng nhập email';
                               }
-                              if (!RegExp(
-                                r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$',
-                              ).hasMatch(value.trim())) {
-                                return 'Email không hợp lệ';
-                              }
                               return null;
                             },
                           ),
@@ -201,6 +207,8 @@ class LoginScreen extends HookConsumerWidget {
                             controller: passwordController,
                             enabled: !authState.isLoading,
                             obscureText: !isPasswordVisible.value,
+                            autovalidateMode:
+                                AutovalidateMode.onUserInteraction,
                             textInputAction: TextInputAction.done,
                             decoration: CustomInputDecoration.build(
                               context,
@@ -226,12 +234,9 @@ class LoginScreen extends HookConsumerWidget {
                               if (value == null || value.isEmpty) {
                                 return 'Vui lòng nhập mật khẩu';
                               }
-                              if (value.length < 6) {
-                                return 'Mật khẩu tối thiểu 6 ký tự';
-                              }
                               return null;
                             },
-                            onFieldSubmitted: (_) => handleLogin(),
+                            onFieldSubmitted: (_) => handleLoginDebounced(),
                           ),
 
                           SizedBox(height: isTablet ? 16 : 12),

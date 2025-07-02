@@ -339,13 +339,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         // Log error nhưng vẫn clear local state
         state = const AuthState(
           isInitialized: true,
-          // successMessage: 'Đăng xuất thành công!',
+          successMessage: 'Đăng xuất thành công!',
         );
       },
       (_) {
         state = const AuthState(
           isInitialized: true,
-          // successMessage: 'Đăng xuất thành công!',
+          successMessage: 'Đăng xuất thành công!',
         );
       },
     );
@@ -444,7 +444,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = state.copyWith(
           isLoading: false,
           isOtpSent: true,
-          // successMessage: 'Mã OTP đã được gửi đến email của bạn!',
+          successMessage: 'Mã OTP đã được gửi đến email của bạn!',
         );
       },
     );
@@ -479,7 +479,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isLoading: false,
           isOtpVerified: true,
           verifyToken: verifyToken,
-          // successMessage: 'Xác thực OTP thành công!',
+          successMessage: 'Xác thực OTP thành công!',
         );
       },
     );
@@ -547,7 +547,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       (_) {
         state = state.copyWith(
           isLoading: false,
-          // successMessage: 'Đặt lại mật khẩu thành công!',
+          successMessage: 'Đặt lại mật khẩu thành công!',
           // Reset OTP states after successful password reset
           isOtpSent: false,
           isOtpVerified: false,

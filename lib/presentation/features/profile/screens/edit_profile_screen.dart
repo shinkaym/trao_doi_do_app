@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -52,8 +53,16 @@ class EditProfileScreen extends HookConsumerWidget {
     final autovalidateMode = useState(AutovalidateMode.disabled);
     final selectedMajor = useState<String?>(null);
 
+    final debouncer = useMemoized(() => Debouncer());
+
     // Watch auth state to get user data
     final authState = ref.watch(authProvider);
+
+    useEffect(() {
+      return () {
+        debouncer.cancel();
+      };
+    }, []);
 
     // Initialize controllers with user data
     useEffect(() {
@@ -68,23 +77,21 @@ class EditProfileScreen extends HookConsumerWidget {
 
     // Listen for auth state changes
     useEffect(() {
-      if (authState.successMessage != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.showSuccessSnackBar(authState.successMessage!);
-          ref.read(authProvider.notifier).clearSuccess();
-          context.pop();
-        });
-      }
-
       if (authState.failure != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.microtask(() {
           context.showErrorSnackBar(authState.failure!.message);
           ref.read(authProvider.notifier).clearError();
         });
       }
 
+      if (authState.successMessage != null) {
+        Future.microtask(() {
+          context.showSuccessSnackBar(authState.successMessage!);
+          ref.read(authProvider.notifier).clearSuccess();
+        });
+      }
       return null;
-    }, [authState.successMessage, authState.failure]);
+    }, [authState.failure, authState.successMessage]);
 
     Future<void> pickImage() async {
       try {
@@ -98,7 +105,7 @@ class EditProfileScreen extends HookConsumerWidget {
           ),
         );
       } catch (e) {
-        context.showErrorSnackBar('Lỗi khi chọn ảnh: $e');
+        context.showErrorSnackBar('Lỗi khi chọn ảnh');
       }
     }
 
@@ -109,76 +116,83 @@ class EditProfileScreen extends HookConsumerWidget {
       if (formKey.currentState!.validate()) {
         isLoading.value = true;
 
-        try {
-          // Track which fields have actually changed
-          String? updatedFullName;
-          String? updatedAddress;
-          String? updatedMajor;
-          String? updatedAvatar;
+        // Track which fields have actually changed
+        String? updatedFullName;
+        String? updatedAddress;
+        String? updatedMajor;
+        String? updatedAvatar;
 
-          final currentUser = authState.user;
-          if (currentUser == null) {
-            context.showErrorSnackBar('Không tìm thấy thông tin người dùng');
-            return;
-          }
-
-          // Check each field for changes
-          final newFullName = fullNameController.text.trim();
-          if (newFullName != currentUser.fullName) {
-            updatedFullName = newFullName;
-          }
-
-          final newAddress = addressController.text.trim();
-          if (newAddress != currentUser.address) {
-            updatedAddress = newAddress;
-          }
-
-          final newMajor = selectedMajor.value ?? '';
-          if (newMajor != currentUser.major) {
-            updatedMajor = newMajor;
-          }
-
-          // Handle avatar update
-          if (selectedImage.value != null) {
-            final bytes = await selectedImage.value!.readAsBytes();
-            updatedAvatar = Base64Utils.encodeImageToDataUri(bytes);
-          }
-
-          // Check if any field has changed
-          final hasChanges =
-              updatedFullName != null ||
-              updatedAddress != null ||
-              updatedMajor != null ||
-              updatedAvatar != null;
-
-          if (!hasChanges) {
-            context.showInfoSnackBar('Không có thay đổi nào để cập nhật');
-            return;
-          }
-
-          // Build change summary for user feedback
-          final List<String> changedFields = [];
-          if (updatedFullName != null) changedFields.add('Họ tên');
-          if (updatedAddress != null) changedFields.add('Địa chỉ');
-          if (updatedMajor != null) changedFields.add('Ngành học');
-          if (updatedAvatar != null) changedFields.add('Ảnh đại diện');
-
-          // Call update with only changed fields
-          await ref
-              .read(authProvider.notifier)
-              .updateProfile(
-                userId: currentUser.id,
-                fullName: updatedFullName,
-                address: updatedAddress,
-                major: updatedMajor,
-                avatar: updatedAvatar,
-              );
-        } catch (e) {
-          context.showErrorSnackBar('Lỗi khi cập nhật: $e');
-        } finally {
-          isLoading.value = false;
+        final currentUser = authState.user;
+        if (currentUser == null) {
+          context.showErrorSnackBar('Không tìm thấy thông tin người dùng');
+          return;
         }
+
+        // Check each field for changes
+        final newFullName = fullNameController.text.trim();
+        if (newFullName != currentUser.fullName) {
+          updatedFullName = newFullName;
+        }
+
+        final newAddress = addressController.text.trim();
+        if (newAddress != currentUser.address) {
+          updatedAddress = newAddress;
+        }
+
+        final newMajor = selectedMajor.value ?? '';
+        if (newMajor != currentUser.major) {
+          updatedMajor = newMajor;
+        }
+
+        // Handle avatar update
+        if (selectedImage.value != null) {
+          final bytes = await selectedImage.value!.readAsBytes();
+          updatedAvatar = Base64Utils.encodeImageToDataUri(bytes);
+        }
+
+        // Check if any field has changed
+        final hasChanges =
+            updatedFullName != null ||
+            updatedAddress != null ||
+            updatedMajor != null ||
+            updatedAvatar != null;
+
+        if (!hasChanges) {
+          context.showInfoSnackBar('Không có thay đổi nào để cập nhật');
+          isLoading.value = false;
+          return;
+        }
+
+        // Build change summary for user feedback
+        final List<String> changedFields = [];
+        if (updatedFullName != null) changedFields.add('Họ tên');
+        if (updatedAddress != null) changedFields.add('Địa chỉ');
+        if (updatedMajor != null) changedFields.add('Ngành học');
+        if (updatedAvatar != null) changedFields.add('Ảnh đại diện');
+
+        // Call update with only changed fields
+        await ref
+            .read(authProvider.notifier)
+            .updateProfile(
+              userId: currentUser.id,
+              fullName: updatedFullName,
+              address: updatedAddress,
+              major: updatedMajor,
+              avatar: updatedAvatar,
+            );
+        isLoading.value = false;
       }
+    }
+
+    Future<void> handleSaveDebounced() async {
+      const duration = Duration(milliseconds: 800);
+
+      debouncer.debounce(
+        duration: duration,
+        onDebounce: () async {
+          await handleSave();
+        },
+      );
     }
 
     final colorScheme = context.colorScheme;
@@ -310,7 +324,8 @@ class EditProfileScreen extends HookConsumerWidget {
                         SizedBox(
                           height: isTablet ? 56 : 50,
                           child: ElevatedButton.icon(
-                            onPressed: isLoading.value ? null : handleSave,
+                            onPressed:
+                                isLoading.value ? null : handleSaveDebounced,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: colorScheme.primary,
                               foregroundColor: colorScheme.onPrimary,

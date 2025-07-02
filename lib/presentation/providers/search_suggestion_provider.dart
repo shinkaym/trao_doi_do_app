@@ -1,5 +1,4 @@
-import 'dart:async';
-
+import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
@@ -36,14 +35,13 @@ class SearchSuggestionsState {
 
 class SearchSuggestionsNotifier extends StateNotifier<SearchSuggestionsState> {
   final GetPostsUseCase _getPostsUseCase;
-  Timer? _debounceTimer;
+  final Debouncer _debouncer;
 
   SearchSuggestionsNotifier(this._getPostsUseCase)
-    : super(SearchSuggestionsState());
+    : _debouncer = Debouncer(),
+      super(SearchSuggestionsState());
 
   void searchWithDebounce(String query) {
-    _debounceTimer?.cancel();
-
     if (query.trim().isEmpty) {
       state = SearchSuggestionsState();
       return;
@@ -51,9 +49,12 @@ class SearchSuggestionsNotifier extends StateNotifier<SearchSuggestionsState> {
 
     state = state.copyWith(isLoading: true, query: query.trim(), failure: null);
 
-    _debounceTimer = Timer(const Duration(milliseconds: 500), () {
-      _performSearch(query.trim());
-    });
+    _debouncer.debounce(
+      duration: const Duration(milliseconds: 500),
+      onDebounce: () {
+        _performSearch(query.trim());
+      },
+    );
   }
 
   Future<void> _performSearch(String query) async {
@@ -64,7 +65,7 @@ class SearchSuggestionsNotifier extends StateNotifier<SearchSuggestionsState> {
 
     final searchQuery = PostsQuery(
       search: query,
-      limit: 5, // Chỉ lấy 5 kết quả gợi ý
+      limit: 7, // Chỉ lấy 5 kết quả gợi ý
       page: 1,
     );
 
@@ -81,13 +82,13 @@ class SearchSuggestionsNotifier extends StateNotifier<SearchSuggestionsState> {
   }
 
   void clear() {
-    _debounceTimer?.cancel();
+    _debouncer.cancel();
     state = SearchSuggestionsState();
   }
 
   @override
   void dispose() {
-    _debounceTimer?.cancel();
+    _debouncer.cancel();
     super.dispose();
   }
 }

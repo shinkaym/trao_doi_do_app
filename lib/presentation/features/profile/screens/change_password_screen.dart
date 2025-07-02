@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
@@ -9,7 +10,6 @@ import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/widgets/app_header.dart';
-import 'package:trao_doi_do_app/presentation/features/auth/widgets/email_info_card.dart';
 import 'package:trao_doi_do_app/presentation/features/auth/widgets/info_card.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/change_password/password_header_widget.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/change_password/security_info_widget.dart';
@@ -81,7 +81,7 @@ final changePasswordStateProvider =
 
 class ChangePasswordStateNotifier extends StateNotifier<ChangePasswordState> {
   final Ref ref;
-  Timer? _countdownTimer;
+  final Debouncer _countdownDebouncer = Debouncer();
 
   ChangePasswordStateNotifier(this.ref) : super(const ChangePasswordState());
 
@@ -119,20 +119,12 @@ class ChangePasswordStateNotifier extends StateNotifier<ChangePasswordState> {
       state = state.copyWith(
         isLoading: false,
         currentStep: ChangePasswordStep.verifyOtp,
-        remainingTime: 300, // 5 phút = 300 giây
+        remainingTime: 300,
         canResend: false,
       );
       _startCountdown();
-
-      if (context.mounted) {
-        context.showSuccessSnackBar('OTP đã được gửi đến $userEmail');
-      }
     } else {
       state = state.copyWith(isLoading: false);
-
-      if (context.mounted) {
-        context.showErrorSnackBar(newAuthState.failure!.message);
-      }
     }
   }
 
@@ -153,10 +145,7 @@ class ChangePasswordStateNotifier extends StateNotifier<ChangePasswordState> {
       } else {
         state = state.copyWith(isLoading: false);
         updateOtp('');
-
-        if (context.mounted) {
-          context.showErrorSnackBar(authState.failure!.message);
-        }
+        // Không hiển thị snackbar ở đây nữa
       }
     }
   }
@@ -179,39 +168,42 @@ class ChangePasswordStateNotifier extends StateNotifier<ChangePasswordState> {
     state = state.copyWith(isLoading: false);
 
     if (authState.failure == null) {
+      // Chỉ handle navigation và logout ở đây
       if (context.mounted) {
-        context.showSuccessSnackBar(
-          'Đổi mật khẩu thành công! Vui lòng đăng nhập lại.',
-        );
-
         await Future.delayed(const Duration(seconds: 2));
 
         if (context.mounted) {
           await ref.read(authProvider.notifier).logout();
-
           context.pop();
         }
       }
-    } else {
-      if (context.mounted) {
-        context.showErrorSnackBar(authState.failure!.message);
-      }
     }
+    // Không hiển thị snackbar ở đây nữa
   }
 
   void _startCountdown() {
-    // Hủy timer cũ nếu có
-    _countdownTimer?.cancel();
+    // Hủy debouncer cũ nếu có
+    _countdownDebouncer.cancel();
 
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (state.remainingTime > 0) {
-        state = state.copyWith(remainingTime: state.remainingTime - 1);
-      } else {
-        state = state.copyWith(canResend: true);
-        timer.cancel();
-        _countdownTimer = null;
-      }
-    });
+    // Bắt đầu countdown
+    _countdownLoop();
+  }
+
+  void _countdownLoop() {
+    if (state.remainingTime > 0) {
+      state = state.copyWith(remainingTime: state.remainingTime - 1);
+
+      // Sử dụng debouncer để delay 1 giây
+      _countdownDebouncer.debounce(
+        duration: const Duration(seconds: 1),
+        onDebounce: () {
+          _countdownLoop(); // Gọi đệ quy
+        },
+      );
+    } else {
+      state = state.copyWith(canResend: true);
+      _countdownDebouncer.cancel();
+    }
   }
 
   void updateOtp(String otp) {
@@ -220,8 +212,8 @@ class ChangePasswordStateNotifier extends StateNotifier<ChangePasswordState> {
 
   void resendOtp(BuildContext context) {
     if (state.canResend) {
-      // Reset timer khi gửi lại
-      _countdownTimer?.cancel();
+      // Reset debouncer khi gửi lại
+      _countdownDebouncer.cancel();
       _sendOtpAgain(context);
     }
   }
@@ -242,23 +234,16 @@ class ChangePasswordStateNotifier extends StateNotifier<ChangePasswordState> {
         canResend: false,
       );
       _startCountdown();
-
-      if (context.mounted) {
-        context.showSuccessSnackBar('OTP đã được gửi lại đến ${state.email}');
-      }
+      // Không hiển thị snackbar ở đây nữa
     } else {
       state = state.copyWith(isLoading: false);
-
-      if (context.mounted) {
-        context.showErrorSnackBar(authState.failure!.message);
-      }
+      // Không hiển thị snackbar ở đây nữa
     }
   }
 
   void goBackToPasswordInput() {
-    // Hủy timer khi quay lại
-    _countdownTimer?.cancel();
-    _countdownTimer = null;
+    // Hủy debouncer khi quay lại
+    _countdownDebouncer.cancel();
 
     state = state.copyWith(
       currentStep: ChangePasswordStep.enterPasswords,
@@ -272,9 +257,8 @@ class ChangePasswordStateNotifier extends StateNotifier<ChangePasswordState> {
   }
 
   void reset() {
-    // Hủy timer khi reset
-    _countdownTimer?.cancel();
-    _countdownTimer = null;
+    // Hủy debouncer khi reset
+    _countdownDebouncer.cancel();
 
     state = const ChangePasswordState();
     ref.read(authProvider.notifier).resetOtpStates();
@@ -282,8 +266,8 @@ class ChangePasswordStateNotifier extends StateNotifier<ChangePasswordState> {
 
   @override
   void dispose() {
-    // Hủy timer khi dispose
-    _countdownTimer?.cancel();
+    // Hủy debouncer khi dispose
+    _countdownDebouncer.cancel();
     super.dispose();
   }
 
@@ -326,7 +310,15 @@ class ChangePasswordScreen extends HookConsumerWidget {
     useEffect(() {
       if (authState.failure != null) {
         Future.microtask(() {
+          context.showErrorSnackBar(authState.failure!.message);
           ref.read(authProvider.notifier).clearError();
+        });
+      }
+
+      if (authState.successMessage != null) {
+        Future.microtask(() {
+          context.showSuccessSnackBar(authState.successMessage!);
+          ref.read(authProvider.notifier).clearSuccess();
         });
       }
       return null;
@@ -683,11 +675,6 @@ class _OtpStepContent extends HookConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(height: isTablet ? 40 : 32),
-
-        // Email info
-        EmailInfoCard(email: changePasswordState.email),
-
         SizedBox(height: isTablet ? 24 : 20),
 
         // Thông báo về mật khẩu mới

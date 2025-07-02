@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
@@ -73,7 +74,7 @@ final forgotPasswordStateProvider =
 
 class ForgotPasswordStateNotifier extends StateNotifier<ForgotPasswordState> {
   final Ref ref;
-  Timer? _countdownTimer;
+  final Debouncer _debouncer = Debouncer();
 
   ForgotPasswordStateNotifier(this.ref) : super(const ForgotPasswordState());
 
@@ -95,16 +96,8 @@ class ForgotPasswordStateNotifier extends StateNotifier<ForgotPasswordState> {
         canResend: false,
       );
       _startCountdown();
-
-      if (context.mounted) {
-        context.showSuccessSnackBar('OTP đã được gửi đến $email');
-      }
     } else {
       state = state.copyWith(isLoading: false);
-
-      if (context.mounted) {
-        context.showErrorSnackBar(authState.failure!.message);
-      }
     }
   }
 
@@ -124,17 +117,9 @@ class ForgotPasswordStateNotifier extends StateNotifier<ForgotPasswordState> {
           isLoading: false,
           currentStep: ForgotPasswordStep.enterNewPassword,
         );
-
-        if (context.mounted) {
-          context.showSuccessSnackBar('OTP xác thực thành công!');
-        }
       } else {
         state = state.copyWith(isLoading: false);
         updateOtp('');
-
-        if (context.mounted) {
-          context.showErrorSnackBar(authState.failure!.message);
-        }
       }
     }
   }
@@ -152,9 +137,6 @@ class ForgotPasswordStateNotifier extends StateNotifier<ForgotPasswordState> {
 
     if (verifyToken == null) {
       state = state.copyWith(isLoading: false);
-      if (context.mounted) {
-        context.showErrorSnackBar('Token xác thực không hợp lệ');
-      }
       return;
     }
 
@@ -173,32 +155,41 @@ class ForgotPasswordStateNotifier extends StateNotifier<ForgotPasswordState> {
 
     if (newAuthState.failure == null) {
       if (context.mounted) {
-        context.showSuccessSnackBar('Đặt lại mật khẩu thành công!');
         await Future.delayed(const Duration(seconds: 1));
         if (context.mounted) {
           context.goNamed(RouteNames.login, extra: {'email': state.email});
         }
       }
-    } else {
-      if (context.mounted) {
-        context.showErrorSnackBar(newAuthState.failure!.message);
-      }
     }
   }
 
   void _startCountdown() {
-    // Hủy timer cũ nếu có
-    _countdownTimer?.cancel();
+    // Hủy debouncer cũ nếu có
+    _debouncer.cancel();
 
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (state.remainingTime > 0) {
-        state = state.copyWith(remainingTime: state.remainingTime - 1);
-      } else {
-        state = state.copyWith(canResend: true);
-        timer.cancel();
-        _countdownTimer = null;
-      }
-    });
+    // Khởi tạo lại state
+    state = state.copyWith(remainingTime: 300, canResend: false);
+
+    // Sử dụng debouncer để đếm ngược
+    _countdownRecursive();
+  }
+
+  void _countdownRecursive() {
+    if (state.remainingTime > 0) {
+      _debouncer.debounce(
+        duration: const Duration(seconds: 1),
+        onDebounce: () {
+          if (state.remainingTime > 0) {
+            state = state.copyWith(remainingTime: state.remainingTime - 1);
+            _countdownRecursive(); // Tiếp tục đếm ngược
+          } else {
+            state = state.copyWith(canResend: true);
+          }
+        },
+      );
+    } else {
+      state = state.copyWith(canResend: true);
+    }
   }
 
   void updateOtp(String otp) {
@@ -207,16 +198,15 @@ class ForgotPasswordStateNotifier extends StateNotifier<ForgotPasswordState> {
 
   void resendOtp(BuildContext context) {
     if (state.canResend) {
-      // Reset timer khi gửi lại
-      _countdownTimer?.cancel();
+      // Reset debouncer khi gửi lại
+      _debouncer.cancel();
       sendOtp(state.email, context);
     }
   }
 
   void goBackToEmail() {
-    // Hủy timer khi quay lại
-    _countdownTimer?.cancel();
-    _countdownTimer = null;
+    // Hủy debouncer khi quay lại
+    _debouncer.cancel();
 
     state = state.copyWith(
       currentStep: ForgotPasswordStep.enterEmail,
@@ -230,9 +220,8 @@ class ForgotPasswordStateNotifier extends StateNotifier<ForgotPasswordState> {
   }
 
   void reset() {
-    // Hủy timer khi reset
-    _countdownTimer?.cancel();
-    _countdownTimer = null;
+    // Hủy debouncer khi reset
+    _debouncer.cancel();
 
     state = const ForgotPasswordState();
     ref.read(authProvider.notifier).resetOtpStates();
@@ -240,8 +229,8 @@ class ForgotPasswordStateNotifier extends StateNotifier<ForgotPasswordState> {
 
   @override
   void dispose() {
-    // Hủy timer khi dispose
-    _countdownTimer?.cancel();
+    // Hủy debouncer khi dispose
+    _debouncer.cancel();
     super.dispose();
   }
 
@@ -284,7 +273,15 @@ class ForgotPasswordScreen extends HookConsumerWidget {
     useEffect(() {
       if (authState.failure != null) {
         Future.microtask(() {
+          context.showErrorSnackBar(authState.failure!.message);
           ref.read(authProvider.notifier).clearError();
+        });
+      }
+
+      if (authState.successMessage != null) {
+        Future.microtask(() {
+          context.showSuccessSnackBar(authState.successMessage!);
+          ref.read(authProvider.notifier).clearSuccess();
         });
       }
       return null;

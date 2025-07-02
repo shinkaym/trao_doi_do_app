@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/message.dart';
@@ -70,9 +70,10 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
   final MarkAllMessagesReadUseCase _markAllMessagesReadUseCase;
 
   // Debouncing and optimization
-  Timer? _loadMoreTimer;
+  final Debouncer _loadMoreDebouncer = Debouncer();
   static const Duration _loadMoreDebounce = Duration(milliseconds: 300);
   static const Duration _minTimeBetweenLoads = Duration(milliseconds: 500);
+  final Debouncer _searchDebouncer = Debouncer();
 
   MessagesListNotifier(
     this._getMessagesUseCase,
@@ -82,7 +83,8 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
 
   @override
   void dispose() {
-    _loadMoreTimer?.cancel();
+    _loadMoreDebouncer.cancel();
+    _searchDebouncer.cancel();
     super.dispose();
   }
 
@@ -252,20 +254,25 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
   }
 
   Future<void> searchMessages(String? search) async {
-    final newQuery = state.query.copyWith(search: search, page: 1);
-    await loadMessages(newQuery: newQuery, refresh: true);
+    // Debounce search để tránh quá nhiều API calls
+    _searchDebouncer.debounce(
+      duration: const Duration(milliseconds: 500),
+      onDebounce: () async {
+        final newQuery = state.query.copyWith(search: search, page: 1);
+        await loadMessages(newQuery: newQuery, refresh: true);
+      },
+    );
   }
 
   Future<void> loadMore() async {
-    // Cancel any pending load more timer
-    _loadMoreTimer?.cancel();
-
-    // Debounce load more requests
-    _loadMoreTimer = Timer(_loadMoreDebounce, () {
-      if (mounted && state.canLoadMore) {
-        loadMessages(isLoadMore: true);
-      }
-    });
+    _loadMoreDebouncer.debounce(
+      duration: _loadMoreDebounce,
+      onDebounce: () {
+        if (mounted && state.canLoadMore) {
+          loadMessages(isLoadMore: true);
+        }
+      },
+    );
   }
 
   Future<void> refresh() async {
