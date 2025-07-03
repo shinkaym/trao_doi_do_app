@@ -26,6 +26,10 @@ class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
       _remoteDataSource.chatNotificationResponseStream;
 
   @override
+  Stream<WebSocketResponse> get notificationResponseStream =>
+      _remoteDataSource.notificationResponseStream;
+
+  @override
   Future<void> connectToChat(String? token) =>
       _remoteDataSource.connectToChat(token);
 
@@ -34,8 +38,11 @@ class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
       _remoteDataSource.connectToChatNotification(token);
 
   @override
-  Future<void> connectBoth(String? token) =>
-      _remoteDataSource.connectBoth(token);
+  Future<void> connectToNotification(String? token) =>
+      _remoteDataSource.connectToNotification(token);
+
+  @override
+  Future<void> connectAll(String? token) => _remoteDataSource.connectAll(token);
 
   @override
   WebSocketConnectionState get chatConnectionState =>
@@ -44,6 +51,10 @@ class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
   @override
   WebSocketConnectionState get chatNotificationConnectionState =>
       _remoteDataSource.chatNotificationConnectionState;
+
+  @override
+  WebSocketConnectionState get notificationConnectionState =>
+      _remoteDataSource.notificationConnectionState;
 
   @override
   void sendMessage({
@@ -83,11 +94,23 @@ class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
   }
 
   @override
+  void sendNotificationEvent(String event, Map<String, dynamic> data) {
+    final wsEvent = WebSocketEvent(
+      event: WebSocketEventType.fromString(event) ?? WebSocketEventType.ping,
+      data: data,
+    );
+    _remoteDataSource.sendNotificationEvent(wsEvent);
+  }
+
+  @override
   void disconnectChat() => _remoteDataSource.disconnectChat();
 
   @override
   void disconnectChatNotification() =>
       _remoteDataSource.disconnectChatNotification();
+
+  @override
+  void disconnectNotification() => _remoteDataSource.disconnectNotification();
 
   @override
   void disconnectAll() => _remoteDataSource.disconnectAll();

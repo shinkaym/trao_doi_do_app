@@ -13,6 +13,7 @@ import 'package:trao_doi_do_app/domain/usecases/websocket_usecases.dart';
 import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/chat_websocket_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/chat_notification_websocket_provider.dart';
+import 'package:trao_doi_do_app/presentation/providers/notification_websocket_provider.dart';
 import '../modules/core_module.dart';
 import '../modules/auth_module.dart';
 
@@ -80,6 +81,21 @@ final chatNotificationWebSocketProvider = StateNotifierProvider<
   return notifier;
 });
 
+// Notification WebSocket Provider
+final notificationWebSocketProvider = StateNotifierProvider<
+  NotificationWebSocketNotifier,
+  NotificationWebSocketState
+>((ref) {
+  final repository = ref.watch(multiWebSocketRepositoryProvider);
+  final notifier = NotificationWebSocketNotifier(repository);
+
+  ref.onDispose(() {
+    notifier.disconnect();
+  });
+
+  return notifier;
+});
+
 // Auto Connection Management Provider
 final multiWebSocketConnectionProvider = Provider.autoDispose((ref) {
   ref.keepAlive();
@@ -90,24 +106,34 @@ final multiWebSocketConnectionProvider = Provider.autoDispose((ref) {
     final chatNotificationNotifier = ref.read(
       chatNotificationWebSocketProvider.notifier,
     );
+    final notificationNotifier = ref.read(
+      notificationWebSocketProvider.notifier,
+    );
 
     // Auto connect when user logs in
     if (next.isLoggedIn &&
         next.user != null &&
         (previous?.isLoggedIn != true)) {
-      _autoConnectBoth(ref, chatNotifier, chatNotificationNotifier);
+      _autoConnectAll(
+        ref,
+        chatNotifier,
+        chatNotificationNotifier,
+        notificationNotifier,
+      );
     }
 
     // Auto disconnect when user logs out
     if (!next.isLoggedIn && (previous?.isLoggedIn == true)) {
       chatNotifier.disconnect();
       chatNotificationNotifier.disconnect();
+      notificationNotifier.disconnect();
     }
   });
 
   return {
     'chat': ref.read(chatWebSocketProvider.notifier),
     'chatNotification': ref.read(chatNotificationWebSocketProvider.notifier),
+    'notification': ref.read(notificationWebSocketProvider.notifier),
   };
 });
 
@@ -210,10 +236,11 @@ final getWebSocketConnectionStreamUseCaseProvider =
 // =============================================================================
 
 /// Helper function for new multi-websocket auto-connection
-void _autoConnectBoth(
+void _autoConnectAll(
   ProviderRef ref,
   ChatWebSocketNotifier chatNotifier,
   ChatNotificationWebSocketNotifier chatNotificationNotifier,
+  NotificationWebSocketNotifier notificationNotifier,
 ) {
   ref
       .read(authLocalDataSourceProvider)
@@ -222,6 +249,7 @@ void _autoConnectBoth(
         if (token != null) {
           chatNotifier.connect(token);
           chatNotificationNotifier.connect(token);
+          notificationNotifier.connect(token);
         }
       })
       .catchError((error) {

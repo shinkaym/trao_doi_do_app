@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:trao_doi_do_app/core/network/websocket_client.dart';
 import 'package:trao_doi_do_app/domain/entities/response/websocket_response.dart';
 
-enum WebSocketChannel { chat, chatNotification }
+enum WebSocketChannel { chat, chatNotification, notification }
 
 class MultiWebSocketManager {
   final Map<WebSocketChannel, WebSocketClient> _clients = {};
@@ -18,16 +18,19 @@ class MultiWebSocketManager {
   Stream<WebSocketConnectionState> get connectionStream =>
       _connectionController.stream;
 
-  // ✅ Updated filtered streams với channel source
-  Stream<WebSocketResponse> get chatResponseStream => responseStream
-      .where((response) => response.sourceChannel == 'chat');
+  Stream<WebSocketResponse> get chatResponseStream =>
+      responseStream.where((response) => response.sourceChannel == 'chat');
 
-  Stream<WebSocketResponse> get chatNotificationResponseStream => responseStream
-      .where((response) => response.sourceChannel == 'chat-noti');
+  Stream<WebSocketResponse> get chatNotificationResponseStream =>
+      responseStream.where((response) => response.sourceChannel == 'chat-noti');
+
+  Stream<WebSocketResponse> get notificationResponseStream =>
+      responseStream.where((response) => response.sourceChannel == 'noti');
 
   MultiWebSocketManager() {
     _clients[WebSocketChannel.chat] = WebSocketClient();
     _clients[WebSocketChannel.chatNotification] = WebSocketClient();
+    _clients[WebSocketChannel.notification] = WebSocketClient();
   }
 
   Future<void> connectToChat(String? token) async {
@@ -40,6 +43,10 @@ class MultiWebSocketManager {
       token,
       '/chat-noti',
     );
+  }
+
+  Future<void> connectToNotification(String? token) async {
+    await _connectChannel(WebSocketChannel.notification, token, '/noti');
   }
 
   Future<void> _connectChannel(
@@ -62,15 +69,28 @@ class MultiWebSocketManager {
     _messageSubscriptions[channel]?.cancel();
     _connectionSubscriptions[channel]?.cancel();
 
-    // ✅ Message subscription với channel tagging
+    // ✅ Message subscription with channel tagging
     _messageSubscriptions[channel] = client.messageStream.listen((data) {
       final response = WebSocketResponse.fromJson(data);
-      
-      // ✅ Tag response với source channel
+
+      // ✅ Tag response with source channel
+      String sourceChannel;
+      switch (channel) {
+        case WebSocketChannel.chat:
+          sourceChannel = 'chat';
+          break;
+        case WebSocketChannel.chatNotification:
+          sourceChannel = 'chat-noti';
+          break;
+        case WebSocketChannel.notification:
+          sourceChannel = 'noti';
+          break;
+      }
+
       final taggedResponse = response.copyWithSourceChannel(
-        sourceChannel: channel == WebSocketChannel.chat ? 'chat' : 'chat-noti'
+        sourceChannel: sourceChannel,
       );
-      
+
       _responseController.add(taggedResponse);
     }, onError: (error) => {});
 
@@ -88,6 +108,10 @@ class MultiWebSocketManager {
     _clients[WebSocketChannel.chatNotification]?.sendEvent(event, data);
   }
 
+  void sendNotificationEvent(String event, Map<String, dynamic> data) {
+    _clients[WebSocketChannel.notification]?.sendEvent(event, data);
+  }
+
   WebSocketConnectionState getChatConnectionState() {
     return _clients[WebSocketChannel.chat]?.currentState ??
         WebSocketConnectionState.disconnected;
@@ -98,12 +122,21 @@ class MultiWebSocketManager {
         WebSocketConnectionState.disconnected;
   }
 
+  WebSocketConnectionState getNotificationConnectionState() {
+    return _clients[WebSocketChannel.notification]?.currentState ??
+        WebSocketConnectionState.disconnected;
+  }
+
   void disconnectChat() {
     _clients[WebSocketChannel.chat]?.disconnect();
   }
 
   void disconnectChatNotification() {
     _clients[WebSocketChannel.chatNotification]?.disconnect();
+  }
+
+  void disconnectNotification() {
+    _clients[WebSocketChannel.notification]?.disconnect();
   }
 
   void disconnectAll() {
