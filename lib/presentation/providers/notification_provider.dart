@@ -1,15 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/notification.dart' as entities;
+import 'package:trao_doi_do_app/domain/entities/notification_socket.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_notifications_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/mark_all_notifications_read_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/mark_notification_read_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/notification_query.dart';
+import 'package:trao_doi_do_app/presentation/providers/notification_websocket_provider.dart';
 
 class NotificationState {
   final bool isLoading;
   final bool isLoadingMore;
-  final List<entities.Notification> notifications;
+  final List<entities.Notification> apiNotifications;
+  final List<NotificationSocket> realtimeNotifications;
   final int currentPage;
   final int totalPage;
   final int unreadCount;
@@ -21,7 +25,8 @@ class NotificationState {
   NotificationState({
     this.isLoading = false,
     this.isLoadingMore = false,
-    this.notifications = const [],
+    this.apiNotifications = const [],
+    this.realtimeNotifications = const [],
     this.currentPage = 1,
     this.totalPage = 1,
     this.unreadCount = 0,
@@ -31,10 +36,25 @@ class NotificationState {
     this.successMessage,
   });
 
+  List<dynamic> get allNotifications {
+    return [...realtimeNotifications, ...apiNotifications]..sort((a, b) {
+      final aDate =
+          a is NotificationSocket
+              ? a.createdAt
+              : DateTime.parse((a as entities.Notification).createdAt);
+      final bDate =
+          b is NotificationSocket
+              ? b.createdAt
+              : DateTime.parse((b as entities.Notification).createdAt);
+      return bDate.compareTo(aDate);
+    });
+  }
+
   NotificationState copyWith({
     bool? isLoading,
     bool? isLoadingMore,
-    List<entities.Notification>? notifications,
+    List<entities.Notification>? apiNotifications,
+    List<NotificationSocket>? realtimeNotifications,
     int? currentPage,
     int? totalPage,
     int? unreadCount,
@@ -46,7 +66,9 @@ class NotificationState {
     return NotificationState(
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      notifications: notifications ?? this.notifications,
+      apiNotifications: apiNotifications ?? this.apiNotifications,
+      realtimeNotifications:
+          realtimeNotifications ?? this.realtimeNotifications,
       currentPage: currentPage ?? this.currentPage,
       totalPage: totalPage ?? this.totalPage,
       unreadCount: unreadCount ?? this.unreadCount,
@@ -62,12 +84,48 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
   final GetNotificationsUseCase _getNotificationsUseCase;
   final MarkNotificationReadUseCase _markNotificationReadUseCase;
   final MarkAllNotificationsReadUseCase _markAllNotificationsReadUseCase;
+  final Ref _ref;
 
   NotificationNotifier(
     this._getNotificationsUseCase,
     this._markNotificationReadUseCase,
     this._markAllNotificationsReadUseCase,
-  ) : super(NotificationState());
+    this._ref,
+  ) : super(NotificationState()) {
+    _setupWebSocketListener();
+  }
+
+  void _setupWebSocketListener() {
+    _ref.listen<NotificationWebSocketState>(notificationWebSocketProvider, (
+      _,
+      wsState,
+    ) {
+      if (wsState.notifications.isNotEmpty) {
+        final newRealtimeNotifs =
+            wsState.notifications
+                .where(
+                  (wsNotif) =>
+                      !state.realtimeNotifications.any(
+                        (n) => n.id == wsNotif.id,
+                      ) &&
+                      !state.apiNotifications.any((n) => n.id == wsNotif.id),
+                )
+                .toList();
+
+        if (newRealtimeNotifs.isNotEmpty) {
+          final newUnreadCount =
+              newRealtimeNotifs.where((n) => !n.isRead).length;
+          state = state.copyWith(
+            realtimeNotifications: [
+              ...state.realtimeNotifications,
+              ...newRealtimeNotifs,
+            ],
+            unreadCount: state.unreadCount + newUnreadCount,
+          );
+        }
+      }
+    });
+  }
 
   Future<void> loadNotifications({
     NotificationQuery? newQuery,
@@ -77,7 +135,7 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     if (state.isLoading || state.isLoadingMore) return;
 
     final query = newQuery ?? state.query;
-    final isFirstLoad = refresh || state.notifications.isEmpty;
+    final isFirstLoad = refresh || state.apiNotifications.isEmpty;
 
     if (isFirstLoad) {
       state = state.copyWith(
@@ -87,7 +145,6 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
       );
     } else if (isLoadMore) {
       if (!state.hasMoreData || state.currentPage >= state.totalPage) return;
-
       state = state.copyWith(
         isLoadingMore: true,
         failure: null,
@@ -111,106 +168,124 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
           newNotifications = notificationsResult.notifications;
         } else if (isLoadMore) {
           newNotifications = [
-            ...state.notifications,
+            ...state.apiNotifications,
             ...notificationsResult.notifications,
           ];
         } else {
-          newNotifications = state.notifications;
+          newNotifications = state.apiNotifications;
         }
-
-        final actualTotalPage = notificationsResult.totalPage;
-        final actualCurrentPage = actualTotalPage > 0 ? state.query.page : 1;
-        final actualHasMoreData =
-            actualTotalPage > 0 && actualCurrentPage < actualTotalPage;
 
         state = state.copyWith(
           isLoading: false,
           isLoadingMore: false,
-          notifications: newNotifications,
-          currentPage: actualCurrentPage,
-          totalPage: actualTotalPage,
+          apiNotifications: newNotifications,
+          currentPage: notificationsResult.totalPage > 0 ? state.query.page : 1,
+          totalPage: notificationsResult.totalPage,
           unreadCount: notificationsResult.unreadCount,
-          hasMoreData: actualHasMoreData,
+          hasMoreData:
+              notificationsResult.totalPage > 0 &&
+              state.query.page < notificationsResult.totalPage,
         );
+
+        // Clean up realtime notifications that are now in API
+        if (refresh) {
+          final apiIds = newNotifications.map((n) => n.id).toSet();
+          final remainingRealtime =
+              state.realtimeNotifications
+                  .where((n) => !apiIds.contains(n.id))
+                  .toList();
+
+          if (remainingRealtime.length != state.realtimeNotifications.length) {
+            state = state.copyWith(realtimeNotifications: remainingRealtime);
+          }
+        }
       },
     );
   }
 
-  Future<void> markAsRead(int notificationID) async {
-    final result = await _markNotificationReadUseCase(notificationID);
-
-    result.fold((failure) => state = state.copyWith(failure: failure), (_) {
-      // Cập nhật trạng thái đã đọc cho notification
-      final updatedNotifications =
-          state.notifications.map((notification) {
-            if (notification.id == notificationID && !notification.isRead) {
-              return entities.Notification(
-                id: notification.id,
-                content: notification.content,
-                createdAt: notification.createdAt,
-                isRead: true, // Đánh dấu đã đọc
-                receiverID: notification.receiverID,
-                receiverName: notification.receiverName,
-                senderID: notification.senderID,
-                senderName: notification.senderName,
-                targetID: notification.targetID,
-                targetType: notification.targetType,
-                type: notification.type,
-              );
-            }
-            return notification;
-          }).toList();
-
-      // Giảm số lượng thông báo chưa đọc
-      final newUnreadCount = state.unreadCount > 0 ? state.unreadCount - 1 : 0;
+  Future<void> markAsRead(int notificationId) async {
+    // Check in realtime notifications first
+    final realtimeIndex = state.realtimeNotifications.indexWhere(
+      (n) => n.id == notificationId,
+    );
+    if (realtimeIndex != -1) {
+      final updatedRealtime = List<NotificationSocket>.from(
+        state.realtimeNotifications,
+      );
+      updatedRealtime[realtimeIndex] = updatedRealtime[realtimeIndex].copyWith(
+        isRead: true,
+      );
 
       state = state.copyWith(
-        notifications: updatedNotifications,
-        unreadCount: newUnreadCount,
-        // successMessage: 'Đã đánh dấu thông báo đã đọc',
+        realtimeNotifications: updatedRealtime,
+        unreadCount: state.unreadCount - 1,
       );
-    });
+    }
+
+    // Check in API notifications
+    final apiIndex = state.apiNotifications.indexWhere(
+      (n) => n.id == notificationId,
+    );
+    if (apiIndex != -1) {
+      final updatedApi = List<entities.Notification>.from(
+        state.apiNotifications,
+      );
+      updatedApi[apiIndex] = updatedApi[apiIndex].copyWith(isRead: true);
+
+      state = state.copyWith(
+        apiNotifications: updatedApi,
+        unreadCount: state.unreadCount - 1,
+      );
+    }
+
+    // Call API to mark as read
+    final result = await _markNotificationReadUseCase(notificationId);
+    result.fold(
+      (failure) => state = state.copyWith(failure: failure),
+      (_) => loadUnreadCount(),
+    );
   }
 
   Future<void> markAllAsRead() async {
+    // Mark all realtime as read
+    final updatedRealtime =
+        state.realtimeNotifications
+            .map((n) => n.copyWith(isRead: true))
+            .toList();
+
+    // Mark all API as read
+    final updatedApi =
+        state.apiNotifications.map((n) => n.copyWith(isRead: true)).toList();
+
+    state = state.copyWith(
+      realtimeNotifications: updatedRealtime,
+      apiNotifications: updatedApi,
+      unreadCount: 0,
+    );
+
+    // Call API
     final result = await _markAllNotificationsReadUseCase();
-
-    result.fold((failure) => state = state.copyWith(failure: failure), (_) {
-      // Cập nhật tất cả notifications thành đã đọc
-      final updatedNotifications =
-          state.notifications.map((notification) {
-            return entities.Notification(
-              id: notification.id,
-              content: notification.content,
-              createdAt: notification.createdAt,
-              isRead: true, // Đánh dấu tất cả đã đọc
-              receiverID: notification.receiverID,
-              receiverName: notification.receiverName,
-              senderID: notification.senderID,
-              senderName: notification.senderName,
-              targetID: notification.targetID,
-              targetType: notification.targetType,
-              type: notification.type,
-            );
-          }).toList();
-
-      state = state.copyWith(
-        notifications: updatedNotifications,
-        unreadCount: 0, // Reset về 0
-        // successMessage: 'Đã đánh dấu tất cả thông báo đã đọc',
-      );
-    });
+    result.fold(
+      (failure) => state = state.copyWith(failure: failure),
+      (_) => loadUnreadCount(),
+    );
   }
 
-  void loadMore() {
-    loadNotifications(isLoadMore: true);
+  Future<void> loadUnreadCount() async {
+    final result = await _getNotificationsUseCase(
+      NotificationQuery(page: 1, limit: 1),
+    );
+    result.fold(
+      (failure) => state = state.copyWith(failure: failure),
+      (result) => state = state.copyWith(unreadCount: result.unreadCount),
+    );
   }
 
-  void refresh() {
-    loadNotifications(refresh: true);
+  void loadMore() => loadNotifications(isLoadMore: true);
+  Future<void> refresh() async {
+    await loadNotifications(refresh: true);
+    await loadUnreadCount();
   }
 
-  void clearSuccessMessage() {
-    state = state.copyWith(successMessage: null);
-  }
+  void clearSuccessMessage() => state = state.copyWith(successMessage: null);
 }

@@ -1,4 +1,5 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/providers/appointment_detail_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/providers/appointment_provider.dart';
@@ -189,18 +190,12 @@ final unreadCountProvider =
       return UnreadCountNotifier(getUnreadCountUseCase);
     });
 
-final postProvider = StateNotifierProvider<PostNotifier, PostState>(
-  (ref) {
-    final createPostUseCase = ref.watch(createPostUseCaseProvider);
-    final updatePostUseCase = ref.watch(updatePostUseCaseProvider);
-    final deletePostUseCase = ref.watch(deletePostUseCaseProvider);
-    return PostNotifier(
-      createPostUseCase,
-      updatePostUseCase,
-      deletePostUseCase,
-    );
-  },
-);
+final postProvider = StateNotifierProvider<PostNotifier, PostState>((ref) {
+  final createPostUseCase = ref.watch(createPostUseCaseProvider);
+  final updatePostUseCase = ref.watch(updatePostUseCaseProvider);
+  final deletePostUseCase = ref.watch(deletePostUseCaseProvider);
+  return PostNotifier(createPostUseCase, updatePostUseCase, deletePostUseCase);
+});
 
 final postsListProvider =
     StateNotifierProvider<PostsListNotifier, PostsListState>((ref) {
@@ -342,20 +337,17 @@ final settingsProvider = StateNotifierProvider<SettingsNotifier, SettingsState>(
   },
 );
 
-final notificationProvider = StateNotifierProvider.autoDispose<
-  NotificationNotifier,
-  NotificationState
->((ref) {
-  final getNotificationsUseCase = ref.watch(getNotificationsUseCaseProvider);
-  final markNotificationReadUseCase = ref.watch(
-    markNotificationReadUseCaseProvider,
-  );
-  final markAllNotificationsReadUseCase = ref.watch(
-    markAllNotificationsReadUseCaseProvider,
-  );
-  return NotificationNotifier(
-    getNotificationsUseCase,
-    markNotificationReadUseCase,
-    markAllNotificationsReadUseCase,
-  );
+final notificationProvider =
+    StateNotifierProvider<NotificationNotifier, NotificationState>((ref) {
+      return NotificationNotifier(
+        ref.read(getNotificationsUseCaseProvider),
+        ref.read(markNotificationReadUseCaseProvider),
+        ref.read(markAllNotificationsReadUseCaseProvider),
+        ref,
+      );
+    });
+
+final unreadNotificationCountProvider = Provider<int>((ref) {
+  final notificationState = ref.watch(notificationProvider);
+  return notificationState.unreadCount;
 });

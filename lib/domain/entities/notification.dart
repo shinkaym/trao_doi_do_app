@@ -27,6 +27,34 @@ class Notification extends Equatable {
     required this.type,
   });
 
+  Notification copyWith({
+    int? id,
+    String? content,
+    String? createdAt,
+    bool? isRead,
+    int? receiverID,
+    String? receiverName,
+    int? senderID,
+    String? senderName,
+    int? targetID,
+    String? targetType,
+    String? type,
+  }) {
+    return Notification(
+      id: id ?? this.id,
+      content: content ?? this.content,
+      createdAt: createdAt ?? this.createdAt,
+      isRead: isRead ?? this.isRead,
+      receiverID: receiverID ?? this.receiverID,
+      receiverName: receiverName ?? this.receiverName,
+      senderID: senderID ?? this.senderID,
+      senderName: senderName ?? this.senderName,
+      targetID: targetID ?? this.targetID,
+      targetType: targetType ?? this.targetType,
+      type: type ?? this.type,
+    );
+  }
+
   @override
   List<Object?> get props => [
     id,

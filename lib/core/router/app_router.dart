@@ -28,6 +28,7 @@ import 'package:trao_doi_do_app/presentation/features/profile/screens/profile_sc
 import 'package:trao_doi_do_app/presentation/features/ranking/screens/ranking_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/screens/appointments_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/splash/screens/splash_screen.dart';
+import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 import 'package:trao_doi_do_app/presentation/widgets/scaffold_with_navbar.dart';
 
 // Create a separate provider for router state to prevent circular dependencies
@@ -82,6 +83,29 @@ class RouterState {
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
+  ref.listen<AuthState>(authProvider, (previous, next) {
+    if (next.isLoggedIn && (previous == null || !previous.isLoggedIn)) {
+      // Load thông báo từ API và unread count
+      ref.read(notificationProvider.notifier).loadNotifications(refresh: true);
+      ref.read(notificationProvider.notifier).loadUnreadCount();
+
+      // Kết nối WebSocket
+      final getAccessTokenUseCase = ref.read(getAccessTokenUseCaseProvider);
+      getAccessTokenUseCase.execute().then((result) {
+        result.fold(
+          (failure) => null,
+          (token) =>
+              ref.read(notificationWebSocketProvider.notifier).connect(token),
+        );
+      });
+    } else if (!next.isLoggedIn && previous != null && previous.isLoggedIn) {
+      // Ngắt kết nối WebSocket khi logout
+      ref.read(notificationWebSocketProvider.notifier).disconnect();
+      // Reset notification state
+      ref.invalidate(notificationProvider);
+    }
+  });
+
   return GoRouter(
     initialLocation: RouteConstants.splash,
     errorBuilder: (context, state) => const NotFoundScreen(),

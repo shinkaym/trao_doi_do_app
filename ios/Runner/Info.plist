@@ -59,5 +59,10 @@
 	<!-- Location permission (nếu cần) -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Ứng dụng cần quyền truy cập vị trí để tìm kiếm sản phẩm xung quanh.</string>
+
+    <key>UIBackgroundModes</key>
+<array>
+  <string>audio</string>
+</array>
 </dict>
 </plist>

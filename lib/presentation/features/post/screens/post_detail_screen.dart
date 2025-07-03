@@ -31,7 +31,6 @@ class PostDetailScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userInterestId = useState<int?>(null);
-    debugPrint('Building with postSlug: $postSlug, postId: $postId');
 
     // Hooks
     final pageController = usePageController();
@@ -131,7 +130,36 @@ class PostDetailScreen extends HookConsumerWidget {
       return null;
     }, [postDetailState.post, postDetailState.isLoading]);
 
-  
+    useEffect(() {
+      final interestState = ref.read(interestProvider);
+
+      if (interestState.result?.message != null) {
+        Future.microtask(() {
+          if (context.mounted) {
+            HapticFeedback.lightImpact();
+            context.showSuccessSnackBar(interestState.result!.message);
+
+            // Refresh post detail
+            final post = postDetailState.post;
+            final slugToUse = post?.slug ?? postSlug;
+            if (slugToUse != null) {
+              ref
+                  .read(postDetailProvider.notifier)
+                  .getPostDetail(slug: slugToUse);
+            }
+            ref.read(interestProvider.notifier).clearMessages();
+          }
+        });
+      } else if (interestState.failure != null) {
+        Future.microtask(() {
+          if (context.mounted) {
+            context.showErrorSnackBar(interestState.failure!.message);
+            ref.read(interestProvider.notifier).clearMessages();
+          }
+        });
+      }
+      return null;
+    }, [interestState.result, interestState.failure]);
 
     void handleShare() async {
       if (!context.mounted) return;
@@ -181,17 +209,10 @@ class PostDetailScreen extends HookConsumerWidget {
       final post = postDetailState.post;
       final currentUser = authState.user;
 
-      if (post == null || currentUser == null) {
-        if (context.mounted) {
-          context.showErrorSnackBar('Vui lòng đăng nhập để quan tâm bài đăng');
-        }
-        return;
-      }
-
       if (!interestState.isLoading) {
         final userInterested = PostDetailHelpers.isUserInterested(
-          post.interests,
-          currentUser.id,
+          post!.interests,
+          currentUser!.id,
         );
         final action =
             userInterested ? InterestAction.cancel : InterestAction.create;
@@ -199,30 +220,6 @@ class PostDetailScreen extends HookConsumerWidget {
         await ref
             .read(interestProvider.notifier)
             .toggleInterest(post.id!, action);
-
-        if (!context.mounted) return;
-
-        final updatedState = ref.read(interestProvider);
-
-        if (updatedState.result?.message != null) {
-          HapticFeedback.lightImpact();
-
-          if (context.mounted) {
-            // Sử dụng slug từ post nếu có, nếu không thì dùng postSlug
-            final slugToUse = post.slug ?? postSlug;
-            if (slugToUse != null) {
-              ref
-                  .read(postDetailProvider.notifier)
-                  .getPostDetail(slug: slugToUse);
-            }
-            ref.read(interestProvider.notifier).clearMessages();
-          }
-        } else if (updatedState.failure != null) {
-          if (context.mounted) {
-            context.showErrorSnackBar(updatedState.failure!.message);
-            ref.read(interestProvider.notifier).clearMessages();
-          }
-        }
       }
     }
 
@@ -238,7 +235,6 @@ class PostDetailScreen extends HookConsumerWidget {
         return;
       }
 
-      // Check if user is post owner
       final isPostOwner = PostDetailHelpers.isPostAuthor(post, currentUser);
       if (isPostOwner) {
         context.showInfoSnackBar('Chủ bài viết không thể tạo giao dịch');
@@ -246,7 +242,6 @@ class PostDetailScreen extends HookConsumerWidget {
       }
 
       try {
-        // Load transactions for this interest
         final query = TransactionsQuery(
           sort: 'createdAt',
           order: 'DESC',
@@ -255,16 +250,12 @@ class PostDetailScreen extends HookConsumerWidget {
           searchValue: currentUserInterestId.toString(),
         );
 
-        // Wait for transactions to load completely
         await transactionsNotifier.loadTransactions(
           newQuery: query,
           refresh: true,
         );
 
-        // Now check the updated transactions state
         final updatedTransactionsState = ref.read(transactionsListProvider);
-
-        // Check if can create new transaction
         final latestTransaction =
             updatedTransactionsState.transactions.isNotEmpty
                 ? updatedTransactionsState.transactions.first
@@ -279,13 +270,10 @@ class PostDetailScreen extends HookConsumerWidget {
                   ? 'Đợi phản hồi từ chủ bài viết'
                   : 'Đợi yêu cầu mới nhất được phản hồi';
 
-          if (context.mounted) {
-            context.showInfoSnackBar(waitMessage);
-          }
+          context.showInfoSnackBar(waitMessage);
           return;
         }
 
-        // Only show bottom sheet if all conditions are met
         if (context.mounted) {
           showModalBottomSheet(
             context: context,
@@ -297,17 +285,13 @@ class PostDetailScreen extends HookConsumerWidget {
                   interestId: currentUserInterestId,
                   postType: post.type,
                   onTransactionSent: () {
-                    // Refresh transactions after creating new one
                     transactionsNotifier.refresh();
-                    if (context.mounted) {
-                      context.showSuccessSnackBar('Đã gửi yêu cầu giao dịch');
-                    }
+                    // Loại bỏ show SnackBar ở đây - sẽ được handle bởi callback
                   },
                 ),
           );
         }
       } catch (error) {
-        // Handle any errors during loading
         if (context.mounted) {
           context.showErrorSnackBar('Có lỗi xảy ra khi tải dữ liệu giao dịch');
         }
@@ -326,7 +310,6 @@ class PostDetailScreen extends HookConsumerWidget {
       }
 
       try {
-        // Load transactions for this post
         final query = TransactionsQuery(
           sort: 'createdAt',
           order: 'DESC',
@@ -335,16 +318,13 @@ class PostDetailScreen extends HookConsumerWidget {
           searchValue: currentUserInterestId.toString(),
         );
 
-        // Wait for transactions to load
         await transactionsNotifier.loadTransactions(
           newQuery: query,
           refresh: true,
         );
 
-        // Lấy transactions state sau khi load xong
         final updatedTransactionsState = ref.read(transactionsListProvider);
 
-        // Show transactions bottom sheet
         if (context.mounted) {
           showModalBottomSheet(
             context: context,
@@ -357,7 +337,6 @@ class PostDetailScreen extends HookConsumerWidget {
                   postType: post.type,
                   items: interestDetail?.items ?? [],
                   onTransactionUpdated: (updatedTransaction) {
-                    // Refresh transactions khi có update
                     if (context.mounted) {
                       transactionsNotifier.refresh();
                     }

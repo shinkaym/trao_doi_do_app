@@ -27,17 +27,23 @@ class NotificationSocket {
 
   factory NotificationSocket.fromJson(Map<String, dynamic> json) {
     return NotificationSocket(
-      id: json['ID'] as int,
-      senderID: json['SenderID'] as int?,
-      senderName: json['SenderName'] as String?,
-      receiverID: json['ReceiverID'] as int?,
-      receiverName: json['ReceiverName'] as String?,
-      type: json['Type'] as String,
-      targetType: json['TargetType'] as String,
-      targetID: json['TargetID'] as int,
-      content: json['Content'] as String,
-      isRead: json['IsRead'] as bool,
-      createdAt: DateTime.parse(json['CreatedAt'] as String),
+      id: json['id'] as int,
+      senderID: json['senderID'] == 0 ? null : json['senderID'] as int?,
+      senderName:
+          json['senderName'] == null || json['senderName'] == ''
+              ? null
+              : json['senderName'] as String?,
+      receiverID: json['receiverID'] as int?,
+      receiverName:
+          json['receiverName'] == null || json['receiverName'] == ''
+              ? null
+              : json['receiverName'] as String?,
+      type: json['type'] as String,
+      targetType: json['targetType'] as String,
+      targetID: json['targetID'] as int,
+      content: json['content'] as String,
+      isRead: json['isRead'] as bool,
+      createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
 
