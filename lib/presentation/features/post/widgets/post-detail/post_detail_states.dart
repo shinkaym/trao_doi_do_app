@@ -79,7 +79,7 @@ class PostDetailStates {
                       if (context.mounted) {
                         ref
                             .read(postDetailProvider.notifier)
-                            .getPostDetail(postSlug);
+                            .getPostDetail(slug: postSlug);
                       }
                     },
                     icon: const Icon(Icons.refresh),
@@ -160,3 +160,4 @@ class PostDetailStates {
     );
   }
 }
+

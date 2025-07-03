@@ -130,16 +130,6 @@ class NotificationWebSocketNotifier extends StateNotifier<NotificationWebSocketS
             }
             break;
 
-          case 'join_noti_room_response':
-            if (response.isSuccess) {
-              print('✅ Joined notification room');
-            } else {
-              state = state.copyWith(
-                error: response.error ?? 'Failed to join notification room',
-              );
-            }
-            break;
-
           case 'pong':
             // Handle ping/pong for keep-alive
             break;

@@ -71,4 +71,13 @@ class PostRepositoryImpl implements PostRepository {
       return result;
     }, 'Lỗi xóa bài đăng');
   }
+
+  @override
+  Future<Either<Failure, PostDetailResponse>> getPostByID(int postID) async {
+    return handleRepositoryCall<PostDetailResponse>(() async {
+      final remoteResponse = await _remoteDataSource.getPostByID(postID);
+      final postDetailEntity = remoteResponse.toEntity();
+      return postDetailEntity;
+    }, 'Lỗi tải chi tiết bài đăng');
+  }
 }

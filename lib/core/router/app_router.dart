@@ -1,4 +1,3 @@
-// lib/core/router/app_router.dart (Updated)
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -280,6 +279,15 @@ GoRoute _buildPostsRoute() {
         builder: (context, state) {
           final postSlug = state.pathParameters[RouteConstants.slugParam]!;
           return PostDetailScreen(postSlug: postSlug);
+        },
+      ),
+      GoRoute(
+        path: '${RouteConstants.postDetail}/id/:${RouteConstants.postIdParam}',
+        name: RouteNames.postDetailById,
+        builder: (context, state) {
+          final postIdStr = state.pathParameters[RouteConstants.postIdParam]!;
+          final postId = int.tryParse(postIdStr);
+          return PostDetailScreen(postId: postId);
         },
       ),
       GoRoute(

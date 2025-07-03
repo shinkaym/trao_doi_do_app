@@ -78,7 +78,7 @@ class PostDetail extends Post {
     required super.description,
     required super.info,
     required super.type,
-    super.slug,
+    required super.slug,
     super.status,
     super.images = const [],
     super.newItems = const [],

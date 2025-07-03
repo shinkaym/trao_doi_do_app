@@ -13,6 +13,7 @@ abstract class PostRemoteDataSource {
   Future<PostDetailResponseModel> getPostBySlug(String slug);
   Future<String> updatePost(int postID, UpdatePostModel updatePost);
   Future<String> deletePost(int postID);
+  Future<PostDetailResponseModel> getPostByID(int postID);
 }
 
 class PostRemoteDataSourceImpl implements PostRemoteDataSource {
@@ -103,6 +104,21 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
     final result = ApiResponseModel.fromJson(
       response.data,
       (data) => data.toString(),
+    );
+
+    return result.data!;
+  }
+
+  @override
+  Future<PostDetailResponseModel> getPostByID(int postID) async {
+    final response = await _dioClient.get(
+      '${ApiConstants.posts}/$postID',
+      options: Options(extra: {'requiresAuth': false}),
+    );
+
+    final result = ApiResponseModel.fromJson(
+      response.data,
+      (json) => PostDetailResponseModel.fromJson(json as Map<String, dynamic>),
     );
 
     return result.data!;

@@ -189,7 +189,7 @@ final unreadCountProvider =
       return UnreadCountNotifier(getUnreadCountUseCase);
     });
 
-final postProvider = StateNotifierProvider.autoDispose<PostNotifier, PostState>(
+final postProvider = StateNotifierProvider<PostNotifier, PostState>(
   (ref) {
     final createPostUseCase = ref.watch(createPostUseCaseProvider);
     final updatePostUseCase = ref.watch(updatePostUseCaseProvider);
@@ -230,7 +230,8 @@ final postDetailProvider =
       ref,
     ) {
       final getPostDetailUseCase = ref.watch(getPostDetailUseCaseProvider);
-      return PostDetailNotifier(getPostDetailUseCase);
+      final getPostByIDUseCase = ref.watch(getPostByIDUseCaseProvider);
+      return PostDetailNotifier(getPostDetailUseCase, getPostByIDUseCase);
     });
 
 final messagesListProvider = StateNotifierProvider.autoDispose
@@ -340,7 +341,6 @@ final settingsProvider = StateNotifierProvider<SettingsNotifier, SettingsState>(
     return SettingsNotifier(getSettingsUseCase, getSettingByKeyUseCase);
   },
 );
-
 
 final notificationProvider = StateNotifierProvider.autoDispose<
   NotificationNotifier,

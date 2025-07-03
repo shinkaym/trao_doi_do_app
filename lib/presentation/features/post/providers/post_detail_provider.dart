@@ -1,6 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
+import 'package:trao_doi_do_app/domain/usecases/get_post_by_id_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_post_detail_usecase.dart';
 
 class PostDetailState {
@@ -25,15 +26,20 @@ class PostDetailState {
 
 class PostDetailNotifier extends StateNotifier<PostDetailState> {
   final GetPostDetailUseCase _getPostDetailUseCase;
+  final GetPostByIDUseCase _getPostByIDUseCase;
 
-  PostDetailNotifier(this._getPostDetailUseCase) : super(PostDetailState());
+  PostDetailNotifier(this._getPostDetailUseCase, this._getPostByIDUseCase)
+    : super(PostDetailState());
 
-  Future<void> getPostDetail(String slug) async {
+  Future<void> getPostDetail({String? slug, int? postID}) async {
     if (state.isLoading) return;
 
     state = state.copyWith(isLoading: true, failure: null);
 
-    final result = await _getPostDetailUseCase(slug);
+    final result =
+        slug != null
+            ? await _getPostDetailUseCase(slug)
+            : await _getPostByIDUseCase(postID!);
 
     result.fold(
       (failure) => state = state.copyWith(isLoading: false, failure: failure),

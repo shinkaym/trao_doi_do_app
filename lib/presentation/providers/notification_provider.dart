@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
-import 'package:trao_doi_do_app/domain/entities/notification.dart';
+import 'package:trao_doi_do_app/domain/entities/notification.dart' as entities;
 import 'package:trao_doi_do_app/domain/usecases/get_notifications_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/mark_all_notifications_read_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/mark_notification_read_usecase.dart';
@@ -9,7 +9,7 @@ import 'package:trao_doi_do_app/domain/usecases/params/notification_query.dart';
 class NotificationState {
   final bool isLoading;
   final bool isLoadingMore;
-  final List<Notification> notifications;
+  final List<entities.Notification> notifications;
   final int currentPage;
   final int totalPage;
   final int unreadCount;
@@ -34,7 +34,7 @@ class NotificationState {
   NotificationState copyWith({
     bool? isLoading,
     bool? isLoadingMore,
-    List<Notification>? notifications,
+    List<entities.Notification>? notifications,
     int? currentPage,
     int? totalPage,
     int? unreadCount,
@@ -105,7 +105,7 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
             failure: failure,
           ),
       (notificationsResult) {
-        List<Notification> newNotifications;
+        List<entities.Notification> newNotifications;
 
         if (isFirstLoad) {
           newNotifications = notificationsResult.notifications;
@@ -144,7 +144,7 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
       final updatedNotifications =
           state.notifications.map((notification) {
             if (notification.id == notificationID && !notification.isRead) {
-              return Notification(
+              return entities.Notification(
                 id: notification.id,
                 content: notification.content,
                 createdAt: notification.createdAt,
@@ -167,7 +167,7 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
       state = state.copyWith(
         notifications: updatedNotifications,
         unreadCount: newUnreadCount,
-        successMessage: 'Đã đánh dấu thông báo đã đọc',
+        // successMessage: 'Đã đánh dấu thông báo đã đọc',
       );
     });
   }
@@ -179,7 +179,7 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
       // Cập nhật tất cả notifications thành đã đọc
       final updatedNotifications =
           state.notifications.map((notification) {
-            return Notification(
+            return entities.Notification(
               id: notification.id,
               content: notification.content,
               createdAt: notification.createdAt,
@@ -197,7 +197,7 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
       state = state.copyWith(
         notifications: updatedNotifications,
         unreadCount: 0, // Reset về 0
-        successMessage: 'Đã đánh dấu tất cả thông báo đã đọc',
+        // successMessage: 'Đã đánh dấu tất cả thông báo đã đọc',
       );
     });
   }

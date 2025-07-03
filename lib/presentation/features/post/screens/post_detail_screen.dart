@@ -19,13 +19,19 @@ import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest
 import 'package:trao_doi_do_app/presentation/features/post/widgets/post-detail/transaction_management_section.dart';
 
 class PostDetailScreen extends HookConsumerWidget {
-  final String postSlug;
+  final String? postSlug;
+  final int? postId;
 
-  const PostDetailScreen({super.key, required this.postSlug});
+  const PostDetailScreen({super.key, this.postSlug, this.postId})
+    : assert(
+        postSlug != null || postId != null,
+        'Either postSlug or postId must be provided',
+      );
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userInterestId = useState<int?>(null);
+    debugPrint('Building with postSlug: $postSlug, postId: $postId');
 
     // Hooks
     final pageController = usePageController();
@@ -73,7 +79,15 @@ class PostDetailScreen extends HookConsumerWidget {
     useEffect(() {
       Future.microtask(() {
         if (context.mounted) {
-          ref.read(postDetailProvider.notifier).getPostDetail(postSlug);
+          if (postSlug != null) {
+            ref
+                .read(postDetailProvider.notifier)
+                .getPostDetail(slug: postSlug!);
+          } else if (postId != null) {
+            ref
+                .read(postDetailProvider.notifier)
+                .getPostDetail(postID: postId!);
+          }
         }
       });
       return () {
@@ -82,7 +96,7 @@ class PostDetailScreen extends HookConsumerWidget {
           ref.read(postDetailProvider.notifier).clearPost();
         }
       };
-    }, [postSlug]);
+    }, [postSlug, postId]);
 
     useEffect(() {
       Future.microtask(() {
@@ -117,6 +131,8 @@ class PostDetailScreen extends HookConsumerWidget {
       return null;
     }, [postDetailState.post, postDetailState.isLoading]);
 
+  
+
     void handleShare() async {
       if (!context.mounted) return;
 
@@ -127,13 +143,23 @@ class PostDetailScreen extends HookConsumerWidget {
 
       if (domainSetting != null) {
         final domain = domainSetting.value;
-        final postLink = '$domain/bai-dang/$postSlug';
 
-        // Copy link vào clipboard
-        await Clipboard.setData(ClipboardData(text: postLink));
+        final currentPost = postDetailState.post;
+        final slugToUse = currentPost?.slug ?? postSlug;
 
-        if (context.mounted) {
-          context.showSuccessSnackBar('Đã sao chép link bài đăng');
+        if (slugToUse != null) {
+          final postLink = '$domain/bai-dang/$slugToUse';
+
+          // Copy link vào clipboard
+          await Clipboard.setData(ClipboardData(text: postLink));
+
+          if (context.mounted) {
+            context.showSuccessSnackBar('Đã sao chép link bài đăng');
+          }
+        } else {
+          if (context.mounted) {
+            context.showErrorSnackBar('Không thể lấy thông tin bài đăng');
+          }
         }
       } else {
         if (context.mounted) {
@@ -182,7 +208,13 @@ class PostDetailScreen extends HookConsumerWidget {
           HapticFeedback.lightImpact();
 
           if (context.mounted) {
-            ref.read(postDetailProvider.notifier).getPostDetail(postSlug);
+            // Sử dụng slug từ post nếu có, nếu không thì dùng postSlug
+            final slugToUse = post.slug ?? postSlug;
+            if (slugToUse != null) {
+              ref
+                  .read(postDetailProvider.notifier)
+                  .getPostDetail(slug: slugToUse);
+            }
             ref.read(interestProvider.notifier).clearMessages();
           }
         } else if (updatedState.failure != null) {
@@ -358,7 +390,7 @@ class PostDetailScreen extends HookConsumerWidget {
         colorScheme,
         context,
         ref,
-        postSlug,
+        post?.slug ?? postSlug ?? '',
       );
     }
 
@@ -469,7 +501,10 @@ class PostDetailScreen extends HookConsumerWidget {
                 ),
               ),
 
-            if (!isPostOwner && userInterested && post.type < 5 && post.interests.isNotEmpty)
+            if (!isPostOwner &&
+                userInterested &&
+                post.type < 5 &&
+                post.interests.isNotEmpty)
               SliverToBoxAdapter(
                 child: TransactionManagementSection(
                   isTablet: isTablet,
@@ -502,7 +537,6 @@ class PostDetailScreen extends HookConsumerWidget {
         onChatTap: handleChatTap,
         isPostOwner: isPostOwner,
         post: post,
-        postSlug: postSlug,
       ),
     );
   }

@@ -166,7 +166,7 @@ class PostDetailModel {
   final String description;
   final String info;
   final int type;
-  final String? slug;
+  final String slug;
   final int? status;
   final List<String> images;
   final List<NewItemModel> newItems;
@@ -188,7 +188,7 @@ class PostDetailModel {
     required this.description,
     required this.info,
     required this.type,
-    this.slug,
+    required this.slug,
     this.status,
     this.images = const [],
     this.newItems = const [],

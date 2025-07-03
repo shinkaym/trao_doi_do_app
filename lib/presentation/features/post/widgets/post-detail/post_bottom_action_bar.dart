@@ -16,7 +16,6 @@ class PostBottomActionBar extends ConsumerStatefulWidget {
   final Function(int) onChatTap;
   final bool isPostOwner;
   final PostDetail? post;
-  final String postSlug;
 
   const PostBottomActionBar({
     Key? key,
@@ -28,7 +27,6 @@ class PostBottomActionBar extends ConsumerStatefulWidget {
     required this.onChatTap,
     this.isPostOwner = false,
     this.post,
-    required this.postSlug,
   }) : super(key: key);
 
   @override
@@ -506,10 +504,9 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
             context.dismissDialog();
             context.showSuccessSnackBar('Đã $actionText bài đăng thành công!');
 
-            // Refresh post detail
             ref
                 .read(postDetailProvider.notifier)
-                .getPostDetail(widget.postSlug);
+                .getPostDetail(slug: post.slug);
           }
         } catch (e) {
           if (mounted) {
@@ -573,10 +570,10 @@ class _PostBottomActionBarState extends ConsumerState<PostBottomActionBar> {
             context.dismissDialog();
             context.showSuccessSnackBar('Đã ghim bài đăng thành công!');
 
-            // Refresh post detail
+            // Refresh post detail - sử dụng slug từ post nếu có, nếu không thì dùng postSlug
             ref
                 .read(postDetailProvider.notifier)
-                .getPostDetail(widget.postSlug);
+                .getPostDetail(slug: post.slug);
           }
         } catch (e) {
           if (mounted) {

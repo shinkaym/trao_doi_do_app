@@ -349,4 +349,8 @@ class PostNotifier extends StateNotifier<PostState> {
   Future<void> updatePostStatus(int postID, int status) async {
     await updatePost(postID, status: status);
   }
+
+  void clearMessages() {
+    state = state.copyWith(successMessage: null, failure: null);
+  }
 }

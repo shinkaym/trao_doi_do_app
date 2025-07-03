@@ -47,6 +47,7 @@ class RouteConstants {
   static const String slugParam = 'slug';
   static const String idParam = 'id';
   static const String interestIdParam = 'interestId';
+  static const String postIdParam = 'postId';
   static const String appointmentIdParam = 'appointmentId';
 
   // ========== ROUTE BUILDERS ==========
@@ -146,6 +147,7 @@ class RouteNames {
 
   // Nested routes
   static const String postDetail = 'post-detail';
+  static const String postDetailById = 'post-detail-by-id';
   static const String createPost = 'create-post';
   static const String itemDetail = 'item-detail';
   static const String interestChat = 'interest-chat';

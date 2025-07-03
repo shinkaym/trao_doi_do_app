@@ -36,6 +36,7 @@ import 'package:trao_doi_do_app/domain/usecases/get_items_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_my_good_deeds_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_notifications_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_old_stock_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/get_post_by_id_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_setting_by_key_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_settings_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_transaction_by_interest_usecase.dart';
@@ -267,6 +268,13 @@ final getPostDetailUseCaseProvider = Provider.autoDispose<GetPostDetailUseCase>(
     return GetPostDetailUseCase(repository);
   },
 );
+
+final getPostByIDUseCaseProvider = Provider.autoDispose<GetPostByIDUseCase>((
+  ref,
+) {
+  final repository = ref.watch(postRepositoryProvider);
+  return GetPostByIDUseCase(repository);
+});
 
 final getMessagesUseCaseProvider = Provider.autoDispose<GetMessagesUseCase>((
   ref,

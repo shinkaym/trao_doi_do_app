@@ -32,6 +32,7 @@ class ApiConstants {
   static const String myRanks = '$client$users/my-good-deeds';
   static const String settings = '/settings';
   static const String clientNotifications = '$client/notifications';
+  static const String notifications = '/notifications';
 
   // Headers
   static const String contentType = 'Content-Type';

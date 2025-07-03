@@ -14,4 +14,5 @@ abstract class PostRepository {
     UpdatePost updatePost,
   );
   Future<Either<Failure, String>> deletePost(int postID);
+  Future<Either<Failure, PostDetailResponse>> getPostByID(int postID);
 }

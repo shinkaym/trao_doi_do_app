@@ -15,7 +15,7 @@ import 'package:trao_doi_do_app/presentation/widgets/scroll_to_top_button.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
 class MyPostsScreen extends HookConsumerWidget {
-  const MyPostsScreen({super.key});
+const MyPostsScreen({super.key});
 
   void _onToggleStatus(BuildContext context, WidgetRef ref, Post post) async {
     final postNotifier = ref.read(postProvider.notifier);
@@ -36,16 +36,10 @@ class MyPostsScreen extends HookConsumerWidget {
         await postNotifier.togglePostStatus(post.id!, post.status ?? 3);
 
         context.dismissDialog();
-
         ref.read(myPostsListProvider.notifier).refresh();
-
-        context.showSuccessSnackBar(
-          'Đã $actionText quan tâm của bài đăng thành công!',
-        );
       } catch (e) {
         context.dismissDialog();
-
-        context.showErrorSnackBar('Có lỗi xảy ra khi $actionText bài đăng!');
+        // Không cần show error snackbar ở đây nữa, useEffect sẽ xử lý
       }
     }
   }
@@ -72,7 +66,6 @@ class MyPostsScreen extends HookConsumerWidget {
       return;
     }
 
-    // Sử dụng dialog extension
     final confirmed = await context.showConfirmDialog(
       title: 'Xác nhận ghim',
       content: 'Bạn có chắc chắn muốn ghim bài đăng này?',
@@ -87,14 +80,10 @@ class MyPostsScreen extends HookConsumerWidget {
         await postNotifier.repostPost(post.id!, post.createdAt!);
 
         context.dismissDialog();
-
         ref.read(myPostsListProvider.notifier).refresh();
-
-        context.showSuccessSnackBar('Đã ghim bài đăng thành công!');
       } catch (e) {
         context.dismissDialog();
-
-        context.showErrorSnackBar('Có lỗi xảy ra khi ghim bài đăng!');
+        // Không cần show error snackbar ở đây nữa, useEffect sẽ xử lý
       }
     }
   }
@@ -118,15 +107,10 @@ class MyPostsScreen extends HookConsumerWidget {
         await postNotifier.deletePost(post.id!);
 
         context.dismissDialog();
-
-        // Refresh danh sách sau khi xóa thành công
         ref.read(myPostsListProvider.notifier).refresh();
-
-        context.showSuccessSnackBar('Đã xóa bài đăng thành công!');
       } catch (e) {
         context.dismissDialog();
-
-        context.showErrorSnackBar('Có lỗi xảy ra khi xóa bài đăng!');
+        // Không cần show error snackbar ở đây nữa, useEffect sẽ xử lý
       }
     }
   }
@@ -148,6 +132,25 @@ class MyPostsScreen extends HookConsumerWidget {
     final theme = context.theme;
     final colorScheme = context.colorScheme;
     final postsState = ref.watch(myPostsListProvider);
+    final postState = ref.watch(postProvider);
+
+    useEffect(() {
+      if (postState.successMessage != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          context.showSuccessSnackBar(postState.successMessage!);
+          ref.read(postProvider.notifier).clearMessages();
+        });
+      }
+
+      if (postState.failure != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          context.showErrorSnackBar(postState.failure!.message);
+          ref.read(postProvider.notifier).clearMessages();
+        });
+      }
+
+      return null;
+    }, [postState.successMessage, postState.failure]);
 
     void loadPosts({bool refresh = false}) {
       final query = PostsQuery(
