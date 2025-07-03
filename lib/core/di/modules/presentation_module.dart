@@ -23,6 +23,7 @@ import 'package:trao_doi_do_app/presentation/providers/category_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/item_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/interest_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/messages_provider.dart';
+import 'package:trao_doi_do_app/presentation/providers/notification_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/search_suggestion_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/settings_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/unread_count_provider.dart';
@@ -339,3 +340,22 @@ final settingsProvider = StateNotifierProvider<SettingsNotifier, SettingsState>(
     return SettingsNotifier(getSettingsUseCase, getSettingByKeyUseCase);
   },
 );
+
+
+final notificationProvider = StateNotifierProvider.autoDispose<
+  NotificationNotifier,
+  NotificationState
+>((ref) {
+  final getNotificationsUseCase = ref.watch(getNotificationsUseCaseProvider);
+  final markNotificationReadUseCase = ref.watch(
+    markNotificationReadUseCaseProvider,
+  );
+  final markAllNotificationsReadUseCase = ref.watch(
+    markAllNotificationsReadUseCaseProvider,
+  );
+  return NotificationNotifier(
+    getNotificationsUseCase,
+    markNotificationReadUseCase,
+    markAllNotificationsReadUseCase,
+  );
+});

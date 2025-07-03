@@ -5,6 +5,7 @@ class ApiConstants {
 
   // Endpoints
   static const String client = '/client';
+  static const String clients = '/clients';
   static const String categories = '/categories';
   static const String items = '/items';
   static const String posts = '/posts';
@@ -12,11 +13,10 @@ class ApiConstants {
   static const String clientLogout = '$client/logout';
   static const String clientPosts = '$client/posts';
   static const String clientGetMe = '$client/get-me';
-  static const String clients = '/clients';
-  static const String clientSendOtp = '/client/send-otp';
-  static const String clientVerifyOtp = '/client/verify-otp';
-  static const String clientSignup = '/client/signup';
-  static const String clientResetPassword = '/client/reset-password';
+  static const String clientSendOtp = '$client/send-otp';
+  static const String clientVerifyOtp = '$client/verify-otp';
+  static const String clientSignup = '$client/signup';
+  static const String clientResetPassword = '$client/reset-password';
   static const String interests = '/interests';
   static const String transactions = '/transactions';
   static const String refreshToken = '/refresh-token';
@@ -31,6 +31,7 @@ class ApiConstants {
   static const String ranks = '$client$users/ranks';
   static const String myRanks = '$client$users/my-good-deeds';
   static const String settings = '/settings';
+  static const String clientNotifications = '$client/notifications';
 
   // Headers
   static const String contentType = 'Content-Type';
