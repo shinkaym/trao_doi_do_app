@@ -351,3 +351,6 @@ final unreadNotificationCountProvider = Provider<int>((ref) {
   final notificationState = ref.watch(notificationProvider);
   return notificationState.unreadCount;
 });
+
+// Provider để theo dõi việc skip permission request
+final permissionRequestSkippedProvider = StateProvider<bool>((ref) => false);

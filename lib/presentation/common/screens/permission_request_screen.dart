@@ -12,7 +12,6 @@ class PermissionRequestScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final permissionState = ref.watch(permissionProvider);
-    final permissionNotifier = ref.read(permissionProvider.notifier);
 
     return Scaffold(
       backgroundColor: context.colorScheme.surface,
@@ -288,6 +287,7 @@ class PermissionRequestScreen extends HookConsumerWidget {
   }
 
   void _handleSkip(BuildContext context, WidgetRef ref) {
+    ref.read(permissionRequestSkippedProvider.notifier).state = true;
     _navigateToNextScreen(context);
   }
 

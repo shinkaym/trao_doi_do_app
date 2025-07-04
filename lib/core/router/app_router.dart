@@ -37,6 +37,7 @@ final _routerStateProvider = Provider<RouterState>((ref) {
   final isOnboardingCompleted = ref.watch(isOnboardingCompletedProvider);
   final isSplashCompleted = ref.watch(isSplashCompletedProvider);
   final allPermissionsGranted = ref.watch(allPermissionsGrantedProvider);
+  final permissionRequestSkipped = ref.watch(permissionRequestSkippedProvider);
 
   return RouterState(
     isLoggedIn: authState.isLoggedIn,
@@ -44,6 +45,7 @@ final _routerStateProvider = Provider<RouterState>((ref) {
     isOnboardingCompleted: isOnboardingCompleted,
     isSplashCompleted: isSplashCompleted,
     allPermissionsGranted: allPermissionsGranted,
+    permissionRequestSkipped: permissionRequestSkipped,
   );
 });
 
@@ -53,13 +55,14 @@ class RouterState {
   final bool isOnboardingCompleted;
   final bool isSplashCompleted;
   final bool allPermissionsGranted;
-
+  final bool permissionRequestSkipped;
   const RouterState({
     required this.isLoggedIn,
     required this.isLoading,
     required this.isOnboardingCompleted,
     required this.isSplashCompleted,
     required this.allPermissionsGranted,
+    this.permissionRequestSkipped = false,
   });
 
   @override
@@ -71,7 +74,8 @@ class RouterState {
           isLoading == other.isLoading &&
           isOnboardingCompleted == other.isOnboardingCompleted &&
           isSplashCompleted == other.isSplashCompleted &&
-          allPermissionsGranted == other.allPermissionsGranted;
+          allPermissionsGranted == other.allPermissionsGranted &&
+          permissionRequestSkipped == other.permissionRequestSkipped;
 
   @override
   int get hashCode =>
@@ -79,33 +83,12 @@ class RouterState {
       isLoading.hashCode ^
       isOnboardingCompleted.hashCode ^
       isSplashCompleted.hashCode ^
-      allPermissionsGranted.hashCode;
+      allPermissionsGranted.hashCode ^
+      permissionRequestSkipped.hashCode;
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
-  ref.listen<AuthState>(authProvider, (previous, next) {
-    if (next.isLoggedIn && (previous == null || !previous.isLoggedIn)) {
-      // Load thông báo từ API và unread count
-      ref.read(notificationProvider.notifier).loadNotifications(refresh: true);
-      ref.read(notificationProvider.notifier).loadUnreadCount();
-
-      // Kết nối WebSocket
-      final getAccessTokenUseCase = ref.read(getAccessTokenUseCaseProvider);
-      getAccessTokenUseCase.execute().then((result) {
-        result.fold(
-          (failure) => null,
-          (token) =>
-              ref.read(notificationWebSocketProvider.notifier).connect(token),
-        );
-      });
-    } else if (!next.isLoggedIn && previous != null && previous.isLoggedIn) {
-      // Ngắt kết nối WebSocket khi logout
-      ref.read(notificationWebSocketProvider.notifier).disconnect();
-      // Reset notification state
-      ref.invalidate(notificationProvider);
-    }
-  });
-
+  // Di chuyển logic listen vào RouterNotifier
   return GoRouter(
     initialLocation: RouteConstants.splash,
     errorBuilder: (context, state) => const NotFoundScreen(),
@@ -124,7 +107,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           return RouteConstants.onboarding;
         }
         // After onboarding, check permissions
-        if (!routerState.allPermissionsGranted) {
+        if (!routerState.allPermissionsGranted &&
+            !routerState.permissionRequestSkipped) {
           return RouteConstants.permissionRequest;
         }
         return RouteConstants.home;
@@ -138,7 +122,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Handle onboarding completion
       if (currentPath == RouteConstants.onboarding &&
           routerState.isOnboardingCompleted) {
-        if (!routerState.allPermissionsGranted) {
+        if (!routerState.allPermissionsGranted &&
+            !routerState.permissionRequestSkipped) {
           return RouteConstants.permissionRequest;
         }
         return RouteConstants.home;
@@ -146,7 +131,8 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Handle permission request completion
       if (currentPath == RouteConstants.permissionRequest &&
-          routerState.allPermissionsGranted) {
+          (routerState.allPermissionsGranted ||
+              routerState.permissionRequestSkipped)) {
         return RouteConstants.home;
       }
 
@@ -157,16 +143,26 @@ final routerProvider = Provider<GoRouter>((ref) {
         }
 
         // Then check permissions (skip for auth-related routes)
-        if (!routerState.allPermissionsGranted &&
-            !RouteUtils.isAuthRoute(currentPath)) {
-          return RouteConstants.permissionRequest;
-        }
+     if (!routerState.allPermissionsGranted && 
+        !routerState.permissionRequestSkipped &&
+        !RouteUtils.isAuthRoute(currentPath) &&
+        currentPath != RouteConstants.home) { // Thêm điều kiện này
+      return RouteConstants.permissionRequest;
+    }
       }
 
       // Auth routes - redirect to home if already logged in and setup complete
       if (RouteUtils.isAuthRoute(currentPath)) {
-        if (routerState.isLoggedIn && routerState.allPermissionsGranted) {
+        if (routerState.isLoggedIn &&
+            (routerState.allPermissionsGranted ||
+                routerState.permissionRequestSkipped)) {
           return RouteConstants.home;
+        }
+        // Redirect to permission request if logged in but permissions not granted and not skipped
+        if (routerState.isLoggedIn &&
+            !routerState.allPermissionsGranted &&
+            !routerState.permissionRequestSkipped) {
+          return RouteConstants.permissionRequest;
         }
       }
 
@@ -181,10 +177,38 @@ class RouterNotifier extends ChangeNotifier {
   RouterState? _lastState;
 
   RouterNotifier(this._ref) {
+    // Listen to router state changes
     _ref.listen<RouterState>(_routerStateProvider, (previous, next) {
       if (_lastState != next) {
         _lastState = next;
         notifyListeners();
+      }
+    });
+
+    // Listen to auth state changes và handle WebSocket connection
+    _ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.isLoggedIn && (previous == null || !previous.isLoggedIn)) {
+        // Load thông báo từ API và unread count
+        _ref
+            .read(notificationProvider.notifier)
+            .loadNotifications(refresh: true);
+        _ref.read(notificationProvider.notifier).loadUnreadCount();
+
+        // Kết nối WebSocket
+        final getAccessTokenUseCase = _ref.read(getAccessTokenUseCaseProvider);
+        getAccessTokenUseCase.execute().then((result) {
+          result.fold(
+            (failure) => null,
+            (token) => _ref
+                .read(notificationWebSocketProvider.notifier)
+                .connect(token),
+          );
+        });
+      } else if (!next.isLoggedIn && previous != null && previous.isLoggedIn) {
+        // Ngắt kết nối WebSocket khi logout
+        _ref.read(notificationWebSocketProvider.notifier).disconnect();
+        // Reset notification state
+        _ref.invalidate(notificationProvider);
       }
     });
   }
