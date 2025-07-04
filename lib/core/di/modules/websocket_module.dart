@@ -4,12 +4,6 @@ import 'package:trao_doi_do_app/data/datasources/remote/multi_websocket_remote_d
 import 'package:trao_doi_do_app/data/repositories_impl/multi_websocket_repository_impl.dart';
 import 'package:trao_doi_do_app/domain/repositories/multi_websocket_repository.dart';
 
-// Import old providers for backward compatibility
-import 'package:trao_doi_do_app/core/network/websocket_client.dart';
-import 'package:trao_doi_do_app/data/datasources/remote/websocket_remote_datasource.dart';
-import 'package:trao_doi_do_app/data/repositories_impl/websocket_repository_impl.dart';
-import 'package:trao_doi_do_app/domain/repositories/websocket_repository.dart';
-import 'package:trao_doi_do_app/domain/usecases/websocket_usecases.dart';
 import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/chat_websocket_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/chat_notification_websocket_provider.dart';
@@ -23,10 +17,6 @@ class WebSocketModule {
     // Module initialization logic if needed
   }
 }
-
-// =============================================================================
-// NEW MULTI-WEBSOCKET PROVIDERS
-// =============================================================================
 
 final multiWebSocketManagerProvider =
     Provider.autoDispose<MultiWebSocketManager>((ref) {
@@ -136,100 +126,6 @@ final multiWebSocketConnectionProvider = Provider.autoDispose((ref) {
     'notification': ref.read(notificationWebSocketProvider.notifier),
   };
 });
-
-// =============================================================================
-// OLD PROVIDERS (For Backward Compatibility)
-// =============================================================================
-
-final chatWebSocketClientProvider = Provider.autoDispose<WebSocketClient>((
-  ref,
-) {
-  final client = WebSocketClient();
-  ref.onDispose(() {
-    client.dispose();
-  });
-  return client;
-});
-
-final chatNotificationWebSocketClientProvider =
-    Provider.autoDispose<WebSocketClient>((ref) {
-      final client = WebSocketClient();
-      ref.onDispose(() {
-        client.dispose();
-      });
-      return client;
-    });
-
-final webSocketRemoteDataSourceProvider =
-    Provider.autoDispose<WebSocketRemoteDataSource>((ref) {
-      final chatClient = ref.watch(chatWebSocketClientProvider);
-      final chatNotificationClient = ref.watch(
-        chatNotificationWebSocketClientProvider,
-      );
-      return WebSocketRemoteDataSourceImpl(chatClient, chatNotificationClient);
-    });
-
-final webSocketRepositoryProvider = Provider.autoDispose<WebSocketRepository>((
-  ref,
-) {
-  final remoteDataSource = ref.watch(webSocketRemoteDataSourceProvider);
-  return WebSocketRepositoryImpl(remoteDataSource);
-});
-
-// Use cases
-final connectToChatUseCaseProvider = Provider.autoDispose<ConnectToChatUseCase>(
-  (ref) {
-    final repository = ref.watch(webSocketRepositoryProvider);
-    return ConnectToChatUseCase(repository);
-  },
-);
-
-final connectToChatNotificationUseCaseProvider =
-    Provider.autoDispose<ConnectToChatNotificationUseCase>((ref) {
-      final repository = ref.watch(webSocketRepositoryProvider);
-      return ConnectToChatNotificationUseCase(repository);
-    });
-
-final disconnectWebSocketUseCaseProvider =
-    Provider.autoDispose<DisconnectWebSocketUseCase>((ref) {
-      final repository = ref.watch(webSocketRepositoryProvider);
-      return DisconnectWebSocketUseCase(repository);
-    });
-
-final joinRoomUseCaseProvider = Provider.autoDispose<JoinRoomUseCase>((ref) {
-  final repository = ref.watch(webSocketRepositoryProvider);
-  return JoinRoomUseCase(repository);
-});
-
-final leftRoomUseCaseProvider = Provider.autoDispose<LeftRoomUseCase>((ref) {
-  final repository = ref.watch(webSocketRepositoryProvider);
-  return LeftRoomUseCase(repository);
-});
-
-final sendMessageUseCaseProvider = Provider.autoDispose<SendMessageUseCase>((
-  ref,
-) {
-  final repository = ref.watch(webSocketRepositoryProvider);
-  return SendMessageUseCase(repository);
-});
-
-final sendTransactionUseCaseProvider =
-    Provider.autoDispose<SendTransactionUseCase>((ref) {
-      final repository = ref.watch(webSocketRepositoryProvider);
-      return SendTransactionUseCase(repository);
-    });
-
-final getWebSocketResponseStreamUseCaseProvider =
-    Provider.autoDispose<GetWebSocketResponseStreamUseCase>((ref) {
-      final repository = ref.watch(webSocketRepositoryProvider);
-      return GetWebSocketResponseStreamUseCase(repository);
-    });
-
-final getWebSocketConnectionStreamUseCaseProvider =
-    Provider.autoDispose<GetWebSocketConnectionStreamUseCase>((ref) {
-      final repository = ref.watch(webSocketRepositoryProvider);
-      return GetWebSocketConnectionStreamUseCase(repository);
-    });
 
 // =============================================================================
 // HELPER FUNCTIONS

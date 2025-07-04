@@ -208,10 +208,7 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
     }
   }
 
-  // ✅ Method để force reconnect
   Future<void> reconnect(String? token) async {
-    print('🔄 Reconnecting chat WebSocket...');
-    // Disconnect first
     disconnect();
 
     // Wait a bit before reconnecting

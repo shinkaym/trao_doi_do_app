@@ -69,8 +69,15 @@ class EditProfileScreen extends HookConsumerWidget {
       if (authState.user != null) {
         fullNameController.text = authState.user!.fullName;
         addressController.text = authState.user!.address;
-        selectedMajor.value =
-            authState.user!.major.isEmpty ? null : authState.user!.major;
+
+        // Kiểm tra xem major của user có trong danh sách không
+        final userMajor = authState.user!.major;
+        if (userMajor.isNotEmpty && majorOptions.contains(userMajor)) {
+          selectedMajor.value = userMajor;
+        } else {
+          // Nếu major không có trong danh sách, set về null
+          selectedMajor.value = null;
+        }
       }
       return null;
     }, [authState.user]);
@@ -88,10 +95,31 @@ class EditProfileScreen extends HookConsumerWidget {
         Future.microtask(() {
           context.showSuccessSnackBar(authState.successMessage!);
           ref.read(authProvider.notifier).clearSuccess();
+          // Reset autovalidate mode sau khi lưu thành công
+          autovalidateMode.value = AutovalidateMode.disabled;
         });
       }
       return null;
     }, [authState.failure, authState.successMessage]);
+
+    // Tính toán xem có thay đổi gì không
+    bool hasChanges() {
+      if (authState.user == null) return false;
+
+      final hasNameChanged =
+          fullNameController.text != authState.user!.fullName;
+      final hasAddressChanged =
+          addressController.text != authState.user!.address;
+      final hasMajorChanged =
+          selectedMajor.value != null &&
+          selectedMajor.value != authState.user!.major;
+      final hasAvatarChanged = selectedImage.value != null;
+
+      return hasNameChanged ||
+          hasAddressChanged ||
+          hasMajorChanged ||
+          hasAvatarChanged;
+    }
 
     Future<void> pickImage() async {
       try {
@@ -110,78 +138,111 @@ class EditProfileScreen extends HookConsumerWidget {
     }
 
     Future<void> handleSave() async {
-      // Enable autovalidate mode after first validation attempt
-      autovalidateMode.value = AutovalidateMode.onUserInteraction;
+      // Kiểm tra xem có thay đổi gì không, nếu không có thì return
+      if (!hasChanges()) {
+        return;
+      }
 
-      if (formKey.currentState!.validate()) {
+      // Kiểm tra các trường nào đã thay đổi để áp dụng validate tương ứng
+      final hasNameChanged =
+          fullNameController.text != authState.user?.fullName;
+      final hasAddressChanged =
+          addressController.text != authState.user?.address;
+      final hasMajorChanged =
+          selectedMajor.value != null &&
+          selectedMajor.value != authState.user?.major;
+      final hasAvatarChanged = selectedImage.value != null;
+
+      // Bật autovalidate cho các trường đã thay đổi
+      if (hasNameChanged || hasAddressChanged || hasMajorChanged) {
+        autovalidateMode.value = AutovalidateMode.onUserInteraction;
+      }
+
+      // Validate form trước khi tiếp tục
+      if (!formKey.currentState!.validate()) {
+        // context.showErrorSnackBar(
+        //   'Vui lòng điền đầy đủ thông tin cho các mục bạn muốn thay đổi',
+        // );
+        return;
+      }
+
+      // Nếu chỉ thay đổi avatar mà không thay đổi gì khác
+      if (hasAvatarChanged &&
+          !hasNameChanged &&
+          !hasAddressChanged &&
+          !hasMajorChanged) {
         isLoading.value = true;
+        final bytes = await selectedImage.value!.readAsBytes();
+        final updatedAvatar = Base64Utils.encodeImageToDataUri(bytes);
 
-        // Track which fields have actually changed
-        String? updatedFullName;
-        String? updatedAddress;
-        String? updatedMajor;
-        String? updatedAvatar;
-
-        final currentUser = authState.user;
-        if (currentUser == null) {
-          context.showErrorSnackBar('Không tìm thấy thông tin người dùng');
-          return;
-        }
-
-        // Check each field for changes
-        final newFullName = fullNameController.text.trim();
-        if (newFullName != currentUser.fullName) {
-          updatedFullName = newFullName;
-        }
-
-        final newAddress = addressController.text.trim();
-        if (newAddress != currentUser.address) {
-          updatedAddress = newAddress;
-        }
-
-        final newMajor = selectedMajor.value ?? '';
-        if (newMajor != currentUser.major) {
-          updatedMajor = newMajor;
-        }
-
-        // Handle avatar update
-        if (selectedImage.value != null) {
-          final bytes = await selectedImage.value!.readAsBytes();
-          updatedAvatar = Base64Utils.encodeImageToDataUri(bytes);
-        }
-
-        // Check if any field has changed
-        final hasChanges =
-            updatedFullName != null ||
-            updatedAddress != null ||
-            updatedMajor != null ||
-            updatedAvatar != null;
-
-        if (!hasChanges) {
-          context.showInfoSnackBar('Không có thay đổi nào để cập nhật');
-          isLoading.value = false;
-          return;
-        }
-
-        // Build change summary for user feedback
-        final List<String> changedFields = [];
-        if (updatedFullName != null) changedFields.add('Họ tên');
-        if (updatedAddress != null) changedFields.add('Địa chỉ');
-        if (updatedMajor != null) changedFields.add('Ngành học');
-        if (updatedAvatar != null) changedFields.add('Ảnh đại diện');
-
-        // Call update with only changed fields
         await ref
             .read(authProvider.notifier)
-            .updateProfile(
-              userId: currentUser.id,
-              fullName: updatedFullName,
-              address: updatedAddress,
-              major: updatedMajor,
-              avatar: updatedAvatar,
-            );
+            .updateProfile(userId: authState.user!.id, avatar: updatedAvatar);
+
+        // Reset selectedImage sau khi lưu thành công
+        selectedImage.value = null;
         isLoading.value = false;
+        return;
       }
+
+      isLoading.value = true;
+
+      // Track which fields have actually changed
+      String? updatedFullName;
+      String? updatedAddress;
+      String? updatedMajor;
+      String? updatedAvatar;
+
+      final currentUser = authState.user;
+      if (currentUser == null) {
+        context.showErrorSnackBar('Không tìm thấy thông tin người dùng');
+        isLoading.value = false;
+        return;
+      }
+
+      // Check each field for changes
+      if (hasNameChanged) {
+        updatedFullName = fullNameController.text.trim();
+      }
+
+      if (hasAddressChanged) {
+        updatedAddress = addressController.text.trim();
+      }
+
+      if (hasMajorChanged) {
+        updatedMajor = selectedMajor.value ?? '';
+      }
+
+      // Handle avatar update
+      if (hasAvatarChanged) {
+        final bytes = await selectedImage.value!.readAsBytes();
+        updatedAvatar = Base64Utils.encodeImageToDataUri(bytes);
+      }
+
+      // Build change summary for user feedback
+      final List<String> changedFields = [];
+      if (updatedFullName != null) changedFields.add('Họ tên');
+      if (updatedAddress != null) changedFields.add('Địa chỉ');
+      if (updatedMajor != null) changedFields.add('Ngành học');
+      if (updatedAvatar != null) changedFields.add('Ảnh đại diện');
+
+      // Call update with only changed fields
+      await ref
+          .read(authProvider.notifier)
+          .updateProfile(
+            userId: currentUser.id,
+            fullName: updatedFullName,
+            address: updatedAddress,
+            major: updatedMajor,
+            avatar: updatedAvatar,
+          );
+
+      // Reset selectedImage sau khi lưu thành công
+      if (hasAvatarChanged) {
+        selectedImage.value = null;
+      }
+
+      isLoading.value = false;
     }
 
     Future<void> handleSaveDebounced() async {
@@ -265,11 +326,17 @@ class EditProfileScreen extends HookConsumerWidget {
                                 icon: Icons.person_outline,
                               ),
                               validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Vui lòng nhập họ và tên';
-                                }
-                                if (value.trim().length < 2) {
-                                  return 'Họ và tên phải có ít nhất 2 ký tự';
+                                // Chỉ validate nếu trường này đã thay đổi
+                                final hasChanged =
+                                    fullNameController.text !=
+                                    authState.user?.fullName;
+                                if (hasChanged) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Vui lòng nhập họ và tên';
+                                  }
+                                  if (value.trim().length < 2) {
+                                    return 'Họ và tên phải có ít nhất 2 ký tự';
+                                  }
                                 }
                                 return null;
                               },
@@ -287,11 +354,17 @@ class EditProfileScreen extends HookConsumerWidget {
                                 icon: Icons.location_on_outlined,
                               ),
                               validator: (value) {
-                                if (value == null || value.trim().isEmpty) {
-                                  return 'Vui lòng nhập địa chỉ';
-                                }
-                                if (value.trim().length < 5) {
-                                  return 'Địa chỉ phải có ít nhất 5 ký tự';
+                                // Chỉ validate nếu trường này đã thay đổi
+                                final hasChanged =
+                                    addressController.text !=
+                                    authState.user?.address;
+                                if (hasChanged) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return 'Vui lòng nhập địa chỉ';
+                                  }
+                                  if (value.trim().length < 5) {
+                                    return 'Địa chỉ phải có ít nhất 5 ký tự';
+                                  }
                                 }
                                 return null;
                               },
@@ -309,8 +382,15 @@ class EditProfileScreen extends HookConsumerWidget {
                                 selectedMajor.value = value;
                               },
                               validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Vui lòng chọn ngành học';
+                                // Chỉ validate nếu trường này đã thay đổi
+                                final hasChanged =
+                                    selectedMajor.value != null &&
+                                    selectedMajor.value !=
+                                        authState.user?.major;
+                                if (hasChanged) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Vui lòng chọn ngành học';
+                                  }
                                 }
                                 return null;
                               },
@@ -320,12 +400,12 @@ class EditProfileScreen extends HookConsumerWidget {
 
                         SizedBox(height: isTablet ? 40 : 32),
 
-                        // Save button with loading state
+                        // Save button
                         SizedBox(
                           height: isTablet ? 56 : 50,
                           child: ElevatedButton.icon(
                             onPressed:
-                                isLoading.value ? null : handleSaveDebounced,
+                                !isLoading.value ? handleSaveDebounced : null,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: colorScheme.primary,
                               foregroundColor: colorScheme.onPrimary,

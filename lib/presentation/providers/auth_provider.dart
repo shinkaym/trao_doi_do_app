@@ -322,7 +322,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isLoading: false,
           isLoggedIn: true,
           user: loginResponse.user,
-          successMessage: 'Đăng nhập thành công!',
+          // successMessage: 'Đăng nhập thành công!',
           isInitialized: true,
         );
       },
@@ -339,13 +339,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
         // Log error nhưng vẫn clear local state
         state = const AuthState(
           isInitialized: true,
-          successMessage: 'Đăng xuất thành công!',
+          // successMessage: 'Đăng xuất thành công!',
         );
       },
       (_) {
         state = const AuthState(
           isInitialized: true,
-          successMessage: 'Đăng xuất thành công!',
+          // successMessage: 'Đăng xuất thành công!',
         );
       },
     );

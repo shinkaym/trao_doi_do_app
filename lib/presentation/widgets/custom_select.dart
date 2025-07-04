@@ -28,8 +28,13 @@ class CustomSelect extends StatelessWidget {
     final theme = context.theme;
     final isTablet = context.isTablet;
 
+    String? validValue;
+    if (value != null && value!.isNotEmpty && items.contains(value)) {
+      validValue = value;
+    }
+
     return DropdownButtonFormField<String>(
-      value: value?.isEmpty == true ? null : value,
+      value: validValue,
       items:
           items.map((String item) {
             return DropdownMenuItem<String>(
