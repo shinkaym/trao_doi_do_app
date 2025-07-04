@@ -15,19 +15,19 @@ final bannerSlidesProvider = Provider<List<Map<String, dynamic>>>(
   (ref) => [
     {
       'id': 1,
-      'image': 'banner_1.png',
+      'image': 'banner_1.jpg',
       'title': 'Trường Cao đẳng Kỹ thuật Cao Thắng',
       'url': 'https://caothang.edu.vn/',
     },
     {
       'id': 2,
-      'image': 'banner_2.png',
+      'image': 'banner_2.jpg',
       'title': 'Tìm hiểu về trường',
       'url': 'https://caothang.edu.vn/bai_viet/Gioi-thieu-1',
     },
     {
       'id': 3,
-      'image': 'banner_3.png',
+      'image': 'banner_3.jpg',
       'title': 'Thông tin tuyển sinh',
       'url': 'https://caothang.edu.vn/tuyensinh/',
     },
