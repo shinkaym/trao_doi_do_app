@@ -14,9 +14,7 @@ import 'package:trao_doi_do_app/presentation/widgets/custom_input_decoration.dar
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
 class LoginScreen extends HookConsumerWidget {
-  final Map<String, dynamic>? extra;
-
-  const LoginScreen({super.key, this.extra});
+  const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,7 +22,6 @@ class LoginScreen extends HookConsumerWidget {
     final emailController = useTextEditingController();
     final passwordController = useTextEditingController();
     final isPasswordVisible = useState(false);
-    final hasAutoLoginAttempted = useState(false);
 
     final debouncer = useMemoized(() => Debouncer());
 
@@ -40,44 +37,7 @@ class LoginScreen extends HookConsumerWidget {
       };
     }, []);
 
-    // Auto-fill and attempt login if extra contains email and password
-    useEffect(() {
-      if (extra != null) {
-        if (extra!.containsKey('email') && extra!.containsKey('password')) {
-          final email = extra!['email']?.toString() ?? '';
-          final password = extra!['password']?.toString() ?? '';
-          if (email.isNotEmpty &&
-              password.isNotEmpty &&
-              !hasAutoLoginAttempted.value) {
-            // Fill the text controllers
-            emailController.text = email;
-            passwordController.text = password;
-
-            // Mark that we've attempted auto login
-            hasAutoLoginAttempted.value = true;
-
-            // Attempt auto login after a brief delay
-            WidgetsBinding.instance.addPostFrameCallback((_) async {
-              if (context.mounted) {
-                try {
-                  await ref
-                      .read(authProvider.notifier)
-                      .login(
-                        email: email,
-                        password: password,
-                        device: 'mobile',
-                      );
-                } catch (e) {}
-              }
-            });
-          }
-        }
-      }
-
-      return null;
-    }, [extra]);
     // Listen to auth state changes
-
     useEffect(() {
       if (authState.failure != null) {
         Future.microtask(() {
@@ -238,44 +198,6 @@ class LoginScreen extends HookConsumerWidget {
                             },
                             onFieldSubmitted: (_) => handleLoginDebounced(),
                           ),
-
-                          SizedBox(height: isTablet ? 16 : 12),
-
-                          // Auto login indicator (optional)
-                          if (extra != null &&
-                              extra!.containsKey('email') &&
-                              extra!.containsKey('password') &&
-                              authState.isLoading)
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                children: [
-                                  SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        colorScheme.primary,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Đang tự động đăng nhập...',
-                                    style: TextStyle(
-                                      color: colorScheme.primary,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
 
                           SizedBox(height: isTablet ? 16 : 12),
 

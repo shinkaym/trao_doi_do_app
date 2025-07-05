@@ -77,8 +77,8 @@ class _CollegeLinksSectionState extends State<CollegeLinksSection> {
         children: [
           // Header
           _SectionHeader(
-            isTablet: widget.isTablet, 
-            colorScheme: widget.colorScheme
+            isTablet: widget.isTablet,
+            colorScheme: widget.colorScheme,
           ),
 
           SizedBox(height: widget.isTablet ? 16 : 12),
@@ -133,24 +133,26 @@ class _CollegeLinksSectionState extends State<CollegeLinksSection> {
   Widget _buildPageIndicator() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: _universityLinks.asMap().entries.map((entry) {
-        return GestureDetector(
-          onTap: () {
-            // Optional: Add controller to jump to specific page
-          },
-          child: Container(
-            width: 6,
-            height: 6,
-            margin: const EdgeInsets.symmetric(horizontal: 3),
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _currentIndex == entry.key
-                  ? widget.colorScheme.primary
-                  : widget.colorScheme.outline.withOpacity(0.3),
-            ),
-          ),
-        );
-      }).toList(),
+      children:
+          _universityLinks.asMap().entries.map((entry) {
+            return GestureDetector(
+              onTap: () {
+                // Optional: Add controller to jump to specific page
+              },
+              child: Container(
+                width: 6,
+                height: 6,
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color:
+                      _currentIndex == entry.key
+                          ? widget.colorScheme.primary
+                          : widget.colorScheme.outline.withOpacity(0.3),
+                ),
+              ),
+            );
+          }).toList(),
     );
   }
 }
@@ -244,18 +246,20 @@ class _LinkPreviewCardState extends State<_LinkPreviewCard> {
               children: [
                 // Background Image
                 Positioned.fill(
-                  child: widget.linkPreview.imageUrl != null
-                      ? Image.network(
-                          widget.linkPreview.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              _buildPlaceholderBackground(),
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return _buildPlaceholderBackground();
-                          },
-                        )
-                      : _buildPlaceholderBackground(),
+                  child:
+                      widget.linkPreview.imageUrl != null
+                          ? Image.network(
+                            widget.linkPreview.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder:
+                                (context, error, stackTrace) =>
+                                    _buildPlaceholderBackground(),
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return _buildPlaceholderBackground();
+                            },
+                          )
+                          : _buildPlaceholderBackground(),
                 ),
 
                 // Gradient Overlay - Đậm hơn để chữ rõ hơn
@@ -432,11 +436,7 @@ class _LinkPreviewCardState extends State<_LinkPreviewCard> {
           context.showErrorSnackBar('Không thể mở liên kết: $url');
         }
       }
-    } catch (e) {
-      if (context.mounted) {
-        context.showErrorSnackBar('Lỗi khi mở liên kết: $e');
-      }
-    }
+    } catch (e) {}
   }
 }
 

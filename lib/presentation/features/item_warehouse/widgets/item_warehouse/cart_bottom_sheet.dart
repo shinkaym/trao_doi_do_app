@@ -55,18 +55,19 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
           final item = widget.getItemById(itemId);
           if (item != null) {
             final availableForClaim = getAvailableForClaim(item);
-            
+
             if (newQuantity > availableForClaim) {
               final itemName = itemKey.split('_').skip(1).join('_');
-              
+
               // Xác định thông báo lỗi phù hợp
               String errorMessage;
               if (item.quantity < item.maxClaim) {
                 errorMessage = 'Chỉ còn ${item.quantity} "$itemName" trong kho';
               } else {
-                errorMessage = 'Chỉ được phép nhận tối đa ${item.maxClaim} "$itemName"';
+                errorMessage =
+                    'Chỉ được phép nhận tối đa ${item.maxClaim} "$itemName"';
               }
-              
+
               context.showErrorSnackBar(errorMessage);
               return;
             }
@@ -95,7 +96,7 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
         final item = widget.getItemById(itemId);
         if (item != null) {
           final availableForClaim = getAvailableForClaim(item);
-          
+
           if (quantity > availableForClaim) {
             hasInvalidQuantity = true;
             final itemName = itemKey.split('_').skip(1).join('_');
@@ -150,13 +151,7 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
         Navigator.pop(context);
         widget.onConfirm();
       }
-    } catch (e) {
-      if (mounted) {
-        context.showErrorSnackBar(
-          'Có lỗi xảy ra khi tạo yêu cầu: ${e.toString()}',
-        );
-      }
-    }
+    } catch (e) {}
   }
 
   @override
@@ -262,8 +257,9 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
 
                   final item =
                       itemId != null ? widget.getItemById(itemId) : null;
-                  final availableForClaim = item != null ? getAvailableForClaim(item) : 0;
-                  
+                  final availableForClaim =
+                      item != null ? getAvailableForClaim(item) : 0;
+
                   // Xác định loại giới hạn để hiển thị thông tin phù hợp
                   String limitInfo = '';
                   if (item != null) {
@@ -374,12 +370,17 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
                                             if (item != null &&
                                                 quantity >= availableForClaim) {
                                               String errorMessage;
-                                              if (item.quantity < item.maxClaim) {
-                                                errorMessage = 'Chỉ còn ${item.quantity} "$itemName" trong kho';
+                                              if (item.quantity <
+                                                  item.maxClaim) {
+                                                errorMessage =
+                                                    'Chỉ còn ${item.quantity} "$itemName" trong kho';
                                               } else {
-                                                errorMessage = 'Chỉ được phép nhận tối đa ${item.maxClaim} "$itemName"';
+                                                errorMessage =
+                                                    'Chỉ được phép nhận tối đa ${item.maxClaim} "$itemName"';
                                               }
-                                              context.showErrorSnackBar(errorMessage);
+                                              context.showErrorSnackBar(
+                                                errorMessage,
+                                              );
                                               return;
                                             }
                                             _updateItemQuantity(
@@ -440,7 +441,7 @@ class _CartBottomSheetState extends ConsumerState<CartBottomSheet> {
                                 SizedBox(width: widget.isTablet ? 8 : 6),
                                 Expanded(
                                   child: Text(
-                                    item.quantity < item.maxClaim 
+                                    item.quantity < item.maxClaim
                                         ? 'Số lượng vượt quá hàng có sẵn trong kho'
                                         : 'Số lượng vượt quá giới hạn cho phép nhận',
                                     style: widget.theme.textTheme.bodySmall

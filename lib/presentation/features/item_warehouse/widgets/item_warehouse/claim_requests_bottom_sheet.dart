@@ -95,18 +95,7 @@ class _ClaimRequestsBottomSheetState
           _initializeData();
         });
       }
-    } catch (e) {
-      if (!_isDisposed && mounted) {
-        if (!e.toString().contains('dispose') &&
-            !e.toString().contains('Tried to use')) {
-          Future.delayed(const Duration(milliseconds: 100), () {
-            if (mounted && !_isDisposed) {
-              context.showErrorSnackBar('Không thể tải danh sách yêu cầu: $e');
-            }
-          });
-        }
-      }
-    }
+    } catch (e) {}
   }
 
   void _updateItemQuantity(int itemID, int newQuantity) {
