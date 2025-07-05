@@ -419,7 +419,6 @@ class InterestChatScreen extends HookConsumerWidget {
 
       isSending.value = true;
       messageController.clear();
-      print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa $displayUserId.value');
 
       try {
         webSocketNotifier.sendMessage(

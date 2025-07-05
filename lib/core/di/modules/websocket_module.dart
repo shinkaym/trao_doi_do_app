@@ -74,12 +74,7 @@ final multiWebSocketConnectionProvider = Provider.autoDispose((ref) {
   Future<void> _connectAll(String token) async {
     try {
       await ref.read(multiWebSocketRepositoryProvider).connectAll(token);
-      final manager = ref.read(multiWebSocketManagerProvider);
-      print('Chat state: ${manager.getChatConnectionState()}');
-      print(
-        'ChatNotification state: ${manager.getChatNotificationConnectionState()}',
-      );
-      print('Notification state: ${manager.getNotificationConnectionState()}');
+      ref.read(multiWebSocketManagerProvider);
     } catch (e) {
       // Log error or handle appropriately
     }

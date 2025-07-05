@@ -198,7 +198,6 @@ class RouterNotifier extends ChangeNotifier {
         final getAccessTokenUseCase = _ref.read(getAccessTokenUseCaseProvider);
         final result = await getAccessTokenUseCase.execute();
         result.fold((failure) {}, (token) async {
-          print('TokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenToken: $token');
           if (token != null) {
             try {
               await _ref

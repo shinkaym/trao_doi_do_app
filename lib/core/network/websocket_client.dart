@@ -1,13 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:trao_doi_do_app/core/config/flavor.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-enum WebSocketConnectionState {
-  connecting,
-  connected,
-  disconnected,
-  error,
-}
+enum WebSocketConnectionState { connecting, connected, disconnected, error }
 
 class WebSocketClient {
   WebSocketChannel? _channel;
@@ -15,14 +11,16 @@ class WebSocketClient {
       StreamController<Map<String, dynamic>>.broadcast();
   final StreamController<WebSocketConnectionState> _stateController =
       StreamController<WebSocketConnectionState>.broadcast();
-  WebSocketConnectionState _currentState = WebSocketConnectionState.disconnected;
+  WebSocketConnectionState _currentState =
+      WebSocketConnectionState.disconnected;
   Timer? _pingTimer;
   static const Duration _pingInterval = Duration(seconds: 30);
   static const Duration _timeoutDuration = Duration(seconds: 60);
   Timer? _timeoutTimer;
 
   Stream<Map<String, dynamic>> get messageStream => _messageController.stream;
-  Stream<WebSocketConnectionState> get connectionStream => _stateController.stream;
+  Stream<WebSocketConnectionState> get connectionStream =>
+      _stateController.stream;
   WebSocketConnectionState get currentState => _currentState;
 
   Future<void> connect(String? token, String endpoint) async {
@@ -30,7 +28,7 @@ class WebSocketClient {
 
     _updateState(WebSocketConnectionState.connecting);
     try {
-      final wsUrl = 'ws://34.142.168.171:8001$endpoint';
+      final wsUrl = '${AppConfig.wsDomain}$endpoint';
       _channel = WebSocketChannel.connect(
         Uri.parse(wsUrl),
         protocols: token != null ? [token] : null,
@@ -84,7 +82,6 @@ class WebSocketClient {
         _messageController.add(message);
       }
     } catch (e) {
-      print('Error parsing WebSocket data: $e');
       _updateState(WebSocketConnectionState.error);
       _messageController.addError('Error parsing message: $e');
     }
@@ -114,7 +111,10 @@ class WebSocketClient {
     _pingTimer?.cancel();
     _timeoutTimer?.cancel();
     await Future.delayed(Duration(seconds: 5)); // Simple delay before reconnect
-    await connect(null, ''); // Token and endpoint will be provided by the manager
+    await connect(
+      null,
+      '',
+    ); // Token and endpoint will be provided by the manager
   }
 
   void sendEvent(String event, Map<String, dynamic> data) {

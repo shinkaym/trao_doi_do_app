@@ -56,13 +56,9 @@ class MultiWebSocketManager {
   Future<void> connectAll(String? token) async {
     try {
       await Future.wait([
-        connectToChat(token).then((_) => print('Chat connected')),
-        connectToChatNotification(
-          token,
-        ).then((_) => print('ChatNotification connected')),
-        connectToNotification(
-          token,
-        ).then((_) => print('Notification connected')),
+        connectToChat(token),
+        connectToChatNotification(token),
+        connectToNotification(token),
       ], eagerError: true);
     } catch (e) {
       _responseController.addError(
