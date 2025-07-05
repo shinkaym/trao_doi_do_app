@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/core/network/multi_websocket_manager.dart';
 import 'package:trao_doi_do_app/core/network/websocket_client.dart';
 import 'package:trao_doi_do_app/domain/entities/response/websocket_response.dart';
 import 'package:trao_doi_do_app/domain/entities/chat_notification.dart';
@@ -26,9 +27,6 @@ class ChatNotificationWebSocketState {
     WebSocketResponse? lastResponse,
     String? error,
     bool? isConnecting,
-    int? unreadCount,
-    int? interestedPostsUnreadCount,
-    int? postsWithInterestsUnreadCount,
   }) {
     return ChatNotificationWebSocketState(
       connectionState: connectionState ?? this.connectionState,
@@ -52,37 +50,32 @@ class ChatNotificationWebSocketNotifier
   StreamSubscription? _responseSubscription;
 
   ChatNotificationWebSocketNotifier(this._repository)
-    : super(const ChatNotificationWebSocketState()) {
+      : super(const ChatNotificationWebSocketState()) {
     _listenToConnectionState();
     _listenToChatNotificationResponses();
   }
 
   void _listenToConnectionState() {
     _connectionSubscription = _repository.connectionStream.listen(
-      (connectionState) {
+      (states) {
+        final connectionState = states[WebSocketChannel.chatNotification] ??
+            WebSocketConnectionState.disconnected;
         state = state.copyWith(
           connectionState: connectionState,
           isConnecting: connectionState == WebSocketConnectionState.connecting,
-          error:
-              connectionState == WebSocketConnectionState.error
-                  ? 'Connection error'
-                  : null,
+          error: connectionState == WebSocketConnectionState.error
+              ? 'Chat notification connection error'
+              : null,
         );
 
-        // Clear notifications when disconnected
         if (connectionState == WebSocketConnectionState.disconnected) {
-          state = state.copyWith(
-            notifications: [],
-            unreadCount: 0,
-            interestedPostsUnreadCount: 0,
-            postsWithInterestsUnreadCount: 0,
-          );
+          state = state.copyWith(notifications: []);
         }
       },
       onError: (error) {
         state = state.copyWith(
           connectionState: WebSocketConnectionState.error,
-          error: 'Connection stream error: $error',
+          error: 'Chat notification connection stream error: $error',
           isConnecting: false,
         );
       },
@@ -95,41 +88,26 @@ class ChatNotificationWebSocketNotifier
         state = state.copyWith(lastResponse: response);
 
         switch (response.event) {
-          case 'join_noti_room_response':
-            break;
-
           case 'send_message_response':
             if (response.isSuccess && response.data != null) {
               _handleNewMessageNotification(response.data!);
             }
             break;
-
-          case 'pong':
-            // Handle ping/pong for keep-alive
-            break;
-
-          default:
-            // Handle any other notification events
-            if (response.data != null) {
-              _handleNewChatNotification(response.data!);
-            }
         }
       },
       onError: (error) {
-        state = state.copyWith(error: 'Response stream error: $error');
+        state = state.copyWith(error: 'Chat notification response stream error: $error');
       },
     );
   }
 
-  void _handleNewMessageNotification(Map<String, dynamic> data) {}
-
-  void _handleNewChatNotification(Map<String, dynamic> data) {
+  void _handleNewMessageNotification(Map<String, dynamic> data) {
     try {
       final notification = ChatNotification.fromJson(data);
       final updatedNotifications = [notification, ...state.notifications];
       state = state.copyWith(notifications: updatedNotifications);
     } catch (e) {
-      state = state.copyWith(error: 'Error parsing chat notification: $e');
+      state = state.copyWith(error: 'Error parsing notification: $e');
     }
   }
 
@@ -169,40 +147,19 @@ class ChatNotificationWebSocketNotifier
     await connect(token);
   }
 
-  Future<void> connectToChatNotification(String? token) async {
-    return connect(token);
-  }
-
   void clearError() {
     state = state.copyWith(error: null);
   }
 
-  void markAsRead() {
-    state = state.copyWith(
-      unreadCount: 0,
-      interestedPostsUnreadCount: 0,
-      postsWithInterestsUnreadCount: 0,
-    );
-  }
-
   void clearAllNotifications() {
-    state = state.copyWith(
-      notifications: [],
-      unreadCount: 0,
-      interestedPostsUnreadCount: 0,
-      postsWithInterestsUnreadCount: 0,
-    );
+    state = state.copyWith(notifications: []);
   }
 
   void disconnect() {
     _repository.disconnectChatNotification();
-
     state = state.copyWith(
       connectionState: WebSocketConnectionState.disconnected,
       notifications: [],
-      unreadCount: 0,
-      interestedPostsUnreadCount: 0,
-      postsWithInterestsUnreadCount: 0,
       isConnecting: false,
     );
   }

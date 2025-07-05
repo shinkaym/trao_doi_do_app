@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:trao_doi_do_app/core/network/multi_websocket_manager.dart';
 import 'package:trao_doi_do_app/core/network/websocket_client.dart';
 import 'package:trao_doi_do_app/domain/entities/response/websocket_response.dart';
 import 'package:trao_doi_do_app/domain/entities/notification_socket.dart';
@@ -51,28 +52,33 @@ class NotificationWebSocketNotifier
   StreamSubscription? _responseSubscription;
 
   NotificationWebSocketNotifier(this._repository)
-    : _audioPlayer = AudioPlayer(),
-      super(const NotificationWebSocketState()) {
+      : _audioPlayer = AudioPlayer(),
+        super(const NotificationWebSocketState()) {
     _listenToConnectionState();
     _listenToNotificationResponses();
   }
 
   void _listenToConnectionState() {
     _connectionSubscription = _repository.connectionStream.listen(
-      (connectionState) {
+      (states) {
+        final connectionState = states[WebSocketChannel.notification] ??
+            WebSocketConnectionState.disconnected;
         state = state.copyWith(
           connectionState: connectionState,
           isConnecting: connectionState == WebSocketConnectionState.connecting,
-          error:
-              connectionState == WebSocketConnectionState.error
-                  ? 'Connection error'
-                  : null,
+          error: connectionState == WebSocketConnectionState.error
+              ? 'Notification connection error'
+              : null,
         );
+
+        if (connectionState == WebSocketConnectionState.disconnected) {
+          state = state.copyWith(notifications: []);
+        }
       },
       onError: (error) {
         state = state.copyWith(
           connectionState: WebSocketConnectionState.error,
-          error: 'Connection stream error: $error',
+          error: 'Notification connection stream error: $error',
           isConnecting: false,
         );
       },
@@ -98,20 +104,17 @@ class NotificationWebSocketNotifier
         }
       },
       onError: (error) {
-        state = state.copyWith(error: 'Response stream error: $error');
+        state = state.copyWith(error: 'Notification response stream error: $error');
       },
     );
   }
 
   Future<void> _playNotificationSound() async {
     try {
-      await _audioPlayer.stop(); // Dừng âm thanh hiện tại nếu có
+      await _audioPlayer.stop();
       await _audioPlayer.play(AssetSource('sounds/notification.mp3'));
-
-      // Hoặc nếu bạn muốn phát từ URL:
-      // await _audioPlayer.play(UrlSource('https://example.com/sound.mp3'));
     } catch (e) {
-      print('Error playing notification sound: $e');
+      state = state.copyWith(error: 'Error playing notification sound: $e');
     }
   }
 
@@ -130,9 +133,15 @@ class NotificationWebSocketNotifier
       state = state.copyWith(
         isConnecting: false,
         connectionState: WebSocketConnectionState.error,
-        error: 'Failed to connect: $e',
+        error: 'Failed to connect to notification: $e',
       );
     }
+  }
+
+  Future<void> reconnect(String? token) async {
+    disconnect();
+    await Future.delayed(const Duration(milliseconds: 500));
+    await connect(token);
   }
 
   void disconnect() {
@@ -149,6 +158,7 @@ class NotificationWebSocketNotifier
     _connectionSubscription?.cancel();
     _responseSubscription?.cancel();
     disconnect();
+    _audioPlayer.dispose();
     super.dispose();
   }
 }

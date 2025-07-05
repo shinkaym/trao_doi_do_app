@@ -5,27 +5,22 @@ import 'package:trao_doi_do_app/domain/entities/response/websocket_response.dart
 import 'package:trao_doi_do_app/domain/entities/websocket_event.dart';
 
 abstract class MultiWebSocketRemoteDataSource {
-  // General streams
   Stream<WebSocketResponse> get responseStream;
-  Stream<WebSocketConnectionState> get connectionStream;
+  Stream<Map<WebSocketChannel, WebSocketConnectionState>> get connectionStream;
 
-  // Specific streams
   Stream<WebSocketResponse> get chatResponseStream;
   Stream<WebSocketResponse> get chatNotificationResponseStream;
   Stream<WebSocketResponse> get notificationResponseStream;
 
-  // Connection methods
   Future<void> connectToChat(String? token);
   Future<void> connectToChatNotification(String? token);
   Future<void> connectToNotification(String? token);
   Future<void> connectAll(String? token);
 
-  // State getters
   WebSocketConnectionState get chatConnectionState;
   WebSocketConnectionState get chatNotificationConnectionState;
   WebSocketConnectionState get notificationConnectionState;
 
-  // Actions
   void sendChatEvent(WebSocketEvent event);
   void sendChatNotificationEvent(WebSocketEvent event);
   void sendNotificationEvent(WebSocketEvent event);
@@ -46,7 +41,7 @@ class MultiWebSocketRemoteDataSourceImpl
   Stream<WebSocketResponse> get responseStream => _manager.responseStream;
 
   @override
-  Stream<WebSocketConnectionState> get connectionStream =>
+  Stream<Map<WebSocketChannel, WebSocketConnectionState>> get connectionStream =>
       _manager.connectionStream;
 
   @override
@@ -65,21 +60,15 @@ class MultiWebSocketRemoteDataSourceImpl
   Future<void> connectToChat(String? token) => _manager.connectToChat(token);
 
   @override
+  Future<void> connectToChatNotification(String? token) =>
+      _manager.connectToChatNotification(token);
+
+  @override
   Future<void> connectToNotification(String? token) =>
       _manager.connectToNotification(token);
 
   @override
-  Future<void> connectAll(String? token) async {
-    await Future.wait([
-      _manager.connectToChat(token),
-      _manager.connectToChatNotification(token),
-      _manager.connectToNotification(token),
-    ]);
-  }
-
-  @override
-  Future<void> connectToChatNotification(String? token) =>
-      _manager.connectToChatNotification(token);
+  Future<void> connectAll(String? token) => _manager.connectAll(token);
 
   @override
   WebSocketConnectionState get chatConnectionState =>

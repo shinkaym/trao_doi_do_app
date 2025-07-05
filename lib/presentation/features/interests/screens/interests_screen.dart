@@ -49,6 +49,7 @@ class InterestsScreen extends HookConsumerWidget {
 
     final totalInterestedPostsUnreadCount =
         interestedPostsState.unreadMessageCount;
+        
     final totalPostsWithInterestsUnreadCount =
         postsWithInterestsState.unreadMessageCount;
 

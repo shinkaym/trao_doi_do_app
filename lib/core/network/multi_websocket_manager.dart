@@ -8,15 +8,18 @@ class MultiWebSocketManager {
   final Map<WebSocketChannel, WebSocketClient> _clients = {};
   final StreamController<WebSocketResponse> _responseController =
       StreamController<WebSocketResponse>.broadcast();
-  final StreamController<WebSocketConnectionState> _connectionController =
-      StreamController<WebSocketConnectionState>.broadcast();
+  final StreamController<Map<WebSocketChannel, WebSocketConnectionState>>
+  _connectionController =
+      StreamController<
+        Map<WebSocketChannel, WebSocketConnectionState>
+      >.broadcast();
 
   final Map<WebSocketChannel, StreamSubscription> _messageSubscriptions = {};
   final Map<WebSocketChannel, StreamSubscription> _connectionSubscriptions = {};
 
   Stream<WebSocketResponse> get responseStream => _responseController.stream;
-  Stream<WebSocketConnectionState> get connectionStream =>
-      _connectionController.stream;
+  Stream<Map<WebSocketChannel, WebSocketConnectionState>>
+  get connectionStream => _connectionController.stream;
 
   Stream<WebSocketResponse> get chatResponseStream =>
       responseStream.where((response) => response.sourceChannel == 'chat');
@@ -31,6 +34,7 @@ class MultiWebSocketManager {
     _clients[WebSocketChannel.chat] = WebSocketClient();
     _clients[WebSocketChannel.chatNotification] = WebSocketClient();
     _clients[WebSocketChannel.notification] = WebSocketClient();
+    _updateConnectionStates();
   }
 
   Future<void> connectToChat(String? token) async {
@@ -49,55 +53,86 @@ class MultiWebSocketManager {
     await _connectChannel(WebSocketChannel.notification, token, '/noti');
   }
 
+  Future<void> connectAll(String? token) async {
+    try {
+      await Future.wait([
+        connectToChat(token).then((_) => print('Chat connected')),
+        connectToChatNotification(
+          token,
+        ).then((_) => print('ChatNotification connected')),
+        connectToNotification(
+          token,
+        ).then((_) => print('Notification connected')),
+      ], eagerError: true);
+    } catch (e) {
+      _responseController.addError(
+        'Failed to connect all channelsFailed to connect all channelsFailed to connect all channelsFailed to connect all channelsFailed to connect all channelsFailed to connect all channelsFailed to connect all channels: $e',
+      );
+    }
+  }
+
   Future<void> _connectChannel(
     WebSocketChannel channel,
     String? token,
     String endpoint,
   ) async {
     final client = _clients[channel]!;
-
-    // Setup subscriptions before connecting
     _setupChannelSubscriptions(channel);
-
-    await client.connect(token, endpoint);
+    try {
+      await client.connect(token, endpoint);
+    } catch (e) {
+      _responseController.addError('Failed to connect $channel: $e');
+      rethrow;
+    }
   }
 
   void _setupChannelSubscriptions(WebSocketChannel channel) {
     final client = _clients[channel]!;
 
-    // Cancel existing subscriptions
     _messageSubscriptions[channel]?.cancel();
     _connectionSubscriptions[channel]?.cancel();
 
-    // ✅ Message subscription with channel tagging
-    _messageSubscriptions[channel] = client.messageStream.listen((data) {
-      final response = WebSocketResponse.fromJson(data);
+    _messageSubscriptions[channel] = client.messageStream.listen(
+      (data) {
+        final response = WebSocketResponse.fromJson(data);
+        String sourceChannel;
+        switch (channel) {
+          case WebSocketChannel.chat:
+            sourceChannel = 'chat';
+            break;
+          case WebSocketChannel.chatNotification:
+            sourceChannel = 'chat-noti';
+            break;
+          case WebSocketChannel.notification:
+            sourceChannel = 'noti';
+            break;
+        }
+        final taggedResponse = response.copyWithSourceChannel(
+          sourceChannel: sourceChannel,
+        );
+        _responseController.add(taggedResponse);
+      },
+      onError: (error) {
+        _responseController.addError('Message error on $channel: $error');
+      },
+    );
 
-      // ✅ Tag response with source channel
-      String sourceChannel;
-      switch (channel) {
-        case WebSocketChannel.chat:
-          sourceChannel = 'chat';
-          break;
-        case WebSocketChannel.chatNotification:
-          sourceChannel = 'chat-noti';
-          break;
-        case WebSocketChannel.notification:
-          sourceChannel = 'noti';
-          break;
-      }
+    _connectionSubscriptions[channel] = client.connectionStream.listen(
+      (state) {
+        _updateConnectionStates();
+      },
+      onError: (error) {
+        _responseController.addError('Connection error on $channel: $error');
+      },
+    );
+  }
 
-      final taggedResponse = response.copyWithSourceChannel(
-        sourceChannel: sourceChannel,
-      );
-
-      _responseController.add(taggedResponse);
-    }, onError: (error) => {});
-
-    // Connection subscription
-    _connectionSubscriptions[channel] = client.connectionStream.listen((state) {
-      _connectionController.add(state);
-    }, onError: (error) => {});
+  void _updateConnectionStates() {
+    final states = {
+      for (var channel in _clients.keys)
+        channel: _clients[channel]!.currentState,
+    };
+    _connectionController.add(states);
   }
 
   void sendChatEvent(String event, Map<String, dynamic> data) {
@@ -129,18 +164,22 @@ class MultiWebSocketManager {
 
   void disconnectChat() {
     _clients[WebSocketChannel.chat]?.disconnect();
+    _updateConnectionStates();
   }
 
   void disconnectChatNotification() {
     _clients[WebSocketChannel.chatNotification]?.disconnect();
+    _updateConnectionStates();
   }
 
   void disconnectNotification() {
     _clients[WebSocketChannel.notification]?.disconnect();
+    _updateConnectionStates();
   }
 
   void disconnectAll() {
     _clients.values.forEach((client) => client.disconnect());
+    _updateConnectionStates();
   }
 
   void dispose() {

@@ -143,12 +143,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         }
 
         // Then check permissions (skip for auth-related routes)
-     if (!routerState.allPermissionsGranted && 
-        !routerState.permissionRequestSkipped &&
-        !RouteUtils.isAuthRoute(currentPath) &&
-        currentPath != RouteConstants.home) { // Thêm điều kiện này
-      return RouteConstants.permissionRequest;
-    }
+        if (!routerState.allPermissionsGranted &&
+            !routerState.permissionRequestSkipped &&
+            !RouteUtils.isAuthRoute(currentPath) &&
+            currentPath != RouteConstants.home) {
+          // Thêm điều kiện này
+          return RouteConstants.permissionRequest;
+        }
       }
 
       // Auth routes - redirect to home if already logged in and setup complete
@@ -185,30 +186,35 @@ class RouterNotifier extends ChangeNotifier {
       }
     });
 
-    // Listen to auth state changes và handle WebSocket connection
-    _ref.listen<AuthState>(authProvider, (previous, next) {
+    _ref.listen<AuthState>(authProvider, (previous, next) async {
       if (next.isLoggedIn && (previous == null || !previous.isLoggedIn)) {
-        // Load thông báo từ API và unread count
+        // Load notifications and unread count
         _ref
             .read(notificationProvider.notifier)
             .loadNotifications(refresh: true);
         _ref.read(notificationProvider.notifier).loadUnreadCount();
 
-        // Kết nối WebSocket
+        // Connect WebSockets when user logs in
         final getAccessTokenUseCase = _ref.read(getAccessTokenUseCaseProvider);
-        getAccessTokenUseCase.execute().then((result) {
-          result.fold(
-            (failure) => null,
-            (token) => _ref
-                .read(notificationWebSocketProvider.notifier)
-                .connect(token),
-          );
+        final result = await getAccessTokenUseCase.execute();
+        result.fold((failure) {}, (token) async {
+          print('TokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenTokenToken: $token');
+          if (token != null) {
+            try {
+              await _ref
+                  .read(multiWebSocketRepositoryProvider)
+                  .connectAll(token);
+            } catch (e) {}
+          }
         });
       } else if (!next.isLoggedIn && previous != null && previous.isLoggedIn) {
-        // Ngắt kết nối WebSocket khi logout
-        _ref.read(notificationWebSocketProvider.notifier).disconnect();
         // Reset notification state
         _ref.invalidate(notificationProvider);
+
+        // Disconnect all WebSockets
+        try {
+          _ref.read(multiWebSocketRepositoryProvider).disconnectAll();
+        } catch (e) {}
       }
     });
   }

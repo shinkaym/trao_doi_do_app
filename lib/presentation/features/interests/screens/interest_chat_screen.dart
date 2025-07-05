@@ -18,6 +18,7 @@ import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/messages_list_widget.dart';
 import 'package:trao_doi_do_app/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter_debouncer/flutter_debouncer.dart';
+import 'package:collection/collection.dart';
 
 class InterestChatScreen extends HookConsumerWidget {
   final String interestId;
@@ -37,14 +38,14 @@ class InterestChatScreen extends HookConsumerWidget {
 
     final isLoading = useState(true);
     final isSending = useState(false);
-    final hasMarkedAsRead = useState(
-      false,
-    ); // Thêm flag để tránh đánh dấu đã đọc nhiều lần
+    final hasMarkedAsRead = useState(false);
 
     final isPostOwner = useState<bool>(false);
     final displayName = useState<String>('');
     final displayAvatar = useState<String>('');
     final displayUserId = useState<int?>(null);
+
+    final isReconnecting = useState(false);
 
     // Watch providers
     final authState = ref.watch(authProvider);
@@ -63,6 +64,60 @@ class InterestChatScreen extends HookConsumerWidget {
 
     final getAccessTokenUseCase = ref.read(getAccessTokenUseCaseProvider);
 
+    // Handle WebSocket reconnection
+    useEffect(
+      () {
+        Timer? reconnectTimer;
+
+        if (webSocketState.error != null &&
+            !webSocketState.isConnected &&
+            !webSocketState.isConnecting &&
+            !isReconnecting.value) {
+          reconnectTimer = Timer.periodic(const Duration(seconds: 5), (
+            timer,
+          ) async {
+            if (webSocketState.isConnected) {
+              timer.cancel();
+              isReconnecting.value = false;
+              return;
+            }
+
+            if (!isReconnecting.value) {
+              isReconnecting.value = true;
+              try {
+                final result = await getAccessTokenUseCase.execute();
+                result.fold(
+                  (failure) {
+                    isReconnecting.value = false;
+                    context.showErrorSnackBar(
+                      'Lỗi lấy token: ${failure.message}',
+                    );
+                  },
+                  (token) async {
+                    await webSocketNotifier.reconnect(token);
+                    isReconnecting.value = false;
+                  },
+                );
+              } catch (e) {
+                isReconnecting.value = false;
+                context.showErrorSnackBar('Lỗi kết nối lại: $e');
+              }
+            }
+          });
+        }
+
+        return () {
+          reconnectTimer?.cancel();
+        };
+      },
+      [
+        webSocketState.error,
+        webSocketState.isConnected,
+        webSocketState.isConnecting,
+      ],
+    );
+
+    // Initialize interest detail
     useEffect(() {
       Future.microtask(() async {
         if (interestDetailState.interestDetail == null &&
@@ -85,7 +140,6 @@ class InterestChatScreen extends HookConsumerWidget {
 
             // Set display information based on user role
             if (isPostOwner.value) {
-              // Post owner sees the interested user's info
               final interestedUser = interestDetail.interests.firstWhere(
                 (i) => i.id.toString() == interestId,
                 orElse: () => throw Exception('Interested user not found'),
@@ -94,22 +148,12 @@ class InterestChatScreen extends HookConsumerWidget {
               displayAvatar.value = interestedUser.userAvatar;
               displayUserId.value = interestedUser.userID;
             } else {
-              // Interested user sees the post author's info
               displayName.value = interestDetail.authorName;
               displayAvatar.value = interestDetail.authorAvatar;
               displayUserId.value = interestDetail.authorID;
             }
 
-            // Connect to WebSocket if not already connected
-            if (!webSocketState.isConnected && !webSocketState.isConnecting) {
-              final result = await getAccessTokenUseCase.execute();
-              result.fold(
-                (failure) => {},
-                (token) => webSocketNotifier.connectToChat(token),
-              );
-            }
-
-            // Join the chat room
+            // Join the chat room if connected
             if (webSocketState.isConnected) {
               webSocketNotifier.joinRoom(int.parse(interestId));
             }
@@ -139,13 +183,14 @@ class InterestChatScreen extends HookConsumerWidget {
             });
           } catch (e) {
             isLoading.value = false;
+            context.showErrorSnackBar('Lỗi tải dữ liệu: $e');
           }
         }
       });
       return null;
     }, [interestDetail, authState.user]);
 
-    // Tự động đánh dấu đã đọc tin nhắn khi load xong messages
+    // Auto mark messages as read
     useEffect(() {
       if (!messagesState.isLoading &&
           messagesState.messages.isNotEmpty &&
@@ -155,17 +200,18 @@ class InterestChatScreen extends HookConsumerWidget {
           try {
             await messagesNotifier.markAllAsRead();
             hasMarkedAsRead.value = true;
-          } catch (e) {}
+          } catch (e) {
+            context.showErrorSnackBar('Lỗi đánh dấu đã đọc: $e');
+          }
         });
       }
       return null;
     }, [messagesState.isLoading, messagesState.messages]);
 
-    // Đánh dấu đã đọc khi có tin nhắn mới từ WebSocket
+    // Mark new messages as read
     useEffect(() {
       if (messagesState.messages.isNotEmpty &&
           messagesNotifier.unreadCount > 0) {
-        // Delay một chút để đảm bảo user nhìn thấy tin nhắn
         Future.delayed(const Duration(milliseconds: 1000), () {
           if (messagesNotifier.unreadCount > 0) {
             messagesNotifier.markAllAsRead();
@@ -175,78 +221,56 @@ class InterestChatScreen extends HookConsumerWidget {
       return null;
     }, [messagesState.messages.length]);
 
-    // Handle WebSocket connection state changes
+    // Handle WebSocket connection state
     useEffect(() {
       if (webSocketState.isConnected && authState.user != null) {
-        // Join room when connected
         webSocketNotifier.joinRoom(int.parse(interestId));
+        if (webSocketState.error != null) {
+          webSocketNotifier.clearError();
+        }
       }
       return null;
     }, [webSocketState.isConnected]);
 
-    // Handle WebSocket connection when auth state changes
-    useEffect(() {
-      () async {
-        if (authState.user != null &&
-            !webSocketState.isConnected &&
-            !webSocketState.isConnecting) {
-          final result = await getAccessTokenUseCase.execute();
-          result.fold(
-            (failure) => {},
-            (token) => webSocketNotifier.connectToChat(token),
-          );
-        }
-      }();
-      return null;
-    }, [authState.user]);
-
-    // Handle new WebSocket messages
-
-    void _handleChatMessageResponse(Map<String, dynamic> messageData) {
+    // Handle WebSocket messages
+    void _handleWebSocketMessage(Map<String, dynamic> messageData) {
       final interestID = messageData['interestID'] as int?;
+      if (interestID != int.parse(interestId)) return;
 
-      if (interestID == int.parse(interestId)) {
-        try {
-          if (messageData['senderID'] == null || authState.user?.id == null) {
-            return;
-          }
-
-          final message = Message.fromWebSocket(
-            messageData,
-            interestID: int.parse(interestId),
-            currentUserId: authState.user!.id,
-            otherUserId: displayUserId.value,
-          );
-
-          // Check for duplicates
-          final existingMessage =
-              messagesState.messages.where((m) {
-                if (messageData['id'] != null && m.id == messageData['id']) {
-                  return true;
-                }
-                return m.message == message.message &&
-                    m.senderID == message.senderID &&
-                    m.createdAt != null &&
-                    message.createdAt != null &&
-                    m.createdAt!
-                            .difference(message.createdAt!)
-                            .abs()
-                            .inSeconds <
-                        3;
-              }).firstOrNull;
-
-          if (existingMessage == null) {
-            messagesNotifier.addNewMessage(message);
-
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (scrollController.hasClients) {
-                _scrollToBottom(scrollController);
-              }
-            });
-          }
-        } catch (e) {
-          print('❌ Error in _handleChatMessageResponse: $e');
+      try {
+        if (messageData['senderID'] == null || authState.user?.id == null) {
+          return;
         }
+
+        final message = Message.fromWebSocket(
+          messageData,
+          interestID: int.parse(interestId),
+          currentUserId: authState.user!.id,
+          otherUserId: displayUserId.value,
+        );
+
+        // Check for duplicates
+        final existingMessage = messagesState.messages.firstWhereOrNull((m) {
+          if (messageData['id'] != null && m.id == messageData['id']) {
+            return true;
+          }
+          return m.message == message.message &&
+              m.senderID == message.senderID &&
+              m.createdAt != null &&
+              message.createdAt != null &&
+              m.createdAt!.difference(message.createdAt!).abs().inSeconds < 3;
+        });
+
+        if (existingMessage == null) {
+          messagesNotifier.addNewMessage(message);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (scrollController.hasClients) {
+              _scrollToBottom(scrollController);
+            }
+          });
+        }
+      } catch (e) {
+        context.showErrorSnackBar('Lỗi xử lý tin nhắn: $e');
       }
     }
 
@@ -254,19 +278,16 @@ class InterestChatScreen extends HookConsumerWidget {
       StreamSubscription? chatResponseSubscription;
 
       if (webSocketState.isConnected) {
-        // ✅ Listen directly to chat-specific stream
         chatResponseSubscription = webSocketNotifier.chatResponseStream.listen(
           (response) {
-            print('📨 Direct chat response: ${response.event}');
-
             if (response.event == 'send_message_response' &&
                 response.isSuccess &&
                 response.data != null) {
-              _handleChatMessageResponse(response.data!);
+              _handleWebSocketMessage(response.data!);
             }
           },
           onError: (error) {
-            print('❌ Chat response stream error: $error');
+            context.showErrorSnackBar('Lỗi stream tin nhắn: $error');
           },
         );
       }
@@ -276,95 +297,11 @@ class InterestChatScreen extends HookConsumerWidget {
       };
     }, [webSocketState.isConnected]);
 
-    void _handleNewWebSocketMessage() {
-      final response = webSocketState.lastResponse;
-      if (response == null) return;
-
-      // ✅ CRITICAL: Only process messages from chat channel
-      if (!response.isFromChat) {
-        // Log for debugging
-        print(
-          '🔍 Ignoring message from ${response.sourceChannel}: ${response.event}',
-        );
-        return;
-      }
-
-      if (response.event == 'send_message_response' &&
-          response.isSuccess &&
-          response.data != null) {
-        final messageData = response.data!;
-        final interestID = messageData['interestID'] as int?;
-
-        // ✅ Debug logging
-        print(
-          '📨 Processing chat message: interestID=$interestID, current=${interestId}',
-        );
-
-        if (interestID == int.parse(interestId)) {
-          try {
-            // Validate required fields
-            if (messageData['senderID'] == null || authState.user?.id == null) {
-              print('❌ Missing required fields: senderID or userID');
-              return;
-            }
-
-            // Use the factory constructor
-            final message = Message.fromWebSocket(
-              messageData,
-              interestID: int.parse(interestId),
-              currentUserId: authState.user!.id,
-              otherUserId: displayUserId.value,
-            );
-
-            // Check if message already exists
-            final existingMessage =
-                messagesState.messages.where((m) {
-                  if (messageData['id'] != null && m.id == messageData['id']) {
-                    return true;
-                  }
-                  return m.message == message.message &&
-                      m.senderID == message.senderID &&
-                      m.createdAt != null &&
-                      message.createdAt != null &&
-                      m.createdAt!
-                              .difference(message.createdAt!)
-                              .abs()
-                              .inSeconds <
-                          3;
-                }).firstOrNull;
-
-            if (existingMessage == null) {
-              print('✅ Adding new message from chat channel');
-              messagesNotifier.addNewMessage(message);
-
-              // Scroll to bottom after adding message
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (scrollController.hasClients) {
-                  _scrollToBottom(scrollController);
-                }
-              });
-            } else {
-              print('⚠️ Duplicate message detected, skipping');
-            }
-          } catch (e) {
-            print('❌ Error processing chat message: $e');
-          }
-        }
-      }
-    }
-
-    useEffect(() {
-      if (webSocketState.lastResponse != null) {
-        Future.microtask(_handleNewWebSocketMessage);
-      }
-      return null;
-    }, [webSocketState.lastResponse]);
-
     // Handle WebSocket errors
     useEffect(() {
       if (webSocketState.error != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.showErrorSnackBar('WebSocket Error: ${webSocketState.error}');
+          context.showErrorSnackBar('Lỗi WebSocket: ${webSocketState.error}');
           webSocketNotifier.clearError();
         });
       }
@@ -442,6 +379,28 @@ class InterestChatScreen extends HookConsumerWidget {
       };
     }, []);
 
+    void handleManualReconnect() async {
+      if (webSocketState.isConnecting || isReconnecting.value) return;
+
+      isReconnecting.value = true;
+      try {
+        final result = await getAccessTokenUseCase.execute();
+        result.fold(
+          (failure) {
+            isReconnecting.value = false;
+            context.showErrorSnackBar('Lỗi lấy token: ${failure.message}');
+          },
+          (token) async {
+            await webSocketNotifier.reconnect(token);
+            isReconnecting.value = false;
+          },
+        );
+      } catch (e) {
+        isReconnecting.value = false;
+        context.showErrorSnackBar('Lỗi kết nối lại: $e');
+      }
+    }
+
     // Event handlers
     void sendMessage() async {
       final messageText = messageController.text.trim();
@@ -450,13 +409,17 @@ class InterestChatScreen extends HookConsumerWidget {
 
       if (!webSocketState.isConnected) {
         context.showWarningSnackBar(
-          'Không thể gửi tin nhắn. Đang kết nối lại...',
+          'Không thể gửi tin nhắn. Vui lòng kiểm tra kết nối mạng.',
         );
+        if (!webSocketState.isConnecting && !isReconnecting.value) {
+          handleManualReconnect();
+        }
         return;
       }
 
       isSending.value = true;
       messageController.clear();
+      print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa $displayUserId.value');
 
       try {
         webSocketNotifier.sendMessage(
@@ -467,6 +430,7 @@ class InterestChatScreen extends HookConsumerWidget {
         );
       } catch (e) {
         context.showErrorSnackBar('Lỗi gửi tin nhắn: $e');
+        messageController.text = messageText;
       } finally {
         isSending.value = false;
       }
@@ -514,7 +478,6 @@ class InterestChatScreen extends HookConsumerWidget {
           latestTransaction == null || latestTransaction.status != 1;
 
       if (!canCreateTransaction) {
-        // Thay đổi message dựa trên post type
         final waitMessage =
             interestDetail?.type == PostType.findLost.value
                 ? 'Đợi phản hồi từ chủ bài viết'
@@ -549,13 +512,11 @@ class InterestChatScreen extends HookConsumerWidget {
 
     useEffect(() {
       final response = webSocketState.lastResponse;
-      if (response?.event == 'send_transaction_response') {
-        if (response!.isSuccess) {
-          // Use Future.microtask to avoid state modification during build
-          Future.microtask(() {
-            handleRefreshTransactions();
-          });
-        }
+      if (response?.event == 'send_transaction_response' &&
+          response!.isSuccess) {
+        Future.microtask(() {
+          handleRefreshTransactions();
+        });
       }
       return null;
     }, [webSocketState.lastResponse]);
@@ -605,6 +566,8 @@ class InterestChatScreen extends HookConsumerWidget {
             ConnectionStatusWidget(
               webSocketState: webSocketState,
               isTablet: isTablet,
+              onReconnect: handleManualReconnect,
+              isReconnecting: isReconnecting.value,
             ),
 
             // Post info header

@@ -95,29 +95,6 @@ class CustomBottomNavigation extends HookConsumerWidget {
       },
     );
 
-    // Kết nối tới chat notification WebSocket khi đã đăng nhập
-    useEffect(() {
-      Future.microtask(() async {
-        if (authState.isLoggedIn &&
-            authState.user != null &&
-            !chatNotificationState.isConnected &&
-            !chatNotificationState.isConnecting) {
-          final result = await getAccessTokenUseCase.execute();
-          result.fold(
-            (failure) => {},
-            (token) =>
-                chatNotificationNotifier.connectToChatNotification(token),
-          );
-        }
-
-        // Ngắt kết nối khi đăng xuất
-        if (!authState.isLoggedIn && chatNotificationState.isConnected) {
-          chatNotificationNotifier.disconnect();
-        }
-      });
-      return null;
-    }, [authState.isLoggedIn, authState.user]);
-
     // Xử lý WebSocket connection state changes
     useEffect(() {
       if (chatNotificationState.isConnected) {

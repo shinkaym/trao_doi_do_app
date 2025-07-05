@@ -1,10 +1,11 @@
-import 'package:trao_doi_do_app/domain/entities/response/websocket_response.dart';
+import 'package:trao_doi_do_app/core/network/multi_websocket_manager.dart';
 import 'package:trao_doi_do_app/core/network/websocket_client.dart';
+import 'package:trao_doi_do_app/domain/entities/response/websocket_response.dart';
 
 abstract class MultiWebSocketRepository {
   // Streams
   Stream<WebSocketResponse> get responseStream;
-  Stream<WebSocketConnectionState> get connectionStream;
+  Stream<Map<WebSocketChannel, WebSocketConnectionState>> get connectionStream;
   Stream<WebSocketResponse> get chatResponseStream;
   Stream<WebSocketResponse> get chatNotificationResponseStream;
   Stream<WebSocketResponse> get notificationResponseStream;

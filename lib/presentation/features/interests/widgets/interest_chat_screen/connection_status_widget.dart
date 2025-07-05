@@ -4,16 +4,20 @@ import 'package:trao_doi_do_app/presentation/providers/chat_websocket_provider.d
 class ConnectionStatusWidget extends StatelessWidget {
   final ChatWebSocketState webSocketState;
   final bool isTablet;
+  final VoidCallback? onReconnect;
+  final bool isReconnecting;
 
   const ConnectionStatusWidget({
     super.key,
     required this.webSocketState,
     required this.isTablet,
+    this.onReconnect,
+    this.isReconnecting = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (webSocketState.isConnecting) {
+    if (webSocketState.isConnecting || isReconnecting) {
       return Container(
         padding: const EdgeInsets.all(8),
         color: Colors.orange.withOpacity(0.1),
@@ -30,7 +34,7 @@ class ConnectionStatusWidget extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Text(
-              'Đang kết nối...',
+              isReconnecting ? 'Đang kết nối lại...' : 'Đang kết nối...',
               style: TextStyle(color: Colors.orange, fontSize: 12),
             ),
           ],
@@ -49,6 +53,30 @@ class ConnectionStatusWidget extends StatelessWidget {
               'Mất kết nối',
               style: TextStyle(color: Colors.red, fontSize: 12),
             ),
+            if (onReconnect != null) ...[
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: onReconnect,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'Kết nối lại',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       );

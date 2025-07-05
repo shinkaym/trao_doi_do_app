@@ -1,7 +1,8 @@
+import 'package:trao_doi_do_app/core/network/multi_websocket_manager.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/multi_websocket_remote_datasource.dart';
 import 'package:trao_doi_do_app/domain/entities/response/websocket_response.dart';
-import 'package:trao_doi_do_app/domain/repositories/multi_websocket_repository.dart';
 import 'package:trao_doi_do_app/domain/entities/websocket_event.dart';
+import 'package:trao_doi_do_app/domain/repositories/multi_websocket_repository.dart';
 import 'package:trao_doi_do_app/core/network/websocket_client.dart';
 
 class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
@@ -14,7 +15,7 @@ class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
       _remoteDataSource.responseStream;
 
   @override
-  Stream<WebSocketConnectionState> get connectionStream =>
+  Stream<Map<WebSocketChannel, WebSocketConnectionState>> get connectionStream =>
       _remoteDataSource.connectionStream;
 
   @override
@@ -63,6 +64,10 @@ class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
     required int userID,
     required String message,
   }) {
+    if (_remoteDataSource.chatConnectionState !=
+        WebSocketConnectionState.connected) {
+      throw Exception('Cannot send message: chat channel not connected');
+    }
     final event = WebSocketEvent.sendMessage(
       interestID: interestID,
       isOwner: isOwner,
@@ -74,6 +79,10 @@ class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
 
   @override
   void sendTransaction({required int interestID, required int receiverID}) {
+    if (_remoteDataSource.chatConnectionState !=
+        WebSocketConnectionState.connected) {
+      throw Exception('Cannot send transaction: chat channel not connected');
+    }
     final event = WebSocketEvent.sendTransaction(
       interestID: interestID,
       receiverID: receiverID,
@@ -83,18 +92,30 @@ class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
 
   @override
   void joinRoom({required int interestID}) {
+    if (_remoteDataSource.chatConnectionState !=
+        WebSocketConnectionState.connected) {
+      throw Exception('Cannot join room: chat channel not connected');
+    }
     final event = WebSocketEvent.joinRoom(interestID: interestID);
     _remoteDataSource.sendChatEvent(event);
   }
 
   @override
   void leftRoom({required int interestID}) {
+    if (_remoteDataSource.chatConnectionState !=
+        WebSocketConnectionState.connected) {
+      throw Exception('Cannot leave room: chat channel not connected');
+    }
     final event = WebSocketEvent.leftRoom(interestID: interestID);
     _remoteDataSource.sendChatEvent(event);
   }
 
   @override
   void sendNotificationEvent(String event, Map<String, dynamic> data) {
+    if (_remoteDataSource.notificationConnectionState !=
+        WebSocketConnectionState.connected) {
+      throw Exception('Cannot send notification: notification channel not connected');
+    }
     final wsEvent = WebSocketEvent(
       event: WebSocketEventType.fromString(event) ?? WebSocketEventType.ping,
       data: data,
