@@ -156,14 +156,37 @@ class RegisterStateNotifier extends StateNotifier<RegisterState> {
     state = state.copyWith(isLoading: false);
 
     if (newAuthState.failure == null) {
-      if (context.mounted) {
-        await Future.delayed(const Duration(seconds: 1));
+      // Thay vì chuyển đến login, chúng ta sẽ tự động đăng nhập
+      await _autoLoginAfterSignup(context, state.email, password);
+    }
+  }
+
+  Future<void> _autoLoginAfterSignup(
+    BuildContext context,
+    String email,
+    String password,
+  ) async {
+    try {
+      // Gọi login với thông tin vừa đăng ký
+      await ref
+          .read(authProvider.notifier)
+          .login(email: email, password: password);
+
+      final authState = ref.read(authProvider);
+
+      if (authState.isLoggedIn && authState.user != null) {
+        // Đăng nhập thành công, chuyển đến màn hình chính
         if (context.mounted) {
-          context.goNamed(
-            RouteNames.login,
-            extra: {'email': state.email, 'password': password},
-          );
+          context.goNamed(RouteNames.home);
         }
+      }
+    } catch (e) {
+      // Nếu có lỗi khi đăng nhập tự động, vẫn chuyển đến màn hình login
+      if (context.mounted) {
+        context.goNamed(
+          RouteNames.login,
+          extra: {'email': state.email, 'password': password},
+        );
       }
     }
   }
@@ -609,7 +632,6 @@ class _OtpStepContent extends HookConsumerWidget {
         ),
         SizedBox(height: isTablet ? 24 : 20),
 
-        // Timer and resend
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -763,7 +785,7 @@ class _DetailsStepContent extends HookConsumerWidget {
 
     return Form(
       key: formKey,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
+      autovalidateMode: AutovalidateMode.disabled,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

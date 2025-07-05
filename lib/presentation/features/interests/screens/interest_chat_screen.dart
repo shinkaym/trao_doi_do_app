@@ -64,50 +64,45 @@ class InterestChatScreen extends HookConsumerWidget {
 
     final getAccessTokenUseCase = ref.read(getAccessTokenUseCaseProvider);
 
-    // Handle WebSocket reconnection
+    void _handleReconnect() async {
+      if (isReconnecting.value || webSocketState.isConnected) return;
+
+      isReconnecting.value = true;
+      try {
+        final result = await getAccessTokenUseCase.execute();
+        result.fold(
+          (failure) {
+            isReconnecting.value = false;
+          },
+          (token) async {
+            await webSocketNotifier.reconnect(token);
+            isReconnecting.value = false;
+          },
+        );
+      } catch (e) {
+        isReconnecting.value = false;
+      }
+    }
+
     useEffect(
       () {
-        Timer? reconnectTimer;
+        final debouncer = Debouncer();
+        bool isDisposed = false;
 
         if (webSocketState.error != null &&
             !webSocketState.isConnected &&
-            !webSocketState.isConnecting &&
-            !isReconnecting.value) {
-          reconnectTimer = Timer.periodic(const Duration(seconds: 5), (
-            timer,
-          ) async {
-            if (webSocketState.isConnected) {
-              timer.cancel();
-              isReconnecting.value = false;
-              return;
-            }
-
-            if (!isReconnecting.value) {
-              isReconnecting.value = true;
-              try {
-                final result = await getAccessTokenUseCase.execute();
-                result.fold(
-                  (failure) {
-                    isReconnecting.value = false;
-                    context.showErrorSnackBar(
-                      'Lỗi lấy token: ${failure.message}',
-                    );
-                  },
-                  (token) async {
-                    await webSocketNotifier.reconnect(token);
-                    isReconnecting.value = false;
-                  },
-                );
-              } catch (e) {
-                isReconnecting.value = false;
-                context.showErrorSnackBar('Lỗi kết nối lại: $e');
-              }
-            }
-          });
+            !webSocketState.isConnecting) {
+          debouncer.debounce(
+            duration: const Duration(seconds: 5),
+            onDebounce: () {
+              if (!isDisposed) _handleReconnect();
+            },
+          );
         }
 
         return () {
-          reconnectTimer?.cancel();
+          isDisposed = true;
+          debouncer.cancel();
         };
       },
       [
@@ -116,7 +111,6 @@ class InterestChatScreen extends HookConsumerWidget {
         webSocketState.isConnecting,
       ],
     );
-
     // Initialize interest detail
     useEffect(() {
       Future.microtask(() async {
@@ -183,7 +177,6 @@ class InterestChatScreen extends HookConsumerWidget {
             });
           } catch (e) {
             isLoading.value = false;
-            context.showErrorSnackBar('Lỗi tải dữ liệu: $e');
           }
         }
       });
@@ -200,9 +193,7 @@ class InterestChatScreen extends HookConsumerWidget {
           try {
             await messagesNotifier.markAllAsRead();
             hasMarkedAsRead.value = true;
-          } catch (e) {
-            context.showErrorSnackBar('Lỗi đánh dấu đã đọc: $e');
-          }
+          } catch (e) {}
         });
       }
       return null;
@@ -269,9 +260,7 @@ class InterestChatScreen extends HookConsumerWidget {
             }
           });
         }
-      } catch (e) {
-        context.showErrorSnackBar('Lỗi xử lý tin nhắn: $e');
-      }
+      } catch (e) {}
     }
 
     useEffect(() {
@@ -346,30 +335,6 @@ class InterestChatScreen extends HookConsumerWidget {
       return () => scrollController.removeListener(handleScroll);
     }, [messagesState.isLoadingMore, messagesState.hasMoreData]);
 
-    // Handle transaction state changes
-    useEffect(() {
-      if (transactionsState.failure != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.showErrorSnackBar(
-            'Lỗi tải giao dịch: ${transactionsState.failure!.message}',
-          );
-        });
-      }
-      return null;
-    }, [transactionsState.failure]);
-
-    // Handle messages state changes
-    useEffect(() {
-      if (messagesState.failure != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.showErrorSnackBar(
-            'Lỗi tải tin nhắn: ${messagesState.failure!.message}',
-          );
-        });
-      }
-      return null;
-    }, [messagesState.failure]);
-
     // Cleanup when leaving the screen
     useEffect(() {
       return () {
@@ -388,7 +353,6 @@ class InterestChatScreen extends HookConsumerWidget {
         result.fold(
           (failure) {
             isReconnecting.value = false;
-            context.showErrorSnackBar('Lỗi lấy token: ${failure.message}');
           },
           (token) async {
             await webSocketNotifier.reconnect(token);
@@ -397,7 +361,6 @@ class InterestChatScreen extends HookConsumerWidget {
         );
       } catch (e) {
         isReconnecting.value = false;
-        context.showErrorSnackBar('Lỗi kết nối lại: $e');
       }
     }
 
@@ -428,7 +391,6 @@ class InterestChatScreen extends HookConsumerWidget {
           message: messageText,
         );
       } catch (e) {
-        context.showErrorSnackBar('Lỗi gửi tin nhắn: $e');
         messageController.text = messageText;
       } finally {
         isSending.value = false;

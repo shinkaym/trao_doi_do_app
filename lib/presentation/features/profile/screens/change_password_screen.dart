@@ -733,7 +733,6 @@ class _OtpStepContent extends HookConsumerWidget {
         ),
         SizedBox(height: isTablet ? 24 : 20),
 
-        // Timer and resend
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
