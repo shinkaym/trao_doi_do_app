@@ -36,16 +36,11 @@ class CustomBottomNavigation extends HookConsumerWidget {
     );
 
     // Watch auth state và providers
-    final authState = ref.watch(authProvider);
     final chatNotificationState = ref.watch(chatNotificationWebSocketProvider);
     final unreadCountState = ref.watch(unreadCountProvider);
 
     // Notifiers
-    final chatNotificationNotifier = ref.read(
-      chatNotificationWebSocketProvider.notifier,
-    );
     final unreadCountNotifier = ref.read(unreadCountProvider.notifier);
-    final getAccessTokenUseCase = ref.read(getAccessTokenUseCaseProvider);
 
     // Load unread count khi widget được build lần đầu
     useEffect(() {

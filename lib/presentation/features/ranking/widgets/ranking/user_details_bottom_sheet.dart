@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/ranking.dart';
+import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
 class UserDetailsBottomSheet extends StatelessWidget {
   final UserRank? yourInfo;
@@ -219,6 +220,7 @@ class UserDetailsBottomSheet extends StatelessWidget {
     final createdAt = DateTime.parse(goodDeed.createdAt);
     final timeAgo = TimeUtils.formatTimeAgo(createdAt);
     final itemsText = _buildItemsText(goodDeed.items);
+    final goodDeedType = GoodDeedType.fromValue(goodDeed.goodDeedType);
 
     return Container(
       padding: EdgeInsets.all(isTablet ? 16 : 12),
@@ -230,20 +232,36 @@ class UserDetailsBottomSheet extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header with type and points
           Row(
             children: [
-              Icon(
-                Icons.access_time,
-                size: isTablet ? 16 : 14,
-                color: colorScheme.primary,
-              ),
-              SizedBox(width: isTablet ? 8 : 6),
-              Text(
-                timeAgo,
-                style: TextStyle(
-                  fontSize: isTablet ? 14 : 12,
-                  color: colorScheme.primary,
-                  fontWeight: FontWeight.w500,
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isTablet ? 10 : 8,
+                  vertical: isTablet ? 6 : 4,
+                ),
+                decoration: BoxDecoration(
+                  color: goodDeedType.color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      goodDeedType.icon,
+                      size: isTablet ? 14 : 12,
+                      color: goodDeedType.color,
+                    ),
+                    SizedBox(width: isTablet ? 6 : 4),
+                    Text(
+                      goodDeedType.label,
+                      style: TextStyle(
+                        fontSize: isTablet ? 12 : 10,
+                        color: goodDeedType.color,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Spacer(),
@@ -267,6 +285,30 @@ class UserDetailsBottomSheet extends StatelessWidget {
               ),
             ],
           ),
+
+          SizedBox(height: isTablet ? 8 : 6),
+
+          // Time row
+          Row(
+            children: [
+              Icon(
+                Icons.access_time,
+                size: isTablet ? 16 : 14,
+                color: theme.hintColor,
+              ),
+              SizedBox(width: isTablet ? 8 : 6),
+              Text(
+                timeAgo,
+                style: TextStyle(
+                  fontSize: isTablet ? 14 : 12,
+                  color: theme.hintColor,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+
+          // Items text
           if (itemsText.isNotEmpty) ...[
             SizedBox(height: isTablet ? 8 : 6),
             Text(

@@ -39,23 +39,27 @@ class SmartScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = context.colorScheme;
 
-    return Scaffold(
-      backgroundColor: colorScheme.background,
-      appBar: AdaptiveAppBar.build(
-        context,
-        title: title,
-        forceType: appBarType,
-        showNotification: showNotification,
-        showBackButton: showBackButton,
-        showSearchButton: showSearchButton,
-        actions: appBarActions,
-        bottom: appBarBottom,
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      behavior: HitTestBehavior.opaque,
+      child: Scaffold(
+        backgroundColor: colorScheme.background,
+        appBar: AdaptiveAppBar.build(
+          context,
+          title: title,
+          forceType: appBarType,
+          showNotification: showNotification,
+          showBackButton: showBackButton,
+          showSearchButton: showSearchButton,
+          actions: appBarActions,
+          bottom: appBarBottom,
+        ),
+        body: body,
+        floatingActionButton: floatingActionButton,
+        bottomNavigationBar: bottomNavigationBar,
+        drawer: drawer,
+        endDrawer: endDrawer,
       ),
-      body: body,
-      floatingActionButton: floatingActionButton,
-      bottomNavigationBar: bottomNavigationBar,
-      drawer: drawer,
-      endDrawer: endDrawer,
     );
   }
 }

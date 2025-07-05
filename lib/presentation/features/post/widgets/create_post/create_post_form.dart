@@ -243,10 +243,10 @@ class CreatePostForm extends HookConsumerWidget {
     }
 
     void addGiveAwayItem() {
-      if (giveAwayItems.value.length >= 4) {
-        context.showErrorSnackBar('Chỉ được thêm tối đa 4 món đồ');
-        return;
-      }
+      // if (giveAwayItems.value.length >= 4) {
+      //   context.showErrorSnackBar('Chỉ được thêm tối đa 4 món đồ');
+      //   return;
+      // }
 
       showAddItemDialog(
         context: context,

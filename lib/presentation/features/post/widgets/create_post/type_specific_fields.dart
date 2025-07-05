@@ -481,12 +481,12 @@ class TypeSpecificFields extends HookConsumerWidget {
                         color: colorScheme.onSurface,
                       ),
                     ),
-                    Text(
-                      'Tối đa 4 món đồ',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.hintColor,
-                      ),
-                    ),
+                    // Text(
+                    //   'Tối đa 4 món đồ',
+                    //   style: theme.textTheme.bodySmall?.copyWith(
+                    //     color: theme.hintColor,
+                    //   ),
+                    // ),
                   ],
                 ),
               ),
@@ -519,7 +519,8 @@ class TypeSpecificFields extends HookConsumerWidget {
   }
 
   Widget _buildAddItemButton() {
-    final isDisabled = giveAwayItems.length >= 4;
+    // final isDisabled = giveAwayItems.length >= 4; // 4 món
+    final isDisabled = giveAwayItems.length >= 30;
 
     return Container(
       decoration: BoxDecoration(
