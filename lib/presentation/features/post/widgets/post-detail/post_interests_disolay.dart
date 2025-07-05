@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
-import 'package:trao_doi_do_app/presentation/features/post/widgets/post-detail/user_interest_list_item%20_for_own_post.dart';
+import 'package:trao_doi_do_app/presentation/features/post/widgets/post-detail/user_interest_list_item_for_own_post.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/post-detail/post_interests_section.dart';
 
 class PostInterestsDisplay extends StatelessWidget {

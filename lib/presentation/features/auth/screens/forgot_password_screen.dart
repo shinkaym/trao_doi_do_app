@@ -157,7 +157,7 @@ class ForgotPasswordStateNotifier extends StateNotifier<ForgotPasswordState> {
       if (context.mounted) {
         await Future.delayed(const Duration(seconds: 1));
         if (context.mounted) {
-          context.goNamed(RouteNames.login, extra: {'email': state.email});
+          context.goNamed(RouteNames.login);
         }
       }
     }
