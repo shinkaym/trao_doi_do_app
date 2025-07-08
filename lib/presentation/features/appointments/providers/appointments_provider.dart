@@ -172,16 +172,6 @@ class AppointmentsListNotifier extends StateNotifier<AppointmentsListState> {
     loadAppointments(newQuery: newQuery, refresh: true);
   }
 
-  void sortAppointments(String? sort, String? order) {
-    final newQuery = state.query.copyWith(sort: sort, order: order, page: 1);
-    loadAppointments(newQuery: newQuery, refresh: true);
-  }
-
-  void changeLimit(int limit) {
-    final newQuery = state.query.copyWith(limit: limit, page: 1);
-    loadAppointments(newQuery: newQuery, refresh: true);
-  }
-
   void loadMore() {
     loadAppointments(isLoadMore: true);
   }

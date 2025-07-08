@@ -354,3 +354,11 @@ final unreadNotificationCountProvider = Provider<int>((ref) {
 
 // Provider để theo dõi việc skip permission request
 final permissionRequestSkippedProvider = StateProvider<bool>((ref) => false);
+
+final appointmentProvider =
+    StateNotifierProvider<AppointmentNotifier, AppointmentState>((ref) {
+      final updateAppointmentUseCase = ref.watch(
+        updateAppointmentUseCaseProvider,
+      );
+      return AppointmentNotifier(updateAppointmentUseCase);
+    });

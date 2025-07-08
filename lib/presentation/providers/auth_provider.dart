@@ -7,7 +7,6 @@ import 'package:trao_doi_do_app/domain/usecases/get_me_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/is_logged_in_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/login_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/logout_usecase.dart';
-import 'package:trao_doi_do_app/domain/usecases/refresh_token_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/reset_password_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/send_otp_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/signup_usecase.dart';
@@ -21,7 +20,6 @@ class AuthState {
   final Failure? failure;
   final String? successMessage;
   final bool isInitialized;
-  final bool forceLogout; // Thêm flag để force logout
   final String? verifyToken;
   final bool isOtpSent;
   final bool isOtpVerified;
@@ -33,7 +31,6 @@ class AuthState {
     this.failure,
     this.successMessage,
     this.isInitialized = false,
-    this.forceLogout = false,
     this.verifyToken,
     this.isOtpSent = false,
     this.isOtpVerified = false,
@@ -46,7 +43,6 @@ class AuthState {
     Failure? failure,
     String? successMessage,
     bool? isInitialized,
-    bool? forceLogout,
     String? verifyToken,
     bool? isOtpSent,
     bool? isOtpVerified,
@@ -63,7 +59,6 @@ class AuthState {
       successMessage:
           clearSuccessMessage ? null : (successMessage ?? this.successMessage),
       isInitialized: isInitialized ?? this.isInitialized,
-      forceLogout: forceLogout ?? this.forceLogout,
       verifyToken: clearVerifyToken ? null : (verifyToken ?? this.verifyToken),
       isOtpSent: isOtpSent ?? this.isOtpSent,
       isOtpVerified: isOtpVerified ?? this.isOtpVerified,
@@ -81,7 +76,6 @@ class AuthState {
           failure == other.failure &&
           successMessage == other.successMessage &&
           isInitialized == other.isInitialized &&
-          forceLogout == other.forceLogout &&
           verifyToken == other.verifyToken &&
           isOtpSent == other.isOtpSent &&
           isOtpVerified == other.isOtpVerified;
@@ -94,7 +88,6 @@ class AuthState {
       failure.hashCode ^
       successMessage.hashCode ^
       isInitialized.hashCode ^
-      forceLogout.hashCode ^
       verifyToken.hashCode ^
       isOtpSent.hashCode ^
       isOtpVerified.hashCode;
@@ -105,7 +98,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final LogoutUseCase _logoutUseCase;
   final GetCurrentUserUseCase _getCurrentUserUseCase;
   final IsLoggedInUseCase _isLoggedInUseCase;
-  final RefreshTokenUseCase _refreshTokenUseCase;
   final GetMeUseCase _getMeUseCase;
   final UpdateProfileUseCase _updateProfileUseCase;
   final SendOtpUseCase _sendOtpUseCase;
@@ -118,7 +110,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     this._logoutUseCase,
     this._getCurrentUserUseCase,
     this._isLoggedInUseCase,
-    this._refreshTokenUseCase,
     this._getMeUseCase,
     this._updateProfileUseCase,
     this._sendOtpUseCase,
@@ -240,14 +231,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       isLoggedIn: false,
       isInitialized: true,
       clearUser: true,
-      forceLogout: true, // Set force logout
     );
-
-    // Reset force logout sau một frame để tránh infinite loop
-    await Future.delayed(Duration.zero);
-    if (mounted) {
-      state = state.copyWith(forceLogout: false);
-    }
   }
 
   Future<void> getMe({bool showLoading = true}) async {
@@ -284,18 +268,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
       isInitialized: true,
       isLoggedIn: false,
       clearUser: true,
-      forceLogout: true,
       failure: ServerFailure(
         'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
       ),
     );
-
-    // Reset force logout sau một frame
-    Future.delayed(Duration.zero).then((_) {
-      if (mounted) {
-        state = state.copyWith(forceLogout: false);
-      }
-    });
   }
 
   Future<void> login({
@@ -346,38 +322,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
         state = const AuthState(
           isInitialized: true,
           // successMessage: 'Đăng xuất thành công!',
-        );
-      },
-    );
-  }
-
-  /// IMPROVED: Better refresh token handling
-  Future<void> refreshToken() async {
-    final result = await _refreshTokenUseCase();
-
-    result.fold(
-      (failure) {
-        // Token refresh failed, clear auth state và force logout
-        state = state.copyWith(
-          isInitialized: true,
-          isLoggedIn: false,
-          clearUser: true,
-          forceLogout: true,
-          failure: ServerFailure('Phiên đăng nhập đã hết hạn'),
-        );
-
-        // Reset force logout sau một frame
-        Future.delayed(Duration.zero).then((_) {
-          if (mounted) {
-            state = state.copyWith(forceLogout: false);
-          }
-        });
-      },
-      (user) {
-        state = state.copyWith(
-          user: user,
-          isLoggedIn: user != null,
-          clearFailure: true,
         );
       },
     );

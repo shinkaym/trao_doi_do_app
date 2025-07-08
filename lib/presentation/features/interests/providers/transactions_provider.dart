@@ -132,65 +132,6 @@ class TransactionsListNotifier extends StateNotifier<TransactionsListState> {
     );
   }
 
-  // Navigation methods
-  Future<void> goToPage(int page) async {
-    if (page < 1 || page > state.totalPage || page == state.currentPage) return;
-
-    final newQuery = state.query.copyWith(page: page);
-    await loadTransactions(newQuery: newQuery, isGoToPage: true);
-  }
-
-  Future<void> goToPreviousPage() async {
-    if (state.currentPage > 1) {
-      await goToPage(state.currentPage - 1);
-    }
-  }
-
-  Future<void> goToNextPage() async {
-    if (state.currentPage < state.totalPage) {
-      await goToPage(state.currentPage + 1);
-    }
-  }
-
-  Future<void> goToFirstPage() async {
-    await goToPage(1);
-  }
-
-  Future<void> goToLastPage() async {
-    await goToPage(state.totalPage);
-  }
-
-  // Filter methods
-  void filterByStatus(int? status) {
-    final newQuery = state.query.copyWith(status: status);
-    loadTransactions(newQuery: newQuery, refresh: true);
-  }
-
-  void sortTransactions(String? sort, String? order) {
-    final newQuery = state.query.copyWith(sort: sort, order: order);
-    loadTransactions(newQuery: newQuery, refresh: true);
-  }
-
-  void applyFilter({
-    String? searchBy,
-    String? searchValue,
-    int? status,
-    String? sort,
-    String? order,
-    int? postID, // Add this parameter
-  }) {
-    final newQuery = state.query.copyWith(
-      searchBy: searchBy,
-      searchValue: searchValue,
-      status: status,
-      sort: sort,
-      order: order,
-      postID: postID, // Add this line
-      page: 1,
-    );
-    loadTransactions(newQuery: newQuery, refresh: true);
-  }
-
   // Load more for infinite scroll
   void loadMore() {
     loadTransactions(isLoadMore: true);

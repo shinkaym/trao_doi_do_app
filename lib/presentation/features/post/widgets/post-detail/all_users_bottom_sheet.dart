@@ -204,39 +204,6 @@ class _AllUsersBottomSheetState extends State<AllUsersBottomSheet>
             ),
           ),
           // Count badge
-          if (widget.interests.isNotEmpty) ...[
-            Container(
-              padding: EdgeInsets.symmetric(
-                horizontal: isTablet ? 12 : 10,
-                vertical: isTablet ? 6 : 4,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.red.withOpacity(0.2)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.favorite,
-                    size: isTablet ? 14 : 12,
-                    color: Colors.red,
-                  ),
-                  SizedBox(width: isTablet ? 6 : 4),
-                  Text(
-                    '${widget.interests.length}',
-                    style: TextStyle(
-                      color: Colors.red,
-                      fontSize: isTablet ? 12 : 10,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: isTablet ? 12 : 8),
-          ],
           IconButton(
             onPressed: _closeSheet,
             icon: Icon(

@@ -71,20 +71,18 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
     bool isLoadMore = false,
     bool isGoToPage = false,
   }) async {
-    // Ngăn chặn multiple calls cùng lúc
     if (state.isLoading || state.isLoadingMore || state.isLoadingPage) return;
 
     final query = newQuery ?? state.query;
     final isFirstLoad = refresh || state.interests.isEmpty;
     final isTypeChanged = newQuery != null && newQuery.type != state.query.type;
 
-    // Nếu type thay đổi, luôn load từ đầu
     if (isTypeChanged || isFirstLoad) {
       state = state.copyWith(
         isLoading: true,
         failure: null,
         query: query.copyWith(page: 1),
-        interests: [], // Clear data khi type thay đổi
+        interests: [],
       );
     } else if (isLoadMore) {
       if (!state.hasMoreData || state.currentPage >= state.totalPage) return;
@@ -178,21 +176,11 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
     }
   }
 
-  // Method to update unread message count without full reload
-  void updateUnreadMessageCount(int count) {
-    state = state.copyWith(unreadMessageCount: count);
-  }
-
   // Method to decrease unread count when messages are read
   void decreaseUnreadCount(int countToDecrease) {
     final newTotalCount = state.unreadMessageCount - countToDecrease;
     final finalCount = newTotalCount < 0 ? 0 : newTotalCount;
     state = state.copyWith(unreadMessageCount: finalCount);
-  }
-
-  // Method to mark all messages as read
-  void markAllMessagesAsRead() {
-    state = state.copyWith(unreadMessageCount: 0);
   }
 
   // Pagination methods
@@ -214,19 +202,8 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
     }
   }
 
-  // Filter methods
-  void filterByType(int? type) {
-    final newQuery = state.query.copyWith(type: type, page: 1);
-    loadInterests(newQuery: newQuery, refresh: true);
-  }
-
   void search(String? search) {
     final newQuery = state.query.copyWith(search: search, page: 1);
-    loadInterests(newQuery: newQuery, refresh: true);
-  }
-
-  void sortInterests(String? sort, String? order) {
-    final newQuery = state.query.copyWith(sort: sort, order: order, page: 1);
     loadInterests(newQuery: newQuery, refresh: true);
   }
 
@@ -238,57 +215,8 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
     loadInterests(refresh: true);
   }
 
-  // Thêm method để increment unread count
   void incrementUnreadCount() {
     state = state.copyWith(unreadMessageCount: state.unreadMessageCount + 1);
-  }
-
-  // Method để reset unread count khi user vào chat
-  void resetUnreadCount() {
-    state = state.copyWith(unreadMessageCount: 0);
-  }
-
-  void updateInterestUnreadCount(int interestId, int newCount) {
-    final updatedInterests =
-        state.interests.map((post) {
-          final updatedInterests =
-              post.interests.map((interest) {
-                if (interest.id == interestId) {
-                  return Interest(
-                    id: interest.id,
-                    postID: interest.postID,
-                    userID: interest.userID,
-                    userName: interest.userName,
-                    userAvatar: interest.userAvatar,
-                    status: interest.status,
-                    createdAt: interest.createdAt,
-                    newMessage: interest.newMessage,
-                    messageFromID: interest.messageFromID,
-                    newMessageIsRead: interest.newMessageIsRead,
-                    unreadMessageCount: newCount,
-                  );
-                }
-                return interest;
-              }).toList();
-
-          return InterestPost(
-            id: post.id,
-            slug: post.slug,
-            title: post.title,
-            type: post.type,
-            description: post.description,
-            createdAt: post.createdAt,
-            updatedAt: post.updatedAt,
-            authorID: post.authorID,
-            authorName: post.authorName,
-            authorAvatar: post.authorAvatar,
-            interests: updatedInterests,
-            items: post.items,
-            unreadMessageCount: post.unreadMessageCount,
-          );
-        }).toList();
-
-    state = state.copyWith(interests: updatedInterests);
   }
 
   // Method để tăng unread count cho một interest cụ thể
@@ -413,12 +341,5 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
         }).toList();
 
     state = state.copyWith(interests: updatedPosts);
-  }
-
-  int getTotalUnreadCount() {
-    return state.interests.fold<int>(
-      0,
-      (sum, post) => sum + post.unreadMessageCount,
-    );
   }
 }

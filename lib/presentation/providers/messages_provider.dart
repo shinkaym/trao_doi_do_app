@@ -18,7 +18,7 @@ class MessagesListState {
   final bool hasMoreData;
   final String? markAllReadResult;
   final DateTime? lastLoadTime;
-  final Set<int> loadingPages; // Track which pages are currently loading
+  final Set<int> loadingPages;
 
   MessagesListState({
     this.isLoading = false,
@@ -254,7 +254,6 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
   }
 
   Future<void> searchMessages(String? search) async {
-    // Debounce search để tránh quá nhiều API calls
     _searchDebouncer.debounce(
       duration: const Duration(milliseconds: 500),
       onDebounce: () async {

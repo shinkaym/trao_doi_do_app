@@ -51,8 +51,4 @@ class UnreadCountNotifier extends StateNotifier<UnreadCountState> {
     final newCount = (state.count - amount).clamp(0, double.infinity).toInt();
     state = state.copyWith(count: newCount);
   }
-
-  void markAllAsRead() {
-    state = state.copyWith(count: 0);
-  }
 }

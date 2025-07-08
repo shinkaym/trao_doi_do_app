@@ -153,20 +153,6 @@ class _UserInterestListItemState extends State<UserInterestListItem>
                       ],
                     ),
                   ),
-
-                  // Action icon
-                  Container(
-                    padding: EdgeInsets.all(widget.isTablet ? 8 : 6),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(
-                      Icons.chat_bubble_outline_rounded,
-                      size: widget.isTablet ? 18 : 16,
-                      color: Colors.red.withOpacity(0.8),
-                    ),
-                  ),
                 ],
               ),
             ),

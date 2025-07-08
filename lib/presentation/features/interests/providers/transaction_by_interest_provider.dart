@@ -3,7 +3,6 @@ import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_transaction_by_interest_usecase.dart';
 
-// State cho transaction của từng interest
 class TransactionByInterestState {
   final bool isLoading;
   final Failure? failure;
@@ -29,7 +28,6 @@ class TransactionByInterestState {
   }
 }
 
-// Notifier cho transaction của từng interest
 class TransactionByInterestNotifier
     extends StateNotifier<TransactionByInterestState> {
   final GetTransactionByInterestUseCase _getTransactionByInterestUseCase;

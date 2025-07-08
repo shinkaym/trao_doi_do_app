@@ -47,6 +47,7 @@ import 'package:trao_doi_do_app/domain/usecases/mark_all_messages_read_usecase.d
 import 'package:trao_doi_do_app/domain/usecases/mark_all_notifications_read_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/mark_notification_read_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/onboarding_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/update_appointment_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_claim_request_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_post_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_transaction_status_usecase.dart';
@@ -380,4 +381,10 @@ final markAllNotificationsReadUseCaseProvider =
     Provider.autoDispose<MarkAllNotificationsReadUseCase>((ref) {
       final repository = ref.watch(notificationRepositoryProvider);
       return MarkAllNotificationsReadUseCase(repository);
+    });
+
+final updateAppointmentUseCaseProvider =
+    Provider.autoDispose<UpdateAppointmentUseCase>((ref) {
+      final repository = ref.watch(appointmentRepositoryProvider);
+      return UpdateAppointmentUseCase(repository);
     });

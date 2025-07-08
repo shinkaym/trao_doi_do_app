@@ -104,31 +104,12 @@ class ItemsListNotifier extends StateNotifier<ItemsListState> {
     );
   }
 
-  // Filter methods
-  void filterByCategory(int? categoryID) {
-    final newQuery = state.query.copyWith(categoryID: categoryID);
-    loadItems(newQuery: newQuery, refresh: true);
-  }
-
   void search(String? searchBy, String? searchValue) {
     final newQuery = state.query.copyWith(
       searchBy: searchBy,
       searchValue: searchValue,
     );
     loadItems(newQuery: newQuery, refresh: true);
-  }
-
-  void sortItems(String? sort, String? order) {
-    final newQuery = state.query.copyWith(sort: sort, order: order);
-    loadItems(newQuery: newQuery, refresh: true);
-  }
-
-  void loadMore() {
-    loadItems();
-  }
-
-  void refresh() {
-    loadItems(refresh: true);
   }
 
   void clearFilters() {

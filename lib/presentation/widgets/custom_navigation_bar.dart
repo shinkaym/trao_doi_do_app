@@ -62,30 +62,7 @@ class CustomBottomNavigation extends HookConsumerWidget {
           // Tăng unread count thêm 1
           unreadCountNotifier.updateCount(unreadCountState.count + 1);
 
-          // Có thể thêm haptic feedback để thông báo cho user
           HapticFeedback.lightImpact();
-        }
-
-        // Xử lý các event khác nếu cần
-        if (previous?.lastResponse != next.lastResponse &&
-            next.lastResponse != null) {
-          switch (next.lastResponse!.event) {
-            case 'new_chat_notification':
-              // Xử lý notification chat khác
-              unreadCountNotifier.updateCount(unreadCountState.count + 1);
-              break;
-
-            case 'mark_as_read_response':
-              // Có thể reset unread count nếu server báo đã đọc
-              if (next.lastResponse!.isSuccess) {
-                // Không cần làm gì vì user sẽ tự decrease count khi vào chat
-              }
-              break;
-
-            default:
-              // Xử lý các event khác
-              break;
-          }
         }
       },
     );

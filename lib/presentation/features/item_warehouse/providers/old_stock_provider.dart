@@ -154,22 +154,6 @@ class OldStockNotifier extends StateNotifier<OldStockState> {
     await goToPage(state.totalPage);
   }
 
-  // Filter and search methods
-  void search(String? searchValue) {
-    final newQuery = state.query.copyWith(search: searchValue, page: 1);
-    loadOldStock(newQuery: newQuery, refresh: true);
-  }
-
-  void sort(String? sort, String? order) {
-    final newQuery = state.query.copyWith(sort: sort, order: order, page: 1);
-    loadOldStock(newQuery: newQuery, refresh: true);
-  }
-
-  void filterByCategory(int? categoryID) {
-    final newQuery = state.query.copyWith(categoryID: categoryID, page: 1);
-    loadOldStock(newQuery: newQuery, refresh: true);
-  }
-
   void applyFilter({
     String? search,
     String? sort,

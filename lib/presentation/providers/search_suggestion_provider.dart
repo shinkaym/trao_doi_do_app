@@ -65,7 +65,7 @@ class SearchSuggestionsNotifier extends StateNotifier<SearchSuggestionsState> {
 
     final searchQuery = PostsQuery(
       search: query,
-      limit: 7, // Chỉ lấy 5 kết quả gợi ý
+      limit: 7, 
       page: 1,
     );
 

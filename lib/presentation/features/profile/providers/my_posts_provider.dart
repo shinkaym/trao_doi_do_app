@@ -57,7 +57,6 @@ class MyPostsListNotifier extends StateNotifier<MyPostsListState> {
 
   MyPostsListNotifier(this._getMyPostsUseCase) : super(MyPostsListState());
 
-  // Load posts với các tùy chọn khác nhau
   Future<void> loadPosts({
     PostsQuery? newQuery,
     bool refresh = false,
@@ -158,34 +157,6 @@ class MyPostsListNotifier extends StateNotifier<MyPostsListState> {
   // Chuyển đến trang cuối
   Future<void> goToLastPage() async {
     await goToPage(state.totalPage);
-  }
-
-  // Filter methods (giữ nguyên)
-  void filterByType(int? type) {
-    final newQuery = state.query.copyWith(type: type);
-    loadPosts(newQuery: newQuery, refresh: true);
-  }
-
-  void search(String? search) {
-    final newQuery = state.query.copyWith(search: search);
-    loadPosts(newQuery: newQuery, refresh: true);
-  }
-
-  void sortPosts(String? sort, String? order) {
-    final newQuery = state.query.copyWith(sort: sort, order: order);
-    loadPosts(newQuery: newQuery, refresh: true);
-  }
-
-  void applyFilter({String? search, int? type, String? sort, String? order, int? status}) {
-    final newQuery = state.query.copyWith(
-      search: search,
-      type: type,
-      sort: sort,
-      status: status,
-      order: order,
-      page: 1,
-    );
-    loadPosts(newQuery: newQuery, refresh: true);
   }
 
   // Load more (giữ nguyên cho infinite scroll)

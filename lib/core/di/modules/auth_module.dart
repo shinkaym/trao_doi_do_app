@@ -128,7 +128,6 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final logoutUseCase = ref.watch(logoutUseCaseProvider);
   final getCurrentUserUseCase = ref.watch(getCurrentUserUseCaseProvider);
   final isLoggedInUseCase = ref.watch(isLoggedInUseCaseProvider);
-  final refreshTokenUseCase = ref.watch(refreshTokenUseCaseProvider);
   final getMeUseCase = ref.watch(getMeUseCaseProvider);
   final updateProfileUseCase = ref.watch(updateProfileUseCaseProvider);
   final sendOtpUseCase = ref.watch(sendOtpUseCaseProvider);
@@ -141,7 +140,6 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
     logoutUseCase,
     getCurrentUserUseCase,
     isLoggedInUseCase,
-    refreshTokenUseCase,
     getMeUseCase,
     updateProfileUseCase,
     sendOtpUseCase,
