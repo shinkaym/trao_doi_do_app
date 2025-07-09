@@ -276,7 +276,7 @@ class InterestChatScreen extends HookConsumerWidget {
             }
           },
           onError: (error) {
-            context.showErrorSnackBar('Lỗi stream tin nhắn: $error');
+            // context.showErrorSnackBar('Lỗi stream tin nhắn: $error');
           },
         );
       }
@@ -290,7 +290,7 @@ class InterestChatScreen extends HookConsumerWidget {
     useEffect(() {
       if (webSocketState.error != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.showErrorSnackBar('Lỗi WebSocket: ${webSocketState.error}');
+          // context.showErrorSnackBar('Lỗi WebSocket: ${webSocketState.error}');
           webSocketNotifier.clearError();
         });
       }

@@ -91,13 +91,13 @@ final getAccessTokenUseCaseProvider = Provider<GetAccessTokenUseCase>((ref) {
   return GetAccessTokenUseCase(repository);
 });
 
-// NEW: Profile update use case provider
+// Profile update
 final updateProfileUseCaseProvider = Provider<UpdateProfileUseCase>((ref) {
   final repository = ref.watch(authRepositoryProvider);
   return UpdateProfileUseCase(repository);
 });
 
-// NEW: OTP operation use case providers
+// send OTP 
 final sendOtpUseCaseProvider = Provider<SendOtpUseCase>((ref) {
   final repository = ref.watch(authRepositoryProvider);
   return SendOtpUseCase(repository);
@@ -108,7 +108,6 @@ final verifyOtpUseCaseProvider = Provider<VerifyOtpUseCase>((ref) {
   return VerifyOtpUseCase(repository);
 });
 
-// NEW: Account operation use case providers
 final signupUseCaseProvider = Provider<SignupUseCase>((ref) {
   final repository = ref.watch(authRepositoryProvider);
   return SignupUseCase(repository);

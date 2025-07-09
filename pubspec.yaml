@@ -63,7 +63,6 @@ dependencies:
   flutter_flavorizr: ^2.4.1
 
   # UI + Theme
-  flutter_svg: ^2.1.0
   google_fonts: ^6.2.1
 
   # Codegen

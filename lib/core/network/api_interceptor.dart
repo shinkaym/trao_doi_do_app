@@ -333,7 +333,7 @@ class ApiInterceptor extends Interceptor {
       'credential',
       'private',
       'confidential',
-      'refreshtoken', // Add refresh token to sensitive fields
+      'refreshtoken',
     ];
 
     return sensitiveFields.any((sensitive) => fieldName.contains(sensitive));

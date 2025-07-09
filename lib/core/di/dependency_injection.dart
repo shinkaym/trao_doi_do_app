@@ -1,6 +1,6 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-// Import all modules
+// Import
 import 'modules/core_module.dart';
 import 'modules/network_module.dart';
 import 'modules/auth_module.dart';
@@ -9,7 +9,7 @@ import 'modules/domain_module.dart';
 import 'modules/presentation_module.dart';
 import 'modules/websocket_module.dart';
 
-// Re-export all providers for easy access
+// Re-export
 export 'modules/core_module.dart';
 export 'modules/network_module.dart';
 export 'modules/auth_module.dart';

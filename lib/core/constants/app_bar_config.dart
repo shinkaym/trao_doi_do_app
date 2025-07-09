@@ -20,12 +20,10 @@ class AppBarConfig {
     this.bottom,
   });
 
-  // Predefined configs cho các màn hình
   static const Map<String, AppBarConfig> screenConfigs = {
-    // Main screens - tất cả đều yêu cầu đăng nhập
     '/home': AppBarConfig(
       type: AppBarType.standard,
-      title: 'Trao đổi đồ', // Hoặc tên app của bạn
+      title: 'Share And Save',
       showNotification: true,
     ),
     '/posts': AppBarConfig(
@@ -118,7 +116,7 @@ class AppBarConfig {
       showBackButton: true,
     ),
 
-    // Special screens (sẽ tự handle AppBar)
+    // Special screens
     '/posts/post-detail': AppBarConfig(type: AppBarType.detail, title: ''),
     '/warehouse/item-detail': AppBarConfig(type: AppBarType.detail, title: ''),
     '/interests/chat': AppBarConfig(type: AppBarType.chat, title: ''),
