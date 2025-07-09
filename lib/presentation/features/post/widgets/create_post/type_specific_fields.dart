@@ -171,7 +171,24 @@ class TypeSpecificFields extends HookConsumerWidget {
         onChanged: (_) => onLocationChanged?.call(), // Thêm dòng này
         style: theme.textTheme.bodyLarge,
         decoration: InputDecoration(
-          labelText: 'Địa điểm',
+          label: RichText(
+            text: TextSpan(
+              text: 'Địa điểm ',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+              children: [
+                TextSpan(
+                  text: '*',
+                  style: TextStyle(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
           labelStyle: TextStyle(
             color: colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
@@ -268,7 +285,24 @@ class TypeSpecificFields extends HookConsumerWidget {
         autovalidateMode: timeAutovalidateMode, // Thêm dòng này
         style: theme.textTheme.bodyLarge,
         decoration: InputDecoration(
-          labelText: 'Thời gian',
+          label: RichText(
+            text: TextSpan(
+              text: 'Thời gian ',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+              children: [
+                TextSpan(
+                  text: '*',
+                  style: TextStyle(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
           labelStyle: TextStyle(
             color: colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
@@ -469,16 +503,27 @@ class TypeSpecificFields extends HookConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      switch (selectedType) {
-                        PostType.foundItem => 'Món đồ tìm thấy',
-                        PostType.findLost => 'Tìm kiếm món đồ',
-                        PostType.wantItem => 'Muốn nhận đồ cũ',
-                        _ => 'Danh sách món đồ',
-                      },
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: colorScheme.onSurface,
+                    RichText(
+                      text: TextSpan(
+                        text: switch (selectedType) {
+                          PostType.foundItem => 'Món đồ tìm thấy',
+                          PostType.findLost => 'Tìm kiếm món đồ',
+                          PostType.wantItem => 'Muốn nhận đồ cũ',
+                          _ => 'Danh sách món đồ',
+                        },
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: colorScheme.onSurface,
+                        ),
+                        children: [
+                          TextSpan(
+                            text: ' *',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: colorScheme.error,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     // Text(

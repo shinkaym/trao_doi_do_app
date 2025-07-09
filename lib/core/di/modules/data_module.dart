@@ -99,11 +99,12 @@ final rankingRemoteDataSourceProvider =
       return RankingRemoteDataSourceImpl(dioClient);
     });
 
-final settingsRemoteDataSourceProvider =
-    Provider.autoDispose<SettingsRemoteDataSource>((ref) {
-      final dioClient = ref.watch(dioClientProvider);
-      return SettingsRemoteDataSourceImpl(dioClient);
-    });
+final settingsRemoteDataSourceProvider = Provider<SettingsRemoteDataSource>((
+  ref,
+) {
+  final dioClient = ref.watch(dioClientProvider);
+  return SettingsRemoteDataSourceImpl(dioClient);
+});
 
 final notificationRemoteDataSourceProvider =
     Provider.autoDispose<NotificationRemoteDataSource>((ref) {

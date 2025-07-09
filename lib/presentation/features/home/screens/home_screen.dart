@@ -88,7 +88,7 @@ class HomeScreen extends HookConsumerWidget {
                   ),
                   SizedBox(height: isTablet ? 32 : 24),
 
-                  // Phần 3: Danh sách các loại bài đăng - Có padding
+                  // Phần 3: Danh sách các loại bài đăng
                   ...homePostTypes.map(
                     (postType) => PostCategorySection(
                       postType: postType,

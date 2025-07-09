@@ -257,12 +257,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
     );
   }
 
-  /// Refresh user info từ server (cho pull-to-refresh)
-  Future<void> refreshUserInfo() async {
-    await getMe(showLoading: false);
-  }
-
-  /// Handle khi token expired từ interceptor - QUAN TRỌNG
   void handleTokenExpired() {
     state = state.copyWith(
       isInitialized: true,
@@ -312,7 +306,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     result.fold(
       (failure) {
-        // Log error nhưng vẫn clear local state
         state = const AuthState(
           isInitialized: true,
           // successMessage: 'Đăng xuất thành công!',

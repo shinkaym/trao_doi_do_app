@@ -28,8 +28,6 @@ import 'package:trao_doi_do_app/presentation/providers/notification_provider.dar
 import 'package:trao_doi_do_app/presentation/providers/search_suggestion_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/settings_provider.dart';
 import 'package:trao_doi_do_app/presentation/providers/unread_count_provider.dart';
-import '../modules/core_module.dart';
-import '../modules/domain_module.dart';
 
 /// Presentation Module - Contains UI state providers
 class PresentationModule {
@@ -203,8 +201,11 @@ final postsListProvider =
       return PostsListNotifier(getPostsUseCase);
     });
 
-final postsProviderFamily = StateNotifierProvider.family
-    .autoDispose<PostsListNotifier, PostsListState, PostType>((ref, postType) {
+final postsProviderFamily =
+    StateNotifierProvider.family<PostsListNotifier, PostsListState, PostType>((
+      ref,
+      postType,
+    ) {
       // Inject GetPostsUseCase dependency here
       final getPostsUseCase = ref.watch(getPostsUseCaseProvider);
       return PostsListNotifier(getPostsUseCase);

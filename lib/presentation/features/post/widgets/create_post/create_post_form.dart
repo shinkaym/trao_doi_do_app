@@ -278,7 +278,7 @@ class CreatePostForm extends HookConsumerWidget {
       final description = descriptionController.text.trim();
       final imagesBase64 =
           images.value
-              .map((img) => Base64Utils.encodeImageToDataUri(img.imageData!))
+              .map((img) => Base64Utils.encodeImageTo800x600WithPadding(img.imageData!))
               .toList();
 
       final info = <String, dynamic>{};

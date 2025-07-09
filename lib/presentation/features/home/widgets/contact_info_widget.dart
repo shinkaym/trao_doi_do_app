@@ -19,29 +19,36 @@ class ContactInfoSection extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settingsState = ref.watch(settingsProvider);
+    // Chỉ watch những gì cần thiết
+    final isLoading = ref.watch(
+      settingsProvider.select((state) => state.isLoading),
+    );
+    final settings = ref.watch(
+      settingsProvider.select((state) => state.settings),
+    );
+    final hasError = ref.watch(
+      settingsProvider.select((state) => state.failure != null),
+    );
 
     useEffect(() {
-      // Chỉ load nếu chưa có dữ liệu và không đang loading
-      if (settingsState.settings.isEmpty && !settingsState.isLoading) {
+      if (settings.isEmpty && !isLoading && !hasError) {
         Future.microtask(() {
           ref.read(settingsProvider.notifier).loadSettings();
         });
       }
       return null;
-    }, []); // Empty dependency array = chỉ chạy 1 lần
+    }, []);
 
-    if (settingsState.isLoading) {
+    if (isLoading) {
       return ContactInfoSkeleton(isTablet: isTablet, colorScheme: colorScheme);
     }
 
-    if (settingsState.settings.isEmpty) {
+    if (settings.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    final contactInfo = _getContactInfo(settingsState.settings);
+    final contactInfo = _getContactInfo(settings);
 
-    // Nếu không có thông tin nào thì không hiển thị
     if (contactInfo.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -52,9 +59,7 @@ class ContactInfoSection extends HookConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _ContactHeader(isTablet: isTablet, colorScheme: colorScheme),
-
           SizedBox(height: isTablet ? 16 : 12),
-
           _ContactInfoCard(
             contactInfo: contactInfo,
             isTablet: isTablet,

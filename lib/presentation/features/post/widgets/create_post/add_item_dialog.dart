@@ -1227,7 +1227,7 @@ class AddItemDialog extends HookConsumerWidget {
                     categoryId: selectedCategoryID.value,
                   );
 
-                  final dataUri = Base64Utils.encodeImageToDataUri(
+                  final dataUri = Base64Utils.encodeImageTo400x400WithPadding(
                     item.imageData!,
                   );
                   final base64Image = base64Encode(item.imageData!);

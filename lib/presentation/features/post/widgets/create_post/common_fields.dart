@@ -96,10 +96,23 @@ class CommonFields extends StatelessWidget {
         style: theme.textTheme.bodyLarge,
         autovalidateMode: titleAutovalidateMode,
         decoration: InputDecoration(
-          labelText: 'Tiêu đề bài đăng *',
-          labelStyle: TextStyle(
-            color: colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w500,
+          label: RichText(
+            text: TextSpan(
+              text: 'Tiêu đề bài đăng ',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+              children: [
+                TextSpan(
+                  text: '*',
+                  style: TextStyle(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
           hintText: 'Nhập tiêu đề mô tả ngắn gọn...',
           hintStyle: TextStyle(
@@ -183,7 +196,24 @@ class CommonFields extends StatelessWidget {
         maxLines: 4,
         autovalidateMode: descriptionAutovalidateMode,
         decoration: InputDecoration(
-          labelText: 'Mô tả chi tiết *',
+          label: RichText(
+            text: TextSpan(
+              text: 'Mô tả chi tiết ',
+              style: theme.textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+              ),
+              children: [
+                TextSpan(
+                  text: '*',
+                  style: TextStyle(
+                    color: colorScheme.error,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
           labelStyle: TextStyle(
             color: colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,

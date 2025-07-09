@@ -33,6 +33,13 @@ class ImageSection extends StatelessWidget {
               ),
             ),
             Text(
+              ' *',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.error,
+              ),
+            ),
+            Text(
               ' (tối đa 4 ảnh, mỗi ảnh ≤ 5MB)',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.hintColor,

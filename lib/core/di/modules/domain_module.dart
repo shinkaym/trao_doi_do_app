@@ -135,9 +135,7 @@ final rankingRepositoryProvider = Provider.autoDispose<RankingRepository>((
   return RankingRepositoryImpl(remoteDataSource);
 });
 
-final settingsRepositoryProvider = Provider.autoDispose<SettingsRepository>((
-  ref,
-) {
+final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
   final remoteDataSource = ref.watch(settingsRemoteDataSourceProvider);
   return SettingsRepositoryImpl(remoteDataSource);
 });
@@ -352,18 +350,15 @@ final getMyGoodDeedsUseCaseProvider =
       return GetMyGoodDeedsUseCase(repository);
     });
 
-final getSettingsUseCaseProvider = Provider.autoDispose<GetSettingsUseCase>((
-  ref,
-) {
+final getSettingsUseCaseProvider = Provider<GetSettingsUseCase>((ref) {
   final repository = ref.watch(settingsRepositoryProvider);
   return GetSettingsUseCase(repository);
 });
 
-final getSettingByKeyUseCaseProvider =
-    Provider.autoDispose<GetSettingByKeyUseCase>((ref) {
-      final repository = ref.watch(settingsRepositoryProvider);
-      return GetSettingByKeyUseCase(repository);
-    });
+final getSettingByKeyUseCaseProvider = Provider<GetSettingByKeyUseCase>((ref) {
+  final repository = ref.watch(settingsRepositoryProvider);
+  return GetSettingByKeyUseCase(repository);
+});
 
 final getNotificationsUseCaseProvider =
     Provider.autoDispose<GetNotificationsUseCase>((ref) {
