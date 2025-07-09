@@ -119,7 +119,7 @@ class AppointmentNotifier extends StateNotifier<AppointmentState> {
 
   // Cancel appointment (status = 4)
   Future<void> cancelAppointment(int appointmentID) async {
-    await updateAppointmentStatus(appointmentID, 4);
+    await updateAppointmentStatus(appointmentID, 2);
   }
 
   // Clear messages and errors
