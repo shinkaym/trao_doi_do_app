@@ -4,13 +4,11 @@ import 'package:trao_doi_do_app/domain/entities/appointment.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_appointment_usecase.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 
-// State cho appointment updates
 class AppointmentState {
   final bool isLoading;
   final String? successMessage;
   final Failure? failure;
-  final Map<int, bool>
-  updatingAppointments; // Track which appointments are being updated
+  final Map<int, bool> updatingAppointments;
 
   const AppointmentState({
     this.isLoading = false,
@@ -33,29 +31,24 @@ class AppointmentState {
     );
   }
 
-  // Helper method to check if specific appointment is updating
   bool isAppointmentUpdating(int appointmentID) {
     return updatingAppointments[appointmentID] ?? false;
   }
 }
 
-// Notifier cho appointment updates
 class AppointmentNotifier extends StateNotifier<AppointmentState> {
   final UpdateAppointmentUseCase _updateAppointmentUseCase;
 
   AppointmentNotifier(this._updateAppointmentUseCase)
     : super(const AppointmentState());
 
-  // Private method to handle update operations
   Future<void> _handleUpdate(
     int appointmentID,
     UpdateAppointment updateAppointment,
     String successMessage,
   ) async {
-    // Check if this appointment is already being updated
     if (state.isAppointmentUpdating(appointmentID)) return;
 
-    // Mark this appointment as updating
     final updatingMap = Map<int, bool>.from(state.updatingAppointments);
     updatingMap[appointmentID] = true;
 

@@ -6,7 +6,6 @@ import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/domain/entities/appointment.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/appointment_query.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/appointments/providers/appointment_provider.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/widgets/appointments_list_content.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/widgets/appointments_filter_bottom_sheet.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/widgets/appointments_top_action_bar.dart';
