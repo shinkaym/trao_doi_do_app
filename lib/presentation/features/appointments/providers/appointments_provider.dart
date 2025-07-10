@@ -55,6 +55,9 @@ class AppointmentsListState {
 class AppointmentsListNotifier extends StateNotifier<AppointmentsListState> {
   final GetAppointmentsUseCase _getAppointmentsUseCase;
 
+  int? _currentRequestId;
+  int _nextRequestId = 1;
+
   AppointmentsListNotifier(this._getAppointmentsUseCase)
     : super(AppointmentsListState());
 
@@ -146,8 +149,35 @@ class AppointmentsListNotifier extends StateNotifier<AppointmentsListState> {
   // Pagination methods
   Future<void> goToPage(int page) async {
     if (page < 1 || page > state.totalPage || page == state.currentPage) return;
+
+    // Tạo requestId mới
+    final requestId = _nextRequestId++;
+    _currentRequestId = requestId;
+
+    // Cập nhật UI ngay lập tức
+    state = state.copyWith(currentPage: page, isLoadingPage: false);
+
     final newQuery = state.query.copyWith(page: page);
-    await loadAppointments(newQuery: newQuery, isGoToPage: true);
+
+    try {
+      final result = await _getAppointmentsUseCase(newQuery);
+
+      if (_currentRequestId != requestId) return;
+
+      result.fold((failure) => state = state.copyWith(failure: failure), (
+        data,
+      ) {
+        state = state.copyWith(
+          appointments: data.appointments,
+          currentPage: page,
+          totalPage: data.totalPage,
+          hasMoreData: page < data.totalPage,
+        );
+      });
+    } catch (e) {
+      if (_currentRequestId != requestId) return;
+      state = state.copyWith(isLoadingPage: false);
+    }
   }
 
   Future<void> goToPreviousPage() async {

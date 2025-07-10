@@ -23,55 +23,69 @@ class InterestsScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final interestedPostsState = ref.watch(interestedPostsProvider);
+    final postsWithInterestsState = ref.watch(postsWithInterestsProvider);
+
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
 
     // Hooks for state management
-    final tabController = useTabController(initialLength: 2);
+    final tabController = useTabController(
+      initialLength: 2,
+      initialIndex: interestedPostsState.selectedTab,
+    );
     final isInitialized = useRef(false);
     final scrollController = useScrollController();
 
     // Updated search state management to match PostsScreen
-    final sharedSearchController = useTextEditingController();
+    final sharedSearchController = useTextEditingController(
+      text: interestedPostsState.query.search ?? '',
+    );
     final searchFocusNode = useFocusNode();
     final isSearchVisible = useState<bool>(false);
     final searchQuery = useState<String>('');
 
     final sharedSortField = useState('createdAt');
-    final sharedSortOrder = useState('DESC');
+    final sharedSortOrder = useState<String>(
+      interestedPostsState.query.order ?? 'DESC',
+    );
 
     // Add debouncer for search
     final debouncer = useMemoized(() => Debouncer());
 
-    final interestedPostsState = ref.watch(interestedPostsProvider);
-    final postsWithInterestsState = ref.watch(postsWithInterestsProvider);
-
     final totalInterestedPostsUnreadCount =
         interestedPostsState.unreadMessageCount;
-        
+
     final totalPostsWithInterestsUnreadCount =
         postsWithInterestsState.unreadMessageCount;
 
     void applySharedFiltersToCurrentTab() {
       final currentTab = tabController.index;
-      final searchValue = searchQuery.value.isEmpty ? null : searchQuery.value;
+      final searchValue =
+          sharedSearchController.text.isEmpty
+              ? null
+              : sharedSearchController.text;
 
       final query = InterestsQuery(
         type: currentTab == 0 ? 1 : 2,
-        sort: sharedSortField.value,
+        sort: 'createdAt', // Giá trị mặc định
         order: sharedSortOrder.value,
         search: searchValue,
+        page:
+            currentTab == 0
+                ? interestedPostsState.currentPage
+                : postsWithInterestsState.currentPage,
       );
 
       if (currentTab == 0) {
         ref
             .read(interestedPostsProvider.notifier)
-            .loadInterests(newQuery: query, refresh: true);
+            .loadInterests(newQuery: query);
       } else {
         ref
             .read(postsWithInterestsProvider.notifier)
-            .loadInterests(newQuery: query, refresh: true);
+            .loadInterests(newQuery: query);
       }
     }
 
@@ -180,29 +194,32 @@ class InterestsScreen extends HookConsumerWidget {
 
     // Load initial data for both tabs
     void loadInitialData() {
-      final searchValue = searchQuery.value.isEmpty ? null : searchQuery.value;
+      final currentTab = tabController.index;
+      final searchValue =
+          sharedSearchController.text.isEmpty
+              ? null
+              : sharedSearchController.text;
 
-      final interestedQuery = InterestsQuery(
-        type: 1,
-        sort: sharedSortField.value,
+      // Load data cho tab hiện tại
+      final query = InterestsQuery(
+        type: currentTab == 0 ? 1 : 2,
         order: sharedSortOrder.value,
         search: searchValue,
       );
 
-      final postsWithInterestsQuery = InterestsQuery(
-        type: 2,
-        sort: sharedSortField.value,
-        order: sharedSortOrder.value,
-        search: searchValue,
-      );
-
-      ref
-          .read(interestedPostsProvider.notifier)
-          .loadInterests(newQuery: interestedQuery, refresh: true);
-
-      ref
-          .read(postsWithInterestsProvider.notifier)
-          .loadUnreadMessageCount(query: postsWithInterestsQuery);
+      if (currentTab == 0) {
+        if (interestedPostsState.interests.isEmpty) {
+          ref
+              .read(interestedPostsProvider.notifier)
+              .loadInterests(newQuery: query);
+        }
+      } else {
+        if (postsWithInterestsState.interests.isEmpty) {
+          ref
+              .read(postsWithInterestsProvider.notifier)
+              .loadInterests(newQuery: query);
+        }
+      }
     }
 
     // Handle tab changes
@@ -348,13 +365,24 @@ class InterestsScreen extends HookConsumerWidget {
       };
     }, []);
 
-    // Listen to tab changes
     useEffect(() {
       tabController.addListener(onTabChanged);
       return () => tabController.removeListener(onTabChanged);
     }, [tabController]);
 
-    // Listen to interest state changes
+    // Listen to tab changes
+    useEffect(() {
+      void listener() {
+        if (tabController.indexIsChanging) return;
+        ref
+            .read(interestedPostsProvider.notifier)
+            .updateSelectedTab(tabController.index);
+      }
+
+      tabController.addListener(listener);
+      return () => tabController.removeListener(listener);
+    }, [tabController]);
+
     ref.listen<InterestState>(interestProvider, (previous, next) {
       if (previous?.isLoading == true && next.isLoading == false) {
         if (next.result != null && tabController.index == 0) {

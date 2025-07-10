@@ -97,14 +97,14 @@ final transactionRepositoryProvider =
       return TransactionRepositoryImpl(remoteDataSource);
     });
 
-final interestRepositoryProvider = Provider.autoDispose<InterestRepository>((
+final interestRepositoryProvider = Provider<InterestRepository>((
   ref,
 ) {
   final remoteDataSource = ref.watch(interestRemoteDataSourceProvider);
   return InterestRepositoryImpl(remoteDataSource);
 });
 
-final postRepositoryProvider = Provider.autoDispose<PostRepository>((ref) {
+final postRepositoryProvider = Provider<PostRepository>((ref) {
   final remoteDataSource = ref.watch(postRemoteDataSourceProvider);
   return PostRepositoryImpl(remoteDataSource);
 });
@@ -117,13 +117,13 @@ final messageRepositoryProvider = Provider.autoDispose<MessageRepository>((
 });
 
 final itemWarehouseRepositoryProvider =
-    Provider.autoDispose<ItemWarehouseRepository>((ref) {
+    Provider<ItemWarehouseRepository>((ref) {
       final remoteDataSource = ref.watch(itemWarehouseRemoteDataSourceProvider);
       return ItemWarehouseRepositoryImpl(remoteDataSource);
     });
 
 final appointmentRepositoryProvider =
-    Provider.autoDispose<AppointmentRepository>((ref) {
+    Provider<AppointmentRepository>((ref) {
       final remoteDataSource = ref.watch(appointmentRemoteDataSourceProvider);
       return AppointmentRepositoryImpl(remoteDataSource);
     });
@@ -209,7 +209,7 @@ final cancelInterestUseCaseProvider =
       return CancelInterestUseCase(repository);
     });
 
-final getInterestsUseCaseProvider = Provider.autoDispose<GetInterestsUseCase>((
+final getInterestsUseCaseProvider = Provider<GetInterestsUseCase>((
   ref,
 ) {
   final repository = ref.watch(interestRepositoryProvider);
@@ -254,7 +254,7 @@ final getPostsUseCaseProvider = Provider.autoDispose<GetPostsUseCase>((ref) {
   return GetPostsUseCase(repository);
 });
 
-final getMyPostsUseCaseProvider = Provider.autoDispose<GetMyPostsUseCase>((
+final getMyPostsUseCaseProvider = Provider<GetMyPostsUseCase>((
   ref,
 ) {
   final repository = ref.watch(postRepositoryProvider);
@@ -300,7 +300,7 @@ final updateClaimRequestUseCaseProvider =
       return UpdateClaimRequestUseCase(repository);
     });
 
-final getOldStockUseCaseProvider = Provider.autoDispose<GetOldStockUseCase>((
+final getOldStockUseCaseProvider = Provider<GetOldStockUseCase>((
   ref,
 ) {
   final repository = ref.watch(itemWarehouseRepositoryProvider);
@@ -326,7 +326,7 @@ final deleteAllClaimRequestsUseCaseProvider =
     });
 
 final getAppointmentsUseCaseProvider =
-    Provider.autoDispose<GetAppointmentsUseCase>((ref) {
+    Provider<GetAppointmentsUseCase>((ref) {
       final repository = ref.watch(appointmentRepositoryProvider);
       return GetAppointmentsUseCase(repository);
     });

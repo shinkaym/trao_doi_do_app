@@ -21,22 +21,45 @@ class PostsScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final postsState = ref.watch(postsListProvider);
+
     final preselectedType = extra?['type'] as PostType?;
     final preselectedSearch = extra?['search'] as String?;
     final autoFocus = extra?['autoFocus'] as bool? ?? true;
 
-    // Khởi tạo searchController với giá trị preselected
+    final currentState = ref.read(postsListProvider);
+
     final searchController = useTextEditingController(
-      text: preselectedSearch ?? '',
+      text: preselectedSearch ?? currentState.query.search ?? '',
     );
 
-    final selectedType = useState<PostType>(preselectedType ?? PostType.all);
-    final selectedSort = useState<SortOrder>(SortOrder.newest);
-    final searchQuery = useState<String>(preselectedSearch ?? '');
+    final selectedType = useState<PostType>(
+      preselectedType ??
+          (currentState.query.type != null
+              ? PostType.values.firstWhere(
+                (type) => type.value == currentState.query.type,
+                orElse: () => PostType.all,
+              )
+              : PostType.all),
+    );
+    final selectedSort = useState<SortOrder>(
+      currentState.query.sort != null && currentState.query.order != null
+          ? SortOrder.timeSortOptions.firstWhere(
+            (sort) =>
+                sort.sort == currentState.query.sort &&
+                sort.order == currentState.query.order,
+            orElse: () => SortOrder.newest,
+          )
+          : SortOrder.newest,
+    );
+    final searchQuery = useState<String>(
+      preselectedSearch ?? currentState.query.search ?? '',
+    );
     final scrollController = useScrollController();
     final searchFocusNode = useFocusNode();
     final isSearchVisible = useState<bool>(
-      preselectedSearch?.isNotEmpty ?? false,
+      preselectedSearch?.isNotEmpty ??
+          (currentState.query.search?.isNotEmpty ?? false),
     );
 
     final debouncer = useMemoized(() => Debouncer());
@@ -44,7 +67,6 @@ class PostsScreen extends HookConsumerWidget {
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
-    final postsState = ref.watch(postsListProvider);
 
     void loadPosts({bool refresh = false}) {
       final query = PostsQuery(
@@ -52,7 +74,7 @@ class PostsScreen extends HookConsumerWidget {
         type: selectedType.value.value,
         sort: selectedSort.value.sort,
         order: selectedSort.value.order,
-        page: refresh ? 1 : 1,
+        page: refresh ? 1 : postsState.currentPage,
       );
 
       ref
@@ -148,9 +170,15 @@ class PostsScreen extends HookConsumerWidget {
     // Load posts lần đầu và focus search nếu có preselected search
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        loadPosts();
+        final needsNewLoad =
+            postsState.posts.isEmpty ||
+            preselectedType != null ||
+            preselectedSearch != null;
 
-        // Nếu có preselected search và autoFocus = true, focus vào search field
+        if (needsNewLoad) {
+          loadPosts();
+        }
+
         if (preselectedSearch?.isNotEmpty == true && autoFocus) {
           searchFocusNode.requestFocus();
         }

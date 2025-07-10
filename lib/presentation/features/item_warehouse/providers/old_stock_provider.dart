@@ -55,6 +55,9 @@ class OldStockState {
 class OldStockNotifier extends StateNotifier<OldStockState> {
   final GetOldStockUseCase _getOldStockUseCase;
 
+  int? _currentRequestId;
+  int _nextRequestId = 1;
+
   OldStockNotifier(this._getOldStockUseCase) : super(OldStockState());
 
   Future<void> loadOldStock({
@@ -130,8 +133,42 @@ class OldStockNotifier extends StateNotifier<OldStockState> {
   Future<void> goToPage(int page) async {
     if (page < 1 || page > state.totalPage || page == state.currentPage) return;
 
+    // Tạo requestId mới
+    final requestId = _nextRequestId++;
+    _currentRequestId = requestId;
+
+    // Cập nhật UI ngay lập tức
+    state = state.copyWith(currentPage: page, isLoadingPage: false);
+
     final newQuery = state.query.copyWith(page: page);
-    await loadOldStock(newQuery: newQuery, isGoToPage: true);
+
+    try {
+      final result = await _getOldStockUseCase(newQuery);
+
+      // Kiểm tra request có còn là mới nhất không
+      if (_currentRequestId != requestId) return;
+
+      result.fold(
+        (failure) =>
+            state = state.copyWith(failure: failure, isLoadingPage: false),
+        (oldStockResponse) {
+          final actualTotalPage = oldStockResponse.totalPage;
+          final actualHasMoreData =
+              actualTotalPage > 0 && page < actualTotalPage;
+
+          state = state.copyWith(
+            items: oldStockResponse.itemOldStocks,
+            totalPage: actualTotalPage,
+            hasMoreData: actualHasMoreData,
+            failure: null,
+            isLoadingPage: false,
+          );
+        },
+      );
+    } catch (e) {
+      if (_currentRequestId != requestId) return;
+      state = state.copyWith(isLoadingPage: false);
+    }
   }
 
   Future<void> goToPreviousPage() async {

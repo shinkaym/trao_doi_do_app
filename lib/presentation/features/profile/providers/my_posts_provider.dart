@@ -54,7 +54,8 @@ class MyPostsListState {
 
 class MyPostsListNotifier extends StateNotifier<MyPostsListState> {
   final GetMyPostsUseCase _getMyPostsUseCase;
-
+  int? _currentRequestId;
+  int _nextRequestId = 1;
   MyPostsListNotifier(this._getMyPostsUseCase) : super(MyPostsListState());
 
   Future<void> loadPosts({
@@ -131,8 +132,54 @@ class MyPostsListNotifier extends StateNotifier<MyPostsListState> {
   Future<void> goToPage(int page) async {
     if (page < 1 || page > state.totalPage || page == state.currentPage) return;
 
+    // Tạo requestId mới cho lần gọi này
+    final requestId = _nextRequestId++;
+    _currentRequestId = requestId;
+
+    // Cập nhật UI ngay lập tức - KHÔNG hiển thị loading trên nút
+    state = state.copyWith(currentPage: page, isLoadingPage: false);
+
     final newQuery = state.query.copyWith(page: page);
-    await loadPosts(newQuery: newQuery, isGoToPage: true);
+
+    try {
+      final result = await _getMyPostsUseCase(newQuery);
+
+      // Kiểm tra xem request này còn là request mới nhất không
+      if (_currentRequestId != requestId) {
+        // Nếu có request mới hơn, bỏ qua kết quả này
+        return;
+      }
+
+      result.fold(
+        (failure) {
+          // Chỉ cập nhật failure, không rollback currentPage
+          state = state.copyWith(failure: failure, isLoadingPage: false);
+        },
+        (postsResult) {
+          final actualTotalPage = postsResult.totalPage;
+          final actualCurrentPage = actualTotalPage > 0 ? page : 1;
+          final actualHasMoreData =
+              actualTotalPage > 0 && actualCurrentPage < actualTotalPage;
+
+          state = state.copyWith(
+            posts: postsResult.posts,
+            currentPage: actualCurrentPage,
+            totalPage: actualTotalPage,
+            hasMoreData: actualHasMoreData,
+            failure: null,
+            isLoadingPage: false,
+          );
+        },
+      );
+    } catch (e) {
+      // Kiểm tra xem request này còn là request mới nhất không
+      if (_currentRequestId != requestId) {
+        return;
+      }
+
+      // Chỉ cập nhật trạng thái lỗi, không rollback currentPage
+      state = state.copyWith(isLoadingPage: false);
+    }
   }
 
   // Chuyển đến trang trước

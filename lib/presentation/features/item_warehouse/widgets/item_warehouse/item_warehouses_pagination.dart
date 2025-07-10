@@ -40,7 +40,7 @@ class ItemWarehousesPagination extends StatelessWidget {
           // Previous button
           ItemWarehousesPaginationButton(
             icon: Icons.chevron_left,
-            enabled: state.currentPage > 1 && !state.isLoadingPage,
+            enabled: state.currentPage > 1,
             onPressed: onPreviousPage,
             isTablet: isTablet,
             colorScheme: colorScheme,
@@ -64,8 +64,7 @@ class ItemWarehousesPagination extends StatelessWidget {
           // Next button
           ItemWarehousesPaginationButton(
             icon: Icons.chevron_right,
-            enabled:
-                state.currentPage < state.totalPage && !state.isLoadingPage,
+            enabled: state.currentPage < state.totalPage,
             onPressed: onNextPage,
             isTablet: isTablet,
             colorScheme: colorScheme,
@@ -152,10 +151,7 @@ class ItemWarehousesPagination extends StatelessWidget {
       isActive: isActive,
       isTablet: isTablet,
       colorScheme: colorScheme,
-      onTap:
-          !state.isLoadingPage && page != state.currentPage
-              ? () => onPageChanged(page)
-              : null,
+      onTap: page != state.currentPage ? () => onPageChanged(page) : null,
     );
   }
 }

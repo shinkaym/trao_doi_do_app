@@ -62,18 +62,17 @@ final transactionRemoteDataSourceProvider =
       return TransactionRemoteDataSourceImpl(dioClient);
     });
 
-final interestRemoteDataSourceProvider =
-    Provider.autoDispose<InterestRemoteDataSource>((ref) {
-      final dioClient = ref.watch(dioClientProvider);
-      return InterestRemoteDataSourceImpl(dioClient);
-    });
+final interestRemoteDataSourceProvider = Provider<InterestRemoteDataSource>((
+  ref,
+) {
+  final dioClient = ref.watch(dioClientProvider);
+  return InterestRemoteDataSourceImpl(dioClient);
+});
 
-final postRemoteDataSourceProvider = Provider.autoDispose<PostRemoteDataSource>(
-  (ref) {
-    final dioClient = ref.watch(dioClientProvider);
-    return PostRemoteDataSourceImpl(dioClient);
-  },
-);
+final postRemoteDataSourceProvider = Provider<PostRemoteDataSource>((ref) {
+  final dioClient = ref.watch(dioClientProvider);
+  return PostRemoteDataSourceImpl(dioClient);
+});
 
 final messageRemoteDataSourceProvider =
     Provider.autoDispose<MessageRemoteDataSource>((ref) {
@@ -82,13 +81,13 @@ final messageRemoteDataSourceProvider =
     });
 
 final itemWarehouseRemoteDataSourceProvider =
-    Provider.autoDispose<ItemWarehouseRemoteDataSource>((ref) {
+    Provider<ItemWarehouseRemoteDataSource>((ref) {
       final dioClient = ref.watch(dioClientProvider);
       return ItemWarehouseRemoteDataSourceImpl(dioClient);
     });
 
 final appointmentRemoteDataSourceProvider =
-    Provider.autoDispose<AppointmentRemoteDataSource>((ref) {
+    Provider<AppointmentRemoteDataSource>((ref) {
       final dioClient = ref.watch(dioClientProvider);
       return AppointmentRemoteDataSourceImpl(dioClient);
     });

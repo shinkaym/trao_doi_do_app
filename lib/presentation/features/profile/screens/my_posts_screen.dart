@@ -15,7 +15,7 @@ import 'package:trao_doi_do_app/presentation/widgets/scroll_to_top_button.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
 class MyPostsScreen extends HookConsumerWidget {
-const MyPostsScreen({super.key});
+  const MyPostsScreen({super.key});
 
   void _onToggleStatus(BuildContext context, WidgetRef ref, Post post) async {
     final postNotifier = ref.read(postProvider.notifier);
@@ -117,11 +117,9 @@ const MyPostsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final searchController = useTextEditingController();
-    final selectedType = useState<PostType>(PostType.all);
-    final selectedSort = useState<SortOrder>(SortOrder.newest);
-    final selectedStatus = useState<PostStatus>(PostStatus.all);
-    final searchQuery = useState<String>('');
+    final postsState = ref.watch(myPostsListProvider);
+    final postState = ref.watch(postProvider);
+    
     final scrollController = useScrollController();
     final searchFocusNode = useFocusNode();
     final isSearchVisible = useState<bool>(false);
@@ -131,8 +129,41 @@ const MyPostsScreen({super.key});
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
-    final postsState = ref.watch(myPostsListProvider);
-    final postState = ref.watch(postProvider);
+
+    final searchQuery = useState<String>('');
+
+    final searchController = useTextEditingController(
+      text: postsState.query.search ?? '',
+    );
+
+    final selectedType = useState<PostType>(
+      postsState.query.type != null
+          ? PostType.values.firstWhere(
+            (type) => type.value == postsState.query.type,
+            orElse: () => PostType.all,
+          )
+          : PostType.all,
+    );
+
+    final selectedSort = useState<SortOrder>(
+      postsState.query.sort != null && postsState.query.order != null
+          ? SortOrder.timeSortOptions.firstWhere(
+            (sort) =>
+                sort.sort == postsState.query.sort &&
+                sort.order == postsState.query.order,
+            orElse: () => SortOrder.newest,
+          )
+          : SortOrder.newest,
+    );
+
+    final selectedStatus = useState<PostStatus>(
+      postsState.query.status != null
+          ? PostStatus.values.firstWhere(
+            (status) => status.value == postsState.query.status,
+            orElse: () => PostStatus.all,
+          )
+          : PostStatus.all,
+    );
 
     useEffect(() {
       if (postState.successMessage != null) {
@@ -159,7 +190,7 @@ const MyPostsScreen({super.key});
         status: selectedStatus.value.value,
         sort: selectedSort.value.sort,
         order: selectedSort.value.order,
-        page: refresh ? 1 : 1,
+        page: refresh ? 1 : postsState.currentPage,
       );
 
       ref
@@ -259,7 +290,9 @@ const MyPostsScreen({super.key});
     // Load posts lần đầu
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        loadPosts();
+        if (postsState.posts.isEmpty) {
+          loadPosts();
+        }
       });
       return () {
         debouncer.cancel();

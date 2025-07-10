@@ -21,22 +21,25 @@ class Pagination extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final state =
+        currentTabIndex == 0
+            ? ref.watch(interestedPostsProvider)
+            : ref.watch(postsWithInterestsProvider);
+
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
         horizontal: isTablet ? 32 : 16,
         vertical: isTablet ? 12 : 8,
       ),
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-      ),
+      decoration: BoxDecoration(color: Colors.transparent),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Previous button
           PaginationButton(
             icon: Icons.chevron_left,
-            enabled: state.currentPage > 1 && !state.isLoadingPage,
+            enabled: state.currentPage > 1,
             onPressed: () => _goToPreviousPage(ref),
             isTablet: isTablet,
             colorScheme: colorScheme,
@@ -60,8 +63,7 @@ class Pagination extends HookConsumerWidget {
           // Next button
           PaginationButton(
             icon: Icons.chevron_right,
-            enabled:
-                state.currentPage < state.totalPage && !state.isLoadingPage,
+            enabled: state.currentPage < state.totalPage,
             onPressed: () => _goToNextPage(ref),
             isTablet: isTablet,
             colorScheme: colorScheme,
@@ -147,10 +149,7 @@ class Pagination extends HookConsumerWidget {
       isActive: isActive,
       isTablet: isTablet,
       colorScheme: colorScheme,
-      onTap:
-          !state.isLoadingPage && page != state.currentPage
-              ? () => _goToPage(page, ref)
-              : null,
+      onTap: page != state.currentPage ? () => _goToPage(page, ref) : null,
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:trao_doi_do_app/domain/usecases/params/interest_query.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_interests_usecase.dart';
 
 class InterestsListState {
+  final int selectedTab;
   final bool isLoading;
   final bool isLoadingMore;
   final List<InterestPost> interests;
@@ -17,6 +18,7 @@ class InterestsListState {
   final int unreadMessageCount;
   final bool isLoadingUnreadCount;
   InterestsListState({
+    this.selectedTab = 0,
     this.isLoading = false,
     this.isLoadingMore = false,
     this.interests = const [],
@@ -31,6 +33,7 @@ class InterestsListState {
   });
 
   InterestsListState copyWith({
+    int? selectedTab,
     bool? isLoading,
     bool? isLoadingMore,
     List<InterestPost>? interests,
@@ -44,6 +47,7 @@ class InterestsListState {
     bool? isLoadingUnreadCount,
   }) {
     return InterestsListState(
+      selectedTab: selectedTab ?? this.selectedTab,
       isLoading: isLoading ?? this.isLoading,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       interests: interests ?? this.interests,
@@ -61,6 +65,9 @@ class InterestsListState {
 
 class InterestsListNotifier extends StateNotifier<InterestsListState> {
   final GetInterestsUseCase _getInterestsUseCase;
+
+  int? _currentRequestId;
+  int _nextRequestId = 1;
 
   InterestsListNotifier(this._getInterestsUseCase)
     : super(InterestsListState());
@@ -186,8 +193,46 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
   // Pagination methods
   Future<void> goToPage(int page) async {
     if (page < 1 || page > state.totalPage || page == state.currentPage) return;
+
+    // Tạo requestId mới cho lần gọi này
+    final requestId = _nextRequestId++;
+    _currentRequestId = requestId;
+
+    // Cập nhật UI ngay lập tức
+    state = state.copyWith(currentPage: page, isLoadingPage: false);
+
     final newQuery = state.query.copyWith(page: page);
-    await loadInterests(newQuery: newQuery, isGoToPage: true);
+
+    try {
+      final result = await _getInterestsUseCase(newQuery);
+
+      // Kiểm tra xem request này còn là request mới nhất không
+      if (_currentRequestId != requestId) return;
+
+      result.fold(
+        (failure) {
+          state = state.copyWith(failure: failure, isLoadingPage: false);
+        },
+        (interestsResult) {
+          final actualTotalPage = interestsResult.totalPage;
+          final actualCurrentPage = actualTotalPage > 0 ? page : 1;
+          final actualHasMoreData =
+              actualTotalPage > 0 && actualCurrentPage < actualTotalPage;
+
+          state = state.copyWith(
+            interests: interestsResult.interests,
+            currentPage: actualCurrentPage,
+            totalPage: actualTotalPage,
+            hasMoreData: actualHasMoreData,
+            failure: null,
+            isLoadingPage: false,
+          );
+        },
+      );
+    } catch (e) {
+      if (_currentRequestId != requestId) return;
+      state = state.copyWith(isLoadingPage: false);
+    }
   }
 
   Future<void> goToPreviousPage() async {
@@ -341,5 +386,9 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
         }).toList();
 
     state = state.copyWith(interests: updatedPosts);
+  }
+
+  void updateSelectedTab(int tabIndex) {
+    state = state.copyWith(selectedTab: tabIndex);
   }
 }

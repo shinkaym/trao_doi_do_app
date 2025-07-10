@@ -136,7 +136,7 @@ final interestProvider =
       return InterestNotifier(createInterestUseCase, cancelInterestUseCase);
     });
 
-final interestedPostsProvider = StateNotifierProvider.autoDispose<
+final interestedPostsProvider = StateNotifierProvider<
   InterestsListNotifier,
   InterestsListState
 >((ref) {
@@ -158,7 +158,7 @@ final transactionByInterestProvider = StateNotifierProvider.family<
   );
 });
 
-final postsWithInterestsProvider = StateNotifierProvider.autoDispose<
+final postsWithInterestsProvider = StateNotifierProvider<
   InterestsListNotifier,
   InterestsListState
 >((ref) {
@@ -214,9 +214,7 @@ final postsProviderFamily =
     });
 
 final myPostsListProvider =
-    StateNotifierProvider.autoDispose<MyPostsListNotifier, MyPostsListState>((
-      ref,
-    ) {
+    StateNotifierProvider<MyPostsListNotifier, MyPostsListState>((ref) {
       final getMyPostsUseCase = ref.watch(getMyPostsUseCaseProvider);
       return MyPostsListNotifier(getMyPostsUseCase);
     });

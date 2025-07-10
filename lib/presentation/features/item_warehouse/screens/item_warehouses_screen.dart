@@ -21,9 +21,9 @@ class ItemWarehousesScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final searchController = useTextEditingController();
-    final selectedCategory = useState<Category?>(null);
-    final selectedSort = useState<SortOrder>(SortOrder.quantityAsc);
+    final oldStockState = ref.watch(oldStockProvider);
+    final availableCategories = ref.watch(categoryProvider).categories;
+
     final searchQuery = useState<String>('');
     final scrollController = useScrollController();
     final searchFocusNode = useFocusNode();
@@ -36,9 +36,45 @@ class ItemWarehousesScreen extends HookConsumerWidget {
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
-    final oldStockState = ref.watch(oldStockProvider);
 
-    final availableCategories = ref.watch(categoryProvider).categories;
+    final searchController = useTextEditingController(
+      text: oldStockState.query.search ?? '',
+    );
+
+    final selectedCategory = useState<Category?>(
+      oldStockState.query.categoryID != null
+          ? availableCategories.firstWhere(
+            (c) => c.id == oldStockState.query.categoryID,
+            orElse: () => availableCategories[0],
+          )
+          : null,
+    );
+
+    final selectedSort = useState<SortOrder>(
+      oldStockState.query.sort != null && oldStockState.query.order != null
+          ? SortOrder.quantitySortOptions.firstWhere(
+            (s) =>
+                s.sort == oldStockState.query.sort &&
+                s.order == oldStockState.query.order,
+            orElse: () => SortOrder.quantityAsc,
+          )
+          : SortOrder.quantityAsc,
+    );
+
+    // Cập nhật hàm loadItems
+    void loadItems({bool refresh = false}) {
+      final query = OldStockQuery(
+        search: searchQuery.value.isEmpty ? null : searchQuery.value,
+        categoryID: selectedCategory.value?.id,
+        sort: selectedSort.value.sort,
+        order: selectedSort.value.order,
+        page: refresh ? 1 : oldStockState.currentPage,
+      );
+
+      ref
+          .read(oldStockProvider.notifier)
+          .loadOldStock(newQuery: query, refresh: refresh);
+    }
 
     // Lấy thông tin item từ state để kiểm tra quantity và maxClaim
     OldStockItem? getItemById(int itemId) {
@@ -127,20 +163,6 @@ class ItemWarehousesScreen extends HookConsumerWidget {
       final currentItems = Map<String, int>.from(selectedItems.value);
       currentItems[itemKey] = quantity;
       selectedItems.value = currentItems;
-    }
-
-    void loadItems({bool refresh = false}) {
-      final query = OldStockQuery(
-        search: searchQuery.value.isEmpty ? null : searchQuery.value,
-        categoryID: selectedCategory.value?.id,
-        sort: selectedSort.value.sort,
-        order: selectedSort.value.order,
-        page: refresh ? 1 : 1,
-      );
-
-      ref
-          .read(oldStockProvider.notifier)
-          .loadOldStock(newQuery: query, refresh: refresh);
     }
 
     void showCartBottomSheet() {
@@ -265,11 +287,11 @@ class ItemWarehousesScreen extends HookConsumerWidget {
 
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        loadItems();
+        if (oldStockState.items.isEmpty) {
+          loadItems();
+        }
       });
-      return () {
-        debouncer.cancel();
-      };
+      return () => debouncer.cancel();
     }, []);
 
     return SmartScaffold(

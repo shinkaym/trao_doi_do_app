@@ -25,18 +25,14 @@ class PostsPagination extends HookConsumerWidget {
         horizontal: isTablet ? 32 : 16,
         vertical: isTablet ? 12 : 8,
       ),
-      // Loại bỏ background color và box shadow để tạo hiệu ứng trong suốt
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
-        // Không có boxShadow và border
-      ),
+      decoration: const BoxDecoration(color: Colors.transparent),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Previous button
           PostsPaginationButton(
             icon: Icons.chevron_left,
-            enabled: state.currentPage > 1 && !state.isLoadingPage,
+            enabled: state.currentPage > 1,
             onPressed:
                 () => ref.read(postsListProvider.notifier).goToPreviousPage(),
             isTablet: isTablet,
@@ -61,8 +57,7 @@ class PostsPagination extends HookConsumerWidget {
           // Next button
           PostsPaginationButton(
             icon: Icons.chevron_right,
-            enabled:
-                state.currentPage < state.totalPage && !state.isLoadingPage,
+            enabled: state.currentPage < state.totalPage,
             onPressed:
                 () => ref.read(postsListProvider.notifier).goToNextPage(),
             isTablet: isTablet,
@@ -150,10 +145,7 @@ class PostsPagination extends HookConsumerWidget {
       isActive: isActive,
       isTablet: isTablet,
       colorScheme: colorScheme,
-      onTap:
-          !state.isLoadingPage && page != state.currentPage
-              ? () => ref.read(postsListProvider.notifier).goToPage(page)
-              : null,
+      onTap: () => ref.read(postsListProvider.notifier).goToPage(page),
     );
   }
 }
@@ -245,8 +237,6 @@ class PageButton extends StatelessWidget {
         width: isTablet ? 44 : 40,
         height: isTablet ? 44 : 40,
         decoration: BoxDecoration(
-          // Trang hiện tại có nền màu primary với độ trong suốt
-          // Các trang khác có nền trong suốt
           color:
               isActive
                   ? colorScheme.primary.withOpacity(0.9)

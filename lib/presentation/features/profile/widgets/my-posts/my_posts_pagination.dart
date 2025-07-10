@@ -25,18 +25,14 @@ class MyPostsPagination extends HookConsumerWidget {
         horizontal: isTablet ? 32 : 16,
         vertical: isTablet ? 12 : 8,
       ),
-      // Loại bỏ background color và box shadow để tạo hiệu ứng trong suốt
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
-        // Không có boxShadow và border
-      ),
+      decoration: const BoxDecoration(color: Colors.transparent),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           // Previous button
           MyPostsPaginationButton(
             icon: Icons.chevron_left,
-            enabled: state.currentPage > 1 && !state.isLoadingPage,
+            enabled: state.currentPage > 1,
             onPressed:
                 () => ref.read(myPostsListProvider.notifier).goToPreviousPage(),
             isTablet: isTablet,
@@ -61,8 +57,7 @@ class MyPostsPagination extends HookConsumerWidget {
           // Next button
           MyPostsPaginationButton(
             icon: Icons.chevron_right,
-            enabled:
-                state.currentPage < state.totalPage && !state.isLoadingPage,
+            enabled: state.currentPage < state.totalPage,
             onPressed:
                 () => ref.read(myPostsListProvider.notifier).goToNextPage(),
             isTablet: isTablet,
@@ -151,7 +146,7 @@ class MyPostsPagination extends HookConsumerWidget {
       isTablet: isTablet,
       colorScheme: colorScheme,
       onTap:
-          !state.isLoadingPage && page != state.currentPage
+          page != state.currentPage
               ? () => ref.read(myPostsListProvider.notifier).goToPage(page)
               : null,
     );

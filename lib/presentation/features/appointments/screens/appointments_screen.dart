@@ -17,19 +17,30 @@ class AppointmentsScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedSort = useState<SortOrder>(SortOrder.startTimeDesc);
-    final scrollController = useScrollController();
+    final appointmentsState = ref.watch(appointmentsListProvider);
 
+    final selectedSort = useState<SortOrder>(
+      appointmentsState.query.sort != null &&
+              appointmentsState.query.order != null
+          ? SortOrder.values.firstWhere(
+            (sort) =>
+                sort.sort == appointmentsState.query.sort &&
+                sort.order == appointmentsState.query.order,
+            orElse: () => SortOrder.startTimeDesc,
+          )
+          : SortOrder.startTimeDesc,
+    );
+
+    final scrollController = useScrollController();
     final isTablet = context.isTablet;
     final theme = context.theme;
     final colorScheme = context.colorScheme;
-    final appointmentsState = ref.watch(appointmentsListProvider);
 
     void loadAppointments({bool refresh = false}) {
       final query = AppointmentQuery(
         sort: selectedSort.value.sort,
         order: selectedSort.value.order,
-        page: refresh ? 1 : 1,
+        page: refresh ? 1 : appointmentsState.currentPage,
       );
 
       ref
@@ -103,7 +114,9 @@ class AppointmentsScreen extends HookConsumerWidget {
 
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        loadAppointments();
+        if (appointmentsState.appointments.isEmpty) {
+          loadAppointments();
+        }
       });
       return null;
     }, []);
