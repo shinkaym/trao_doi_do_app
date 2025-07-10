@@ -33,7 +33,10 @@ class MyPostsScreen extends HookConsumerWidget {
       try {
         context.showLoadingDialog(message: 'Đang xử lý...');
 
-        await postNotifier.togglePostStatus(post.id!, post.status ?? 3);
+        await postNotifier.togglePostStatus(
+          post.id!,
+          (post.status ?? PostStatus.approved.value)!,
+        );
 
         context.dismissDialog();
         ref.read(myPostsListProvider.notifier).refresh();
@@ -119,10 +122,12 @@ class MyPostsScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final postsState = ref.watch(myPostsListProvider);
     final postState = ref.watch(postProvider);
-    
+
     final scrollController = useScrollController();
     final searchFocusNode = useFocusNode();
-    final isSearchVisible = useState<bool>(false);
+    final isSearchVisible = useState<bool>(
+      postsState.query.search?.isNotEmpty == true,
+    );
 
     final debouncer = useMemoized(() => Debouncer());
 
@@ -130,7 +135,7 @@ class MyPostsScreen extends HookConsumerWidget {
     final theme = context.theme;
     final colorScheme = context.colorScheme;
 
-    final searchQuery = useState<String>('');
+    final searchQuery = useState<String>(postsState.query.search ?? '');
 
     final searchController = useTextEditingController(
       text: postsState.query.search ?? '',
@@ -275,6 +280,7 @@ class MyPostsScreen extends HookConsumerWidget {
 
     void toggleSearch() {
       isSearchVisible.value = !isSearchVisible.value;
+
       if (isSearchVisible.value) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           searchFocusNode.requestFocus();
@@ -291,7 +297,7 @@ class MyPostsScreen extends HookConsumerWidget {
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (postsState.posts.isEmpty) {
-          loadPosts();
+          resetAll();
         }
       });
       return () {

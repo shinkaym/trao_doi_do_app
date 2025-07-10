@@ -84,7 +84,10 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
     final isFirstLoad = refresh || state.interests.isEmpty;
     final isTypeChanged = newQuery != null && newQuery.type != state.query.type;
 
-    if (isTypeChanged || isFirstLoad) {
+    final isSearchChanged =
+        newQuery != null && newQuery.search != state.query.search;
+
+    if (isTypeChanged || isFirstLoad || isSearchChanged) {
       state = state.copyWith(
         isLoading: true,
         failure: null,
@@ -101,6 +104,8 @@ class InterestsListNotifier extends StateNotifier<InterestsListState> {
       );
     } else if (isGoToPage) {
       state = state.copyWith(isLoadingPage: true, failure: null, query: query);
+    } else {
+      state = state.copyWith(isLoading: true, failure: null, query: query);
     }
 
     try {

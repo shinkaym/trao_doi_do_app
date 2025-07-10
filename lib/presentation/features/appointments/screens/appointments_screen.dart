@@ -90,7 +90,7 @@ class AppointmentsScreen extends HookConsumerWidget {
       }
     }
 
-    void resetFilters() {
+    void resetAll() {
       selectedSort.value = SortOrder.startTimeDesc;
       loadAppointments(refresh: true);
     }
@@ -104,7 +104,7 @@ class AppointmentsScreen extends HookConsumerWidget {
             (context) => AppointmentsFilterBottomSheet(
               selectedSort: selectedSort.value,
               onApplyFilters: handleApplyFilters,
-              onResetFilters: resetFilters,
+              onResetFilters: resetAll,
               isTablet: isTablet,
               theme: theme,
               colorScheme: colorScheme,
@@ -115,7 +115,7 @@ class AppointmentsScreen extends HookConsumerWidget {
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (appointmentsState.appointments.isEmpty) {
-          loadAppointments();
+          resetAll();
         }
       });
       return null;
@@ -144,7 +144,7 @@ class AppointmentsScreen extends HookConsumerWidget {
                     selectedSort: selectedSort.value,
                     onRejectAppointment: handleRejectAppointment,
                     onRefresh: handleRefresh,
-                    onResetFilters: resetFilters,
+                    onResetFilters: resetAll,
                     scrollController: scrollController,
                   ),
                 ),

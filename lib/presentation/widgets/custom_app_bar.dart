@@ -156,48 +156,49 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
     final offset = renderBox.localToGlobal(Offset.zero);
 
     _overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        top: offset.dy + size.height,
-        left: 0,
-        right: 0,
-        bottom: 5,
-        child: Container(
-          color: Colors.black.withOpacity(0.1),
-          child: Material(
-            color: Colors.transparent,
-            child: Consumer(
-              builder: (context, ref, child) {
-                final searchState = ref.watch(searchSuggestionsProvider);
+      builder:
+          (context) => Positioned(
+            top: offset.dy + size.height,
+            left: 0,
+            right: 0,
+            bottom: 5,
+            child: Container(
+              color: Colors.black.withOpacity(0.1),
+              child: Material(
+                color: Colors.transparent,
+                child: Consumer(
+                  builder: (context, ref, child) {
+                    final searchState = ref.watch(searchSuggestionsProvider);
 
-                if (searchState.query.isEmpty) {
-                  return const SizedBox.shrink();
-                }
+                    if (searchState.query.isEmpty) {
+                      return const SizedBox.shrink();
+                    }
 
-                return Container(
-                  width: double.infinity,
-                  height: double.infinity,
-                  child: SearchSuggestionsOverlay(
-                    suggestions: searchState.suggestions,
-                    isLoading: searchState.isLoading,
-                    searchQuery: searchState.query,
-                    onPostTap: (post) {
-                      _hideOverlay();
-                      _navigateToPostDetail(context, post);
-                    },
-                    onViewAll: () {
-                      _hideOverlay();
-                      _navigateToPostsWithSearch(
-                        context,
-                        searchState.query,
-                      );
-                    },
-                  ),
-                );
-              },
+                    return Container(
+                      width: double.infinity,
+                      height: double.infinity,
+                      child: SearchSuggestionsOverlay(
+                        suggestions: searchState.suggestions,
+                        isLoading: searchState.isLoading,
+                        searchQuery: searchState.query,
+                        onPostTap: (post) {
+                          _hideOverlay();
+                          _navigateToPostDetail(context, post);
+                        },
+                        onViewAll: () {
+                          _hideOverlay();
+                          _navigateToPostsWithSearch(
+                            context,
+                            searchState.query,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
           ),
-        ),
-      ),
     );
 
     overlay.insert(_overlayEntry!);
@@ -233,9 +234,11 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
     final isDark = context.isDarkMode;
 
     // Facebook-inspired colors
-    final appBarBgColor = widget.backgroundColor ??
+    final appBarBgColor =
+        widget.backgroundColor ??
         (isDark ? const Color(0xFF1B1B1B) : Colors.white);
-    final appBarFgColor = widget.foregroundColor ??
+    final appBarFgColor =
+        widget.foregroundColor ??
         (isDark ? Colors.white : const Color(0xFF1C1E21));
     final toolbarHeight = isTablet ? 70.0 : 60.0;
 
@@ -258,9 +261,10 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
             color: appBarBgColor,
             boxShadow: [
               BoxShadow(
-                color: isDark
-                    ? Colors.black.withOpacity(0.3)
-                    : Colors.black.withOpacity(0.1),
+                color:
+                    isDark
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.black.withOpacity(0.1),
                 offset: const Offset(0, 1),
                 blurRadius: 10,
                 spreadRadius: 0,
@@ -268,25 +272,27 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
             ],
           ),
         ),
-        bottom: widget.bottom != null
-            ? PreferredSize(
-                preferredSize: widget.bottom!.preferredSize,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: appBarBgColor,
-                    border: Border(
-                      bottom: BorderSide(
-                        color: isDark
-                            ? Colors.grey.withOpacity(0.2)
-                            : Colors.grey.withOpacity(0.1),
-                        width: 0.5,
+        bottom:
+            widget.bottom != null
+                ? PreferredSize(
+                  preferredSize: widget.bottom!.preferredSize,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: appBarBgColor,
+                      border: Border(
+                        bottom: BorderSide(
+                          color:
+                              isDark
+                                  ? Colors.grey.withOpacity(0.2)
+                                  : Colors.grey.withOpacity(0.1),
+                          width: 0.5,
+                        ),
                       ),
                     ),
+                    child: widget.bottom!,
                   ),
-                  child: widget.bottom!,
-                ),
-              )
-            : null,
+                )
+                : null,
         leading: _buildLeading(context, appBarBgColor, appBarFgColor),
         title: _buildTitle(context, appBarBgColor, appBarFgColor),
         actions: _isSearchMode ? [] : _buildActions(context, appBarFgColor),
@@ -315,7 +321,8 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
 
     if (widget.showBackButton) {
       return AppBarBackButton(
-        onPressed: widget.onBackPressed ??
+        onPressed:
+            widget.onBackPressed ??
             () {
               if (context.canPop) {
                 context.pop();
@@ -330,10 +337,7 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
       );
     }
 
-    return Container(
-      margin: EdgeInsets.only(left: isTablet ? 16 : 12),
-      child: AppBarLogo(isTablet: isTablet),
-    );
+    return null;
   }
 
   Widget? _buildTitle(
@@ -398,7 +402,8 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
     if (widget.showNotificationButton) {
       actions.add(
         AppBarNotificationButton(
-          onPressed: widget.onNotificationTap ??
+          onPressed:
+              widget.onNotificationTap ??
               () => context.pushNamed(RouteNames.notifications),
           foregroundColor: foregroundColor,
           isDark: isDark,
@@ -430,26 +435,21 @@ class _CustomAppBarState extends ConsumerState<CustomAppBar>
 class AppBarLogo extends StatelessWidget {
   final bool isTablet;
 
-  const AppBarLogo({
-    super.key,
-    required this.isTablet,
-  });
+  const AppBarLogo({super.key, required this.isTablet});
 
   @override
   Widget build(BuildContext context) {
-    final double size = isTablet ? 20 : 18;
+    final double size = isTablet ? 32 : 50;
 
     return Container(
       width: size,
       height: size,
-      margin: EdgeInsets.all(4),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(4),
         child: Image.asset(
           'assets/images/logo.png',
           width: size,
           height: size,
-          fit: BoxFit.cover,
+          fit: BoxFit.contain,
           errorBuilder: (context, error, stackTrace) {
             return Container(
               width: size,
@@ -499,9 +499,10 @@ class AppBarBackButton extends StatelessWidget {
         icon: Container(
           padding: EdgeInsets.all(isTablet ? 10 : 8),
           decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withOpacity(0.1)
-                : Colors.grey.withOpacity(0.1),
+            color:
+                isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.grey.withOpacity(0.1),
             borderRadius: BorderRadius.circular(50),
           ),
           child: Icon(
@@ -559,14 +560,16 @@ class AppBarSearchField extends StatelessWidget {
                 child: Container(
                   height: isTablet ? 46 : 40,
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : Colors.grey.withOpacity(0.1),
+                    color:
+                        isDark
+                            ? Colors.white.withOpacity(0.1)
+                            : Colors.grey.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(25),
                     border: Border.all(
-                      color: isDark
-                          ? Colors.white.withOpacity(0.2)
-                          : Colors.grey.withOpacity(0.3),
+                      color:
+                          isDark
+                              ? Colors.white.withOpacity(0.2)
+                              : Colors.grey.withOpacity(0.3),
                       width: 1,
                     ),
                   ),
@@ -588,20 +591,21 @@ class AppBarSearchField extends StatelessWidget {
                         horizontal: isTablet ? 20 : 16,
                         vertical: isTablet ? 14 : 12,
                       ),
-                      suffixIcon: controller.text.isNotEmpty
-                          ? IconButton(
-                              icon: Icon(
-                                Icons.clear_rounded,
+                      suffixIcon:
+                          controller.text.isNotEmpty
+                              ? IconButton(
+                                icon: Icon(
+                                  Icons.clear_rounded,
+                                  color: foregroundColor.withOpacity(0.6),
+                                  size: isTablet ? 22 : 20,
+                                ),
+                                onPressed: onClear,
+                              )
+                              : Icon(
+                                Icons.search_rounded,
                                 color: foregroundColor.withOpacity(0.6),
                                 size: isTablet ? 22 : 20,
                               ),
-                              onPressed: onClear,
-                            )
-                          : Icon(
-                              Icons.search_rounded,
-                              color: foregroundColor.withOpacity(0.6),
-                              size: isTablet ? 22 : 20,
-                            ),
                     ),
                     onChanged: onChanged,
                     onSubmitted: onSubmitted,
@@ -629,58 +633,84 @@ class AppBarTitle extends ConsumerWidget {
     required this.isTablet,
   });
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
+@override
+Widget build(BuildContext context, WidgetRef ref) {
+  final authState = ref.watch(authProvider);
 
-    // Show user info if logged in
-    if (authState.isLoggedIn && authState.user != null) {
-      final user = authState.user!;
-      String emailPrefix = user.email.split('@').first;
-      String displayName = user.fullName;
+  // Show user info if logged in
+  if (authState.isLoggedIn && authState.user != null) {
+    final user = authState.user!;
+    String emailPrefix = user.email.split('@').first;
+    String displayName = user.fullName;
 
-      return Row(
-        children: [
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '$emailPrefix\n$displayName',
-              style: TextStyle(
-                color: foregroundColor,
-                fontSize: isTablet ? 16 : 14,
-                fontWeight: FontWeight.w600,
-                letterSpacing: -0.2,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      );
-    }
-
-    // Show default title if not logged in
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const SizedBox(width: 8),
+        Container(
+          margin: EdgeInsets.only(left: isTablet ? 16 : 12),
+          child: AppBarLogo(isTablet: isTablet),
+        ),
+        SizedBox(width: isTablet ? 6 : 4),
         Expanded(
-          child: Text(
-            title,
-            style: TextStyle(
-              color: foregroundColor,
-              fontSize: isTablet ? 16 : 14,
-              fontWeight: FontWeight.w600,
-              letterSpacing: -0.2,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                emailPrefix,
+                style: TextStyle(
+                  color: foregroundColor,
+                  fontSize: isTablet ? 16 : 14,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.2,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                displayName,
+                style: TextStyle(
+                  color: foregroundColor.withOpacity(0.7),
+                  fontSize: isTablet ? 14 : 12,
+                  fontWeight: FontWeight.w400,
+                  letterSpacing: -0.2,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
       ],
     );
   }
-}
 
+  // Show default title if not logged in
+  return Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Container(
+        margin: EdgeInsets.only(left: isTablet ? 16 : 12),
+        child: AppBarLogo(isTablet: isTablet),
+      ),
+      SizedBox(width: isTablet ? 12 : 10),
+      Expanded(
+        child: Text(
+          title,
+          style: TextStyle(
+            color: foregroundColor,
+            fontSize: isTablet ? 16 : 14,
+            fontWeight: FontWeight.w600,
+            letterSpacing: -0.2,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    ],
+  );
+}
+}
 class AppBarSearchButton extends StatelessWidget {
   final VoidCallback onPressed;
   final Color foregroundColor;
@@ -703,9 +733,10 @@ class AppBarSearchButton extends StatelessWidget {
         icon: Container(
           padding: EdgeInsets.all(isTablet ? 10 : 8),
           decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withOpacity(0.1)
-                : Colors.grey.withOpacity(0.08),
+            color:
+                isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.grey.withOpacity(0.08),
             borderRadius: BorderRadius.circular(50),
           ),
           child: Icon(
@@ -749,9 +780,10 @@ class AppBarNotificationButton extends ConsumerWidget {
             icon: Container(
               padding: EdgeInsets.all(isTablet ? 10 : 8),
               decoration: BoxDecoration(
-                color: isDark
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.grey.withOpacity(0.08),
+                color:
+                    isDark
+                        ? Colors.white.withOpacity(0.1)
+                        : Colors.grey.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(50),
               ),
               child: Icon(
@@ -835,9 +867,10 @@ class AppBarMoreOptionsMenu extends StatelessWidget {
         child: Container(
           padding: EdgeInsets.all(isTablet ? 10 : 8),
           decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withOpacity(0.1)
-                : Colors.grey.withOpacity(0.08),
+            color:
+                isDark
+                    ? Colors.white.withOpacity(0.1)
+                    : Colors.grey.withOpacity(0.08),
             borderRadius: BorderRadius.circular(50),
           ),
           child: Icon(
@@ -846,30 +879,31 @@ class AppBarMoreOptionsMenu extends StatelessWidget {
             size: isTablet ? 22 : 20,
           ),
         ),
-        itemBuilder: (BuildContext context) => [
-          PopupMenuItem<String>(
-            value: RouteNames.help,
-            height: isTablet ? 50 : 44,
-            child: Row(
-              children: [
-                Icon(
-                  Icons.help_outline_rounded,
-                  color: foregroundColor.withOpacity(0.7),
-                  size: isTablet ? 22 : 20,
+        itemBuilder:
+            (BuildContext context) => [
+              PopupMenuItem<String>(
+                value: RouteNames.help,
+                height: isTablet ? 50 : 44,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.help_outline_rounded,
+                      color: foregroundColor.withOpacity(0.7),
+                      size: isTablet ? 22 : 20,
+                    ),
+                    SizedBox(width: isTablet ? 16 : 12),
+                    Text(
+                      'Trợ giúp',
+                      style: TextStyle(
+                        color: foregroundColor,
+                        fontSize: isTablet ? 16 : 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-                SizedBox(width: isTablet ? 16 : 12),
-                Text(
-                  'Trợ giúp',
-                  style: TextStyle(
-                    color: foregroundColor,
-                    fontSize: isTablet ? 16 : 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+              ),
+            ],
         onSelected: (String value) {
           context.pushNamed(value);
         },

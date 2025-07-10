@@ -44,7 +44,6 @@ class InterestsScreen extends HookConsumerWidget {
     );
     final searchFocusNode = useFocusNode();
     final isSearchVisible = useState<bool>(false);
-    final searchQuery = useState<String>('');
 
     final sharedSortField = useState('createdAt');
     final sharedSortOrder = useState<String>(
@@ -94,7 +93,6 @@ class InterestsScreen extends HookConsumerWidget {
       debouncer.debounce(
         duration: const Duration(milliseconds: 500),
         onDebounce: () {
-          searchQuery.value = query;
           applySharedFiltersToCurrentTab();
         },
       );
@@ -102,10 +100,26 @@ class InterestsScreen extends HookConsumerWidget {
 
     // Reset search function
     void resetSearch() {
-      searchQuery.value = '';
       sharedSearchController.clear();
       isSearchVisible.value = false;
-      applySharedFiltersToCurrentTab();
+      final currentTab = tabController.index;
+      final query = InterestsQuery(
+        type: currentTab == 0 ? 1 : 2,
+        sort: 'createdAt',
+        order: sharedSortOrder.value,
+        search: null,
+        page: 1,
+      );
+
+      if (currentTab == 0) {
+        ref
+            .read(interestedPostsProvider.notifier)
+            .loadInterests(newQuery: query, refresh: true);
+      } else {
+        ref
+            .read(postsWithInterestsProvider.notifier)
+            .loadInterests(newQuery: query, refresh: true);
+      }
     }
 
     // Reset filters
@@ -117,7 +131,6 @@ class InterestsScreen extends HookConsumerWidget {
 
     // Reset all filters and search
     void resetAll() {
-      searchQuery.value = '';
       sharedSearchController.clear();
       isSearchVisible.value = false;
       sharedSortField.value = 'createdAt';
@@ -227,7 +240,10 @@ class InterestsScreen extends HookConsumerWidget {
       if (tabController.indexIsChanging) return;
 
       final currentTab = tabController.index;
-      final searchValue = searchQuery.value.isEmpty ? null : searchQuery.value;
+      final searchValue =
+          sharedSearchController.text.isEmpty
+              ? null
+              : sharedSearchController.text;
 
       final query = InterestsQuery(
         type: currentTab == 0 ? 1 : 2,
@@ -238,14 +254,22 @@ class InterestsScreen extends HookConsumerWidget {
 
       if (currentTab == 0) {
         final state = ref.read(interestedPostsProvider);
-        if (state.interests.isEmpty || state.query.type != 1) {
+        // Làm mới nếu danh sách rỗng, type không khớp, hoặc bộ lọc/tìm kiếm thay đổi
+        if (state.interests.isEmpty ||
+            state.query.type != 1 ||
+            state.query.search != searchValue ||
+            state.query.order != sharedSortOrder.value) {
           ref
               .read(interestedPostsProvider.notifier)
               .loadInterests(newQuery: query, refresh: true);
         }
       } else {
         final state = ref.read(postsWithInterestsProvider);
-        if (state.interests.isEmpty || state.query.type != 2) {
+        // Làm mới nếu danh sách rỗng, type không khớp, hoặc bộ lọc/tìm kiếm thay đổi
+        if (state.interests.isEmpty ||
+            state.query.type != 2 ||
+            state.query.search != searchValue ||
+            state.query.order != sharedSortOrder.value) {
           ref
               .read(postsWithInterestsProvider.notifier)
               .loadInterests(newQuery: query, refresh: true);
@@ -420,7 +444,7 @@ class InterestsScreen extends HookConsumerWidget {
                   onFilterPressed: showFilterBottomSheet,
                   isTablet: isTablet,
                   colorScheme: colorScheme,
-                  hasActiveSearch: searchQuery.value.isNotEmpty,
+                  hasActiveSearch: sharedSearchController.text.isNotEmpty,
                   hasActiveFilters: sharedSortOrder.value != 'DESC',
                 ),
 

@@ -155,6 +155,7 @@ class PostsScreen extends HookConsumerWidget {
 
     void toggleSearch() {
       isSearchVisible.value = !isSearchVisible.value;
+
       if (isSearchVisible.value && autoFocus) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           searchFocusNode.requestFocus();
@@ -167,22 +168,50 @@ class PostsScreen extends HookConsumerWidget {
       }
     }
 
-    // Load posts lần đầu và focus search nếu có preselected search
+    // Replace the existing useEffect with this updated version
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final needsNewLoad =
-            postsState.posts.isEmpty ||
-            preselectedType != null ||
-            preselectedSearch != null;
+        // Check if we have preselected parameters from navigation
+        final hasPreselectedParams =
+            preselectedType != null || preselectedSearch != null;
 
-        if (needsNewLoad) {
-          loadPosts();
+        if (hasPreselectedParams) {
+          // Reset to clean state first, then apply new parameters
+          final newQuery = PostsQuery(
+            search:
+                preselectedSearch?.isEmpty == true ? null : preselectedSearch,
+            type: preselectedType?.value,
+            sort: SortOrder.newest.sort,
+            order: SortOrder.newest.order,
+            page: 1,
+          );
+
+          // Update local state to match new parameters
+          selectedType.value = preselectedType ?? PostType.all;
+          selectedSort.value = SortOrder.newest;
+          searchQuery.value = preselectedSearch ?? '';
+
+          // Update search visibility
+          isSearchVisible.value = preselectedSearch?.isNotEmpty ?? false;
+
+          // Load posts with new query
+          ref
+              .read(postsListProvider.notifier)
+              .loadPosts(newQuery: newQuery, refresh: true);
+        } else {
+          // No preselected params, check if we need to load posts
+          final needsNewLoad = postsState.posts.isEmpty;
+          if (needsNewLoad) {
+            resetAll();
+          }
         }
 
+        // Handle search focus
         if (preselectedSearch?.isNotEmpty == true && autoFocus) {
           searchFocusNode.requestFocus();
         }
       });
+
       return () {
         debouncer.cancel();
       };

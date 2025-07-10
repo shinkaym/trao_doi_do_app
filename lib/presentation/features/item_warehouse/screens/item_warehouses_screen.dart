@@ -27,7 +27,9 @@ class ItemWarehousesScreen extends HookConsumerWidget {
     final searchQuery = useState<String>('');
     final scrollController = useScrollController();
     final searchFocusNode = useFocusNode();
-    final isSearchVisible = useState<bool>(false);
+    final isSearchVisible = useState<bool>(
+      oldStockState.query.search?.isNotEmpty == true,
+    );
 
     final selectedItems = useState<Map<String, int>>({});
 
@@ -42,11 +44,16 @@ class ItemWarehousesScreen extends HookConsumerWidget {
     );
 
     final selectedCategory = useState<Category?>(
-      oldStockState.query.categoryID != null
-          ? availableCategories.firstWhere(
-            (c) => c.id == oldStockState.query.categoryID,
-            orElse: () => availableCategories[0],
-          )
+      oldStockState.query.categoryID != null && availableCategories.isNotEmpty
+          ? () {
+            final matchingCategories =
+                availableCategories
+                    .where((c) => c.id == oldStockState.query.categoryID)
+                    .toList();
+            return matchingCategories.isNotEmpty
+                ? matchingCategories.first
+                : null;
+          }()
           : null,
     );
 
@@ -288,7 +295,7 @@ class ItemWarehousesScreen extends HookConsumerWidget {
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (oldStockState.items.isEmpty) {
-          loadItems();
+          resetAll();
         }
       });
       return () => debouncer.cancel();
