@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/help/data/help_data.dart';
+import 'package:trao_doi_do_app/presentation/models/help_item.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
 class HelpScreen extends HookConsumerWidget {
@@ -15,7 +16,7 @@ class HelpScreen extends HookConsumerWidget {
     final colorScheme = context.colorScheme;
 
     void showHelpDialog(HelpItem item) {
-      context.showInfoDialog(
+      context.showHelpDialog(
         title: item.title,
         content: item.description,
         icon: item.icon,
@@ -39,11 +40,6 @@ class HelpScreen extends HookConsumerWidget {
 
               // Help Items Grid
               _buildHelpItemsGrid(isTablet, theme, colorScheme, showHelpDialog),
-
-              SizedBox(height: isTablet ? 32 : 24),
-
-              // Footer Section
-              _buildFooterSection(isTablet, theme, colorScheme),
             ],
           ),
         ),
@@ -217,53 +213,6 @@ class HelpScreen extends HookConsumerWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildFooterSection(
-    bool isTablet,
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(isTablet ? 20 : 16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceVariant.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: colorScheme.outline.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.lightbulb_outline,
-            size: isTablet ? 32 : 28,
-            color: colorScheme.primary,
-          ),
-          SizedBox(height: isTablet ? 12 : 8),
-          Text(
-            'Vẫn cần hỗ trợ?',
-            style: TextStyle(
-              fontSize: isTablet ? 16 : 14,
-              fontWeight: FontWeight.w600,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          SizedBox(height: isTablet ? 6 : 4),
-          Text(
-            'Liên hệ với chúng tôi qua thông tin liên hệ tại màn hình chính để được trợ giúp trực tiếp.',
-            style: TextStyle(
-              fontSize: isTablet ? 14 : 12,
-              color: theme.hintColor,
-              height: 1.3,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
       ),
     );
   }

@@ -456,4 +456,65 @@ extension DialogExtensions on BuildContext {
       ),
     );
   }
+
+  void showHelpDialog({
+    required String title,
+    required String content,
+    IconData icon = Icons.help_outline,
+    String buttonText = 'Đã hiểu',
+  }) {
+    showAppDialog(
+      child: AlertDialog(
+        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+        actionsPadding: const EdgeInsets.all(16),
+        title: Row(
+          children: [
+            Icon(icon, color: appColors.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: textTheme.titleLarge?.copyWith(
+                  color: appColors.primaryTextColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(this).size.height * 0.6,
+            maxWidth: MediaQuery.of(this).size.width * 0.9,
+          ),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                content,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: appColors.secondaryTextColor,
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ),
+        ),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => _dismissDialog(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: appColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+              child: Text(buttonText),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
