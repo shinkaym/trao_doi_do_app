@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
-import 'package:trao_doi_do_app/presentation/features/post/providers/posts_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/post/notifiers/posts_notifier.dart';
 
 class PostsPagination extends HookConsumerWidget {
   final PostsListState state;

@@ -7,7 +7,7 @@ import 'package:trao_doi_do_app/domain/usecases/get_notifications_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/mark_all_notifications_read_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/mark_notification_read_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/notification_query.dart';
-import 'package:trao_doi_do_app/presentation/providers/notification_websocket_provider.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/notification_websocket_notifier.dart';
 
 class NotificationState {
   final bool isLoading;

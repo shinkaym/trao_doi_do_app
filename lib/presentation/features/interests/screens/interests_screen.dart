@@ -12,8 +12,8 @@ import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/interests_top_action_bar.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/posts_with_interests_tab.dart';
 import 'package:trao_doi_do_app/presentation/widgets/scroll_to_top_button.dart';
-import 'package:trao_doi_do_app/presentation/providers/chat_notification_websocket_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/interest_provider.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/chat_notification_websocket_notifier.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/interest_notifier.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 

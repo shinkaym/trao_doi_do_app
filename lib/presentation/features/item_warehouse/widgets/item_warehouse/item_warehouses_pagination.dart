@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
-import 'package:trao_doi_do_app/presentation/features/item_warehouse/providers/old_stock_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/notifiers/old_stock_notifier.dart';
 
 class ItemWarehousesPagination extends HookConsumerWidget {
   final OldStockState state;

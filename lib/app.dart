@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:trao_doi_do_app/core/config/theme_mode_provider.dart';
+import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/router/app_router.dart';
 import 'package:trao_doi_do_app/theme/app_theme.dart';
 

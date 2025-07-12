@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/domain/entities/message.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/message_bubble.dart';
-import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/messages_provider.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/auth_notifier.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/messages_notifier.dart';
 
 class MessagesListWidget extends StatefulWidget {
   final MessagesListState messagesState;

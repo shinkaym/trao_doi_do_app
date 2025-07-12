@@ -28,7 +28,7 @@ import 'package:trao_doi_do_app/presentation/features/profile/screens/profile_sc
 import 'package:trao_doi_do_app/presentation/features/ranking/screens/ranking_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/screens/appointments_screen.dart';
 import 'package:trao_doi_do_app/presentation/features/splash/screens/splash_screen.dart';
-import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/auth_notifier.dart';
 import 'package:trao_doi_do_app/presentation/widgets/scaffold_with_navbar.dart';
 
 // Create a separate provider for router state to prevent circular dependencies

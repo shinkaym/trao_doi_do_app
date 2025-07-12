@@ -7,7 +7,7 @@ import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/entities/request/transaction_request.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/providers/transaction_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/notifiers/transaction_notifier.dart';
 
 class TransactionItemSelectionBottomSheet extends HookConsumerWidget {
   final List<InterestItem> postItems;

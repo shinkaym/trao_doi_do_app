@@ -15,7 +15,7 @@ import 'package:trao_doi_do_app/domain/usecases/send_otp_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/signup_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_profile_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/verify_otp_usecase.dart';
-import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/auth_notifier.dart';
 import '../modules/core_module.dart';
 import '../modules/network_module.dart';
 

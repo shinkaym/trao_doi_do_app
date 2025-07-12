@@ -8,7 +8,7 @@ import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/entities/request/transaction_request.dart';
 import 'package:trao_doi_do_app/domain/entities/transaction.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/providers/transaction_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/notifiers/transaction_notifier.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/transaction_list_bottom_sheet/delivery_method_selector.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/transaction_list_bottom_sheet/editable_transaction_item.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/transaction_list_bottom_sheet/transaction_action_buttons.dart';

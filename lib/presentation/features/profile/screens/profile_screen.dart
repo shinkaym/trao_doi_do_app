@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:trao_doi_do_app/core/config/theme_mode_provider.dart';
 import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
-import 'package:trao_doi_do_app/presentation/providers/auth_provider.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/auth_notifier.dart';
 import 'package:trao_doi_do_app/presentation/widgets/smart_scaffold.dart';
 
 class ProfileScreen extends HookConsumerWidget {

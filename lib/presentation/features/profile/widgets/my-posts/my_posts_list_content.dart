@@ -3,7 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/domain/entities/post.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/post/widgets/posts/post_skeleton.dart';
-import 'package:trao_doi_do_app/presentation/features/profile/providers/my_posts_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/notifiers/my_posts_notifier.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/my-posts/my_post_card.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/my-posts/my_posts_empty_state.dart';
 import 'package:trao_doi_do_app/presentation/features/profile/widgets/my-posts/my_posts_pagination.dart';

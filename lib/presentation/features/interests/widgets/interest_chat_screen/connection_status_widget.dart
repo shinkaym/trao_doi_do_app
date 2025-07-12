@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:trao_doi_do_app/presentation/providers/chat_websocket_provider.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/chat_websocket_notifier.dart';
 
 class ConnectionStatusWidget extends StatelessWidget {
   final ChatWebSocketState webSocketState;

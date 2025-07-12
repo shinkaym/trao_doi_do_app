@@ -3,7 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/domain/entities/item_warehouse.dart';
 import 'package:trao_doi_do_app/domain/entities/category.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/item_warehouse/providers/old_stock_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/notifiers/old_stock_notifier.dart';
 import 'package:trao_doi_do_app/presentation/features/item_warehouse/widgets/item_warehouse/item_warehouse_card.dart';
 import 'package:trao_doi_do_app/presentation/features/item_warehouse/widgets/item_warehouse/item_warehouse_skeleton.dart';
 import 'package:trao_doi_do_app/presentation/features/item_warehouse/widgets/item_warehouse/item_warehouses_empty_state.dart';

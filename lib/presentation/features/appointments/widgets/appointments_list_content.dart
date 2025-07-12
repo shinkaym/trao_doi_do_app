@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/domain/entities/appointment.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/appointments/providers/appointments_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/appointments/notifiers/appointments_notifier.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/widgets/appointment_card.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/widgets/appointment_detail_dialog.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/widgets/appointment_skeleton.dart';

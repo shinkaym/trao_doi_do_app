@@ -5,8 +5,8 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/nav_bar_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
-import 'package:trao_doi_do_app/presentation/providers/chat_notification_websocket_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/unread_count_provider.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/chat_notification_websocket_notifier.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/unread_count_notifier.dart';
 
 class CustomBottomNavigation extends HookConsumerWidget {
   final int currentIndex;

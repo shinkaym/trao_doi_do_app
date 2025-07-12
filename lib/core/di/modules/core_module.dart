@@ -5,7 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:trao_doi_do_app/core/constants/storage_keys.dart';
 import 'package:trao_doi_do_app/core/services/permission_service.dart';
 import 'package:trao_doi_do_app/core/utils/logger_utils.dart';
-import 'package:trao_doi_do_app/presentation/providers/permission_provider.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/permission_notifier.dart';
 
 /// Core Module - Contains fundamental dependencies
 class CoreModule {

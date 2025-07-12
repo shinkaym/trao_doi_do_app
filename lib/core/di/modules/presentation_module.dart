@@ -1,33 +1,35 @@
+import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/core/config/theme_mode_notifier.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
-import 'package:trao_doi_do_app/presentation/features/appointments/providers/appointment_detail_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/appointments/providers/appointment_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/appointments/providers/appointments_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/providers/interest_detail_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/providers/transaction_by_interest_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/providers/transaction_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/providers/transactions_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/interests/providers/interests_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/post/providers/post_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/post/providers/posts_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/post/providers/post_detail_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/profile/providers/my_posts_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/ranking/providers/my_good_deeds_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/ranking/providers/ranking_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/splash/providers/splash_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/onboarding/providers/onboarding_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/item_warehouse/providers/claim_request_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/item_warehouse/providers/claim_requests_list_provider.dart';
-import 'package:trao_doi_do_app/presentation/features/item_warehouse/providers/old_stock_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/category_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/item_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/interest_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/messages_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/notification_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/search_suggestion_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/settings_provider.dart';
-import 'package:trao_doi_do_app/presentation/providers/unread_count_provider.dart';
+import 'package:trao_doi_do_app/presentation/features/appointments/notifiers/appointment_detail_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/appointments/notifiers/appointment_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/appointments/notifiers/appointments_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/notifiers/interest_detail_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/notifiers/transaction_by_interest_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/notifiers/transaction_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/notifiers/transactions_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/interests/notifiers/interests_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/post/notifiers/post_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/post/notifiers/posts_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/post/notifiers/post_detail_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/profile/notifiers/my_posts_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/ranking/notifiers/my_good_deeds_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/ranking/notifiers/ranking_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/splash/notifiers/splash_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/onboarding/notifiers/onboarding_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/notifiers/claim_request_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/notifiers/claim_requests_list_notifier.dart';
+import 'package:trao_doi_do_app/presentation/features/item_warehouse/notifiers/old_stock_notifier.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/category_notifier.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/item_notifier.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/interest_notifier.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/messages_notifier.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/notification_notifier.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/search_suggestion_notifier.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/settings_notifier.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/unread_count_notifier.dart';
 
 /// Presentation Module - Contains UI state providers
 class PresentationModule {
@@ -39,6 +41,10 @@ class PresentationModule {
 // =============================================================================
 // SPLASH & ONBOARDING PROVIDERS
 // =============================================================================
+
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>(
+  (ref) => ThemeModeNotifier(),
+);
 
 final splashProvider = StateNotifierProvider<SplashNotifier, SplashState>((
   ref,
