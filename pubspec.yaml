@@ -86,7 +86,7 @@ dependencies:
   web_socket_channel: ^3.0.3
   flutter_debouncer: ^2.0.0
   permission_handler: ^12.0.0+1
-  connectivity_plus: ^4.0.2
+  connectivity_plus: ^6.0.5
 
   # App Icon Generator
   flutter_launcher_icons: ^0.14.4

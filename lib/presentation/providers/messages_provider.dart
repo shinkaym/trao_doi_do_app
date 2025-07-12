@@ -280,55 +280,6 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
     state = state.copyWith(messages: updatedMessages);
   }
 
-  void updateMessage(Message updatedMessage) {
-    if (updatedMessage.interestID != state.query.interestID) return;
-
-    final messageIndex = state.messages.indexWhere(
-      (m) => m.id == updatedMessage.id,
-    );
-    if (messageIndex == -1) return;
-
-    final updatedMessages = [...state.messages];
-    updatedMessages[messageIndex] = updatedMessage;
-
-    state = state.copyWith(messages: updatedMessages);
-  }
-
-  void removeMessage(int messageId) {
-    final updatedMessages =
-        state.messages.where((m) => m.id != messageId).toList();
-    state = state.copyWith(messages: updatedMessages);
-  }
-
-  void markMessageAsRead(int messageId) {
-    final messageIndex = state.messages.indexWhere((m) => m.id == messageId);
-    if (messageIndex == -1) return;
-
-    final message = state.messages[messageIndex];
-    if (message.isRead == 1) return; // Already read
-
-    final updatedMessages = [...state.messages];
-    updatedMessages[messageIndex] = message.copyWith(isRead: 1);
-
-    state = state.copyWith(messages: updatedMessages);
-  }
-
-  void markMessagesAsRead(List<int> messageIds) {
-    bool hasChanges = false;
-    final updatedMessages =
-        state.messages.map((message) {
-          if (messageIds.contains(message.id) && message.isRead == 0) {
-            hasChanges = true;
-            return message.copyWith(isRead: 1);
-          }
-          return message;
-        }).toList();
-
-    if (hasChanges) {
-      state = state.copyWith(messages: updatedMessages);
-    }
-  }
-
   void clearMessages() {
     state = state.copyWith(
       messages: [],
@@ -340,29 +291,9 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
     );
   }
 
-  void resetState() {
-    state = MessagesListState(query: state.query);
-  }
-
-  // Utility methods
-  bool get hasMessages => state.messages.isNotEmpty;
-
-  bool get hasUnreadMessages => state.messages.any((m) => m.isRead == 0);
-
   int get unreadCount {
     return state.messages.where((message) => message.isRead == 0).length;
   }
-
-  int get totalMessageCount => state.messages.length;
-
-  Message? get lastMessage =>
-      state.messages.isNotEmpty ? state.messages.last : null;
-
-  Message? get firstMessage =>
-      state.messages.isNotEmpty ? state.messages.first : null;
-
-  List<Message> get unreadMessages =>
-      state.messages.where((m) => m.isRead == 0).toList();
 
   void clearError() {
     if (state.failure != null) {

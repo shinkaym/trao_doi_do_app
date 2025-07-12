@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -16,7 +15,6 @@ import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/connection_status_widget.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/message_input_widget.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interest_chat_screen/messages_list_widget.dart';
-import 'package:trao_doi_do_app/presentation/widgets/custom_app_bar.dart';
 import 'package:flutter_debouncer/flutter_debouncer.dart';
 import 'package:collection/collection.dart';
 
@@ -38,7 +36,10 @@ class InterestChatScreen extends HookConsumerWidget {
 
     final isLoading = useState(true);
     final isSending = useState(false);
-    final hasMarkedAsRead = useState(false);
+
+    final hasMarkedAsReadOnEntry = useState(false);
+    final lastMessageId = useState<int?>(null);
+    final lastUnreadCount = useState<int>(0);
 
     final isPostOwner = useState<bool>(false);
     final displayName = useState<String>('');
@@ -46,6 +47,8 @@ class InterestChatScreen extends HookConsumerWidget {
     final displayUserId = useState<int?>(null);
 
     final isReconnecting = useState(false);
+
+    final markAsReadDebouncer = useMemoized(() => Debouncer(), []);
 
     // Watch providers
     final authState = ref.watch(authProvider);
@@ -111,6 +114,7 @@ class InterestChatScreen extends HookConsumerWidget {
         webSocketState.isConnecting,
       ],
     );
+
     // Initialize interest detail
     useEffect(() {
       Future.microtask(() async {
@@ -183,34 +187,50 @@ class InterestChatScreen extends HookConsumerWidget {
       return null;
     }, [interestDetail, authState.user]);
 
-    // Auto mark messages as read
     useEffect(() {
       if (!messagesState.isLoading &&
           messagesState.messages.isNotEmpty &&
-          !hasMarkedAsRead.value &&
+          !hasMarkedAsReadOnEntry.value &&
           messagesNotifier.unreadCount > 0) {
         Future.microtask(() async {
           try {
             await messagesNotifier.markAllAsRead();
-            hasMarkedAsRead.value = true;
+            hasMarkedAsReadOnEntry.value = true;
+            lastUnreadCount.value = 0;
           } catch (e) {}
         });
       }
       return null;
-    }, [messagesState.isLoading, messagesState.messages]);
+    }, [messagesState.isLoading, messagesState.messages.isEmpty]);
 
-    // Mark new messages as read
     useEffect(() {
-      if (messagesState.messages.isNotEmpty &&
-          messagesNotifier.unreadCount > 0) {
-        Future.delayed(const Duration(milliseconds: 1000), () {
-          if (messagesNotifier.unreadCount > 0) {
-            messagesNotifier.markAllAsRead();
-          }
-        });
+      if (messagesState.messages.isNotEmpty && authState.user != null) {
+        final latestMessage = messagesState.messages.last;
+        final currentUnreadCount = messagesNotifier.unreadCount;
+
+        // Chỉ mark as read khi:
+        // 1. Có tin nhắn mới (ID khác với tin nhắn cuối cùng)
+        // 2. Tin nhắn mới không phải từ mình
+        // 3. Có tin nhắn chưa đọc
+        if (latestMessage.id != lastMessageId.value &&
+            latestMessage.senderID != authState.user!.id &&
+            currentUnreadCount > 0) {
+          markAsReadDebouncer.debounce(
+            duration: const Duration(milliseconds: 1500),
+            onDebounce: () {
+              if (messagesNotifier.unreadCount > 0) {
+                messagesNotifier.markAllAsRead();
+                lastUnreadCount.value = 0;
+              }
+            },
+          );
+        }
+
+        lastMessageId.value = latestMessage.id;
+        lastUnreadCount.value = currentUnreadCount;
       }
       return null;
-    }, [messagesState.messages.length]);
+    }, [messagesState.messages.length, authState.user?.id]);
 
     // Handle WebSocket connection state
     useEffect(() {
@@ -267,18 +287,15 @@ class InterestChatScreen extends HookConsumerWidget {
       StreamSubscription? chatResponseSubscription;
 
       if (webSocketState.isConnected) {
-        chatResponseSubscription = webSocketNotifier.chatResponseStream.listen(
-          (response) {
-            if (response.event == 'send_message_response' &&
-                response.isSuccess &&
-                response.data != null) {
-              _handleWebSocketMessage(response.data!);
-            }
-          },
-          onError: (error) {
-            // context.showErrorSnackBar('Lỗi stream tin nhắn: $error');
-          },
-        );
+        chatResponseSubscription = webSocketNotifier.chatResponseStream.listen((
+          response,
+        ) {
+          if (response.event == 'send_message_response' &&
+              response.isSuccess &&
+              response.data != null) {
+            _handleWebSocketMessage(response.data!);
+          }
+        }, onError: (error) {});
       }
 
       return () {
@@ -290,7 +307,6 @@ class InterestChatScreen extends HookConsumerWidget {
     useEffect(() {
       if (webSocketState.error != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          // context.showErrorSnackBar('Lỗi WebSocket: ${webSocketState.error}');
           webSocketNotifier.clearError();
         });
       }
@@ -341,6 +357,7 @@ class InterestChatScreen extends HookConsumerWidget {
         if (webSocketState.isConnected) {
           webSocketNotifier.leftRoom(int.parse(interestId));
         }
+        markAsReadDebouncer.cancel();
       };
     }, []);
 
@@ -471,45 +488,27 @@ class InterestChatScreen extends HookConsumerWidget {
       transactionsNotifier.refresh();
     }
 
-    useEffect(() {
-      final response = webSocketState.lastResponse;
-      if (response?.event == 'send_transaction_response' &&
-          response!.isSuccess) {
-        Future.microtask(() {
-          handleRefreshTransactions();
-        });
-      }
-      return null;
-    }, [webSocketState.lastResponse]);
+    // ✅ Tối ưu: Chỉ refresh transactions khi thực sự cần thiết
+    useEffect(
+      () {
+        final response = webSocketState.lastResponse;
+        if (response?.event == 'send_transaction_response' &&
+            response!.isSuccess) {
+          // Debounce để tránh multiple calls
+          Future.delayed(const Duration(milliseconds: 500), () {
+            handleRefreshTransactions();
+          });
+        }
+        return null;
+      },
+      [
+        webSocketState.lastResponse?.event,
+        webSocketState.lastResponse?.isSuccess,
+      ],
+    );
 
     final isTablet = context.isTablet;
     final colorScheme = context.colorScheme;
-
-    if (isLoading.value || !authState.isInitialized) {
-      return Scaffold(
-        backgroundColor: colorScheme.background,
-        appBar: CustomAppBar(
-          title: 'Trò chuyện',
-          showBackButton: true,
-          onBackPressed: () => context.pop(),
-        ),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (authState.user == null) {
-      return Scaffold(
-        backgroundColor: colorScheme.background,
-        appBar: CustomAppBar(
-          title: 'Trò chuyện',
-          showBackButton: true,
-          onBackPressed: () => context.pop(),
-        ),
-        body: const Center(
-          child: Text('Bạn cần đăng nhập để sử dụng chức năng này'),
-        ),
-      );
-    }
 
     return Scaffold(
       backgroundColor: colorScheme.background,

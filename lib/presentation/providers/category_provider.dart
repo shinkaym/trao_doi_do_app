@@ -50,8 +50,4 @@ class CategoryNotifier extends StateNotifier<CategoryState> {
           ),
     );
   }
-
-  void refresh() {
-    getCategories();
-  }
 }

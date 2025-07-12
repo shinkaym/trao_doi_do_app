@@ -60,15 +60,16 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
 
   Stream<WebSocketResponse> get chatResponseStream =>
       _repository.chatResponseStream;
-  
+
   void _syncConnectionState() {
     final connectionState = _repository.chatConnectionState;
     state = state.copyWith(
       connectionState: connectionState,
       isConnecting: connectionState == WebSocketConnectionState.connecting,
-      error: connectionState == WebSocketConnectionState.error
-          ? 'Chat connection error'
-          : null,
+      error:
+          connectionState == WebSocketConnectionState.error
+              ? 'Chat connection error'
+              : null,
     );
   }
 
@@ -76,14 +77,16 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
     _connectionSubscription = _repository.connectionStream.listen(
       (states) {
         // Lấy trạng thái của channel chat từ Map
-        final connectionState = states[WebSocketChannel.chat] ??
+        final connectionState =
+            states[WebSocketChannel.chat] ??
             WebSocketConnectionState.disconnected;
         state = state.copyWith(
           connectionState: connectionState,
           isConnecting: connectionState == WebSocketConnectionState.connecting,
-          error: connectionState == WebSocketConnectionState.error
-              ? 'Chat connection error'
-              : null,
+          error:
+              connectionState == WebSocketConnectionState.error
+                  ? 'Chat connection error'
+                  : null,
         );
 
         if (connectionState == WebSocketConnectionState.disconnected) {
@@ -242,10 +245,6 @@ class ChatWebSocketNotifier extends StateNotifier<ChatWebSocketState> {
 
   void clearError() {
     state = state.copyWith(error: null);
-  }
-
-  void clearChatMessages() {
-    state = state.copyWith(messages: []);
   }
 
   void disconnect() {

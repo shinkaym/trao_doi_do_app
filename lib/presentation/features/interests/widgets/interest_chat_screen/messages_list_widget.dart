@@ -215,27 +215,26 @@ class _MessagesListWidgetState extends State<MessagesListWidget> {
   }
 
   void _onScroll() {
-    if (_isLoadingMore) return;
+    if (_isLoadingMore || !mounted) return;
 
     final position = widget.scrollController.position;
+    if (!position.hasPixels) return;
+
     final isNearTop = position.pixels <= 100;
     final isAtBottom = position.pixels >= position.maxScrollExtent - 100;
 
-    // Trigger load more when near top
+    // Trigger load more when near top - với debounce
     if (isNearTop &&
         !widget.messagesState.isLoadingMore &&
         !widget.messagesState.isLoading) {
       widget.messagesNotifier.loadMore();
     }
 
-    // Show/hide scroll down button
-    if (!isAtBottom && !_showScrollDownButton) {
+    // Show/hide scroll down button - chỉ setState khi cần thiết
+    final shouldShowButton = !isAtBottom;
+    if (shouldShowButton != _showScrollDownButton) {
       setState(() {
-        _showScrollDownButton = true;
-      });
-    } else if (isAtBottom && _showScrollDownButton) {
-      setState(() {
-        _showScrollDownButton = false;
+        _showScrollDownButton = shouldShowButton;
       });
     }
   }
@@ -421,42 +420,73 @@ class MeasuredMessageBubble extends StatefulWidget {
 class _MeasuredMessageBubbleState extends State<MeasuredMessageBubble> {
   final GlobalKey _containerKey = GlobalKey();
   bool _hasReportedHeight = false;
+  double? _lastReportedHeight;
 
   @override
   void initState() {
     super.initState();
-    // Measure height after first build
+    // Đo height sau khi build xong
     WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeight());
   }
 
+  @override
+  void didUpdateWidget(MeasuredMessageBubble oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // Chỉ đo lại height khi nội dung thay đổi
+    if (oldWidget.message.message != widget.message.message ||
+        oldWidget.isTablet != widget.isTablet ||
+        oldWidget.showAvatar != widget.showAvatar) {
+      _hasReportedHeight = false;
+      _lastReportedHeight = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeight());
+    }
+  }
+
   void _measureHeight() {
-    if (_hasReportedHeight) return;
+    if (!mounted) return;
 
     final renderBox =
         _containerKey.currentContext?.findRenderObject() as RenderBox?;
     if (renderBox?.hasSize == true) {
       final height = renderBox!.size.height;
-      widget.onHeightCalculated(widget.messageId, height);
-      _hasReportedHeight = true;
+
+      // Chỉ báo cáo nếu height thay đổi đáng kể
+      if (_lastReportedHeight == null ||
+          (_lastReportedHeight! - height).abs() > 2) {
+        widget.onHeightCalculated(widget.messageId, height);
+        _hasReportedHeight = true;
+        _lastReportedHeight = height;
+      }
+    } else {
+      // Retry sau 100ms nếu chưa có size
+      if (!_hasReportedHeight) {
+        Future.delayed(const Duration(milliseconds: 100), () {
+          if (mounted) _measureHeight();
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      key: _containerKey,
-      child: MessageBubble(
-        message: widget.message,
-        isCurrentUser: widget.isCurrentUser,
-        showAvatar: widget.showAvatar,
-        isTablet: widget.isTablet,
-        otherUserName: widget.otherUserName,
-        otherUserAvatar: widget.otherUserAvatar,
-        currentUserName: widget.currentUserName,
-        currentUserAvatar: widget.currentUserAvatar,
-        onPostTap: widget.onPostTap,
-        messages: widget.messages,
-        messageIndex: widget.messageIndex,
+    return RepaintBoundary(
+      // Tránh repaint không cần thiết
+      child: Container(
+        key: _containerKey,
+        child: MessageBubble(
+          message: widget.message,
+          isCurrentUser: widget.isCurrentUser,
+          showAvatar: widget.showAvatar,
+          isTablet: widget.isTablet,
+          otherUserName: widget.otherUserName,
+          otherUserAvatar: widget.otherUserAvatar,
+          currentUserName: widget.currentUserName,
+          currentUserAvatar: widget.currentUserAvatar,
+          onPostTap: widget.onPostTap,
+          messages: widget.messages,
+          messageIndex: widget.messageIndex,
+        ),
       ),
     );
   }

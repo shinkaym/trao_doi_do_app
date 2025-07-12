@@ -50,7 +50,7 @@ class ChatNotificationWebSocketNotifier
   StreamSubscription? _responseSubscription;
 
   ChatNotificationWebSocketNotifier(this._repository)
-      : super(const ChatNotificationWebSocketState()) {
+    : super(const ChatNotificationWebSocketState()) {
     _listenToConnectionState();
     _listenToChatNotificationResponses();
   }
@@ -58,14 +58,16 @@ class ChatNotificationWebSocketNotifier
   void _listenToConnectionState() {
     _connectionSubscription = _repository.connectionStream.listen(
       (states) {
-        final connectionState = states[WebSocketChannel.chatNotification] ??
+        final connectionState =
+            states[WebSocketChannel.chatNotification] ??
             WebSocketConnectionState.disconnected;
         state = state.copyWith(
           connectionState: connectionState,
           isConnecting: connectionState == WebSocketConnectionState.connecting,
-          error: connectionState == WebSocketConnectionState.error
-              ? 'Chat notification connection error'
-              : null,
+          error:
+              connectionState == WebSocketConnectionState.error
+                  ? 'Chat notification connection error'
+                  : null,
         );
 
         if (connectionState == WebSocketConnectionState.disconnected) {
@@ -96,7 +98,9 @@ class ChatNotificationWebSocketNotifier
         }
       },
       onError: (error) {
-        state = state.copyWith(error: 'Chat notification response stream error: $error');
+        state = state.copyWith(
+          error: 'Chat notification response stream error: $error',
+        );
       },
     );
   }
@@ -149,10 +153,6 @@ class ChatNotificationWebSocketNotifier
 
   void clearError() {
     state = state.copyWith(error: null);
-  }
-
-  void clearAllNotifications() {
-    state = state.copyWith(notifications: []);
   }
 
   void disconnect() {
