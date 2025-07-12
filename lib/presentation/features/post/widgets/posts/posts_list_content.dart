@@ -39,57 +39,69 @@ class PostsListContent extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Hiển thị skeleton khi đang loading lần đầu
+    // Hiển thị skeleton khi đang loading lần đầu (không có dữ liệu)
     if (postsState.isLoading && postsState.posts.isEmpty) {
-      return SingleChildScrollView(
-        controller: scrollController,
-        child: Column(
-          children: [
-            SizedBox(height: isTablet ? 16 : 8),
-            PostSkeletonList(
+      return _buildSkeletonContent();
+    }
+
+    // Hiển thị empty state khi không có dữ liệu và không loading
+    if (postsState.posts.isEmpty && !postsState.isLoading) {
+      return _buildEmptyState();
+    }
+
+    // Hiển thị danh sách posts (có thể có skeleton cho pagination)
+    return _buildPostsList();
+  }
+
+  Widget _buildSkeletonContent() {
+    return SingleChildScrollView(
+      controller: scrollController,
+      child: Column(
+        children: [
+          SizedBox(height: isTablet ? 16 : 8),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
+            child: PostSkeletonList(
               isTablet: isTablet,
               colorScheme: colorScheme,
               itemCount: 10,
             ),
-            SizedBox(height: isTablet ? 24 : 16),
-          ],
-        ),
-      );
-    }
+          ),
+          SizedBox(height: isTablet ? 24 : 16),
+        ],
+      ),
+    );
+  }
 
-    // Hiển thị empty state - FIX: Sử dụng LayoutBuilder để lấy chiều cao available
-    if (postsState.posts.isEmpty && !postsState.isLoading) {
-      return RefreshIndicator(
-        onRefresh: () async => onRefresh(),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              controller: scrollController,
-              physics:
-                  const AlwaysScrollableScrollPhysics(), // Cho phép pull to refresh
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight:
-                      constraints.maxHeight, // Đảm bảo chiều cao tối thiểu
-                ),
-                child: IntrinsicHeight(
-                  child: PostsEmptyState(
-                    isTablet: isTablet,
-                    theme: theme,
-                    colorScheme: colorScheme,
-                    searchQuery: searchQuery,
-                    selectedType: selectedType,
-                    selectedSort: selectedSort,
-                    onResetFilters: onResetFilters,
-                  ),
+  Widget _buildEmptyState() {
+    return RefreshIndicator(
+      onRefresh: () async => onRefresh(),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            controller: scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: PostsEmptyState(
+                  isTablet: isTablet,
+                  theme: theme,
+                  colorScheme: colorScheme,
+                  searchQuery: searchQuery,
+                  selectedType: selectedType,
+                  selectedSort: selectedSort,
+                  onResetFilters: onResetFilters,
                 ),
               ),
-            );
-          },
-        ),
-      );
-    }
+            ),
+          );
+        },
+      ),
+    );
+  }
 
+  Widget _buildPostsList() {
     return RefreshIndicator(
       onRefresh: () async => onRefresh(),
       child: CustomScrollView(
@@ -98,31 +110,40 @@ class PostsListContent extends HookConsumerWidget {
           // Top spacing
           SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
 
-          // Posts List
+          // Posts List hoặc Skeleton khi loading pagination
           SliverPadding(
             padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
-            sliver: SliverList.separated(
-              itemCount: postsState.posts.length,
-              itemBuilder: (context, index) {
-                return PostCard(
-                  post: postsState.posts[index],
-                  isTablet: isTablet,
-                  theme: theme,
-                  colorScheme: colorScheme,
-                  onTap: onPostTap,
-                  hasImages: _hasImages,
-                  getRewardFromPost: _getRewardFromPost,
-                  getLocationFromPost: _getLocationFromPost,
-                );
-              },
-              separatorBuilder: (context, index) {
-                return SizedBox(height: isTablet ? 8 : 6);
-              },
-            ),
+            sliver:
+                postsState.isLoadingPage || postsState.isLoading
+                    ? SliverToBoxAdapter(
+                      child: PostSkeletonList(
+                        isTablet: isTablet,
+                        colorScheme: colorScheme,
+                        itemCount: 10,
+                      ),
+                    )
+                    : SliverList.separated(
+                      itemCount: postsState.posts.length,
+                      itemBuilder: (context, index) {
+                        return PostCard(
+                          post: postsState.posts[index],
+                          isTablet: isTablet,
+                          theme: theme,
+                          colorScheme: colorScheme,
+                          onTap: onPostTap,
+                          hasImages: _hasImages,
+                          getRewardFromPost: _getRewardFromPost,
+                          getLocationFromPost: _getLocationFromPost,
+                        );
+                      },
+                      separatorBuilder: (context, index) {
+                        return SizedBox(height: isTablet ? 8 : 6);
+                      },
+                    ),
           ),
 
-          // Pagination - integrated in the scroll view
-          if (postsState.totalPage > 1 && postsState.posts.isNotEmpty)
+          // Pagination - luôn hiển thị khi có nhiều trang
+          if (postsState.totalPage > 1)
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(isTablet ? 12 : 6),

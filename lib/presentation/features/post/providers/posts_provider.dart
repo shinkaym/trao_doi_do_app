@@ -6,7 +6,6 @@ import 'package:trao_doi_do_app/domain/usecases/get_posts_usecase.dart';
 
 class PostsListState {
   final bool isLoading;
-  final bool isLoadingMore;
   final List<Post> posts;
   final int currentPage;
   final int totalPage;
@@ -17,7 +16,6 @@ class PostsListState {
 
   PostsListState({
     this.isLoading = false,
-    this.isLoadingMore = false,
     this.posts = const [],
     this.currentPage = 1,
     this.totalPage = 1,
@@ -29,7 +27,6 @@ class PostsListState {
 
   PostsListState copyWith({
     bool? isLoading,
-    bool? isLoadingMore,
     List<Post>? posts,
     int? currentPage,
     int? totalPage,
@@ -40,7 +37,6 @@ class PostsListState {
   }) {
     return PostsListState(
       isLoading: isLoading ?? this.isLoading,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       posts: posts ?? this.posts,
       currentPage: currentPage ?? this.currentPage,
       totalPage: totalPage != null ? totalPage : this.totalPage,
@@ -64,10 +60,8 @@ class PostsListNotifier extends StateNotifier<PostsListState> {
   Future<void> loadPosts({
     PostsQuery? newQuery,
     bool refresh = false,
-    bool isLoadMore = false,
-    bool isGoToPage = false,
   }) async {
-    if (state.isLoading || state.isLoadingMore || state.isLoadingPage) return;
+    if (state.isLoading || state.isLoadingPage) return;
 
     final query = newQuery ?? state.query;
     final isFirstLoad = refresh || state.posts.isEmpty;
@@ -78,17 +72,7 @@ class PostsListNotifier extends StateNotifier<PostsListState> {
         failure: null,
         query: query.copyWith(page: 1),
       );
-    } else if (isLoadMore) {
-      if (!state.hasMoreData || state.currentPage >= state.totalPage) return;
-
-      state = state.copyWith(
-        isLoadingMore: true,
-        failure: null,
-        query: query.copyWith(page: state.currentPage + 1),
-      );
-    } else if (isGoToPage) {
-      state = state.copyWith(isLoadingPage: true, failure: null, query: query);
-    }
+    } 
 
     final result = await _getPostsUseCase(query);
 
@@ -96,7 +80,6 @@ class PostsListNotifier extends StateNotifier<PostsListState> {
       (failure) =>
           state = state.copyWith(
             isLoading: false,
-            isLoadingMore: false,
             isLoadingPage: false,
             failure: failure,
           ),
@@ -104,10 +87,6 @@ class PostsListNotifier extends StateNotifier<PostsListState> {
         List<Post> newPosts;
 
         if (isFirstLoad) {
-          newPosts = postsResult.posts;
-        } else if (isLoadMore) {
-          newPosts = [...state.posts, ...postsResult.posts];
-        } else if (isGoToPage) {
           newPosts = postsResult.posts;
         } else {
           newPosts = state.posts;
@@ -120,7 +99,6 @@ class PostsListNotifier extends StateNotifier<PostsListState> {
 
         state = state.copyWith(
           isLoading: false,
-          isLoadingMore: false,
           isLoadingPage: false,
           posts: newPosts,
           currentPage: actualCurrentPage,
@@ -138,7 +116,7 @@ class PostsListNotifier extends StateNotifier<PostsListState> {
     final requestId = _nextRequestId++;
     _currentRequestId = requestId;
 
-    state = state.copyWith(currentPage: page, isLoadingPage: false);
+    state = state.copyWith(currentPage: page, isLoadingPage: true);
 
     final newQuery = state.query.copyWith(page: page);
 
@@ -232,11 +210,6 @@ class PostsListNotifier extends StateNotifier<PostsListState> {
       page: 1,
     );
     loadPosts(newQuery: newQuery, refresh: true);
-  }
-
-  // Load more (giữ nguyên cho infinite scroll)
-  void loadMore() {
-    loadPosts(isLoadMore: true);
   }
 
   void refresh() {

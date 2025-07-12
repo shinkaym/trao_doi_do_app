@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/providers/appointments_provider.dart';
 
-class AppointmentsPagination extends StatelessWidget {
+class AppointmentsPagination extends HookConsumerWidget {
   final AppointmentsListState state;
   final bool isTablet;
   final ThemeData theme;
   final ColorScheme colorScheme;
-  final Function(int) onPageChanged;
-  final VoidCallback onPreviousPage;
-  final VoidCallback onNextPage;
-  final VoidCallback onFirstPage;
-  final VoidCallback onLastPage;
 
   const AppointmentsPagination({
     super.key,
@@ -18,15 +15,10 @@ class AppointmentsPagination extends StatelessWidget {
     required this.isTablet,
     required this.theme,
     required this.colorScheme,
-    required this.onPageChanged,
-    required this.onPreviousPage,
-    required this.onNextPage,
-    required this.onFirstPage,
-    required this.onLastPage,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
@@ -41,7 +33,11 @@ class AppointmentsPagination extends StatelessWidget {
           AppointmentsPaginationButton(
             icon: Icons.chevron_left,
             enabled: state.currentPage > 1,
-            onPressed: onPreviousPage,
+            onPressed:
+                () =>
+                    ref
+                        .read(appointmentsListProvider.notifier)
+                        .goToPreviousPage(),
             isTablet: isTablet,
             colorScheme: colorScheme,
           ),
@@ -54,7 +50,7 @@ class AppointmentsPagination extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: _buildPageNumbers(),
+                children: _buildPageNumbers(context, ref),
               ),
             ),
           ),
@@ -65,7 +61,9 @@ class AppointmentsPagination extends StatelessWidget {
           AppointmentsPaginationButton(
             icon: Icons.chevron_right,
             enabled: state.currentPage < state.totalPage,
-            onPressed: onNextPage,
+            onPressed:
+                () =>
+                    ref.read(appointmentsListProvider.notifier).goToNextPage(),
             isTablet: isTablet,
             colorScheme: colorScheme,
           ),
@@ -74,7 +72,7 @@ class AppointmentsPagination extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildPageNumbers() {
+  List<Widget> _buildPageNumbers(BuildContext context, WidgetRef ref) {
     List<Widget> pages = [];
     int currentPage = state.currentPage;
     int totalPage = state.totalPage;
@@ -85,7 +83,7 @@ class AppointmentsPagination extends StatelessWidget {
 
     // Luôn hiển thị trang đầu
     if (start > 1) {
-      pages.add(_buildPageButton(1));
+      pages.add(_buildPageButton(1, ref));
       if (start > 2) {
         pages.add(
           Padding(
@@ -111,7 +109,7 @@ class AppointmentsPagination extends StatelessWidget {
 
     // Hiển thị các trang ở giữa
     for (int i = start; i <= end; i++) {
-      pages.add(_buildPageButton(i));
+      pages.add(_buildPageButton(i, ref));
     }
 
     // Luôn hiển thị trang cuối
@@ -137,13 +135,13 @@ class AppointmentsPagination extends StatelessWidget {
           ),
         );
       }
-      pages.add(_buildPageButton(totalPage));
+      pages.add(_buildPageButton(totalPage, ref));
     }
 
     return pages;
   }
 
-  Widget _buildPageButton(int page) {
+  Widget _buildPageButton(int page, WidgetRef ref) {
     final isActive = page == state.currentPage;
 
     return AppointmentsPageButton(
@@ -151,7 +149,10 @@ class AppointmentsPagination extends StatelessWidget {
       isActive: isActive,
       isTablet: isTablet,
       colorScheme: colorScheme,
-      onTap: page != state.currentPage ? () => onPageChanged(page) : null,
+      onTap:
+          page != state.currentPage
+              ? () => ref.read(appointmentsListProvider.notifier).goToPage(page)
+              : null,
     );
   }
 }

@@ -133,7 +133,7 @@ class UnifiedInterestPostCard extends StatelessWidget {
   Widget _buildRoundedBadge(int count) {
     final size = isTablet ? 22.0 : 18.0;
     final fontSize = isTablet ? 11.0 : 9.0;
-    
+
     return Container(
       width: size,
       height: size,
@@ -234,7 +234,7 @@ class UnifiedInterestPostCard extends StatelessWidget {
     if (isFromCurrentUser) {
       messageText = 'Bạn: ${interest.newMessage}';
     } else {
-      messageText = '${interest.userName}: ${interest.newMessage}';
+      messageText = '${interest.newMessage}';
     }
 
     return Container(
@@ -316,9 +316,9 @@ class UnifiedInterestPostCard extends StatelessWidget {
             ],
           ),
         ),
-        
+
         const Spacer(),
-        
+
         // Show time for both modes
         Row(
           mainAxisSize: MainAxisSize.min,
@@ -331,7 +331,8 @@ class UnifiedInterestPostCard extends StatelessWidget {
               ),
             ),
             // Show unread message count badge only for postWithInterests mode
-            if (mode == InterestPostCardMode.postWithInterests && post.unreadMessageCount > 0) ...[
+            if (mode == InterestPostCardMode.postWithInterests &&
+                post.unreadMessageCount > 0) ...[
               SizedBox(width: isTablet ? 8 : 6),
               _buildRoundedBadge(post.unreadMessageCount),
             ],

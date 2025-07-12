@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/domain/entities/appointment.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/providers/appointments_provider.dart';
@@ -36,56 +35,68 @@ class AppointmentsListContent extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Hiển thị skeleton khi đang loading lần đầu
+    // Hiển thị skeleton khi đang loading lần đầu (không có dữ liệu)
     if (appointmentsState.isLoading && appointmentsState.appointments.isEmpty) {
-      return SingleChildScrollView(
-        controller: scrollController,
-        child: Column(
-          children: [
-            SizedBox(height: isTablet ? 16 : 8),
-            AppointmentSkeletonList(
+      return _buildSkeletonContent();
+    }
+
+    // Hiển thị empty state khi không có dữ liệu và không loading
+    if (appointmentsState.appointments.isEmpty &&
+        !appointmentsState.isLoading) {
+      return _buildEmptyState();
+    }
+
+    // Hiển thị danh sách appointments (có thể có skeleton cho pagination)
+    return _buildAppointmentsList();
+  }
+
+  Widget _buildSkeletonContent() {
+    return SingleChildScrollView(
+      controller: scrollController,
+      child: Column(
+        children: [
+          SizedBox(height: isTablet ? 16 : 8),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
+            child: AppointmentSkeletonList(
               isTablet: isTablet,
               colorScheme: colorScheme,
               itemCount: 10,
             ),
-            SizedBox(height: isTablet ? 24 : 16),
-          ],
-        ),
-      );
-    }
+          ),
+          SizedBox(height: isTablet ? 24 : 16),
+        ],
+      ),
+    );
+  }
 
-    // Hiển thị empty state - FIX: Sử dụng LayoutBuilder để lấy chiều cao available
-    if (appointmentsState.appointments.isEmpty &&
-        !appointmentsState.isLoading) {
-      return RefreshIndicator(
-        onRefresh: () async => onRefresh(),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              controller: scrollController,
-              physics:
-                  const AlwaysScrollableScrollPhysics(), // Cho phép pull to refresh
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight:
-                      constraints.maxHeight, // Đảm bảo chiều cao tối thiểu
-                ),
-                child: IntrinsicHeight(
-                  child: AppointmentsEmptyState(
-                    isTablet: isTablet,
-                    theme: theme,
-                    colorScheme: colorScheme,
-                    selectedSort: selectedSort,
-                    onResetFilters: onResetFilters,
-                  ),
+  Widget _buildEmptyState() {
+    return RefreshIndicator(
+      onRefresh: () async => onRefresh(),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            controller: scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
+                child: AppointmentsEmptyState(
+                  isTablet: isTablet,
+                  theme: theme,
+                  colorScheme: colorScheme,
+                  selectedSort: selectedSort,
+                  onResetFilters: onResetFilters,
                 ),
               ),
-            );
-          },
-        ),
-      );
-    }
+            ),
+          );
+        },
+      ),
+    );
+  }
 
+  Widget _buildAppointmentsList() {
     return RefreshIndicator(
       onRefresh: () async => onRefresh(),
       child: CustomScrollView(
@@ -94,31 +105,42 @@ class AppointmentsListContent extends HookConsumerWidget {
           // Top spacing
           SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
 
-          // Appointments List
+          // Appointments List hoặc Skeleton khi loading pagination
           SliverPadding(
             padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
-            sliver: SliverList.separated(
-              itemCount: appointmentsState.appointments.length,
-              itemBuilder: (context, index) {
-                final appointment = appointmentsState.appointments[index];
-                return AppointmentCard(
-                  appointment: appointment,
-                  isTablet: isTablet,
-                  theme: theme,
-                  colorScheme: colorScheme,
-                  onReject: () => onRejectAppointment(appointment),
-                  onTap: () => _showAppointmentDetail(context, appointment),
-                );
-              },
-              separatorBuilder: (context, index) {
-                return SizedBox(height: isTablet ? 8 : 6);
-              },
-            ),
+            sliver:
+                appointmentsState.isLoadingPage || appointmentsState.isLoading
+                    ? SliverToBoxAdapter(
+                      child: AppointmentSkeletonList(
+                        isTablet: isTablet,
+                        colorScheme: colorScheme,
+                        itemCount: 10,
+                      ),
+                    )
+                    : SliverList.separated(
+                      itemCount: appointmentsState.appointments.length,
+                      itemBuilder: (context, index) {
+                        final appointment =
+                            appointmentsState.appointments[index];
+                        return AppointmentCard(
+                          appointment: appointment,
+                          isTablet: isTablet,
+                          theme: theme,
+                          colorScheme: colorScheme,
+                          onReject: () => onRejectAppointment(appointment),
+                          onTap:
+                              () =>
+                                  _showAppointmentDetail(context, appointment),
+                        );
+                      },
+                      separatorBuilder: (context, index) {
+                        return SizedBox(height: isTablet ? 8 : 6);
+                      },
+                    ),
           ),
 
-          // Pagination - integrated in the scroll view
-          if (appointmentsState.totalPage > 1 &&
-              appointmentsState.appointments.isNotEmpty)
+          // Pagination - luôn hiển thị khi có nhiều trang
+          if (appointmentsState.totalPage > 1)
             SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.all(isTablet ? 12 : 6),
@@ -127,23 +149,6 @@ class AppointmentsListContent extends HookConsumerWidget {
                   isTablet: isTablet,
                   theme: theme,
                   colorScheme: colorScheme,
-                  onPageChanged: (page) {
-                    ref.read(appointmentsListProvider.notifier).goToPage(page);
-                  },
-                  onPreviousPage: () {
-                    ref
-                        .read(appointmentsListProvider.notifier)
-                        .goToPreviousPage();
-                  },
-                  onNextPage: () {
-                    ref.read(appointmentsListProvider.notifier).goToNextPage();
-                  },
-                  onFirstPage: () {
-                    ref.read(appointmentsListProvider.notifier).goToFirstPage();
-                  },
-                  onLastPage: () {
-                    ref.read(appointmentsListProvider.notifier).goToLastPage();
-                  },
                 ),
               ),
             ),

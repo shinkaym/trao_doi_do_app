@@ -136,13 +136,11 @@ final interestProvider =
       return InterestNotifier(createInterestUseCase, cancelInterestUseCase);
     });
 
-final interestedPostsProvider = StateNotifierProvider<
-  InterestsListNotifier,
-  InterestsListState
->((ref) {
-  final getInterestsUseCase = ref.watch(getInterestsUseCaseProvider);
-  return InterestsListNotifier(getInterestsUseCase);
-});
+final interestedPostsProvider =
+    StateNotifierProvider<InterestsListNotifier, InterestsListState>((ref) {
+      final getInterestsUseCase = ref.watch(getInterestsUseCaseProvider);
+      return InterestsListNotifier(getInterestsUseCase);
+    });
 
 final transactionByInterestProvider = StateNotifierProvider.family<
   TransactionByInterestNotifier,
@@ -158,13 +156,11 @@ final transactionByInterestProvider = StateNotifierProvider.family<
   );
 });
 
-final postsWithInterestsProvider = StateNotifierProvider<
-  InterestsListNotifier,
-  InterestsListState
->((ref) {
-  final getInterestsUseCase = ref.watch(getInterestsUseCaseProvider);
-  return InterestsListNotifier(getInterestsUseCase);
-});
+final postsWithInterestsProvider =
+    StateNotifierProvider<InterestsListNotifier, InterestsListState>((ref) {
+      final getInterestsUseCase = ref.watch(getInterestsUseCaseProvider);
+      return InterestsListNotifier(getInterestsUseCase);
+    });
 
 final interestDetailProvider = StateNotifierProvider.autoDispose.family<
   InterestDetailNotifier,
@@ -181,9 +177,7 @@ final interestDetailProvider = StateNotifierProvider.autoDispose.family<
 });
 
 final unreadCountProvider =
-    StateNotifierProvider.autoDispose<UnreadCountNotifier, UnreadCountState>((
-      ref,
-    ) {
+    StateNotifierProvider<UnreadCountNotifier, UnreadCountState>((ref) {
       final getUnreadCountUseCase = ref.watch(getUnreadCountUseCaseProvider);
       return UnreadCountNotifier(getUnreadCountUseCase);
     });

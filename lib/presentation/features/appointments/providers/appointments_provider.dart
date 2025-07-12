@@ -6,7 +6,6 @@ import 'package:trao_doi_do_app/domain/usecases/get_appointments_usecase.dart';
 
 class AppointmentsListState {
   final bool isLoading;
-  final bool isLoadingMore;
   final List<Appointment> appointments;
   final int currentPage;
   final int totalPage;
@@ -17,7 +16,6 @@ class AppointmentsListState {
 
   AppointmentsListState({
     this.isLoading = false,
-    this.isLoadingMore = false,
     this.appointments = const [],
     this.currentPage = 1,
     this.totalPage = 1,
@@ -29,7 +27,6 @@ class AppointmentsListState {
 
   AppointmentsListState copyWith({
     bool? isLoading,
-    bool? isLoadingMore,
     List<Appointment>? appointments,
     int? currentPage,
     int? totalPage,
@@ -40,7 +37,6 @@ class AppointmentsListState {
   }) {
     return AppointmentsListState(
       isLoading: isLoading ?? this.isLoading,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       appointments: appointments ?? this.appointments,
       currentPage: currentPage ?? this.currentPage,
       totalPage: totalPage ?? this.totalPage,
@@ -54,7 +50,6 @@ class AppointmentsListState {
 
 class AppointmentsListNotifier extends StateNotifier<AppointmentsListState> {
   final GetAppointmentsUseCase _getAppointmentsUseCase;
-
   int? _currentRequestId;
   int _nextRequestId = 1;
 
@@ -64,11 +59,8 @@ class AppointmentsListNotifier extends StateNotifier<AppointmentsListState> {
   Future<void> loadAppointments({
     AppointmentQuery? newQuery,
     bool refresh = false,
-    bool isLoadMore = false,
-    bool isGoToPage = false,
   }) async {
-    // Ngăn chặn multiple calls cùng lúc
-    if (state.isLoading || state.isLoadingMore || state.isLoadingPage) return;
+    if (state.isLoading || state.isLoadingPage) return;
 
     final query = newQuery ?? state.query;
     final isFirstLoad = refresh || state.appointments.isEmpty;
@@ -78,132 +70,123 @@ class AppointmentsListNotifier extends StateNotifier<AppointmentsListState> {
         isLoading: true,
         failure: null,
         query: query.copyWith(page: 1),
-        appointments: [],
       );
-    } else if (isLoadMore) {
-      if (!state.hasMoreData || state.currentPage >= state.totalPage) return;
-
-      state = state.copyWith(
-        isLoadingMore: true,
-        failure: null,
-        query: query.copyWith(page: state.currentPage + 1),
-      );
-    } else if (isGoToPage) {
-      state = state.copyWith(isLoadingPage: true, failure: null, query: query);
     }
 
-    try {
-      final result = await _getAppointmentsUseCase(state.query);
+    final result = await _getAppointmentsUseCase(query);
 
-      result.fold(
-        (failure) =>
-            state = state.copyWith(
-              isLoading: false,
-              isLoadingMore: false,
-              isLoadingPage: false,
-              failure: failure,
-            ),
-        (appointmentsResult) {
-          List<Appointment> newAppointments;
-
-          if (isFirstLoad) {
-            newAppointments = appointmentsResult.appointments;
-          } else if (isLoadMore) {
-            newAppointments = [
-              ...state.appointments,
-              ...appointmentsResult.appointments,
-            ];
-          } else if (isGoToPage) {
-            newAppointments = appointmentsResult.appointments;
-          } else {
-            newAppointments = state.appointments;
-          }
-
-          final actualTotalPage = appointmentsResult.totalPage;
-          final actualCurrentPage = actualTotalPage > 0 ? state.query.page : 1;
-          final actualHasMoreData =
-              actualTotalPage > 0 && actualCurrentPage < actualTotalPage;
-
+    result.fold(
+      (failure) =>
           state = state.copyWith(
             isLoading: false,
-            isLoadingMore: false,
             isLoadingPage: false,
-            appointments: newAppointments,
-            currentPage: actualCurrentPage,
-            totalPage: actualTotalPage,
-            hasMoreData: actualHasMoreData,
-            failure: null,
-          );
-        },
-      );
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        isLoadingMore: false,
-        isLoadingPage: false,
-        failure: ServerFailure('Đã xảy ra lỗi không mong muốn'),
-      );
-    }
+            failure: failure,
+          ),
+      (appointmentsResult) {
+        List<Appointment> newAppointments;
+
+        if (isFirstLoad) {
+          newAppointments = appointmentsResult.appointments;
+        } else {
+          newAppointments = state.appointments;
+        }
+
+        final actualTotalPage = appointmentsResult.totalPage;
+        final actualCurrentPage = actualTotalPage > 0 ? state.query.page : 1;
+        final actualHasMoreData =
+            actualTotalPage > 0 && actualCurrentPage < actualTotalPage;
+
+        state = state.copyWith(
+          isLoading: false,
+          isLoadingPage: false,
+          appointments: newAppointments,
+          currentPage: actualCurrentPage,
+          totalPage: actualTotalPage,
+          hasMoreData: actualHasMoreData,
+        );
+      },
+    );
   }
 
-  // Pagination methods
+  // Chuyển đến trang cụ thể
   Future<void> goToPage(int page) async {
     if (page < 1 || page > state.totalPage || page == state.currentPage) return;
 
-    // Tạo requestId mới
+    // Tạo requestId mới cho lần gọi này
     final requestId = _nextRequestId++;
     _currentRequestId = requestId;
 
-    // Cập nhật UI ngay lập tức
-    state = state.copyWith(currentPage: page, isLoadingPage: false);
+    // Hiển thị loading state khi chuyển trang
+    state = state.copyWith(
+      currentPage: page,
+      isLoadingPage: true, // Bật loading để hiển thị skeleton
+    );
 
     final newQuery = state.query.copyWith(page: page);
 
     try {
       final result = await _getAppointmentsUseCase(newQuery);
 
-      if (_currentRequestId != requestId) return;
+      // Kiểm tra xem request này còn là request mới nhất không
+      if (_currentRequestId != requestId) {
+        // Nếu có request mới hơn, bỏ qua kết quả này
+        return;
+      }
 
-      result.fold((failure) => state = state.copyWith(failure: failure), (
-        data,
-      ) {
-        state = state.copyWith(
-          appointments: data.appointments,
-          currentPage: page,
-          totalPage: data.totalPage,
-          hasMoreData: page < data.totalPage,
-        );
-      });
+      result.fold(
+        (failure) {
+          // Chỉ cập nhật failure, không rollback currentPage
+          state = state.copyWith(failure: failure, isLoadingPage: false);
+        },
+        (appointmentsResult) {
+          final actualTotalPage = appointmentsResult.totalPage;
+          final actualCurrentPage = actualTotalPage > 0 ? page : 1;
+          final actualHasMoreData =
+              actualTotalPage > 0 && actualCurrentPage < actualTotalPage;
+
+          state = state.copyWith(
+            appointments: appointmentsResult.appointments,
+            currentPage: actualCurrentPage,
+            totalPage: actualTotalPage,
+            hasMoreData: actualHasMoreData,
+            failure: null,
+            isLoadingPage: false,
+          );
+        },
+      );
     } catch (e) {
-      if (_currentRequestId != requestId) return;
+      // Kiểm tra xem request này còn là request mới nhất không
+      if (_currentRequestId != requestId) {
+        return;
+      }
+
+      // Chỉ cập nhật trạng thái lỗi, không rollback currentPage
       state = state.copyWith(isLoadingPage: false);
     }
   }
 
+  // Chuyển đến trang trước
   Future<void> goToPreviousPage() async {
     if (state.currentPage > 1) {
       await goToPage(state.currentPage - 1);
     }
   }
 
+  // Chuyển đến trang tiếp theo
   Future<void> goToNextPage() async {
     if (state.currentPage < state.totalPage) {
       await goToPage(state.currentPage + 1);
     }
   }
 
-  // Filter and search methods
-  void search(String? searchBy, String? searchValue) {
-    final newQuery = state.query.copyWith(
-      searchBy: searchBy,
-      searchValue: searchValue,
-      page: 1,
-    );
-    loadAppointments(newQuery: newQuery, refresh: true);
+  // Chuyển đến trang đầu
+  Future<void> goToFirstPage() async {
+    await goToPage(1);
   }
 
-  void loadMore() {
-    loadAppointments(isLoadMore: true);
+  // Chuyển đến trang cuối
+  Future<void> goToLastPage() async {
+    await goToPage(state.totalPage);
   }
 
   void refresh() {
@@ -216,17 +199,5 @@ class AppointmentsListNotifier extends StateNotifier<AppointmentsListState> {
 
   void reset() {
     state = AppointmentsListState();
-  }
-
-  Future<void> goToFirstPage() async {
-    if (state.currentPage != 1) {
-      await goToPage(1);
-    }
-  }
-
-  Future<void> goToLastPage() async {
-    if (state.currentPage != state.totalPage && state.totalPage > 0) {
-      await goToPage(state.totalPage);
-    }
   }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:trao_doi_do_app/core/utils/base64_utils.dart';
-import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 import 'package:trao_doi_do_app/domain/entities/interest.dart';
 
 class InterestedUsersSection extends StatefulWidget {
@@ -148,48 +147,76 @@ class InterestedUsersSectionState extends State<InterestedUsersSection>
         color: widget.colorScheme.surfaceVariant.withOpacity(0.3),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          // User info row
-          Row(
-            children: [
-              _buildInterestAvatar(interest),
-              SizedBox(width: widget.isTablet ? 12 : 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      interest.userName,
-                      style: TextStyle(
-                        fontSize: widget.isTablet ? 14 : 13,
-                        fontWeight: FontWeight.w600,
-                        color: widget.colorScheme.onSurface,
-                      ),
-                    ),
-                    Text(
-                      'Quan tâm ${TimeUtils.formatTimeAgo(DateTime.parse(interest.createdAt))}',
-                      style: TextStyle(
-                        fontSize: widget.isTablet ? 12 : 11,
-                        color: widget.theme.hintColor,
-                      ),
-                    ),
-                  ],
+          _buildInterestAvatar(interest),
+          SizedBox(width: widget.isTablet ? 12 : 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Username
+                Text(
+                  interest.userName,
+                  style: TextStyle(
+                    fontSize: widget.isTablet ? 14 : 13,
+                    fontWeight: FontWeight.w600,
+                    color: widget.colorScheme.onSurface,
+                  ),
                 ),
-              ),
-              // Chat button with notification badge
-              _buildChatButtonWithBadge(interest),
-            ],
-          ),
 
-          // Latest message section - Always show if there's a message
-          if (hasNewMessage) ...[
-            SizedBox(height: widget.isTablet ? 8 : 6),
-            _buildLatestMessageSection(interest, isUnread, isFromCurrentUser),
-          ],
+                // Latest message or interest time
+                SizedBox(height: widget.isTablet ? 4 : 3),
+                if (hasNewMessage) ...[
+                  _buildLatestMessagePreview(
+                    interest,
+                    isUnread,
+                    isFromCurrentUser,
+                  ),
+                ] else ...[
+                  Text(
+                    'Chưa có tin nhắn',
+                    style: TextStyle(
+                      fontSize: widget.isTablet ? 12 : 11,
+                      color: widget.theme.hintColor,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          // Chat button with notification badge
+          _buildChatButtonWithBadge(interest),
         ],
       ),
+    );
+  }
+
+  Widget _buildLatestMessagePreview(
+    Interest interest,
+    bool isUnread,
+    bool isFromCurrentUser,
+  ) {
+    // Create message text
+    String messageText;
+    if (isFromCurrentUser) {
+      messageText = 'Bạn: ${interest.newMessage}';
+    } else {
+      messageText = interest.newMessage;
+    }
+
+    return Text(
+      messageText,
+      style: TextStyle(
+        fontSize: widget.isTablet ? 12 : 11,
+        fontWeight: isUnread ? FontWeight.w500 : FontWeight.normal,
+        color:
+            isUnread
+                ? widget.colorScheme.primary
+                : widget.colorScheme.onSurface.withOpacity(0.7),
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -244,63 +271,6 @@ class InterestedUsersSectionState extends State<InterestedUsersSection>
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildLatestMessageSection(
-    Interest interest,
-    bool isUnread,
-    bool isFromCurrentUser,
-  ) {
-    // Create message text
-    String messageText;
-    if (isFromCurrentUser) {
-      messageText = 'Bạn: ${interest.newMessage}';
-    } else {
-      messageText = '${interest.userName}: ${interest.newMessage}';
-    }
-
-    return Container(
-      padding: EdgeInsets.all(widget.isTablet ? 10 : 8),
-      decoration: BoxDecoration(
-        color:
-            isUnread
-                ? widget.colorScheme.primary.withOpacity(0.05)
-                : widget.colorScheme.surface,
-        borderRadius: BorderRadius.circular(6),
-        border:
-            isUnread
-                ? Border.all(color: widget.colorScheme.primary.withOpacity(0.2))
-                : Border.all(
-                  color: widget.colorScheme.outline.withOpacity(0.1),
-                ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.chat_bubble_outline,
-            size: widget.isTablet ? 14 : 12,
-            color:
-                isUnread ? widget.colorScheme.primary : widget.theme.hintColor,
-          ),
-          SizedBox(width: widget.isTablet ? 6 : 4),
-          Expanded(
-            child: Text(
-              messageText,
-              style: TextStyle(
-                fontSize: widget.isTablet ? 12 : 11,
-                fontWeight: isUnread ? FontWeight.w500 : FontWeight.normal,
-                color:
-                    isUnread
-                        ? widget.colorScheme.onSurface
-                        : widget.colorScheme.onSurface.withOpacity(0.7),
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ],
-      ),
     );
   }
 

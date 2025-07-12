@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/presentation/features/item_warehouse/providers/old_stock_provider.dart';
 
-class ItemWarehousesPagination extends StatelessWidget {
+class ItemWarehousesPagination extends HookConsumerWidget {
   final OldStockState state;
   final bool isTablet;
   final ThemeData theme;
   final ColorScheme colorScheme;
-  final Function(int) onPageChanged;
-  final VoidCallback onPreviousPage;
-  final VoidCallback onNextPage;
-  final VoidCallback onFirstPage;
-  final VoidCallback onLastPage;
 
   const ItemWarehousesPagination({
     super.key,
@@ -18,15 +15,10 @@ class ItemWarehousesPagination extends StatelessWidget {
     required this.isTablet,
     required this.theme,
     required this.colorScheme,
-    required this.onPageChanged,
-    required this.onPreviousPage,
-    required this.onNextPage,
-    required this.onFirstPage,
-    required this.onLastPage,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.symmetric(
@@ -41,7 +33,7 @@ class ItemWarehousesPagination extends StatelessWidget {
           ItemWarehousesPaginationButton(
             icon: Icons.chevron_left,
             enabled: state.currentPage > 1,
-            onPressed: onPreviousPage,
+            onPressed: () => ref.read(oldStockProvider.notifier).goToPreviousPage(),
             isTablet: isTablet,
             colorScheme: colorScheme,
           ),
@@ -54,7 +46,7 @@ class ItemWarehousesPagination extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                children: _buildPageNumbers(),
+                children: _buildPageNumbers(context, ref),
               ),
             ),
           ),
@@ -65,7 +57,7 @@ class ItemWarehousesPagination extends StatelessWidget {
           ItemWarehousesPaginationButton(
             icon: Icons.chevron_right,
             enabled: state.currentPage < state.totalPage,
-            onPressed: onNextPage,
+            onPressed: () => ref.read(oldStockProvider.notifier).goToNextPage(),
             isTablet: isTablet,
             colorScheme: colorScheme,
           ),
@@ -74,7 +66,7 @@ class ItemWarehousesPagination extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildPageNumbers() {
+  List<Widget> _buildPageNumbers(BuildContext context, WidgetRef ref) {
     List<Widget> pages = [];
     int currentPage = state.currentPage;
     int totalPage = state.totalPage;
@@ -85,7 +77,7 @@ class ItemWarehousesPagination extends StatelessWidget {
 
     // Luôn hiển thị trang đầu
     if (start > 1) {
-      pages.add(_buildPageButton(1));
+      pages.add(_buildPageButton(1, ref));
       if (start > 2) {
         pages.add(
           Padding(
@@ -111,7 +103,7 @@ class ItemWarehousesPagination extends StatelessWidget {
 
     // Hiển thị các trang ở giữa
     for (int i = start; i <= end; i++) {
-      pages.add(_buildPageButton(i));
+      pages.add(_buildPageButton(i, ref));
     }
 
     // Luôn hiển thị trang cuối
@@ -137,13 +129,13 @@ class ItemWarehousesPagination extends StatelessWidget {
           ),
         );
       }
-      pages.add(_buildPageButton(totalPage));
+      pages.add(_buildPageButton(totalPage, ref));
     }
 
     return pages;
   }
 
-  Widget _buildPageButton(int page) {
+  Widget _buildPageButton(int page, WidgetRef ref) {
     final isActive = page == state.currentPage;
 
     return ItemWarehousesPageButton(
@@ -151,7 +143,9 @@ class ItemWarehousesPagination extends StatelessWidget {
       isActive: isActive,
       isTablet: isTablet,
       colorScheme: colorScheme,
-      onTap: page != state.currentPage ? () => onPageChanged(page) : null,
+      onTap: page != state.currentPage
+          ? () => ref.read(oldStockProvider.notifier).goToPage(page)
+          : null,
     );
   }
 }
@@ -178,25 +172,25 @@ class ItemWarehousesPaginationButton extends StatelessWidget {
       width: isTablet ? 44 : 40,
       height: isTablet ? 44 : 40,
       decoration: BoxDecoration(
-        color:
-            enabled
-                ? colorScheme.surface.withOpacity(0.9)
-                : colorScheme.surfaceVariant.withOpacity(0.7),
+        // Sử dụng nền trong suốt với độ mờ
+        color: enabled
+            ? colorScheme.surface.withOpacity(0.9)
+            : colorScheme.surfaceVariant.withOpacity(0.7),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: colorScheme.outline.withOpacity(0.3),
           width: 1,
         ),
-        boxShadow:
-            enabled
-                ? [
-                  BoxShadow(
-                    color: colorScheme.shadow.withOpacity(0.15),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-                : null,
+        // Giữ shadow nhẹ để tạo độ sâu
+        boxShadow: enabled
+            ? [
+                BoxShadow(
+                  color: colorScheme.shadow.withOpacity(0.15),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ]
+            : null,
       ),
       child: Material(
         color: Colors.transparent,
@@ -206,10 +200,9 @@ class ItemWarehousesPaginationButton extends StatelessWidget {
           child: Icon(
             icon,
             size: isTablet ? 20 : 18,
-            color:
-                enabled
-                    ? colorScheme.onSurface
-                    : colorScheme.onSurface.withOpacity(0.5),
+            color: enabled
+                ? colorScheme.onSurface
+                : colorScheme.onSurface.withOpacity(0.5),
           ),
         ),
       ),
@@ -241,16 +234,16 @@ class ItemWarehousesPageButton extends StatelessWidget {
         width: isTablet ? 44 : 40,
         height: isTablet ? 44 : 40,
         decoration: BoxDecoration(
-          color:
-              isActive
-                  ? colorScheme.primary.withOpacity(0.9)
-                  : colorScheme.surface.withOpacity(0.8),
+          // Trang hiện tại có nền màu primary với độ trong suốt
+          // Các trang khác có nền trong suốt
+          color: isActive
+              ? colorScheme.primary.withOpacity(0.9)
+              : colorScheme.surface.withOpacity(0.8),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color:
-                isActive
-                    ? colorScheme.primary.withOpacity(0.7)
-                    : colorScheme.outline.withOpacity(0.3),
+            color: isActive
+                ? colorScheme.primary.withOpacity(0.7)
+                : colorScheme.outline.withOpacity(0.3),
           ),
           boxShadow: [
             BoxShadow(
@@ -271,8 +264,7 @@ class ItemWarehousesPageButton extends StatelessWidget {
                 style: TextStyle(
                   fontSize: isTablet ? 14 : 13,
                   fontWeight: FontWeight.w600,
-                  color:
-                      isActive ? colorScheme.onPrimary : colorScheme.onSurface,
+                  color: isActive ? colorScheme.onPrimary : colorScheme.onSurface,
                 ),
               ),
             ),

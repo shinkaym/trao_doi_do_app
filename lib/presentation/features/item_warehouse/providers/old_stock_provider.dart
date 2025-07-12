@@ -6,7 +6,6 @@ import 'package:trao_doi_do_app/domain/usecases/params/old_stock_query.dart';
 
 class OldStockState {
   final bool isLoading;
-  final bool isLoadingMore;
   final bool isLoadingPage;
   final List<OldStockItem> items;
   final int currentPage;
@@ -17,7 +16,6 @@ class OldStockState {
 
   OldStockState({
     this.isLoading = false,
-    this.isLoadingMore = false,
     this.isLoadingPage = false,
     this.items = const [],
     this.currentPage = 1,
@@ -29,7 +27,6 @@ class OldStockState {
 
   OldStockState copyWith({
     bool? isLoading,
-    bool? isLoadingMore,
     bool? isLoadingPage,
     List<OldStockItem>? items,
     int? currentPage,
@@ -40,7 +37,6 @@ class OldStockState {
   }) {
     return OldStockState(
       isLoading: isLoading ?? this.isLoading,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       isLoadingPage: isLoadingPage ?? this.isLoadingPage,
       items: items ?? this.items,
       currentPage: currentPage ?? this.currentPage,
@@ -63,10 +59,8 @@ class OldStockNotifier extends StateNotifier<OldStockState> {
   Future<void> loadOldStock({
     OldStockQuery? newQuery,
     bool refresh = false,
-    bool isLoadMore = false,
-    bool isGoToPage = false,
   }) async {
-    if (state.isLoading || state.isLoadingMore || state.isLoadingPage) return;
+    if (state.isLoading || state.isLoadingPage) return;
 
     final query = newQuery ?? state.query;
     final isFirstLoad = refresh || state.items.isEmpty;
@@ -77,16 +71,6 @@ class OldStockNotifier extends StateNotifier<OldStockState> {
         failure: null,
         query: query.copyWith(page: 1),
       );
-    } else if (isLoadMore) {
-      if (!state.hasMoreData || state.currentPage >= state.totalPage) return;
-
-      state = state.copyWith(
-        isLoadingMore: true,
-        failure: null,
-        query: query.copyWith(page: state.currentPage + 1),
-      );
-    } else if (isGoToPage) {
-      state = state.copyWith(isLoadingPage: true, failure: null, query: query);
     }
 
     final result = await _getOldStockUseCase(state.query);
@@ -94,7 +78,6 @@ class OldStockNotifier extends StateNotifier<OldStockState> {
       (failure) =>
           state = state.copyWith(
             isLoading: false,
-            isLoadingMore: false,
             isLoadingPage: false,
             failure: failure,
           ),
@@ -102,10 +85,6 @@ class OldStockNotifier extends StateNotifier<OldStockState> {
         List<OldStockItem> newItems;
 
         if (isFirstLoad) {
-          newItems = oldStockResponse.itemOldStocks;
-        } else if (isLoadMore) {
-          newItems = [...state.items, ...oldStockResponse.itemOldStocks];
-        } else if (isGoToPage) {
           newItems = oldStockResponse.itemOldStocks;
         } else {
           newItems = state.items;
@@ -118,7 +97,6 @@ class OldStockNotifier extends StateNotifier<OldStockState> {
 
         state = state.copyWith(
           isLoading: false,
-          isLoadingMore: false,
           isLoadingPage: false,
           items: newItems,
           currentPage: actualCurrentPage,
@@ -138,7 +116,7 @@ class OldStockNotifier extends StateNotifier<OldStockState> {
     _currentRequestId = requestId;
 
     // Cập nhật UI ngay lập tức
-    state = state.copyWith(currentPage: page, isLoadingPage: false);
+    state = state.copyWith(currentPage: page, isLoadingPage: true);
 
     final newQuery = state.query.copyWith(page: page);
 
@@ -189,33 +167,6 @@ class OldStockNotifier extends StateNotifier<OldStockState> {
 
   Future<void> goToLastPage() async {
     await goToPage(state.totalPage);
-  }
-
-  void applyFilter({
-    String? search,
-    String? sort,
-    String? order,
-    int? categoryID,
-    int? limit,
-  }) {
-    final newQuery = state.query.copyWith(
-      search: search,
-      sort: sort,
-      order: order,
-      categoryID: categoryID,
-      limit: limit,
-      page: 1,
-    );
-    loadOldStock(newQuery: newQuery, refresh: true);
-  }
-
-  void clearFilter() {
-    const newQuery = OldStockQuery(page: 1);
-    loadOldStock(newQuery: newQuery, refresh: true);
-  }
-
-  void loadMore() {
-    loadOldStock(isLoadMore: true);
   }
 
   void refresh() {

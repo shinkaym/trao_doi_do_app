@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-// Sử dụng lại ShimmerEffect từ appointment_skeleton.dart
 class ShimmerEffect extends StatefulWidget {
   final Widget child;
   final bool enabled;
@@ -86,7 +85,6 @@ class _ShimmerEffectState extends State<ShimmerEffect>
   }
 }
 
-// Container skeleton đơn giản
 class SkeletonContainer extends StatelessWidget {
   final double? width;
   final double? height;
@@ -123,6 +121,7 @@ class SkeletonContainer extends StatelessWidget {
   }
 }
 
+// ===== FIXED VERSION =====
 class SkeletonLoading extends StatelessWidget {
   final bool isTablet;
   final ThemeData theme;
@@ -137,27 +136,68 @@ class SkeletonLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
-        SliverPadding(
-          padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
-          sliver: SliverList.separated(
+    // Thay đổi: Sử dụng Column thay vì CustomScrollView
+    return Column(
+      children: [
+        // Tạo danh sách skeleton items
+        ...List.generate(3, (index) {
+          return Column(
+            children: [
+              InterestPostSkeleton(
+                isTablet: isTablet,
+                theme: theme,
+                colorScheme: colorScheme,
+                showAuthor: index == 0,
+                showMessage: index < 2,
+              ),
+              if (index < 2) // Thêm spacing giữa các items
+                SizedBox(height: isTablet ? 8 : 6),
+            ],
+          );
+        }),
+      ],
+    );
+  }
+}
+
+// Alternative: Nếu bạn muốn giữ CustomScrollView
+class SkeletonLoadingScrollable extends StatelessWidget {
+  final bool isTablet;
+  final ThemeData theme;
+  final ColorScheme colorScheme;
+
+  const SkeletonLoadingScrollable({
+    super.key,
+    required this.isTablet,
+    required this.theme,
+    required this.colorScheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.6, // Đặt chiều cao cố định
+      child: CustomScrollView(
+        physics:
+            const NeverScrollableScrollPhysics(), // Tắt scroll để tránh xung đột
+        slivers: [
+          SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
+          SliverList.separated(
             separatorBuilder:
                 (context, index) => SizedBox(height: isTablet ? 8 : 6),
-            itemCount: 3, // Giảm từ 5 xuống 3 như appointment
+            itemCount: 3,
             itemBuilder: (context, index) {
               return InterestPostSkeleton(
                 isTablet: isTablet,
                 theme: theme,
                 colorScheme: colorScheme,
-                showAuthor: index == 0, // Chỉ item đầu tiên có author section
-                showMessage: index < 2, // 2 item đầu có message section
+                showAuthor: index == 0,
+                showMessage: index < 2,
               );
             },
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -208,12 +248,11 @@ class InterestPostSkeleton extends StatelessWidget {
               ],
             ),
 
-            // Author section (chỉ hiển thị khi showAuthor = true)
+            // Author section
             if (showAuthor) ...[
               SizedBox(height: isTablet ? 12 : 8),
               Row(
                 children: [
-                  // Avatar
                   SkeletonContainer(
                     width: isTablet ? 32 : 28,
                     height: isTablet ? 32 : 28,
@@ -254,15 +293,12 @@ class InterestPostSkeleton extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title
                   SkeletonContainer(
                     width: double.infinity,
                     height: isTablet ? 18 : 16,
                     borderRadius: 4,
                   ),
                   SizedBox(height: isTablet ? 8 : 6),
-
-                  // Description lines
                   SkeletonContainer(
                     width: double.infinity * 0.9,
                     height: isTablet ? 15 : 13,
@@ -278,7 +314,7 @@ class InterestPostSkeleton extends StatelessWidget {
               ),
             ),
 
-            // Latest message section (chỉ hiển thị khi showMessage = true)
+            // Latest message section
             if (showMessage) ...[
               SizedBox(height: isTablet ? 12 : 8),
               Container(
@@ -317,7 +353,6 @@ class InterestPostSkeleton extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: isTablet ? 8 : 6),
-                    // Unread badge
                     SkeletonContainer(
                       width: isTablet ? 22 : 18,
                       height: isTablet ? 22 : 18,

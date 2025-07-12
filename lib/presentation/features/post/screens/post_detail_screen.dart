@@ -197,6 +197,12 @@ class PostDetailScreen extends HookConsumerWidget {
     }
 
     void handleChatTap(int interestId) {
+      ref
+          .read(interestedPostsProvider.notifier)
+          .resetInterestUnreadCount(interestId);
+      ref
+          .read(postsWithInterestsProvider.notifier)
+          .resetInterestUnreadCount(interestId);
       context.pushNamed(
         RouteNames.interestChat,
         pathParameters: {'interestId': interestId.toString()},

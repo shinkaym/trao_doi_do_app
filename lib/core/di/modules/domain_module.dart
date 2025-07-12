@@ -244,7 +244,7 @@ final getInterestDetailUseCaseProvider =
     });
 
 final getUnreadCountUseCaseProvider =
-    Provider.autoDispose<GetUnreadCountUseCase>((ref) {
+    Provider<GetUnreadCountUseCase>((ref) {
       final repository = ref.watch(interestRepositoryProvider);
       return GetUnreadCountUseCase(repository);
     });

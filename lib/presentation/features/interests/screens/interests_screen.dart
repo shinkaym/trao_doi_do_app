@@ -5,7 +5,6 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/extensions/extensions.dart';
-import 'package:trao_doi_do_app/domain/entities/interest.dart';
 import 'package:trao_doi_do_app/domain/usecases/params/interest_query.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/interests_filter_bottom_sheet.dart';
 import 'package:trao_doi_do_app/presentation/features/interests/widgets/interests_screen/interests_tab_bar.dart';
@@ -71,20 +70,17 @@ class InterestsScreen extends HookConsumerWidget {
         sort: 'createdAt', // Giá trị mặc định
         order: sharedSortOrder.value,
         search: searchValue,
-        page:
-            currentTab == 0
-                ? interestedPostsState.currentPage
-                : postsWithInterestsState.currentPage,
+        page: 1,
       );
 
       if (currentTab == 0) {
         ref
             .read(interestedPostsProvider.notifier)
-            .loadInterests(newQuery: query);
+            .loadInterests(newQuery: query, refresh: true);
       } else {
         ref
             .read(postsWithInterestsProvider.notifier)
-            .loadInterests(newQuery: query);
+            .loadInterests(newQuery: query, refresh: true);
       }
     }
 
@@ -291,68 +287,17 @@ class InterestsScreen extends HookConsumerWidget {
     }
 
     // Handle chat tap
+    // Handle chat tap
     void handleChatTap(int interestId) {
       final currentTab = tabController.index;
       if (currentTab == 0) {
         ref
             .read(interestedPostsProvider.notifier)
             .resetInterestUnreadCount(interestId);
-        final currentInterest = ref
-            .read(interestedPostsProvider)
-            .interests
-            .expand((post) => post.interests)
-            .firstWhere(
-              (interest) => interest.id == interestId,
-              orElse:
-                  () => const Interest(
-                    id: 0,
-                    postID: 0,
-                    userID: 0,
-                    userName: '',
-                    userAvatar: '',
-                    status: 0,
-                    createdAt: '',
-                    newMessage: '',
-                    messageFromID: 0,
-                    newMessageIsRead: 0,
-                    unreadMessageCount: 0,
-                  ),
-            );
-        if (currentInterest.id != 0) {
-          ref
-              .read(interestedPostsProvider.notifier)
-              .decreaseUnreadCount(currentInterest.unreadMessageCount);
-        }
       } else {
         ref
             .read(postsWithInterestsProvider.notifier)
             .resetInterestUnreadCount(interestId);
-        final currentInterest = ref
-            .read(postsWithInterestsProvider)
-            .interests
-            .expand((post) => post.interests)
-            .firstWhere(
-              (interest) => interest.id == interestId,
-              orElse:
-                  () => const Interest(
-                    id: 0,
-                    postID: 0,
-                    userID: 0,
-                    userName: '',
-                    userAvatar: '',
-                    status: 0,
-                    createdAt: '',
-                    newMessage: '',
-                    messageFromID: 0,
-                    newMessageIsRead: 0,
-                    unreadMessageCount: 0,
-                  ),
-            );
-        if (currentInterest.id != 0) {
-          ref
-              .read(postsWithInterestsProvider.notifier)
-              .decreaseUnreadCount(currentInterest.unreadMessageCount);
-        }
       }
 
       context.pushNamed(

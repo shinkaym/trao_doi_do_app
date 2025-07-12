@@ -11,7 +11,7 @@ class InterestsQuery extends Equatable {
 
   const InterestsQuery({
     this.page = 1,
-    this.limit = 2,
+    this.limit = 10,
     this.sort,
     this.order,
     this.type,

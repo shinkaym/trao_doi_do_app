@@ -253,16 +253,6 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
     return uniqueMessages;
   }
 
-  Future<void> searchMessages(String? search) async {
-    _searchDebouncer.debounce(
-      duration: const Duration(milliseconds: 500),
-      onDebounce: () async {
-        final newQuery = state.query.copyWith(search: search, page: 1);
-        await loadMessages(newQuery: newQuery, refresh: true);
-      },
-    );
-  }
-
   Future<void> loadMore() async {
     _loadMoreDebouncer.debounce(
       duration: _loadMoreDebounce,
@@ -287,24 +277,6 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
 
     // Add new message at the end (most recent)
     final updatedMessages = [...state.messages, message];
-    state = state.copyWith(messages: updatedMessages);
-  }
-
-  void addNewMessages(List<Message> newMessages) {
-    if (newMessages.isEmpty) return;
-
-    // Filter messages for this interest and remove duplicates
-    final relevantMessages =
-        newMessages
-            .where((msg) => msg.interestID == state.query.interestID)
-            .where(
-              (msg) => !state.messages.any((existing) => existing.id == msg.id),
-            )
-            .toList();
-
-    if (relevantMessages.isEmpty) return;
-
-    final updatedMessages = [...state.messages, ...relevantMessages];
     state = state.copyWith(messages: updatedMessages);
   }
 
@@ -392,88 +364,9 @@ class MessagesListNotifier extends StateNotifier<MessagesListState> {
   List<Message> get unreadMessages =>
       state.messages.where((m) => m.isRead == 0).toList();
 
-  // Batch operations for better performance
-  void batchUpdateMessages(List<Message> updatedMessages) {
-    if (updatedMessages.isEmpty) return;
-
-    final Map<int, Message> updateMap = {
-      for (var msg in updatedMessages) msg.id: msg,
-    };
-
-    final updatedList =
-        state.messages.map((message) {
-          return updateMap[message.id] ?? message;
-        }).toList();
-
-    state = state.copyWith(messages: updatedList);
-  }
-
-  void batchRemoveMessages(List<int> messageIds) {
-    if (messageIds.isEmpty) return;
-
-    final idsToRemove = messageIds.toSet();
-    final filteredMessages =
-        state.messages
-            .where((message) => !idsToRemove.contains(message.id))
-            .toList();
-
-    state = state.copyWith(messages: filteredMessages);
-  }
-
-  // Real-time updates optimization
-  void optimizeForRealTime() {
-    // Limit memory usage by keeping only recent messages if list gets too large
-    const maxMessages = 1000;
-
-    if (state.messages.length > maxMessages) {
-      // Keep the most recent messages
-      final recentMessages =
-          state.messages.skip(state.messages.length - maxMessages).toList();
-
-      state = state.copyWith(
-        messages: recentMessages,
-        // Reset pagination since we've trimmed old messages
-        currentPage: 1,
-        hasMoreData: true,
-      );
-    }
-  }
-
-  // Error recovery
-  void retryLastOperation() {
-    if (state.failure != null) {
-      if (state.messages.isEmpty) {
-        loadMessages(refresh: true);
-      } else {
-        loadMessages(isLoadMore: true);
-      }
-    }
-  }
-
   void clearError() {
     if (state.failure != null) {
       state = state.copyWith(failure: null);
-    }
-  }
-
-  // Preload optimization
-  void preloadNextPage() {
-    if (state.canLoadMore &&
-        !state.loadingPages.contains(state.currentPage + 1)) {
-      // Preload next page in background without updating UI loading state
-      final nextPageQuery = state.query.copyWith(page: state.currentPage + 1);
-
-      _getMessagesUseCase(nextPageQuery).then((result) {
-        result.fold(
-          (failure) {
-            // Silently handle preload failures
-          },
-          (messagesResult) {
-            // Cache the preloaded messages for faster access
-            // This would require additional state management
-          },
-        );
-      });
     }
   }
 }

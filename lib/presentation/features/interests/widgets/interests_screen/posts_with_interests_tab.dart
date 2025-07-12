@@ -35,57 +35,89 @@ class PostsWithInterestsTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(postsWithInterestsProvider);
 
-    if (state.isLoading) {
-      return SkeletonLoading(
-        isTablet: isTablet,
-        theme: theme,
-        colorScheme: colorScheme,
-      );
+    // Hiển thị skeleton khi đang loading lần đầu (không có dữ liệu)
+    if (state.isLoading && state.interests.isEmpty) {
+      return _buildSkeletonContent();
     }
 
+    // Hiển thị error state
     if (state.failure != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 64, color: theme.hintColor),
-            const SizedBox(height: 16),
-            Text(
-              'Đã xảy ra lỗi',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              state.failure!.message,
-              style: TextStyle(fontSize: 14, color: theme.hintColor),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () {
-                ref.read(postsWithInterestsProvider.notifier).refresh();
-              },
-              child: const Text('Thử lại'),
-            ),
-          ],
-        ),
-      );
+      return _buildErrorState(ref);
     }
 
+    // Hiển thị empty state khi không có dữ liệu và không loading
     if (state.interests.isEmpty && !state.isLoading) {
-      return RefreshIndicator(
-        onRefresh: () async => onRefresh(),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              controller: scrollController,
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
+      return _buildEmptyState();
+    }
+
+    // Hiển thị danh sách interests (có thể có skeleton cho pagination)
+    return _buildInterestsList(ref);
+  }
+
+  Widget _buildSkeletonContent() {
+    return SingleChildScrollView(
+      controller: scrollController,
+      child: Column(
+        children: [
+          SizedBox(height: isTablet ? 16 : 8),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
+            child: SkeletonLoading(
+              isTablet: isTablet,
+              theme: theme,
+              colorScheme: colorScheme,
+            ),
+          ),
+          SizedBox(height: isTablet ? 24 : 16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(WidgetRef ref) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: theme.hintColor),
+          const SizedBox(height: 16),
+          Text(
+            'Đã xảy ra lỗi',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            ref.watch(postsWithInterestsProvider).failure!.message,
+            style: TextStyle(fontSize: 14, color: theme.hintColor),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              ref.read(postsWithInterestsProvider.notifier).refresh();
+            },
+            child: const Text('Thử lại'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return RefreshIndicator(
+      onRefresh: () async => onRefresh(),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            controller: scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minHeight: constraints.maxHeight),
+              child: IntrinsicHeight(
                 child: EmptyState(
                   isTablet: isTablet,
                   theme: theme,
@@ -97,43 +129,62 @@ class PostsWithInterestsTab extends ConsumerWidget {
                   resetFilters: resetFilters,
                 ),
               ),
-            );
-          },
-        ),
-      );
-    }
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildInterestsList(WidgetRef ref) {
+    final state = ref.watch(postsWithInterestsProvider);
 
     return RefreshIndicator(
       onRefresh: () async => onRefresh(),
       child: CustomScrollView(
         controller: scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
+          // Top spacing
           SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
+
+          // Interests List hoặc Skeleton khi loading pagination
           SliverPadding(
             padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
-            sliver: SliverList.separated(
-              separatorBuilder:
-                  (context, index) => SizedBox(height: isTablet ? 8 : 6),
-              itemCount: state.interests.length,
-              itemBuilder: (context, index) {
-                final post = state.interests[index];
-                final postType = PostType.fromValue(post.type);
-                final authState = ref.read(authProvider);
+            sliver:
+                state.isLoading || state.isLoadingPage
+                    ? SliverToBoxAdapter(
+                      child: SkeletonLoading(
+                        isTablet: isTablet,
+                        theme: theme,
+                        colorScheme: colorScheme,
+                      ),
+                    )
+                    : SliverList.separated(
+                      itemCount: state.interests.length,
+                      itemBuilder: (context, index) {
+                        final post = state.interests[index];
+                        final postType = PostType.fromValue(post.type);
+                        final authState = ref.read(authProvider);
 
-                return UnifiedInterestPostCard.postWithInterests(
-                  post: post,
-                  postType: postType,
-                  isTablet: isTablet,
-                  theme: theme,
-                  colorScheme: colorScheme,
-                  handlePostTap: handlePostTap,
-                  handleChatTap: handleChatTap,
-                  authUserId: authState.user?.id,
-                );
-              },
-            ),
+                        return UnifiedInterestPostCard.postWithInterests(
+                          post: post,
+                          postType: postType,
+                          isTablet: isTablet,
+                          theme: theme,
+                          colorScheme: colorScheme,
+                          handlePostTap: handlePostTap,
+                          handleChatTap: handleChatTap,
+                          authUserId: authState.user?.id,
+                        );
+                      },
+                      separatorBuilder: (context, index) {
+                        return SizedBox(height: isTablet ? 8 : 6);
+                      },
+                    ),
           ),
-          // Pagination được thêm vào cuối danh sách
+
+          // Pagination - luôn hiển thị khi có nhiều trang
           if (state.totalPage > 1)
             SliverToBoxAdapter(
               child: Padding(
@@ -147,6 +198,9 @@ class PostsWithInterestsTab extends ConsumerWidget {
                 ),
               ),
             ),
+
+          // Bottom spacing
+          SliverToBoxAdapter(child: SizedBox(height: isTablet ? 100 : 80)),
         ],
       ),
     );
