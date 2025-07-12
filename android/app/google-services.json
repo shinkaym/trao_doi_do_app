@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "174836788333",
+    "project_id": "shareandsave-aaf8f",
+    "storage_bucket": "shareandsave-aaf8f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:174836788333:android:0dddca796988e56693a364",
+        "android_client_info": {
+          "package_name": "com.trao_doi_do_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRCAa_Be3eNMYvK3HRb4vdllpZ2RKiyBw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
