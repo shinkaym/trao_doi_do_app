@@ -403,11 +403,12 @@ class CreatePostForm extends HookConsumerWidget {
 
       final result = await useCase(post);
 
-      result.fold((failure) => context.showErrorSnackBar(failure.message), (_) {
+      result.fold((failure) => context.showErrorSnackBar(failure.message), (_) async {
         ref.read(postProvider.notifier).reset();
         context.showSuccessSnackBar(
           'Tạo bài thành công, vui lòng đợi kiểm duyệt!',
         );
+        await Future.delayed(const Duration(seconds: 3));
         ref.read(myPostsListProvider.notifier).refresh();
         context.pop();
         context.goNamed(RouteNames.myPosts);
