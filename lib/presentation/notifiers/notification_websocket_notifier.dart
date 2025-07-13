@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:audioplayers/audioplayers.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:trao_doi_do_app/core/network/multi_websocket_manager.dart';
 import 'package:trao_doi_do_app/core/network/websocket_client.dart';
@@ -47,12 +47,12 @@ class NotificationWebSocketState {
 class NotificationWebSocketNotifier
     extends StateNotifier<NotificationWebSocketState> {
   final MultiWebSocketRepository _repository;
-  final AudioPlayer _audioPlayer;
+  final AudioPlayer _audioPlayer; // Thay đổi từ AudioPlayer sang AudioPlayer của just_audio
   StreamSubscription? _connectionSubscription;
   StreamSubscription? _responseSubscription;
 
   NotificationWebSocketNotifier(this._repository)
-      : _audioPlayer = AudioPlayer(),
+      : _audioPlayer = AudioPlayer(), // Khởi tạo AudioPlayer của just_audio
         super(const NotificationWebSocketState()) {
     _listenToConnectionState();
     _listenToNotificationResponses();
@@ -111,8 +111,17 @@ class NotificationWebSocketNotifier
 
   Future<void> _playNotificationSound() async {
     try {
+      // Dừng phát hiện tại (nếu có)
       await _audioPlayer.stop();
-      await _audioPlayer.play(AssetSource('sounds/notification.mp3'));
+      
+      // Đặt nguồn âm thanh từ asset
+      await _audioPlayer.setAsset('assets/sounds/notification.mp3');
+      
+      // Đặt âm lượng (tùy chọn)
+      await _audioPlayer.setVolume(1.0);
+      
+      // Phát âm thanh
+      await _audioPlayer.play();
     } catch (e) {
       state = state.copyWith(error: 'Error playing notification sound: $e');
     }
@@ -158,7 +167,7 @@ class NotificationWebSocketNotifier
     _connectionSubscription?.cancel();
     _responseSubscription?.cancel();
     disconnect();
-    _audioPlayer.dispose();
+    _audioPlayer.dispose(); // Dispose AudioPlayer
     super.dispose();
   }
 }

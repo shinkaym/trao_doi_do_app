@@ -74,7 +74,7 @@ dependencies:
   # Media & Image
   image_picker: ^1.1.2
   image: ^4.5.4
-  audioplayers: ^6.5.0
+  just_audio: ^0.10.2
 
   # Utilities
   url_launcher: ^6.3.1
@@ -119,7 +119,7 @@ flutter:
     - assets/images/
     - assets/images/fact/
     - assets/images/banner/
-    - assets/sounds/notification.mp3
+    - assets/sounds/
     - .env
 
 flutter_icons:
