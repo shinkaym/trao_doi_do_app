@@ -2,12 +2,15 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/config/flavor.dart';
+import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 enum WebSocketConnectionState { connecting, connected, disconnected, error }
 
 class WebSocketClient {
+  final Ref ref;
   WebSocketChannel? _channel;
   final StreamController<Map<String, dynamic>> _messageController =
       StreamController<Map<String, dynamic>>.broadcast();
@@ -47,7 +50,7 @@ class WebSocketClient {
   WebSocketConnectionState get currentState => _currentState;
   bool get hasInternetConnection => _hasInternetConnection;
 
-  WebSocketClient() {
+  WebSocketClient(this.ref) {
     _initializeConnectivityMonitoring();
   }
 
@@ -57,7 +60,8 @@ class WebSocketClient {
         _handleConnectivityChange(results);
       },
       onError: (error) {
-        print('Connectivity subscription error: $error');
+        final logger = ref.read(loggerProvider);
+        logger.e('Connectivity subscription error', error);
         // Assume we have connection if we can't monitor it
         _hasInternetConnection = true;
       },
@@ -72,7 +76,8 @@ class WebSocketClient {
       final result = await _connectivity.checkConnectivity();
       _handleConnectivityChange(result);
     } catch (e) {
-      print('Initial connectivity check failed: $e');
+      final logger = ref.read(loggerProvider);
+      logger.e('Initial connectivity check failed', e);
       // If connectivity check fails, assume we have connection
       _hasInternetConnection = true;
     }
@@ -120,9 +125,12 @@ class WebSocketClient {
         hasConnection = !resultStr.contains('none') && resultStr.isNotEmpty;
       }
     } catch (e) {
-      print(
-        'Error parsing connectivity result: $e, type: ${results.runtimeType}',
-      );
+      final logger = ref.read(loggerProvider);
+      logger.e('Error parsing connectivity result', {
+        'error': e,
+        'type': results.runtimeType.toString(),
+        'results': results.toString(),
+      });
       // If we can't parse the connectivity result, assume we have connection
       hasConnection = true;
     }
@@ -263,6 +271,16 @@ class WebSocketClient {
 
     try {
       final message = json.decode(data.toString());
+
+      // Log received message
+      final logger = ref.read(loggerProvider);
+      logger.i('🔽 WebSocket Received', {
+        'endpoint': _endpoint,
+        'event': message['event'],
+        'data': message,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+
       if (message['event'] == 'keep_alive') {
         _updateState(WebSocketConnectionState.connected);
         _resetTimeoutTimer();
@@ -270,6 +288,12 @@ class WebSocketClient {
         _messageController.add(message);
       }
     } catch (e) {
+      final logger = ref.read(loggerProvider);
+      logger.e('Error parsing WebSocket message', {
+        'endpoint': _endpoint,
+        'error': e,
+        'rawData': data.toString(),
+      });
       _updateState(WebSocketConnectionState.error);
       _messageController.addError('Error parsing message: $e');
     }
@@ -278,6 +302,13 @@ class WebSocketClient {
   void _handleError(dynamic error) {
     if (_isDisposed) return;
 
+    final logger = ref.read(loggerProvider);
+    logger.e('WebSocket Error', {
+      'endpoint': _endpoint,
+      'error': error,
+      'connectionState': _currentState.toString(),
+    });
+
     _updateState(WebSocketConnectionState.error);
     _stateController.addError('WebSocket error: $error');
     _scheduleReconnect();
@@ -285,6 +316,12 @@ class WebSocketClient {
 
   void _handleDisconnect() {
     if (_isDisposed) return;
+
+    final logger = ref.read(loggerProvider);
+    logger.w('WebSocket Disconnected', {
+      'endpoint': _endpoint,
+      'previousState': _currentState.toString(),
+    });
 
     _updateState(WebSocketConnectionState.disconnected);
     _pingTimer?.cancel();
@@ -368,8 +405,25 @@ class WebSocketClient {
         'data': data,
         'timestamp': DateTime.now().millisecondsSinceEpoch,
       });
+
+      // Log sent message
+      final logger = ref.read(loggerProvider);
+      logger.i('🔼 WebSocket Sent', {
+        'endpoint': _endpoint,
+        'event': event,
+        'data': data,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+
       _channel!.sink.add(message);
     } catch (e) {
+      final logger = ref.read(loggerProvider);
+      logger.e('Error sending WebSocket event', {
+        'endpoint': _endpoint,
+        'event': event,
+        'data': data,
+        'error': e,
+      });
       _messageController.addError('Error sending event: $e');
     }
   }
@@ -425,7 +479,8 @@ class WebSocketClient {
       final result = await _connectivity.checkConnectivity();
       _handleConnectivityChange(result);
     } catch (e) {
-      print('Connectivity check failed: $e');
+      final logger = ref.read(loggerProvider);
+      logger.e('Connectivity check failed', e);
       // If connectivity check fails, assume we have connection
       _hasInternetConnection = true;
     }

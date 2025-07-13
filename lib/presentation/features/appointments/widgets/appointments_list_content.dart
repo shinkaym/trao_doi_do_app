@@ -51,21 +51,25 @@ class AppointmentsListContent extends HookConsumerWidget {
   }
 
   Widget _buildSkeletonContent() {
-    return SingleChildScrollView(
-      controller: scrollController,
-      child: Column(
-        children: [
-          SizedBox(height: isTablet ? 16 : 8),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
-            child: AppointmentSkeletonList(
-              isTablet: isTablet,
-              colorScheme: colorScheme,
-              itemCount: 10,
+    return RefreshIndicator(
+      onRefresh: () async => onRefresh(),
+      child: SingleChildScrollView(
+        controller: scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            SizedBox(height: isTablet ? 16 : 8),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: isTablet ? 16 : 8),
+              child: AppointmentSkeletonList(
+                isTablet: isTablet,
+                colorScheme: colorScheme,
+                itemCount: 10,
+              ),
             ),
-          ),
-          SizedBox(height: isTablet ? 24 : 16),
-        ],
+            SizedBox(height: isTablet ? 24 : 16),
+          ],
+        ),
       ),
     );
   }
@@ -98,9 +102,19 @@ class AppointmentsListContent extends HookConsumerWidget {
 
   Widget _buildAppointmentsList() {
     return RefreshIndicator(
-      onRefresh: () async => onRefresh(),
+      onRefresh: () async {
+        // Đảm bảo refresh được gọi và trả về Future
+        onRefresh();
+        // Đợi một chút để UI có thời gian cập nhật
+        await Future.delayed(const Duration(milliseconds: 300));
+      },
+      // Tùy chỉnh màu sắc cho refresh indicator
+      color: colorScheme.primary,
+      backgroundColor: colorScheme.surface,
       child: CustomScrollView(
         controller: scrollController,
+        // Đảm bảo luôn có thể scroll để kích hoạt pull-to-refresh
+        physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           // Top spacing
           SliverToBoxAdapter(child: SizedBox(height: isTablet ? 16 : 8)),
@@ -153,8 +167,8 @@ class AppointmentsListContent extends HookConsumerWidget {
               ),
             ),
 
-          // Bottom spacing
-          SliverToBoxAdapter(child: SizedBox(height: isTablet ? 100 : 80)),
+          // Bottom spacing - tăng thêm để đảm bảo có thể scroll
+          SliverToBoxAdapter(child: SizedBox(height: isTablet ? 120 : 100)),
         ],
       ),
     );

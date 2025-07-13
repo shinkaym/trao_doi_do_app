@@ -19,47 +19,59 @@ class MyPostsScreen extends HookConsumerWidget {
 
   void _onToggleStatus(BuildContext context, WidgetRef ref, Post post) async {
     final postNotifier = ref.read(postProvider.notifier);
+    final postsListNotifier = ref.read(myPostsListProvider.notifier);
+
     final isLocked = post.status == PostStatus.locked.value;
     final actionText = isLocked ? 'mở khóa' : 'khóa';
 
     final confirmed = await context.showConfirmDialog(
       title: 'Xác nhận',
-      content: 'Bạn có chắc chắn muốn $actionText quan tâm của bài đăng này?',
+      content: 'Bạn có chắc chắn muốn $actionText bài đăng này?',
       confirmText: 'Xác nhận',
       cancelText: 'Hủy',
     );
 
     if (confirmed == true) {
-      try {
-        context.showLoadingDialog(message: 'Đang xử lý...');
+      // Bắt đầu loading cho post cụ thể
+      postsListNotifier.setPostUpdatingStatus(post.id!, true);
 
+      try {
         await postNotifier.togglePostStatus(
           post.id!,
-          (post.status ?? PostStatus.approved.value)!,
+          post.status ?? PostStatus.approved.value!,
         );
 
-        context.dismissDialog();
-        ref.read(myPostsListProvider.notifier).refresh();
+        final postState = ref.read(postProvider);
+
+        if (postState.successMessage != null) {
+          // Cập nhật trạng thái post trong danh sách thay vì refresh toàn bộ
+          final newStatus =
+              isLocked ? PostStatus.approved.value : PostStatus.locked.value;
+          postsListNotifier.updatePostStatus(post.id!, newStatus!);
+
+          context.showSuccessSnackBar(postState.successMessage!);
+        } else if (postState.failure != null) {
+          context.showErrorSnackBar(postState.failure!.message);
+        }
       } catch (e) {
-        context.dismissDialog();
-        // Không cần show error snackbar ở đây nữa, useEffect sẽ xử lý
+        context.showErrorSnackBar('Đã xảy ra lỗi khi cập nhật trạng thái');
+      } finally {
+        // Tắt loading cho post cụ thể
+        postsListNotifier.setPostUpdatingStatus(post.id!, false);
       }
     }
   }
 
   void _onRepost(BuildContext context, WidgetRef ref, Post post) async {
     final postNotifier = ref.read(postProvider.notifier);
+    final postsListNotifier = ref.read(myPostsListProvider.notifier);
 
     final now = DateTime.now();
     final difference = now.difference(post.createdAt!);
     final canRepost = difference.inDays >= 7;
 
     if (!canRepost) {
-      final now = DateTime.now();
-      final createdAt = post.createdAt!;
-      final difference = now.difference(createdAt);
       final remainingDays = 7 - difference.inDays;
-
       context.showInfoDialog(
         title: 'Thông báo',
         content:
@@ -77,23 +89,34 @@ class MyPostsScreen extends HookConsumerWidget {
     );
 
     if (confirmed == true) {
-      try {
-        context.showLoadingDialog(message: 'Đang ghim...');
+      // Bắt đầu loading cho post cụ thể
+      postsListNotifier.setPostUpdatingStatus(post.id!, true);
 
+      try {
         await postNotifier.repostPost(post.id!, post.createdAt!);
 
-        context.dismissDialog();
-        ref.read(myPostsListProvider.notifier).refresh();
+        final postState = ref.read(postProvider);
+
+        if (postState.successMessage != null) {
+          // Cập nhật thời gian tạo của post trong danh sách
+          postsListNotifier.updatePostAfterRepost(post.id!, DateTime.now());
+
+          context.showSuccessSnackBar(postState.successMessage!);
+        } else if (postState.failure != null) {
+          context.showErrorSnackBar(postState.failure!.message);
+        }
       } catch (e) {
-        context.dismissDialog();
-        // Không cần show error snackbar ở đây nữa, useEffect sẽ xử lý
+        context.showErrorSnackBar('Đã xảy ra lỗi khi ghim bài đăng');
+      } finally {
+        // Tắt loading cho post cụ thể
+        postsListNotifier.setPostUpdatingStatus(post.id!, false);
       }
     }
   }
 
-  // Thêm function xóa bài đăng
   void _onDeletePost(BuildContext context, WidgetRef ref, Post post) async {
     final postNotifier = ref.read(postProvider.notifier);
+    final postsListNotifier = ref.read(myPostsListProvider.notifier);
 
     final confirmed = await context.showConfirmDialog(
       title: 'Xác nhận xóa',
@@ -104,16 +127,27 @@ class MyPostsScreen extends HookConsumerWidget {
     );
 
     if (confirmed == true) {
-      try {
-        context.showLoadingDialog(message: 'Đang xóa bài đăng...');
+      // Bắt đầu loading cho post cụ thể
+      postsListNotifier.setPostUpdatingStatus(post.id!, true);
 
+      try {
         await postNotifier.deletePost(post.id!);
 
-        context.dismissDialog();
-        ref.read(myPostsListProvider.notifier).refresh();
+        final postState = ref.read(postProvider);
+
+        if (postState.successMessage != null) {
+          // Xóa post khỏi danh sách thay vì refresh toàn bộ
+          postsListNotifier.removePost(post.id!);
+
+          context.showSuccessSnackBar(postState.successMessage!);
+        } else if (postState.failure != null) {
+          context.showErrorSnackBar(postState.failure!.message);
+        }
       } catch (e) {
-        context.dismissDialog();
-        // Không cần show error snackbar ở đây nữa, useEffect sẽ xử lý
+        context.showErrorSnackBar('Đã xảy ra lỗi khi xóa bài đăng');
+      } finally {
+        // Tắt loading cho post cụ thể
+        postsListNotifier.setPostUpdatingStatus(post.id!, false);
       }
     }
   }

@@ -1,12 +1,14 @@
 import 'dart:async';
-
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
 import 'package:trao_doi_do_app/core/network/websocket_client.dart';
 import 'package:trao_doi_do_app/domain/entities/response/websocket_response.dart';
 
 enum WebSocketChannel { chat, chatNotification, notification }
 
 class MultiWebSocketManager {
+  final Ref ref;
   final Map<WebSocketChannel, WebSocketClient> _clients = {};
   final StreamController<WebSocketResponse> _responseController =
       StreamController<WebSocketResponse>.broadcast();
@@ -58,10 +60,10 @@ class MultiWebSocketManager {
 
   bool get hasInternetConnection => _hasInternetConnection;
 
-  MultiWebSocketManager() {
-    _clients[WebSocketChannel.chat] = WebSocketClient();
-    _clients[WebSocketChannel.chatNotification] = WebSocketClient();
-    _clients[WebSocketChannel.notification] = WebSocketClient();
+  MultiWebSocketManager(this.ref) {
+    _clients[WebSocketChannel.chat] = WebSocketClient(ref);
+    _clients[WebSocketChannel.chatNotification] = WebSocketClient(ref);
+    _clients[WebSocketChannel.notification] = WebSocketClient(ref);
     _initializeConnectivityMonitoring();
     _updateConnectionStates();
     _startConnectionMonitoring();
@@ -73,7 +75,8 @@ class MultiWebSocketManager {
         _handleConnectivityChange(result);
       },
       onError: (error) {
-        print('Connectivity subscription error: $error');
+        final logger = ref.read(loggerProvider);
+        logger.e('Connectivity subscription error', error);
         // Assume we have connection if we can't monitor it
         _hasInternetConnection = true;
       },
@@ -88,7 +91,8 @@ class MultiWebSocketManager {
       final result = await _connectivity.checkConnectivity();
       _handleConnectivityChange(result);
     } catch (e) {
-      print('Initial connectivity check failed: $e');
+      final logger = ref.read(loggerProvider);
+      logger.e('Initial connectivity check failed', e);
       // If connectivity check fails, assume we have connection
       _hasInternetConnection = true;
     }
@@ -134,9 +138,12 @@ class MultiWebSocketManager {
         return !resultStr.contains('none') && resultStr.isNotEmpty;
       }
     } catch (e) {
-      print(
-        'Error parsing connectivity result: $e, type: ${result.runtimeType}',
-      );
+      final logger = ref.read(loggerProvider);
+      logger.e('Error parsing connectivity result', {
+        'error': e,
+        'type': result.runtimeType.toString(),
+        'result': result.toString(),
+      });
       return true; // Default to connected for unknown types
     }
   }
@@ -224,7 +231,8 @@ class MultiWebSocketManager {
           await _connectChannel(channel, _currentToken, _endpoints[channel]!);
         } catch (e) {
           // Log error but don't throw to avoid stopping other reconnections
-          print('Failed to reconnect channel $channel: $e');
+        final logger = ref.read(loggerProvider);
+          logger.e('Failed to reconnect channel $channel', e);
         }
       }
     });

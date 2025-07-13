@@ -112,7 +112,8 @@ class CreatePostForm extends HookConsumerWidget {
     // Helper function để kiểm tra validation cho items
     String? validateItems() {
       // Chỉ kiểm tra items cho các loại bài cần món đồ (trừ freePost)
-      if (selectedType.value != PostType.freePost && giveAwayItems.value.isEmpty) {
+      if (selectedType.value != PostType.freePost &&
+          giveAwayItems.value.isEmpty) {
         switch (selectedType.value) {
           case PostType.giveAway:
             return 'Vui lòng thêm ít nhất 1 món đồ để tặng';
@@ -153,7 +154,7 @@ class CreatePostForm extends HookConsumerWidget {
           );
 
           images.value = [...images.value, newImage];
-          
+
           // Xóa lỗi validation khi thêm ảnh thành công
           if (imageValidationError.value != null) {
             imageValidationError.value = null;
@@ -181,7 +182,7 @@ class CreatePostForm extends HookConsumerWidget {
       categoryAutovalidateMode.value = AutovalidateMode.disabled;
       timeAutovalidateMode.value = AutovalidateMode.disabled;
       rewardAutovalidateMode.value = AutovalidateMode.disabled;
-      
+
       // Reset validation errors
       imageValidationError.value = null;
       itemValidationError.value = null;
@@ -189,7 +190,7 @@ class CreatePostForm extends HookConsumerWidget {
 
     void removeImage(String imageId) {
       images.value = images.value.where((img) => img.id != imageId).toList();
-      
+
       // Kiểm tra lại validation sau khi xóa ảnh
       if (images.value.isEmpty && imageValidationError.value == null) {
         imageValidationError.value = validateImages();
@@ -253,7 +254,7 @@ class CreatePostForm extends HookConsumerWidget {
         ref: ref,
         onItemAdded: (item) {
           giveAwayItems.value = [...giveAwayItems.value, item];
-          
+
           // Xóa lỗi validation khi thêm item thành công
           if (itemValidationError.value != null) {
             itemValidationError.value = null;
@@ -265,9 +266,11 @@ class CreatePostForm extends HookConsumerWidget {
     void removeGiveAwayItem(String itemId) {
       giveAwayItems.value =
           giveAwayItems.value.where((item) => item.id != itemId).toList();
-          
+
       // Kiểm tra lại validation sau khi xóa item
-      if (selectedType.value != PostType.freePost && giveAwayItems.value.isEmpty && itemValidationError.value == null) {
+      if (selectedType.value != PostType.freePost &&
+          giveAwayItems.value.isEmpty &&
+          itemValidationError.value == null) {
         itemValidationError.value = validateItems();
       }
     }
@@ -278,7 +281,10 @@ class CreatePostForm extends HookConsumerWidget {
       final description = descriptionController.text.trim();
       final imagesBase64 =
           images.value
-              .map((img) => Base64Utils.encodeImageTo800x600WithPadding(img.imageData!))
+              .map(
+                (img) =>
+                    Base64Utils.encodeImageTo800x600WithPadding(img.imageData!),
+              )
               .toList();
 
       final info = <String, dynamic>{};
@@ -310,16 +316,16 @@ class CreatePostForm extends HookConsumerWidget {
       // Reset validation errors
       imageValidationError.value = null;
       itemValidationError.value = null;
-      
+
       // Validate form fields
       final isFormValid = formKey.currentState!.validate();
-      
+
       // Validate images
       final imageError = validateImages();
       if (imageError != null) {
         imageValidationError.value = imageError;
       }
-      
+
       // Validate items
       final itemError = validateItems();
       if (itemError != null) {
@@ -402,8 +408,9 @@ class CreatePostForm extends HookConsumerWidget {
         context.showSuccessSnackBar(
           'Tạo bài thành công, vui lòng đợi kiểm duyệt!',
         );
+        ref.read(myPostsListProvider.notifier).refresh();
         context.pop();
-        context.pushNamed(RouteNames.myPosts);
+        context.goNamed(RouteNames.myPosts);
       });
 
       isSubmitting.value = false;

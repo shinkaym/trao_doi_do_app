@@ -1,13 +1,16 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'dart:convert';
-
 import 'package:trao_doi_do_app/core/services/fcm_navigation_service.dart';
+import 'package:trao_doi_do_app/core/utils/logger_utils.dart';
+import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 class FcmService {
   static final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   static final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
+  static ILogger? _logger;
 
   static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
     'high_importance_channel',
@@ -16,25 +19,28 @@ class FcmService {
     importance: Importance.high,
   );
 
-  static Future<void> initialize() async {
-    // Request permission
-    NotificationSettings settings = await _messaging.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
+  static Future<void> initialize([ProviderContainer? container]) async {
+    // Initialize logger if container is provided
+    if (container != null) {
+      try {
+        _logger = container.read(loggerProvider);
+      } catch (e) {
+        // Fallback if logger is not available
+        _logger = null;
+      }
+    }
+
+    // Check current permission status (don't request, just check)
+    NotificationSettings settings = await _messaging.getNotificationSettings();
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('User granted permission');
+      _logger?.i('✅ FCM: Notification permission is granted');
     } else if (settings.authorizationStatus ==
         AuthorizationStatus.provisional) {
-      print('User granted provisional permission');
+      _logger?.i('⚠️ FCM: Notification permission is provisional');
     } else {
-      print('User declined or has not accepted permission');
+      _logger?.w('❌ FCM: Notification permission is not granted');
+      // Don't return early - still initialize FCM for when permission is granted later
     }
 
     // Initialize local notifications
@@ -62,9 +68,9 @@ class FcmService {
 
     const DarwinInitializationSettings initializationSettingsIOS =
         DarwinInitializationSettings(
-          requestAlertPermission: true,
-          requestBadgePermission: true,
-          requestSoundPermission: true,
+          requestAlertPermission: false, // Don't request here
+          requestBadgePermission: false, // Don't request here
+          requestSoundPermission: false, // Don't request here
         );
 
     const InitializationSettings initializationSettings =
@@ -89,20 +95,32 @@ class FcmService {
   static Future<String?> getFcmToken() async {
     try {
       String? token = await _messaging.getToken();
-      print('FCM Token: $token');
+      _logger?.i('✅ FCM Token obtained', {
+        'token': token!.substring(0, 20) + '...',
+      });
       return token;
     } catch (e) {
-      print('Error getting FCM token: $e');
+      _logger?.e('❌ Error getting FCM token', e);
       return null;
     }
   }
 
   static void onTokenRefresh(Function(String) onTokenReceived) {
-    _messaging.onTokenRefresh.listen(onTokenReceived);
+    _messaging.onTokenRefresh.listen((token) {
+      _logger?.i('🔄 FCM Token refreshed', {
+        'token': token.substring(0, 20) + '...',
+      });
+      onTokenReceived(token);
+    });
   }
 
   static Future<void> _handleForegroundMessage(RemoteMessage message) async {
-    print('Received foreground message: ${message.messageId}');
+    _logger?.i('📱 Received foreground message', {
+      'messageId': message.messageId,
+      'title': message.notification?.title,
+      'body': message.notification?.body,
+      'data': message.data,
+    });
 
     // Show local notification when app is in foreground
     await _showLocalNotification(message);
@@ -134,6 +152,12 @@ class FcmService {
         ),
         payload: _createPayload(message),
       );
+
+      _logger?.i('🔔 Local notification shown', {
+        'title': notification.title,
+        'body': notification.body,
+        'messageId': message.messageId,
+      });
     }
   }
 
@@ -147,15 +171,20 @@ class FcmService {
   }
 
   static void _handleNotificationTap(RemoteMessage message) {
-    print('Notification tapped: ${message.messageId}');
-    print('Notification data: ${message.data}');
+    _logger?.logUserAction('notification_tapped', {
+      'messageId': message.messageId,
+      'data': message.data,
+    });
 
     // Use navigation service to handle navigation
     FcmNavigationService.handleNotificationNavigation(message.data);
   }
 
   static void _onNotificationTap(NotificationResponse response) {
-    print('Local notification tapped: ${response.payload}');
+    _logger?.logUserAction('local_notification_tapped', {
+      'payload': response.payload,
+    });
+
     if (response.payload != null) {
       try {
         Map<String, dynamic> payload = jsonDecode(response.payload!);
@@ -164,7 +193,7 @@ class FcmService {
         // Use navigation service to handle navigation
         FcmNavigationService.handleNotificationNavigation(data);
       } catch (e) {
-        print('Error parsing notification payload: $e');
+        _logger?.e('❌ Error parsing notification payload', e);
         // Fallback to notifications screen
         FcmNavigationService.navigateToNotifications();
       }
@@ -172,19 +201,47 @@ class FcmService {
   }
 
   static Future<void> subscribeToTopic(String topic) async {
-    await _messaging.subscribeToTopic(topic);
+    try {
+      await _messaging.subscribeToTopic(topic);
+      _logger?.i('✅ Subscribed to topic', {'topic': topic});
+    } catch (e) {
+      _logger?.e('❌ Failed to subscribe to topic', e);
+    }
   }
 
   static Future<void> unsubscribeFromTopic(String topic) async {
-    await _messaging.unsubscribeFromTopic(topic);
+    try {
+      await _messaging.unsubscribeFromTopic(topic);
+      _logger?.i('✅ Unsubscribed from topic', {'topic': topic});
+    } catch (e) {
+      _logger?.e('❌ Failed to unsubscribe from topic', e);
+    }
+  }
+
+  /// Method to refresh FCM setup after permission is granted
+  /// Call this after user grants notification permission
+  static Future<void> refreshAfterPermissionGranted() async {
+    _logger?.i('🔄 Refreshing FCM after permission granted');
+
+    // Re-check permission status
+    NotificationSettings settings = await _messaging.getNotificationSettings();
+
+    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+      // Get fresh token after permission is granted
+      await getFcmToken();
+
+      _logger?.i('✅ FCM refreshed successfully after permission granted');
+    }
   }
 }
 
 // Background message handler (must be top-level function)
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print('Handling a background message: ${message.messageId}');
-  print('Background message data: ${message.data}');
+  // Note: Logger might not be available in background handler
+  // Using print as fallback for background messages
+  print('📧 Handling background message: ${message.messageId}');
+  print('📧 Background message data: ${message.data}');
 
   // You can process the message here
   // For example, update local database, show notification, etc.

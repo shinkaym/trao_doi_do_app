@@ -36,6 +36,9 @@ class AppointmentsScreen extends HookConsumerWidget {
     final theme = context.theme;
     final colorScheme = context.colorScheme;
 
+    // Thêm state để track refresh
+    final isRefreshing = useState<bool>(false);
+
     void loadAppointments({bool refresh = false}) {
       final query = AppointmentQuery(
         sort: selectedSort.value.sort,
@@ -53,8 +56,17 @@ class AppointmentsScreen extends HookConsumerWidget {
       loadAppointments(refresh: true);
     }
 
-    void handleRefresh() {
-      loadAppointments(refresh: true);
+    Future<void> handleRefresh() async {
+      if (isRefreshing.value) return; // Tránh multiple refresh
+
+      isRefreshing.value = true;
+      try {
+        loadAppointments(refresh: true);
+        // Đợi một chút để API call hoàn thành
+        await Future.delayed(const Duration(milliseconds: 500));
+      } finally {
+        isRefreshing.value = false;
+      }
     }
 
     void handleRejectAppointment(Appointment appointment) async {
@@ -72,7 +84,7 @@ class AppointmentsScreen extends HookConsumerWidget {
             ref.read(appointmentProvider).updatingAppointments;
         if (loadingAppointments[appointment.id] == true) return;
 
-        // Update appointment status to 4 (cancelled/rejected)
+        // Update appointment status to 2 (rejected)
         await ref
             .read(appointmentProvider.notifier)
             .cancelAppointment(appointment.id);
@@ -80,10 +92,18 @@ class AppointmentsScreen extends HookConsumerWidget {
         // Check the result after the operation
         final appointmentState = ref.read(appointmentProvider);
         if (appointmentState.successMessage != null) {
+          // Cập nhật trạng thái appointment trong danh sách ngay lập tức
+          ref
+              .read(appointmentsListProvider.notifier)
+              .updateAppointmentStatus(
+                appointment.id,
+                2,
+              ); // Status 2 = rejected
+
           context.showSuccessSnackBar('Đã từ chối cuộc hẹn!');
-          // Clear the success message and refresh
+
+          // Clear the success message
           ref.read(appointmentProvider.notifier).clearSuccess();
-          loadAppointments(refresh: true);
         } else if (appointmentState.failure != null) {
           ref.read(appointmentProvider.notifier).clearError();
         }

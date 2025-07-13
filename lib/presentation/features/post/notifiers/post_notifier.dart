@@ -193,12 +193,6 @@ class PostNotifier extends StateNotifier<PostState> {
     state = state.copyWith(oldItems: updatedOldItems);
   }
 
-  void removeOldItem(int index) {
-    final updatedOldItems = [...state.oldItems];
-    updatedOldItems.removeAt(index);
-    state = state.copyWith(oldItems: updatedOldItems);
-  }
-
   Future<void> createPost() async {
     state = state.copyWith(isLoading: true, failure: null);
 
@@ -231,14 +225,6 @@ class PostNotifier extends StateNotifier<PostState> {
 
   void reset() {
     state = state.copyWith(newItems: [], oldItems: [], images: []);
-  }
-
-  void updateIsRepost(bool isRepost) {
-    state = state.copyWith(isRepost: isRepost);
-  }
-
-  void updateStatus(int status) {
-    state = state.copyWith(status: status);
   }
 
   Future<void> deletePost(int postID) async {
@@ -332,22 +318,6 @@ class PostNotifier extends StateNotifier<PostState> {
         );
       },
     );
-  }
-
-  Future<void> updatePostTitle(int postID, String title) async {
-    await updatePost(postID, title: title);
-  }
-
-  Future<void> updatePostDescription(int postID, String description) async {
-    await updatePost(postID, description: description);
-  }
-
-  Future<void> updatePostImages(int postID, List<String> images) async {
-    await updatePost(postID, images: images);
-  }
-
-  Future<void> updatePostStatus(int postID, int status) async {
-    await updatePost(postID, status: status);
   }
 
   void clearMessages() {

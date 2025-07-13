@@ -13,6 +13,7 @@ class MyPostsListState {
   final Failure? failure;
   final bool hasMoreData;
   final bool isLoadingPage;
+  final Map<int, bool> postUpdatingStatus;
 
   MyPostsListState({
     this.isLoading = false,
@@ -23,6 +24,7 @@ class MyPostsListState {
     this.failure,
     this.hasMoreData = true,
     this.isLoadingPage = false,
+    this.postUpdatingStatus = const {},
   });
 
   MyPostsListState copyWith({
@@ -35,6 +37,7 @@ class MyPostsListState {
     Failure? failure,
     bool? hasMoreData,
     bool? isLoadingPage,
+    Map<int, bool>? postUpdatingStatus,
   }) {
     return MyPostsListState(
       isLoading: isLoading ?? this.isLoading,
@@ -45,6 +48,7 @@ class MyPostsListState {
       failure: failure,
       hasMoreData: hasMoreData ?? this.hasMoreData,
       isLoadingPage: isLoadingPage ?? this.isLoadingPage,
+      postUpdatingStatus: postUpdatingStatus ?? this.postUpdatingStatus,
     );
   }
 }
@@ -105,6 +109,85 @@ class MyPostsListNotifier extends StateNotifier<MyPostsListState> {
     );
   }
 
+  void updatePostStatus(int postId, int newStatus) {
+    final updatedPosts =
+        state.posts.map((post) {
+          if (post.id == postId) {
+            return Post(
+              id: post.id,
+              authorID: post.authorID,
+              authorName: post.authorName,
+              authorAvatar: post.authorAvatar,
+              title: post.title,
+              description: post.description,
+              info: post.info,
+              type: post.type,
+              slug: post.slug,
+              status: newStatus,
+              images: post.images,
+              newItems: post.newItems,
+              oldItems: post.oldItems,
+              tags: post.tags,
+              interestCount: post.interestCount,
+              itemCount: post.itemCount,
+              currentItemCount: post.currentItemCount,
+              createdAt: post.createdAt,
+            );
+          }
+          return post;
+        }).toList();
+
+    state = state.copyWith(posts: updatedPosts);
+  }
+
+  void setPostUpdatingStatus(int postId, bool isUpdating) {
+    final updatedStatus = Map<int, bool>.from(state.postUpdatingStatus);
+    if (isUpdating) {
+      updatedStatus[postId] = true;
+    } else {
+      updatedStatus.remove(postId);
+    }
+
+    state = state.copyWith(postUpdatingStatus: updatedStatus);
+  }
+
+  void updatePostAfterRepost(int postId, DateTime newCreatedAt) {
+    final updatedPosts =
+        state.posts.map((post) {
+          if (post.id == postId) {
+            return Post(
+              id: post.id,
+              authorID: post.authorID,
+              authorName: post.authorName,
+              authorAvatar: post.authorAvatar,
+              title: post.title,
+              description: post.description,
+              info: post.info,
+              type: post.type,
+              slug: post.slug,
+              status: post.status,
+              images: post.images,
+              newItems: post.newItems,
+              oldItems: post.oldItems,
+              tags: post.tags,
+              interestCount: post.interestCount,
+              itemCount: post.itemCount,
+              currentItemCount: post.currentItemCount,
+              createdAt: newCreatedAt,
+            );
+          }
+          return post;
+        }).toList();
+
+    state = state.copyWith(posts: updatedPosts);
+  }
+
+  void removePost(int postId) {
+    final updatedPosts =
+        state.posts.where((post) => post.id != postId).toList();
+    state = state.copyWith(posts: updatedPosts);
+  }
+
   // Chuyển đến trang cụ thể
   Future<void> goToPage(int page) async {
     if (page < 1 || page > state.totalPage || page == state.currentPage) return;
@@ -115,8 +198,8 @@ class MyPostsListNotifier extends StateNotifier<MyPostsListState> {
 
     // Hiển thị loading state khi chuyển trang
     state = state.copyWith(
-      currentPage: page, 
-      isLoadingPage: true,  // Bật loading để hiển thị skeleton
+      currentPage: page,
+      isLoadingPage: true, // Bật loading để hiển thị skeleton
     );
 
     final newQuery = state.query.copyWith(page: page);

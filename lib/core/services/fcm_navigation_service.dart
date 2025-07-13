@@ -126,7 +126,6 @@ class FcmNavigationService {
             ),
       );
     } catch (e) {
-      print('Error showing appointment detail: $e');
       context.push(RouteConstants.appointments);
     }
   }
@@ -140,9 +139,7 @@ class FcmNavigationService {
     try {
       final container = ProviderScope.containerOf(context);
       container.read(notificationProvider.notifier).markAsRead(notificationId);
-    } catch (e) {
-      print('Error marking notification as read: $e');
-    }
+    } catch (e) {}
   }
 
   static void navigateToNotifications() {

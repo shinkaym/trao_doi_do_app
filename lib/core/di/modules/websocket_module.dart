@@ -12,7 +12,7 @@ class WebSocketModule {
 }
 
 final multiWebSocketManagerProvider = Provider<MultiWebSocketManager>((ref) {
-  final manager = MultiWebSocketManager();
+  final manager = MultiWebSocketManager(ref);
   ref.onDispose(() {
     manager.dispose();
   });

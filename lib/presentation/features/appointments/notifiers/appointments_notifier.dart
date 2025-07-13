@@ -108,6 +108,29 @@ class AppointmentsListNotifier extends StateNotifier<AppointmentsListState> {
     );
   }
 
+  // Thêm method để cập nhật appointment cụ thể
+  void updateAppointmentStatus(int appointmentId, int newStatus) {
+    final updatedAppointments =
+        state.appointments.map((appointment) {
+          if (appointment.id == appointmentId) {
+            // Tạo appointment mới với status đã cập nhật
+            return Appointment(
+              appointmentItems: appointment.appointmentItems,
+              createdAt: appointment.createdAt,
+              endTime: appointment.endTime,
+              id: appointment.id,
+              startTime: appointment.startTime,
+              status: newStatus,
+              userID: appointment.userID,
+              userName: appointment.userName,
+            );
+          }
+          return appointment;
+        }).toList();
+
+    state = state.copyWith(appointments: updatedAppointments);
+  }
+
   // Chuyển đến trang cụ thể
   Future<void> goToPage(int page) async {
     if (page < 1 || page > state.totalPage || page == state.currentPage) return;

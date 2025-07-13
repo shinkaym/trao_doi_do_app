@@ -326,18 +326,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       // Trigger FCM token registration
       _ref.read(fcmProvider.notifier).refreshToken();
-    } catch (e) {
-      print('Error registering FCM token after login: $e');
-    }
+    } catch (e) {}
   }
 
   // New method to delete FCM token before logout
   Future<void> _deleteFcmTokenBeforeLogout() async {
     try {
       await _ref.read(fcmProvider.notifier).deleteFcmToken();
-    } catch (e) {
-      print('Error deleting FCM token before logout: $e');
-    }
+    } catch (e) {}
   }
 
   Future<void> updateProfile({

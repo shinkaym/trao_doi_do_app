@@ -37,7 +37,18 @@ class _ProviderLogger extends ProviderObserver {
     Object? previousValue,
     Object? newValue,
     ProviderContainer container,
-  ) {}
+  ) {
+    // Only log in debug mode to avoid performance issues
+    if (kDebugMode) {
+      try {
+        final logger = container.read(loggerProvider);
+        logger.d('🔄 Provider updated: ${provider.name ?? provider.runtimeType}');
+      } catch (e) {
+        // Fallback to print if logger is not available
+        debugPrint('🔄 Provider updated: ${provider.name ?? provider.runtimeType}');
+      }
+    }
+  }
 
   @override
   void providerDidFail(
@@ -45,7 +56,15 @@ class _ProviderLogger extends ProviderObserver {
     Object error,
     StackTrace stackTrace,
     ProviderContainer container,
-  ) {}
+  ) {
+    try {
+      final logger = container.read(loggerProvider);
+      logger.e('❌ Provider failed: ${provider.name ?? provider.runtimeType}', error, stackTrace);
+    } catch (e) {
+      // Fallback to print if logger is not available
+      debugPrint('❌ Provider failed: ${provider.name ?? provider.runtimeType} - $error');
+    }
+  }
 }
 
 /// Optimized initialization
@@ -54,9 +73,9 @@ Future<void> _initializeApp(ProviderContainer container) async {
 
   // Parallel initialization cho performance
   await Future.wait([
-    _initializeCore(),
-    _initializeStorage(),
-    _initializeFirebase(),
+    _initializeCore(logger),
+    _initializeStorage(logger),
+    _initializeFirebase(logger),
   ]);
 
   // Initialize FCM after Firebase
@@ -66,47 +85,53 @@ Future<void> _initializeApp(ProviderContainer container) async {
   await _warmUpProviders(container, logger);
 
   // Initialize app lifecycle service
-  _initializeAppLifecycle(container);
+  _initializeAppLifecycle(container, logger);
 
   logger.i('🎉 App initialization completed');
 }
 
-Future<void> _initializeCore() async {
+Future<void> _initializeCore(ILogger logger) async {
+  logger.i('🔧 Initializing core services...');
   TimeUtils.init();
   await dotenv.load();
+  logger.i('✅ Core services initialized');
 }
 
-Future<void> _initializeStorage() async {
+Future<void> _initializeStorage(ILogger logger) async {
+  logger.i('💾 Initializing storage...');
   await Hive.initFlutter();
   await Hive.openBox(StorageKeys.settings);
+  logger.i('✅ Storage initialized');
 }
 
 /// Initialize Firebase
-Future<void> _initializeFirebase() async {
+Future<void> _initializeFirebase(ILogger logger) async {
   try {
+    logger.i('🔥 Initializing Firebase...');
     await Firebase.initializeApp();
-    print('✅ Firebase initialized successfully');
+    logger.i('✅ Firebase initialized successfully');
   } catch (e, stackTrace) {
-    print('❌ Firebase initialization failed: $e');
-    print('Stack trace: $stackTrace');
+    logger.e('❌ Firebase initialization failed', e, stackTrace);
     rethrow;
   }
 }
 
 /// Initialize app lifecycle service
-void _initializeAppLifecycle(ProviderContainer container) {
+void _initializeAppLifecycle(ProviderContainer container, ILogger logger) {
   try {
+    logger.i('🔄 Initializing app lifecycle service...');
     container.read(appLifecycleServiceProvider);
-    print('✅ App lifecycle service initialized');
-  } catch (e) {
-    print('⚠️ App lifecycle service initialization failed: $e');
+    logger.i('✅ App lifecycle service initialized');
+  } catch (e, stackTrace) {
+    logger.e('⚠️ App lifecycle service initialization failed', e, stackTrace);
   }
 }
 
 /// Initialize FCM
 Future<void> _initializeFcm(ProviderContainer container, ILogger logger) async {
   try {
-    await FcmService.initialize();
+    logger.i('📱 Initializing FCM...');
+    await FcmService.initialize(container);
 
     // Initialize FCM provider
     container.read(fcmProvider);
@@ -124,13 +149,45 @@ Future<void> _warmUpProviders(
   ILogger logger,
 ) async {
   try {
+    logger.i('🔥 Warming up providers...');
     final futures = <Future>[];
 
     // Load critical providers concurrently
-    futures.add(Future(() => container.read(onboardingProvider)));
-    futures.add(Future(() => container.read(splashProvider)));
-    futures.add(Future(() => container.read(authProvider)));
-    futures.add(Future(() => container.read(notificationProvider)));
+    futures.add(Future(() {
+      try {
+        container.read(onboardingProvider);
+        logger.d('✅ Onboarding provider warmed up');
+      } catch (e) {
+        logger.w('⚠️ Onboarding provider failed to warm up', e);
+      }
+    }));
+
+    futures.add(Future(() {
+      try {
+        container.read(splashProvider);
+        logger.d('✅ Splash provider warmed up');
+      } catch (e) {
+        logger.w('⚠️ Splash provider failed to warm up', e);
+      }
+    }));
+
+    futures.add(Future(() {
+      try {
+        container.read(authProvider);
+        logger.d('✅ Auth provider warmed up');
+      } catch (e) {
+        logger.w('⚠️ Auth provider failed to warm up', e);
+      }
+    }));
+
+    futures.add(Future(() {
+      try {
+        container.read(notificationProvider);
+        logger.d('✅ Notification provider warmed up');
+      } catch (e) {
+        logger.w('⚠️ Notification provider failed to warm up', e);
+      }
+    }));
 
     await Future.wait(futures, eagerError: false);
     logger.i('✅ Providers warmed up successfully');
