@@ -39,4 +39,6 @@ abstract class MultiWebSocketRepository {
   void disconnectNotification();
   void disconnectAll();
   void dispose();
+
+  Map<String, dynamic> getConnectionSummary();
 }

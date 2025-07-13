@@ -3,6 +3,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:trao_doi_do_app/core/constants/route_constants.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
+import 'package:trao_doi_do_app/core/services/fcm_navigation_service.dart';
 import 'package:trao_doi_do_app/core/utils/route_utils.dart';
 import 'package:trao_doi_do_app/presentation/common/screens/not_found_screen.dart';
 import 'package:trao_doi_do_app/presentation/common/screens/permission_request_screen.dart';
@@ -90,6 +91,7 @@ class RouterState {
 final routerProvider = Provider<GoRouter>((ref) {
   // Di chuyển logic listen vào RouterNotifier
   return GoRouter(
+    navigatorKey: FcmNavigationService.navigatorKey,
     initialLocation: RouteConstants.splash,
     errorBuilder: (context, state) => const NotFoundScreen(),
     refreshListenable: RouterNotifier(ref),
@@ -206,6 +208,9 @@ class RouterNotifier extends ChangeNotifier {
             } catch (e) {}
           }
         });
+
+        // Register FCM token after login
+        _ref.read(fcmProvider.notifier).refreshToken();
       } else if (!next.isLoggedIn && previous != null && previous.isLoggedIn) {
         // Reset notification state
         _ref.invalidate(notificationProvider);
@@ -213,6 +218,11 @@ class RouterNotifier extends ChangeNotifier {
         // Disconnect all WebSockets
         try {
           _ref.read(multiWebSocketRepositoryProvider).disconnectAll();
+        } catch (e) {}
+
+        // Delete FCM token before logout
+        try {
+          await _ref.read(fcmProvider.notifier).deleteFcmToken();
         } catch (e) {}
       }
     });

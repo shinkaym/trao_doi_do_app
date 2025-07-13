@@ -97,7 +97,7 @@ final updateProfileUseCaseProvider = Provider<UpdateProfileUseCase>((ref) {
   return UpdateProfileUseCase(repository);
 });
 
-// send OTP 
+// send OTP
 final sendOtpUseCaseProvider = Provider<SendOtpUseCase>((ref) {
   final repository = ref.watch(authRepositoryProvider);
   return SendOtpUseCase(repository);
@@ -135,6 +135,7 @@ final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   final resetPasswordUseCase = ref.watch(resetPasswordUseCaseProvider);
 
   return AuthNotifier(
+    ref,
     loginUseCase,
     logoutUseCase,
     getCurrentUserUseCase,

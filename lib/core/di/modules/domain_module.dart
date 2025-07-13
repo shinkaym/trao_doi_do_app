@@ -1,6 +1,7 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/appointment_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/category_repository_impl.dart';
+import 'package:trao_doi_do_app/data/repositories_impl/fcm_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/item_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/item_warehouse_repository_impl.dart';
 import 'package:trao_doi_do_app/data/repositories_impl/notification_repository_impl.dart';
@@ -13,6 +14,7 @@ import 'package:trao_doi_do_app/data/repositories_impl/post_repository_impl.dart
 import 'package:trao_doi_do_app/data/repositories_impl/message_repository_impl.dart';
 import 'package:trao_doi_do_app/domain/repositories/appointment_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/category_repository.dart';
+import 'package:trao_doi_do_app/domain/repositories/fcm_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/item_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/item_warehouse_repository.dart';
 import 'package:trao_doi_do_app/domain/repositories/notification_repository.dart';
@@ -26,11 +28,13 @@ import 'package:trao_doi_do_app/domain/usecases/create_claim_request_usecase.dar
 import 'package:trao_doi_do_app/domain/usecases/create_transaction_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/delete_all_claim_requests_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/delete_claim_request_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/delete_fcm_token_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/delete_post_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_appointment_detail_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_appointments_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_categories_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_claim_requests_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/get_fcm_token_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_interest_detail_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_items_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/get_my_good_deeds_usecase.dart';
@@ -47,6 +51,7 @@ import 'package:trao_doi_do_app/domain/usecases/mark_all_messages_read_usecase.d
 import 'package:trao_doi_do_app/domain/usecases/mark_all_notifications_read_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/mark_notification_read_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/onboarding_usecase.dart';
+import 'package:trao_doi_do_app/domain/usecases/save_fcm_token_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_appointment_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_claim_request_usecase.dart';
 import 'package:trao_doi_do_app/domain/usecases/update_post_usecase.dart';
@@ -97,9 +102,7 @@ final transactionRepositoryProvider =
       return TransactionRepositoryImpl(remoteDataSource);
     });
 
-final interestRepositoryProvider = Provider<InterestRepository>((
-  ref,
-) {
+final interestRepositoryProvider = Provider<InterestRepository>((ref) {
   final remoteDataSource = ref.watch(interestRemoteDataSourceProvider);
   return InterestRepositoryImpl(remoteDataSource);
 });
@@ -116,17 +119,17 @@ final messageRepositoryProvider = Provider.autoDispose<MessageRepository>((
   return MessageRepositoryImpl(remoteDataSource);
 });
 
-final itemWarehouseRepositoryProvider =
-    Provider<ItemWarehouseRepository>((ref) {
-      final remoteDataSource = ref.watch(itemWarehouseRemoteDataSourceProvider);
-      return ItemWarehouseRepositoryImpl(remoteDataSource);
-    });
+final itemWarehouseRepositoryProvider = Provider<ItemWarehouseRepository>((
+  ref,
+) {
+  final remoteDataSource = ref.watch(itemWarehouseRemoteDataSourceProvider);
+  return ItemWarehouseRepositoryImpl(remoteDataSource);
+});
 
-final appointmentRepositoryProvider =
-    Provider<AppointmentRepository>((ref) {
-      final remoteDataSource = ref.watch(appointmentRemoteDataSourceProvider);
-      return AppointmentRepositoryImpl(remoteDataSource);
-    });
+final appointmentRepositoryProvider = Provider<AppointmentRepository>((ref) {
+  final remoteDataSource = ref.watch(appointmentRemoteDataSourceProvider);
+  return AppointmentRepositoryImpl(remoteDataSource);
+});
 
 final rankingRepositoryProvider = Provider.autoDispose<RankingRepository>((
   ref,
@@ -145,6 +148,12 @@ final notificationRepositoryProvider =
       final remoteDataSource = ref.watch(notificationRemoteDataSourceProvider);
       return NotificationRepositoryImpl(remoteDataSource);
     });
+
+final fcmRepositoryProvider = Provider<FcmRepository>((ref) {
+  final remoteDataSource = ref.watch(fcmRemoteDataSourceProvider);
+  final localDataSource = ref.watch(fcmLocalDataSourceProvider);
+  return FcmRepositoryImpl(remoteDataSource, localDataSource);
+});
 
 // =============================================================================
 // USE CASE PROVIDERS
@@ -209,9 +218,7 @@ final cancelInterestUseCaseProvider =
       return CancelInterestUseCase(repository);
     });
 
-final getInterestsUseCaseProvider = Provider<GetInterestsUseCase>((
-  ref,
-) {
+final getInterestsUseCaseProvider = Provider<GetInterestsUseCase>((ref) {
   final repository = ref.watch(interestRepositoryProvider);
   return GetInterestsUseCase(repository);
 });
@@ -243,20 +250,17 @@ final getInterestDetailUseCaseProvider =
       return GetInterestDetailUseCase(repository);
     });
 
-final getUnreadCountUseCaseProvider =
-    Provider<GetUnreadCountUseCase>((ref) {
-      final repository = ref.watch(interestRepositoryProvider);
-      return GetUnreadCountUseCase(repository);
-    });
+final getUnreadCountUseCaseProvider = Provider<GetUnreadCountUseCase>((ref) {
+  final repository = ref.watch(interestRepositoryProvider);
+  return GetUnreadCountUseCase(repository);
+});
 
 final getPostsUseCaseProvider = Provider.autoDispose<GetPostsUseCase>((ref) {
   final repository = ref.watch(postRepositoryProvider);
   return GetPostsUseCase(repository);
 });
 
-final getMyPostsUseCaseProvider = Provider<GetMyPostsUseCase>((
-  ref,
-) {
+final getMyPostsUseCaseProvider = Provider<GetMyPostsUseCase>((ref) {
   final repository = ref.watch(postRepositoryProvider);
   return GetMyPostsUseCase(repository);
 });
@@ -300,9 +304,7 @@ final updateClaimRequestUseCaseProvider =
       return UpdateClaimRequestUseCase(repository);
     });
 
-final getOldStockUseCaseProvider = Provider<GetOldStockUseCase>((
-  ref,
-) {
+final getOldStockUseCaseProvider = Provider<GetOldStockUseCase>((ref) {
   final repository = ref.watch(itemWarehouseRepositoryProvider);
   return GetOldStockUseCase(repository);
 });
@@ -325,11 +327,10 @@ final deleteAllClaimRequestsUseCaseProvider =
       return DeleteAllClaimRequestsUseCase(repository);
     });
 
-final getAppointmentsUseCaseProvider =
-    Provider<GetAppointmentsUseCase>((ref) {
-      final repository = ref.watch(appointmentRepositoryProvider);
-      return GetAppointmentsUseCase(repository);
-    });
+final getAppointmentsUseCaseProvider = Provider<GetAppointmentsUseCase>((ref) {
+  final repository = ref.watch(appointmentRepositoryProvider);
+  return GetAppointmentsUseCase(repository);
+});
 
 final getAppointmentDetailUseCaseProvider =
     Provider.autoDispose<GetAppointmentDetailUseCase>((ref) {
@@ -383,3 +384,18 @@ final updateAppointmentUseCaseProvider =
       final repository = ref.watch(appointmentRepositoryProvider);
       return UpdateAppointmentUseCase(repository);
     });
+
+final saveFcmTokenUseCaseProvider = Provider<SaveFcmTokenUseCase>((ref) {
+  final repository = ref.watch(fcmRepositoryProvider);
+  return SaveFcmTokenUseCase(repository);
+});
+
+final deleteFcmTokenUseCaseProvider = Provider<DeleteFcmTokenUseCase>((ref) {
+  final repository = ref.watch(fcmRepositoryProvider);
+  return DeleteFcmTokenUseCase(repository);
+});
+
+final getFcmTokenUseCaseProvider = Provider<GetFcmTokenUseCase>((ref) {
+  final repository = ref.watch(fcmRepositoryProvider);
+  return GetFcmTokenUseCase(repository);
+});

@@ -1,4 +1,5 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:trao_doi_do_app/core/di/modules/fcm_module.dart';
 import 'package:trao_doi_do_app/core/error/failure.dart';
 import 'package:trao_doi_do_app/domain/entities/request/auth_request.dart';
 import 'package:trao_doi_do_app/domain/entities/user.dart';
@@ -94,6 +95,7 @@ class AuthState {
 }
 
 class AuthNotifier extends StateNotifier<AuthState> {
+  final Ref _ref;
   final LoginUseCase _loginUseCase;
   final LogoutUseCase _logoutUseCase;
   final GetCurrentUserUseCase _getCurrentUserUseCase;
@@ -106,6 +108,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final ResetPasswordUseCase _resetPasswordUseCase;
 
   AuthNotifier(
+    this._ref,
     this._loginUseCase,
     this._logoutUseCase,
     this._getCurrentUserUseCase,
@@ -292,9 +295,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
           isLoading: false,
           isLoggedIn: true,
           user: loginResponse.user,
-          // successMessage: 'Đăng nhập thành công!',
           isInitialized: true,
         );
+
+        // Register FCM token after successful login
+        _registerFcmTokenAfterLogin();
       },
     );
   }
@@ -302,22 +307,37 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     state = state.copyWith(isLoading: true, clearFailure: true);
 
+    // Delete FCM token before logout
+    await _deleteFcmTokenBeforeLogout();
+
     final result = await _logoutUseCase();
 
     result.fold(
       (failure) {
-        state = const AuthState(
-          isInitialized: true,
-          // successMessage: 'Đăng xuất thành công!',
-        );
+        state = const AuthState(isInitialized: true);
       },
       (_) {
-        state = const AuthState(
-          isInitialized: true,
-          // successMessage: 'Đăng xuất thành công!',
-        );
+        state = const AuthState(isInitialized: true);
       },
     );
+  }
+
+  Future<void> _registerFcmTokenAfterLogin() async {
+    try {
+      // Trigger FCM token registration
+      _ref.read(fcmProvider.notifier).refreshToken();
+    } catch (e) {
+      print('Error registering FCM token after login: $e');
+    }
+  }
+
+  // New method to delete FCM token before logout
+  Future<void> _deleteFcmTokenBeforeLogout() async {
+    try {
+      await _ref.read(fcmProvider.notifier).deleteFcmToken();
+    } catch (e) {
+      print('Error deleting FCM token before logout: $e');
+    }
   }
 
   Future<void> updateProfile({

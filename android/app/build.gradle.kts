@@ -1,6 +1,6 @@
 plugins {
     id("com.android.application")
-    id("kotlin-android")
+    id("org.jetbrains.kotlin.android")
     // Plugin Google Services để dùng Firebase
     id("com.google.gms.google-services")
     // Flutter Gradle plugin (phải đứng sau android/kotlin)
@@ -8,13 +8,15 @@ plugins {
 }
 
 android {
-    namespace = "com.example.trao_doi_do_app"
+    namespace = "com.trao_doi_do_app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -50,4 +52,6 @@ dependencies {
 
     // Firebase Cloud Messaging (thông báo đẩy)
     implementation("com.google.firebase:firebase-messaging")
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

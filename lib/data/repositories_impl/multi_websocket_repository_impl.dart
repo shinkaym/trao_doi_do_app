@@ -15,8 +15,8 @@ class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
       _remoteDataSource.responseStream;
 
   @override
-  Stream<Map<WebSocketChannel, WebSocketConnectionState>> get connectionStream =>
-      _remoteDataSource.connectionStream;
+  Stream<Map<WebSocketChannel, WebSocketConnectionState>>
+  get connectionStream => _remoteDataSource.connectionStream;
 
   @override
   Stream<WebSocketResponse> get chatResponseStream =>
@@ -114,7 +114,9 @@ class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
   void sendNotificationEvent(String event, Map<String, dynamic> data) {
     if (_remoteDataSource.notificationConnectionState !=
         WebSocketConnectionState.connected) {
-      throw Exception('Cannot send notification: notification channel not connected');
+      throw Exception(
+        'Cannot send notification: notification channel not connected',
+      );
     }
     final wsEvent = WebSocketEvent(
       event: WebSocketEventType.fromString(event) ?? WebSocketEventType.ping,
@@ -138,4 +140,9 @@ class MultiWebSocketRepositoryImpl implements MultiWebSocketRepository {
 
   @override
   void dispose() => _remoteDataSource.dispose();
+
+  @override
+  Map<String, dynamic> getConnectionSummary() {
+    return _remoteDataSource.getConnectionSummary();
+  }
 }

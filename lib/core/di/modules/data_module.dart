@@ -1,8 +1,10 @@
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/data/datasources/local/category_local_datasource.dart';
+import 'package:trao_doi_do_app/data/datasources/local/fcm_local_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/local/onboarding_local_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/appointment_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/category_remote_datasource.dart';
+import 'package:trao_doi_do_app/data/datasources/remote/fcm_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/item_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/item_warehouse_remote_datasource.dart';
 import 'package:trao_doi_do_app/data/datasources/remote/notification_remote_datasource.dart';
@@ -37,6 +39,11 @@ final categoryLocalDataSourceProvider = Provider<CategoryLocalDataSource>((
   ref,
 ) {
   return CategoryLocalDataSourceImpl();
+});
+
+final fcmLocalDataSourceProvider = Provider<FcmLocalDataSource>((ref) {
+  final secureStorage = ref.watch(secureStorageProvider);
+  return FcmLocalDataSourceImpl(secureStorage);
 });
 
 // =============================================================================
@@ -110,3 +117,10 @@ final notificationRemoteDataSourceProvider =
       final dioClient = ref.watch(dioClientProvider);
       return NotificationRemoteDataSourceImpl(dioClient);
     });
+
+final fcmRemoteDataSourceProvider = Provider.autoDispose<FcmRemoteDataSource>((
+  ref,
+) {
+  final dioClient = ref.watch(dioClientProvider);
+  return FcmRemoteDataSourceImpl(dioClient);
+});

@@ -29,6 +29,8 @@ abstract class MultiWebSocketRemoteDataSource {
   void disconnectNotification();
   void disconnectAll();
   void dispose();
+
+  Map<String, dynamic> getConnectionSummary();
 }
 
 class MultiWebSocketRemoteDataSourceImpl
@@ -41,8 +43,8 @@ class MultiWebSocketRemoteDataSourceImpl
   Stream<WebSocketResponse> get responseStream => _manager.responseStream;
 
   @override
-  Stream<Map<WebSocketChannel, WebSocketConnectionState>> get connectionStream =>
-      _manager.connectionStream;
+  Stream<Map<WebSocketChannel, WebSocketConnectionState>>
+  get connectionStream => _manager.connectionStream;
 
   @override
   Stream<WebSocketResponse> get chatResponseStream =>
@@ -111,4 +113,9 @@ class MultiWebSocketRemoteDataSourceImpl
 
   @override
   void dispose() => _manager.dispose();
+
+  @override
+  Map<String, dynamic> getConnectionSummary() {
+    return _manager.getConnectionSummary();
+  }
 }

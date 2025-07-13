@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:trao_doi_do_app/core/config/theme_mode_notifier.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
+import 'package:trao_doi_do_app/core/error/failure.dart';
+import 'package:trao_doi_do_app/core/services/app_lifecycle_service.dart';
 import 'package:trao_doi_do_app/presentation/enums/index.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/notifiers/appointment_detail_notifier.dart';
 import 'package:trao_doi_do_app/presentation/features/appointments/notifiers/appointment_notifier.dart';
@@ -23,6 +25,7 @@ import 'package:trao_doi_do_app/presentation/features/item_warehouse/notifiers/c
 import 'package:trao_doi_do_app/presentation/features/item_warehouse/notifiers/claim_requests_list_notifier.dart';
 import 'package:trao_doi_do_app/presentation/features/item_warehouse/notifiers/old_stock_notifier.dart';
 import 'package:trao_doi_do_app/presentation/notifiers/category_notifier.dart';
+import 'package:trao_doi_do_app/presentation/notifiers/fcm_notifier.dart';
 import 'package:trao_doi_do_app/presentation/notifiers/item_notifier.dart';
 import 'package:trao_doi_do_app/presentation/notifiers/interest_notifier.dart';
 import 'package:trao_doi_do_app/presentation/notifiers/messages_notifier.dart';
@@ -349,6 +352,48 @@ final notificationProvider =
 final unreadNotificationCountProvider = Provider<int>((ref) {
   final notificationState = ref.watch(notificationProvider);
   return notificationState.unreadCount;
+});
+
+// =============================================================================
+// FCM PROVIDERS
+// =============================================================================
+
+// FCM Provider
+final fcmProvider = StateNotifierProvider<FcmNotifier, FcmState>((ref) {
+  final saveFcmTokenUseCase = ref.watch(saveFcmTokenUseCaseProvider);
+  final deleteFcmTokenUseCase = ref.watch(deleteFcmTokenUseCaseProvider);
+  final getFcmTokenUseCase = ref.watch(getFcmTokenUseCaseProvider);
+
+  return FcmNotifier(
+    saveFcmTokenUseCase,
+    deleteFcmTokenUseCase,
+    getFcmTokenUseCase,
+  );
+});
+
+// FCM Status Providers
+final fcmTokenProvider = Provider<String?>((ref) {
+  return ref.watch(fcmProvider.select((state) => state.fcmToken));
+});
+
+final isFcmTokenRegisteredProvider = Provider<bool>((ref) {
+  return ref.watch(fcmProvider.select((state) => state.isTokenRegistered));
+});
+
+final fcmLoadingProvider = Provider<bool>((ref) {
+  return ref.watch(fcmProvider.select((state) => state.isLoading));
+});
+
+final fcmErrorProvider = Provider<Failure?>((ref) {
+  return ref.watch(fcmProvider.select((state) => state.failure));
+});
+
+// =============================================================================
+// APP LIFECYCLE PROVIDER
+// =============================================================================
+
+final appLifecycleServiceProvider = Provider<AppLifecycleService>((ref) {
+  return AppLifecycleService(ref);
 });
 
 // Provider để theo dõi việc skip permission request

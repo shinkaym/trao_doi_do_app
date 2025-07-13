@@ -8,10 +8,6 @@ class MarkNotificationReadUseCase {
   MarkNotificationReadUseCase(this._repository);
 
   Future<Either<Failure, void>> call(int notificationID) async {
-    if (notificationID <= 0) {
-      return const Left(ValidationFailure('ID thông báo không hợp lệ'));
-    }
-
     return await _repository.markNotificationAsRead(notificationID);
   }
 }

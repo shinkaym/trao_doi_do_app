@@ -9,4 +9,5 @@ class StorageKeys {
   static const String items = 'items';
   static const onboardingCompleted = 'onboardingCompleted';
   static const settings = 'settings';
+  static const String fcmToken = 'fcm_token';
 }

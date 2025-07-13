@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -6,6 +7,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:trao_doi_do_app/app.dart';
 import 'package:trao_doi_do_app/core/constants/storage_keys.dart';
 import 'package:trao_doi_do_app/core/di/dependency_injection.dart';
+import 'package:trao_doi_do_app/core/services/fcm_service.dart';
 import 'package:trao_doi_do_app/core/utils/logger_utils.dart';
 import 'package:trao_doi_do_app/core/utils/time_utils.dart';
 
@@ -51,10 +53,20 @@ Future<void> _initializeApp(ProviderContainer container) async {
   final logger = container.read(loggerProvider);
 
   // Parallel initialization cho performance
-  await Future.wait([_initializeCore(), _initializeStorage()]);
+  await Future.wait([
+    _initializeCore(),
+    _initializeStorage(),
+    _initializeFirebase(),
+  ]);
+
+  // Initialize FCM after Firebase
+  await _initializeFcm(container, logger);
 
   // Warm up critical providers
   await _warmUpProviders(container, logger);
+
+  // Initialize app lifecycle service
+  _initializeAppLifecycle(container);
 
   logger.i('🎉 App initialization completed');
 }
@@ -69,6 +81,43 @@ Future<void> _initializeStorage() async {
   await Hive.openBox(StorageKeys.settings);
 }
 
+/// Initialize Firebase
+Future<void> _initializeFirebase() async {
+  try {
+    await Firebase.initializeApp();
+    print('✅ Firebase initialized successfully');
+  } catch (e, stackTrace) {
+    print('❌ Firebase initialization failed: $e');
+    print('Stack trace: $stackTrace');
+    rethrow;
+  }
+}
+
+/// Initialize app lifecycle service
+void _initializeAppLifecycle(ProviderContainer container) {
+  try {
+    container.read(appLifecycleServiceProvider);
+    print('✅ App lifecycle service initialized');
+  } catch (e) {
+    print('⚠️ App lifecycle service initialization failed: $e');
+  }
+}
+
+/// Initialize FCM
+Future<void> _initializeFcm(ProviderContainer container, ILogger logger) async {
+  try {
+    await FcmService.initialize();
+
+    // Initialize FCM provider
+    container.read(fcmProvider);
+
+    logger.i('✅ FCM initialized successfully');
+  } catch (e, stackTrace) {
+    logger.w('⚠️ FCM initialization failed', e, stackTrace);
+    // Don't rethrow to prevent app crash
+  }
+}
+
 /// Warm up providers để tránh cold start
 Future<void> _warmUpProviders(
   ProviderContainer container,
@@ -80,6 +129,8 @@ Future<void> _warmUpProviders(
     // Load critical providers concurrently
     futures.add(Future(() => container.read(onboardingProvider)));
     futures.add(Future(() => container.read(splashProvider)));
+    futures.add(Future(() => container.read(authProvider)));
+    futures.add(Future(() => container.read(notificationProvider)));
 
     await Future.wait(futures, eagerError: false);
     logger.i('✅ Providers warmed up successfully');
